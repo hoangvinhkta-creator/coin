@@ -1,10 +1,14 @@
 # Index — ETH DCA Operating System V2.1.5
 
-Điểm truy cập cho toàn bộ dự án. Hai trang web đi kèm:
+Điểm truy cập cho toàn bộ dự án. Ba trang web đi kèm:
 
 - **Index** (tài liệu, code map, lệnh chạy, ngưỡng): <https://claude.ai/code/artifact/b0bae7ec-0068-4811-b89a-9ee5fb7893de>
 - **Xem kết quả backtest**: <https://claude.ai/code/artifact/7fa3c209-ab5c-4ce3-81e2-a1a7277b5305>
   — kéo `results/report.json` vào trang để xem gate, failure signal và verdict dạng biểu đồ.
+- **App theo dõi**: <https://claude.ai/code/artifact/ee1cc5bf-b66c-438f-9aee-ca229b0e1d95>
+  — nhập giá và giao dịch thật, app tính OSCORE và theo dõi vốn/ladder/danh mục.
+  Nguồn ở [`webapp/`](../webapp/README.md); nạp seed bằng `ethdca export-live`.
+  Lưu ý: app nằm sau cổng verdict của Impl Plan §9 — xem README của webapp.
 
 ## 1. Tài liệu, xếp theo precedence
 
@@ -76,10 +80,11 @@ Mọi module dưới `src/eth_dca_os/`; cột cuối là điều khoản nó th�
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]" && pytest
 
-ethdca fetch      # 1 — dữ liệu Binance thật (bắt buộc cho official run)
-ethdca freeze     # 2 — Phase 0: đóng băng manifest + hash, TRƯỚC mọi gate
-ethdca run all    # 3 — Gate 1/2/3 + controls + verdict
-ethdca verdict    # 4 — đọc lại kết quả đã lưu
+ethdca fetch        # 1 — dữ liệu Binance thật (bắt buộc cho official run)
+ethdca freeze       # 2 — Phase 0: đóng băng manifest + hash, TRƯỚC mọi gate
+ethdca run all      # 3 — Gate 1/2/3 + controls + verdict
+ethdca verdict      # 4 — đọc lại kết quả đã lưu
+ethdca export-live  # seed cho app theo dõi trên web
 ```
 
 `--dev-limit N` chạy nhanh với vài config để kiểm cơ chế; kết quả tự gắn cờ `official: false`.
@@ -120,4 +125,6 @@ Gate 1 hoặc OOS trượt → **DO NOT BUILD**.
    bit-for-bit, không phải con số thật.
 2. **Tối ưu compute cho Gate 2 full** — 219 config × 9 window là phép chạy tính bằng giờ;
    Impl Plan §4 cho phép chạy song song theo config.
-3. **App MVP dashboard** — bị khóa sau verdict theo Impl Plan §9.
+3. **App MVP đầy đủ** — bản hiện tại ([`webapp/`](../webapp/README.md)) là công cụ ghi chép:
+   chưa tự động Base schedule, Month-End, Crash ladder, cooldown và daily limit; Return24H
+   dùng daily return làm xấp xỉ. Impl Plan §9 vẫn khóa bản đầy đủ sau verdict BUILD.

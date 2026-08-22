@@ -31,6 +31,11 @@ def main(argv=None):
 
     sub.add_parser("verdict", help="tổng hợp verdict từ kết quả gần nhất trong --out-dir")
 
+    el = sub.add_parser("export-live",
+                        help="xuất live_seed.json cho app theo dõi trên web")
+    el.add_argument("--history-days", type=int, default=420)
+    el.add_argument("--parity-days", type=int, default=40)
+
     args = p.parse_args(argv)
     raw_dir, out_dir = Path(args.raw_dir), Path(args.out_dir)
 
@@ -51,6 +56,15 @@ def main(argv=None):
         from .manifests import freeze_manifests
         meta = freeze_manifests(out_dir / "manifests")
         print(json.dumps(meta, indent=1, ensure_ascii=False, default=str))
+        return 0
+
+    if args.cmd == "export-live":
+        from .live_export import write_seed
+        path = write_seed(out_dir, raw_dir, history_days=args.history_days,
+                          parity_days=args.parity_days)
+        size_kb = path.stat().st_size / 1024
+        print(f"{path}  ({size_kb:.0f} KB)")
+        print("Mở app theo dõi trên web và nạp file này để khởi tạo lịch sử giá.")
         return 0
 
     if args.cmd == "run":

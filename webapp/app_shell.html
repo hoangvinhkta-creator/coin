@@ -1,0 +1,539 @@
+<title>ETH DCA Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+
+<style>
+:root{
+  --ground:#EFF2F0; --surface:#FAFBFA; --surface-alt:#E6EAE7; --sunken:#E2E7E4;
+  --ink:#151C1A; --ink-soft:#3A4744; --muted:#63716C;
+  --rule:#CDD5D1; --rule-soft:#DFE4E1;
+  --accent:#0E5C4A; --accent-soft:#DCEBE5;
+  --pass:#0F8A72; --pass-bg:#E2F1EC;
+  --fail:#CC4B1F; --fail-bg:#FAEAE3;
+  --warn:#8A6208; --warn-bg:#F6EDD6;
+  --idle:#8A948F; --idle-bg:#E9ECEA;
+  --shadow:0 1px 2px rgba(21,28,26,.05),0 10px 28px -20px rgba(21,28,26,.3);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0D1311; --surface:#151D1A; --surface-alt:#1E2724; --sunken:#111815;
+  --ink:#E5EBE8; --ink-soft:#C0CBC6; --muted:#8C9C96;
+  --rule:#2C3733; --rule-soft:#222C29;
+  --accent:#57C6A3; --accent-soft:#16302A;
+  --pass:#2BA88B; --pass-bg:#16302A;
+  --fail:#D96238; --fail-bg:#33201A;
+  --warn:#D6A63F; --warn-bg:#2E2716;
+  --idle:#77837E; --idle-bg:#1F2724;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -20px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --ground:#0D1311; --surface:#151D1A; --surface-alt:#1E2724; --sunken:#111815;
+  --ink:#E5EBE8; --ink-soft:#C0CBC6; --muted:#8C9C96;
+  --rule:#2C3733; --rule-soft:#222C29;
+  --accent:#57C6A3; --accent-soft:#16302A;
+  --pass:#2BA88B; --pass-bg:#16302A;
+  --fail:#D96238; --fail-bg:#33201A;
+  --warn:#D6A63F; --warn-bg:#2E2716;
+  --idle:#77837E; --idle-bg:#1F2724;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -20px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-variant-ligatures:none}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;background:var(--surface-alt);
+  padding:.1em .38em;border-radius:3px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 22px 80px}
+
+/* header */
+header.top{padding:28px 0 16px;border-bottom:2px solid var(--ink);display:flex;
+  flex-wrap:wrap;gap:14px 28px;align-items:flex-end;justify-content:space-between}
+header.top h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;
+  font-size:clamp(22px,3vw,30px);margin:0;letter-spacing:-.018em}
+header.top .sub{margin:5px 0 0;color:var(--muted);font-size:13.5px;max-width:56ch}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.savechip{font-family:"IBM Plex Mono",monospace;font-size:11px;padding:5px 10px;
+  border-radius:3px;border:1px solid var(--rule);color:var(--muted);white-space:nowrap}
+.savechip.dirty{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+.savechip.ok{border-color:var(--pass);color:var(--pass);background:var(--pass-bg)}
+
+/* buttons */
+button{font-family:inherit;font-size:13.5px;cursor:pointer;border-radius:4px;
+  border:1px solid var(--rule);background:var(--surface);color:var(--ink);padding:7px 13px}
+button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--ground);font-weight:500}
+button.primary:hover:not(:disabled){opacity:.88;color:var(--ground)}
+button.sm{font-size:12px;padding:4px 9px}
+button.danger{color:var(--fail);border-color:var(--rule)}
+button.danger:hover:not(:disabled){border-color:var(--fail);color:var(--fail)}
+
+/* banners */
+.banner{display:flex;gap:11px;align-items:flex-start;margin:16px 0 0;padding:12px 15px;
+  border-radius:5px;font-size:13.5px;border:1px solid var(--rule);background:var(--surface)}
+.banner .mk{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:10.5px;
+  letter-spacing:.06em;white-space:nowrap;padding-top:2px}
+.banner p{margin:0;max-width:84ch}
+.banner.warn{border-color:var(--warn);background:var(--warn-bg)}
+.banner.warn .mk{color:var(--warn)}
+.banner.bad{border-color:var(--fail);background:var(--fail-bg)}
+.banner.bad .mk{color:var(--fail)}
+.banner.good{border-color:var(--pass);background:var(--pass-bg)}
+.banner.good .mk{color:var(--pass)}
+
+/* tabs */
+nav.tabs{display:flex;gap:2px;margin:20px 0 0;border-bottom:1px solid var(--rule);
+  overflow-x:auto}
+nav.tabs button{border:none;border-bottom:2px solid transparent;background:none;
+  border-radius:0;padding:9px 15px;color:var(--muted);font-size:13.5px;white-space:nowrap}
+nav.tabs button:hover{color:var(--ink);border-color:var(--rule)}
+nav.tabs button[aria-selected="true"]{color:var(--accent);border-color:var(--accent);font-weight:500}
+.panel{display:none;padding-top:24px}
+.panel.on{display:block}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;
+  padding:16px 18px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 12px;font-size:12px;font-family:"IBM Plex Mono",monospace;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.bigscore{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.bigscore .n{font-family:"IBM Plex Mono",monospace;font-size:52px;font-weight:600;
+  line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.bigscore .of{color:var(--muted);font-family:"IBM Plex Mono",monospace;font-size:15px}
+.statechips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+  letter-spacing:.05em;padding:4px 9px;border-radius:3px;border:1px solid currentColor}
+.chip.g{color:var(--pass);background:var(--pass-bg)}
+.chip.r{color:var(--fail);background:var(--fail-bg)}
+.chip.y{color:var(--warn);background:var(--warn-bg)}
+.chip.n{color:var(--idle);background:var(--idle-bg)}
+
+/* factor bars */
+.fbar{display:grid;grid-template-columns:104px minmax(0,1fr) 62px;gap:9px;
+  align-items:center;padding:4px 0}
+.fbar .fl{font-size:12.5px;color:var(--ink-soft)}
+.fbar .fv{font-family:"IBM Plex Mono",monospace;font-size:11.5px;text-align:right;
+  font-variant-numeric:tabular-nums;color:var(--muted)}
+.ftrack{height:15px;background:var(--sunken);border-radius:3px;overflow:hidden}
+.ffill{height:100%;background:var(--accent);border-radius:3px}
+.subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:7px;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--rule-soft)}
+.sub{background:var(--sunken);border-radius:4px;padding:7px 9px}
+.sub .k{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted);
+  letter-spacing:.04em}
+.sub .v{font-family:"IBM Plex Mono",monospace;font-size:14px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+
+/* action box */
+.action{margin-top:14px;border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.action .ah{padding:11px 16px;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--rule)}
+.action .ab{padding:16px 18px;background:var(--surface)}
+.action.go .ah{background:var(--pass-bg);color:var(--pass)}
+.action.wait .ah{background:var(--idle-bg);color:var(--idle)}
+.action.fund .ah{background:var(--warn-bg);color:var(--warn)}
+.action .big{font-family:"IBM Plex Mono",monospace;font-size:23px;font-weight:600;
+  letter-spacing:-.015em;font-variant-numeric:tabular-nums}
+.action .why{margin:8px 0 0;font-size:13.5px;color:var(--ink-soft);max-width:74ch}
+
+/* stat rows */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:11px}
+.stat{background:var(--surface);border:1px solid var(--rule);border-radius:5px;padding:12px 14px}
+.stat .k{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 5px}
+.stat .v{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;
+  font-variant-numeric:tabular-nums;letter-spacing:-.015em;display:block;line-height:1.15}
+.stat .s{font-size:11.5px;color:var(--muted);margin:3px 0 0;font-family:"IBM Plex Mono",monospace}
+
+/* pool bars */
+.pool{margin:11px 0 0}
+.pool .ph{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+.pool .ph b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-weight:600;font-size:12px}
+.ptrack{display:flex;height:17px;border-radius:3px;overflow:hidden;background:var(--sunken);gap:2px}
+.pseg{height:100%}
+.pseg.dep{background:var(--accent)}
+.pseg.res{background:var(--warn)}
+.pseg.avl{background:var(--rule)}
+.plegend{display:flex;gap:13px;margin-top:7px;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;color:var(--muted);flex-wrap:wrap}
+.plegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;
+  vertical-align:-1px}
+
+/* tables */
+.scroller{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--rule-soft);vertical-align:middle}
+thead th{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--surface-alt);
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  text-align:right;white-space:nowrap}
+td.mono{font-family:"IBM Plex Mono",monospace;font-size:12px}
+tr.hit{background:var(--pass-bg)}
+.empty{padding:22px;text-align:center;color:var(--muted);font-size:13.5px}
+
+/* forms */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:12px;
+  align-items:end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--muted)}
+.field input,.field select{font-family:"IBM Plex Mono",monospace;font-size:13.5px;
+  padding:8px 10px;border-radius:4px;border:1px solid var(--rule);
+  background:var(--sunken);color:var(--ink);width:100%;min-width:0}
+.field input:focus,.field select:focus{border-color:var(--accent);outline:none}
+.field .hint{font-size:11px;color:var(--muted)}
+.formfoot{display:flex;gap:9px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.formmsg{font-size:12.5px}
+.formmsg.err{color:var(--fail)} .formmsg.ok{color:var(--pass)}
+
+h2{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;font-size:19px;
+  margin:0 0 4px;letter-spacing:-.01em}
+.lede{color:var(--ink-soft);margin:0 0 16px;font-size:13.5px;max-width:76ch}
+.sec{margin-top:30px}
+.sec:first-child{margin-top:0}
+.note{border-left:3px solid var(--accent);background:var(--surface-alt);padding:11px 15px;
+  border-radius:0 4px 4px 0;margin-top:14px}
+.note p{margin:0;font-size:12.5px;color:var(--ink-soft);max-width:80ch}
+.note p+p{margin-top:6px}
+
+.drop{border:1.5px dashed var(--rule);border-radius:6px;padding:24px;text-align:center;
+  background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--surface-alt)}
+
+footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:var(--muted);
+  font-size:11.5px;font-family:"IBM Plex Mono",monospace}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .fbar{grid-template-columns:88px minmax(0,1fr) 56px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<script id="app-state" type="application/json">__STATE__</script>
+<script id="app-seed" type="application/json">__SEED__</script>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>ETH DCA Tracker</h1>
+      <p class="sub">Theo dõi vốn, ladder và danh mục theo ETH DCA OS V2.1.5. Bạn nhập giao dịch
+        thật; hệ thống chỉ khuyến nghị, không tự đặt lệnh.</p>
+    </div>
+    <div class="hdr-right">
+      <span class="savechip" id="saveChip">—</span>
+      <button id="saveBtn" class="primary">Lưu</button>
+    </div>
+  </header>
+
+  <div id="banners"></div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="dash">Bảng điều khiển</button>
+    <button role="tab" aria-selected="false" data-tab="entry">Nhập số liệu</button>
+    <button role="tab" aria-selected="false" data-tab="ladder">Ladder</button>
+    <button role="tab" aria-selected="false" data-tab="history">Lịch sử</button>
+    <button role="tab" aria-selected="false" data-tab="setup">Thiết lập</button>
+  </nav>
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="panel on" id="tab-dash">
+    <div class="hero">
+      <div class="card">
+        <h3>Opportunity Score</h3>
+        <div class="bigscore">
+          <span class="n" id="osVal">—</span><span class="of">/ 100</span>
+        </div>
+        <div class="statechips" id="stateChips"></div>
+        <div style="margin-top:16px" id="factorBars"></div>
+        <div class="subgrid" id="subGrid"></div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>Thị trường</h3>
+          <div class="stats" id="marketStats"></div>
+        </div>
+        <div class="action" id="actionBox" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Danh mục</h2>
+      <div class="stats" id="portfolioStats"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Kho vốn</h2>
+      <p class="lede">VND là source of truth cho ngân sách; USDT là đơn vị thực thi.
+        Zone được coi là hoàn thành theo phân bổ VND thực tế, không theo mục tiêu USDT cố định.</p>
+      <div class="stats" id="treasuryStats"></div>
+      <div class="card" style="margin-top:12px">
+        <h3>Ba pool vốn tháng này</h3>
+        <div id="poolBars"></div>
+        <div class="plegend">
+          <span><i style="background:var(--rule)"></i>Available</span>
+          <span><i style="background:var(--warn)"></i>Reserved</span>
+          <span><i style="background:var(--accent)"></i>Deployed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ENTRY ============ -->
+  <div class="panel" id="tab-entry">
+    <div class="sec">
+      <h2>Giá đóng cửa hôm nay</h2>
+      <p class="lede">Trang web không gọi được Binance nên bạn nhập giá đóng cửa daily.
+        Chỉ nhập nến ĐÃ ĐÓNG — dùng nến đang chạy là vi phạm luật no-lookahead của spec.</p>
+      <div class="card">
+        <div class="form">
+          <div class="field">
+            <label for="pxDate">Ngày (UTC)</label>
+            <input type="date" id="pxDate">
+          </div>
+          <div class="field">
+            <label for="pxEth">ETHUSDT close</label>
+            <input type="number" id="pxEth" step="any" placeholder="3421.55">
+          </div>
+          <div class="field">
+            <label for="pxBtc">BTCUSDT close</label>
+            <input type="number" id="pxBtc" step="any" placeholder="97250.0">
+          </div>
+          <div class="field">
+            <label for="pxVol">ETH volume</label>
+            <input type="number" id="pxVol" step="any" placeholder="185000">
+            <span class="hint">Volume ngày của ETHUSDT trên Binance</span>
+          </div>
+        </div>
+        <div class="formfoot">
+          <button class="primary" id="pxAdd">Thêm ngày</button>
+          <span class="formmsg" id="pxMsg"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Nạp vốn tháng</h2>
+      <p class="lede">Contribution chia theo tỷ lệ Base / Smart / Opportunity của config.
+        Phần Opportunity vượt trần sẽ tự overflow sang Smart của chính tháng đó.</p>
+      <div class="card">
+        <div class="form">
+          <div class="field">
+            <label for="cbMonth">Tháng</label>
+            <input type="month" id="cbMonth">
+          </div>
+          <div class="field">
+            <label for="cbAmt">Số tiền (VND)</label>
+            <input type="number" id="cbAmt" step="any" placeholder="10000000">
+          </div>
+        </div>
+        <div class="formfoot">
+          <button class="primary" id="cbAdd">Nạp</button>
+          <span class="formmsg" id="cbMsg"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Giao dịch P2P</h2>
+      <p class="lede">Ghi số thực tế của giao dịch bạn đã khớp — đây là source of truth cho
+        cost basis và funding delay, không phải giá niêm yết trên bảng quảng cáo.</p>
+      <div class="card">
+        <div class="form">
+          <div class="field">
+            <label for="p2pDir">Chiều</label>
+            <select id="p2pDir">
+              <option value="VND_TO_USDT">VND → USDT (mua)</option>
+              <option value="USDT_TO_VND">USDT → VND (bán)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="p2pVnd">VND</label>
+            <input type="number" id="p2pVnd" step="any" placeholder="10000000">
+          </div>
+          <div class="field">
+            <label for="p2pUsdt">USDT</label>
+            <input type="number" id="p2pUsdt" step="any" placeholder="392.5">
+          </div>
+          <div class="field">
+            <label for="p2pFee">Phí (VND)</label>
+            <input type="number" id="p2pFee" step="any" value="0">
+          </div>
+        </div>
+        <div class="formfoot">
+          <button class="primary" id="p2pAdd">Ghi giao dịch</button>
+          <span class="formmsg" id="p2pMsg"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Xác nhận mua ETH</h2>
+      <p class="lede">Portfolio chỉ thay đổi sau khi bạn xác nhận đã mua thật.
+        Giá khuyến nghị và giá khớp thực tế được lưu cả hai để đo implementation shortfall —
+        đó là dữ liệu đối chiếu ngược lại giả định delay của backtest.</p>
+      <div class="card">
+        <div class="form">
+          <div class="field">
+            <label for="buyZone">Zone</label>
+            <select id="buyZone"></select>
+            <span class="hint">Chọn zone để đánh dấu đã fill</span>
+          </div>
+          <div class="field">
+            <label for="buySrc">Nguồn vốn</label>
+            <select id="buySrc">
+              <option value="BASE">Base</option>
+              <option value="SMART">Smart</option>
+              <option value="OPPORTUNITY">Opportunity</option>
+              <option value="MANUAL">Thủ công</option>
+            </select>
+            <span class="hint">Chỉ dùng khi không gắn zone</span>
+          </div>
+          <div class="field">
+            <label for="buyUsdt">USDT chi</label>
+            <input type="number" id="buyUsdt" step="any" placeholder="200">
+          </div>
+          <div class="field">
+            <label for="buyPrice">Giá khớp (USDT/ETH)</label>
+            <input type="number" id="buyPrice" step="any" placeholder="3418.20">
+          </div>
+          <div class="field">
+            <label for="buyRec">Giá khuyến nghị</label>
+            <input type="number" id="buyRec" step="any" placeholder="3400.00">
+            <span class="hint">Bỏ trống nếu mua thủ công</span>
+          </div>
+          <div class="field">
+            <label for="buyFee">Phí (USDT)</label>
+            <input type="number" id="buyFee" step="any" value="0">
+          </div>
+          <div class="field">
+            <label for="buyVndRate">Tỷ giá VND/USDT</label>
+            <input type="number" id="buyVndRate" step="any" placeholder="25400">
+            <span class="hint">Để quy đổi cost basis VND</span>
+          </div>
+        </div>
+        <div class="formfoot">
+          <button class="primary" id="buyAdd">Xác nhận đã mua</button>
+          <span class="formmsg" id="buyMsg"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LADDER ============ -->
+  <div class="panel" id="tab-ladder">
+    <div class="sec">
+      <h2>Buy ladder đang mở</h2>
+      <p class="lede">Anchor và spacing là bất biến trong suốt vòng đời ladder — zone không bao
+        giờ được dịch lên trên. Ladder bị hủy khi có hai daily close liên tiếp trên
+        invalidation price.</p>
+      <div id="ladderList"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Tạo ladder mới</h2>
+      <div class="card">
+        <div class="form">
+          <div class="field">
+            <label for="ldType">Loại</label>
+            <select id="ldType">
+              <option value="SMART">Smart</option>
+              <option value="OPPORTUNITY">Opportunity</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ldAnchor">Anchor (USDT/ETH)</label>
+            <input type="number" id="ldAnchor" step="any">
+            <span class="hint">Mặc định = giá mới nhất</span>
+          </div>
+          <div class="field">
+            <label for="ldCap">Vốn đưa vào (VND)</label>
+            <input type="number" id="ldCap" step="any">
+            <span class="hint" id="ldCapHint"></span>
+          </div>
+        </div>
+        <div class="formfoot">
+          <button class="primary" id="ldAdd">Tạo ladder</button>
+          <span class="formmsg" id="ldMsg"></span>
+        </div>
+      </div>
+      <div class="note">
+        <p><strong>Spacing được tính tự động</strong> từ ADR30 × smart_spacing_factor ×
+          ScoreMultiplier(OSCORE), rồi clamp trong [<span id="spMin"></span>,
+          <span id="spMax"></span>]. Opportunity spacing = Smart spacing × 1.25, clamp [6%, 15%].</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HISTORY ============ -->
+  <div class="panel" id="tab-history">
+    <div class="sec">
+      <h2>Giao dịch ETH</h2>
+      <div class="scroller" id="tradeTable"></div>
+    </div>
+    <div class="sec">
+      <h2>Giao dịch P2P</h2>
+      <div class="scroller" id="p2pTable"></div>
+    </div>
+    <div class="sec">
+      <h2>Sổ vốn</h2>
+      <p class="lede">Mọi dịch chuyển vốn đều đi qua ledger, không phải một số dư bị ghi đè —
+        nhờ vậy mới kiểm được TOTAL = AVAILABLE + RESERVED + DEPLOYED tại mọi thời điểm.</p>
+      <div class="scroller" id="ledgerTable"></div>
+    </div>
+  </div>
+
+  <!-- ============ SETUP ============ -->
+  <div class="panel" id="tab-setup">
+    <div class="sec">
+      <h2>Nạp dữ liệu lịch sử</h2>
+      <p class="lede">App cần 365 ngày giá để tính High365, MA200, percentile và RSI.
+        Chạy <code>ethdca export-live</code> trên máy có dữ liệu Binance rồi kéo file
+        <code>results/live_seed.json</code> vào đây.</p>
+      <div class="drop" id="seedDrop">
+        <p style="margin:0 0 10px"><strong>Kéo <code>live_seed.json</code> vào đây</strong></p>
+        <input type="file" id="seedFile" accept="application/json,.json" hidden>
+        <button id="seedPick">Chọn file</button>
+        <p class="formmsg" id="seedMsg" style="margin:10px 0 0"></p>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Đối chiếu engine</h2>
+      <p class="lede">App tính OSCORE bằng JavaScript, còn backtest tính bằng Python. Hai bản cài
+        đặt có thể trôi khỏi nhau, nên mỗi seed mang theo score do Python tính và app so lại —
+        đây là cách phát hiện lệch.</p>
+      <div id="parityBox"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Cấu hình chiến lược</h2>
+      <div class="scroller" id="cfgTable"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Dữ liệu của bạn</h2>
+      <div class="card">
+        <div class="formfoot" style="margin-top:0">
+          <button id="expBtn">Tải về JSON</button>
+          <button id="impBtn">Nạp lại từ JSON</button>
+          <input type="file" id="impFile" accept="application/json,.json" hidden>
+          <button class="danger" id="wipeBtn">Xóa toàn bộ dữ liệu</button>
+          <span class="formmsg" id="dataMsg"></span>
+        </div>
+      </div>
+      <div class="note">
+        <p>Dữ liệu lưu trong trang này (nút <strong>Lưu</strong> ở đầu trang) và trong bộ nhớ
+          trình duyệt. Nút <em>Tải về JSON</em> cho bạn một bản sao độc lập — nên tải định kỳ.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
