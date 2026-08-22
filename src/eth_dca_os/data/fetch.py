@@ -1,11 +1,20 @@
 """Tải OHLCV Binance Spot (ETHUSDT/BTCUSDT 1D, ETHUSDT 15m) — Impl Plan Phase 1.
 
+Hai kênh, theo đúng docs/DATA_SOURCES.md:
+  - Bulk archive data.binance.vision: ZIP theo tháng + CHECKSUM SHA256. Dùng cho phần
+    lịch sử (~268k nến 15m) — miễn phí, không key, không rate limit đáng kể.
+  - REST /api/v3/klines: chỉ để bù tháng hiện tại chưa có trong archive. Weight 2/request,
+    giới hạn 6000 weight/phút theo IP; market data không cần API key.
+
 Chạy trên máy có truy cập Binance (môi trường CI/agent có thể bị chặn — dùng synth để dev).
 Raw parquet bất biến lưu vào data/raw/; lineage ghi ở data/raw/lineage.json.
 """
 from __future__ import annotations
 
+import hashlib
+import io
 import time
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,6 +22,7 @@ import pandas as pd
 import requests
 
 BASE_URL = "https://api.binance.com/api/v3/klines"
+ARCHIVE_URL = "https://data.binance.vision/data/spot/monthly/klines"
 COLUMNS = ["open_time", "open", "high", "low", "close", "volume"]
 LIMIT = 1000
 
@@ -51,6 +61,82 @@ def fetch_klines(symbol: str, interval: str, start: datetime, end: datetime,
     return df.drop_duplicates("open_time").sort_values("open_time").reset_index(drop=True)
 
 
+def months_between(start: datetime, end: datetime) -> list[tuple[int, int]]:
+    """Danh sách (year, month) đầy đủ từ start tới end, bao gồm cả tháng của end."""
+    out, y, m = [], start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        out.append((y, m))
+        m += 1
+        if m == 13:
+            y, m = y + 1, 1
+    return out
+
+
+def archive_urls(symbol: str, interval: str, year: int, month: int) -> tuple[str, str]:
+    stem = f"{symbol}-{interval}-{year:04d}-{month:02d}.zip"
+    base = f"{ARCHIVE_URL}/{symbol}/{interval}/{stem}"
+    return base, base + ".CHECKSUM"
+
+
+def _parse_archive_csv(data: bytes) -> pd.DataFrame:
+    """CSV của archive không có header; sáu cột đầu trùng thứ tự với REST klines."""
+    df = pd.read_csv(io.BytesIO(data), header=None, usecols=[0, 1, 2, 3, 4, 5],
+                     names=COLUMNS)
+    # Binance đổi đơn vị open_time từ ms sang µs ở một số tháng gần đây.
+    unit = "us" if df["open_time"].iloc[0] > 1e15 else "ms"
+    df["open_time"] = pd.to_datetime(df["open_time"], unit=unit, utc=True)
+    return df
+
+
+def fetch_month_archive(symbol: str, interval: str, year: int, month: int,
+                        session: requests.Session | None = None,
+                        verify_checksum: bool = True) -> pd.DataFrame | None:
+    """Tải một tháng từ data.binance.vision và verify SHA256. None nếu tháng chưa tồn tại."""
+    s = session or requests.Session()
+    zip_url, sum_url = archive_urls(symbol, interval, year, month)
+    r = s.get(zip_url, timeout=120)
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    if verify_checksum:
+        cs = s.get(sum_url, timeout=30)
+        if cs.status_code == 200:
+            expected = cs.text.split()[0].strip()
+            actual = hashlib.sha256(r.content).hexdigest()
+            if actual != expected:
+                raise ValueError(
+                    f"checksum mismatch cho {zip_url}: {actual} != {expected}")
+    with zipfile.ZipFile(io.BytesIO(r.content)) as zf:
+        name = zf.namelist()[0]
+        return _parse_archive_csv(zf.read(name))
+
+
+def fetch_series(symbol: str, interval: str, start: datetime, end: datetime,
+                 session: requests.Session | None = None) -> pd.DataFrame:
+    """Bulk archive cho các tháng đã hoàn tất, REST cho phần đuôi còn thiếu."""
+    s = session or requests.Session()
+    frames = []
+    for year, month in months_between(start, end):
+        df = fetch_month_archive(symbol, interval, year, month, s)
+        if df is None:
+            break  # tháng chưa có trong archive -> phần còn lại lấy qua REST
+        frames.append(df)
+    have_until = frames[-1]["open_time"].max() if frames else None
+    rest_from = (have_until.to_pydatetime().replace(tzinfo=None)
+                 + pd.Timedelta(INTERVAL_MS[interval], unit="ms").to_pytimedelta()
+                 ) if have_until is not None else start
+    if rest_from < end:
+        tail = fetch_klines(symbol, interval, rest_from, end, s)
+        if len(tail):
+            frames.append(tail)
+    if not frames:
+        return pd.DataFrame(columns=COLUMNS)
+    out = pd.concat(frames, ignore_index=True)
+    out = out[(out["open_time"] >= pd.Timestamp(start, tz="UTC"))
+              & (out["open_time"] < pd.Timestamp(end, tz="UTC"))]
+    return out.drop_duplicates("open_time").sort_values("open_time").reset_index(drop=True)
+
+
 def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = None) -> dict:
     """Tải ETHUSDT 1D + BTCUSDT 1D (từ 2018 để đủ warm-up 365d) và ETHUSDT 15m (từ 2019)."""
     from .dataset import write_raw, build_lineage
@@ -60,13 +146,15 @@ def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = 
     start_dt = datetime.fromisoformat(start)
     end_dt = datetime.fromisoformat(end) if end else datetime.now(timezone.utc).replace(tzinfo=None)
 
+    session = requests.Session()
     files = {}
     for symbol, interval, s0 in (
         ("ETHUSDT", "1d", start_dt),
         ("BTCUSDT", "1d", start_dt),
         ("ETHUSDT", "15m", datetime(2019, 1, 1)),
     ):
-        df = fetch_klines(symbol, interval, s0, end_dt)
-        files[f"{symbol}_{interval}"] = write_raw(df, raw, symbol, interval, source="binance-api")
+        df = fetch_series(symbol, interval, s0, end_dt, session)
+        files[f"{symbol}_{interval}"] = write_raw(df, raw, symbol, interval,
+                                                  source="binance-archive+api")
     lineage = build_lineage(raw)
     return {"files": files, "dataset_hash": lineage["dataset_hash"]}

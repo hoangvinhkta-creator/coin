@@ -5,6 +5,9 @@ Công cụ backtest-first cho chiến lược tích lũy ETH dài hạn, triển
 Theo Implementation Plan §1: **không build app/dashboard trước khi có verdict cho phép** —
 repo này là research prototype + backtest engine (Phase 0–9).
 
+> **Bắt đầu ở đây:** [`docs/INDEX.md`](docs/INDEX.md) — điểm truy cập cho tài liệu, bản đồ code,
+> lệnh chạy, ngưỡng gate và nguồn dữ liệu.
+
 ## Nguồn gốc
 
 - Bộ spec V2.1.4 gốc do chủ dự án cung cấp (7 file .docx).
