@@ -90,16 +90,22 @@ def main(argv=None):
             print(f"F p95={ctl['random_timing']['p95']:.3f} "
                   f"G p95={ctl['random_anchor']['p95']:.3f} v2={ctl['v2_eth']:.3f}")
         if args.what == "all":
-            v = run_verdict(results["gate1"], results["gate2"], results["gate3"],
-                            results.get("controls"), out_dir, prep.dataset_hash)
+            verdict_payload = run_verdict(results["gate1"], results["gate2"], results["gate3"],
+                                          results.get("controls"), out_dir, prep.dataset_hash)
+            results["verdict"] = verdict_payload
             print("=== VERDICT ===")
-            print(json.dumps(v["verdict"], indent=1, ensure_ascii=False))
-            if "warning" in v:
-                print("!!", v["warning"])
+            print(json.dumps(verdict_payload["verdict"], indent=1, ensure_ascii=False))
+            if "warning" in verdict_payload:
+                print("!!", verdict_payload["warning"])
         # lưu state gọn để `verdict` đọc lại
         out_dir.mkdir(parents=True, exist_ok=True)
         light = {k: _strip(v) for k, v in results.items()}
         state_file.write_text(json.dumps(light, default=str, ensure_ascii=False))
+        # report.json: payload đầy đủ, không strip — dùng cho viewer web / phân tích ngoài
+        from .reporting import write_report
+        report_path = write_report(out_dir, results, dataset_hash=prep.dataset_hash)
+        print(f"\nReport đầy đủ: {report_path}")
+        print("Mở trang viewer và kéo file này vào để xem kết quả dạng web.")
         return 0
 
     if args.cmd == "verdict":
@@ -107,16 +113,27 @@ def main(argv=None):
         if not state_file.exists():
             print("Chưa có kết quả — chạy `ethdca run all` trước.")
             return 2
-        print(state_file.read_text()[:2000])
+        state = json.loads(state_file.read_text())
+        if "verdict" in state:
+            print(json.dumps(state["verdict"]["verdict"], indent=1, ensure_ascii=False))
+            if "warning" in state["verdict"]:
+                print("!!", state["verdict"]["warning"])
+        else:
+            print("pipeline_state.json chưa có verdict — chạy `ethdca run all` "
+                  "(không chỉ `run gate1`/`gate2`/`gate3` riêng lẻ) để có verdict.")
+            print(json.dumps(list(state.keys()), ensure_ascii=False))
         return 0
 
     return 1
 
 
+_STRIP_KEYS = ("per_config", "windows", "run_record")
+
+
 def _strip(d):
     if isinstance(d, dict):
         return {k: _strip(v) for k, v in d.items()
-                if not k.startswith("_") and k not in ("per_config", "windows", "run_record")}
+                if not (isinstance(k, str) and (k.startswith("_") or k in _STRIP_KEYS))}
     if isinstance(d, (list, tuple)):
         return f"[{len(d)} items]"
     return d

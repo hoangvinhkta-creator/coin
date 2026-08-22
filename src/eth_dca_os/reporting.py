@@ -55,6 +55,37 @@ def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
     return record
 
 
+def write_report(out_dir: str | Path, results: dict, *, dataset_hash: str) -> Path:
+    """Ghi results/report.json — payload đầy đủ cho viewer web và phân tích ngoài.
+
+    Khác pipeline_state.json ở chỗ KHÔNG rút gọn list: state file chỉ để CLI đọc lại
+    nhanh, còn file này giữ nguyên số liệu (reasons, per-window AE, failure signals...).
+    Các khóa nội bộ bắt đầu bằng "_" và bảng per_config nặng bị loại.
+    """
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": "ethdca.report/1",
+        "strategy_version": STRATEGY_VERSION,
+        "backtest_spec_version": BACKTEST_SPEC_VERSION,
+        "dataset_hash": dataset_hash,
+        "master_seed": MASTER_SEED,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    for key in ("gate1", "gate2", "gate3", "controls", "verdict"):
+        if key not in results:
+            continue
+        section = {k: v for k, v in results[key].items()
+                   if not k.startswith("_") and k not in ("per_config", "run_record")}
+        if key == "gate1":
+            section["window_metrics"] = {k: v for k, v in section["window_metrics"].items()
+                                         if k != "windows"}
+        payload[key] = section
+    path = out / "report.json"
+    path.write_text(json.dumps(_jsonable(payload), indent=1, ensure_ascii=False))
+    return path
+
+
 def print_gate1_report(g1_payload: dict) -> str:
     lines = ["=== GATE 1 — structural value ==="]
     wm = g1_payload["window_metrics"]

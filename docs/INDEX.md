@@ -1,7 +1,10 @@
 # Index — ETH DCA Operating System V2.1.5
 
-Điểm truy cập cho toàn bộ dự án. Bản web có cùng nội dung ở dạng dễ đọc hơn:
-<https://claude.ai/code/artifact/b0bae7ec-0068-4811-b89a-9ee5fb7893de>
+Điểm truy cập cho toàn bộ dự án. Hai trang web đi kèm:
+
+- **Index** (tài liệu, code map, lệnh chạy, ngưỡng): <https://claude.ai/code/artifact/b0bae7ec-0068-4811-b89a-9ee5fb7893de>
+- **Xem kết quả backtest**: <https://claude.ai/code/artifact/7fa3c209-ab5c-4ce3-81e2-a1a7277b5305>
+  — kéo `results/report.json` vào trang để xem gate, failure signal và verdict dạng biểu đồ.
 
 ## 1. Tài liệu, xếp theo precedence
 
@@ -82,8 +85,14 @@ ethdca verdict    # 4 — đọc lại kết quả đã lưu
 `--dev-limit N` chạy nhanh với vài config để kiểm cơ chế; kết quả tự gắn cờ `official: false`.
 `ethdca synth` sinh dataset tổng hợp khi không có mạng Binance — chỉ dev/test.
 
-Kết quả ghi ở `results/`: metrics JSON từng run và `backtest_runs.jsonl` chứa đủ hash config,
-manifest, dataset và seed để tái lập.
+Kết quả ghi ở `results/`:
+
+| File | Dùng để |
+|---|---|
+| `report.json` | Payload đầy đủ — **kéo vào trang xem kết quả** ở đầu tài liệu này |
+| `backtest_runs.jsonl` | Run record: đủ hash config/manifest/dataset và seed để tái lập |
+| `<run_id>_metrics.json` | Metrics chi tiết từng run |
+| `pipeline_state.json` | State rút gọn cho lệnh `ethdca verdict` đọc lại |
 
 ## 5. Ngưỡng cứng
 
