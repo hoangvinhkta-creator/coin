@@ -47,7 +47,7 @@ def test_conservation_no_negative(prepared):
     spent = sum(p["nominal"] for p in res.purchases)
     assert spent <= res.contributed_total + 1e-6
     # cash không âm tại mọi mẫu
-    for ts, cash, eth in res.cash_samples:
+    for ts, cash, eth, _price in res.cash_samples:
         assert cash >= -1e-6
 
 

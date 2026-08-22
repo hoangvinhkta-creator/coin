@@ -537,7 +537,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         if i == 0 or int((c["ts"][i - 1] + TZ_OFFSET) // DAY) != day_ord:
             cash = base_pool.total - base_pool.deployed + smart_pool.total \
                 - smart_pool.deployed + opp_fund.total - opp_fund.deployed
-            res.cash_samples.append((ts, cash, eth_total))
+            res.cash_samples.append((ts, cash, eth_total, o))
 
     res.counters = counters
     return res
