@@ -19,21 +19,19 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — MICRO-GOVDEF-001 hoàn tất: sửa boundary defect, WP-A2 chuyển READY (Tier C tự nhiên)
+2026-08-23 — S003 mở WP-A3 (Ready Gate PASS, chuyển IN_PROGRESS)
 
 Overall Status:
 IN_PROGRESS
 
 Current Phase:
-Phase 1.5 — Roadmap Finalization (HOÀN TẤT tại S002). Toàn bộ 15 work package của RCP-001 đã có
-file định nghĩa task với Ready Gate và Completion Gate **đã đóng băng**.
-Kế tiếp: Phase 2 — Lớp A (bắt buộc sửa trước official run). Chưa gói nào được bắt đầu.
+Phase 2 — Lớp A (bắt buộc sửa trước official run). WP-A3 là gói đầu tiên được thực thi.
 
 Current Task:
-Không có task nào đang thực thi. T-04 và MICRO-GOVDEF-001 đều đã DONE.
+WP-A3 — Sửa vòng đời trạng thái thị trường và ladder khẩn cấp (S003)
 
 Current Task Mode:
-MICRO (phiên vừa hoàn tất; không có task MAJOR nào đang IN_PROGRESS)
+MAJOR
 
 Next Recommended Task:
 Chủ dự án chọn một trong các task đã ở trạng thái READY: **WP-A3** (khuyến nghị — mắt xích đầu
@@ -73,7 +71,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
 | READY | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
 | READY | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04 (DONE). Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier C nay route tự nhiên sau MICRO-GOVDEF-001 (trước đó là ghi đè theo DEC-008) — xem GOVDEF-001 mục Resolution |
-| READY | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. Song song với WP-A1, WP-A2, WP-C1 (đóng F-001, F-021, F-022, F-030) |
+| VERIFYING | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. Song song với WP-A1, WP-A2, WP-C1 (đóng F-001, F-021, F-022, F-030) |
 | PLANNED | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (đóng F-023, F-025, F-032) |
 | PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3 (vốn không bị khoá thì số đo mới đúng) — đóng phần đo lường của F-002, và F-016 |
 | PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4 (đóng F-018, F-019) |
@@ -137,40 +135,39 @@ cho WP-A2 hay bất kỳ task nào khác.
 ## Current Task Snapshot
 
 Task:
-T-04 — Chốt lộ trình và đóng băng tiêu chí (HOÀN TẤT tại S002)
+WP-A3 — Sửa vòng đời trạng thái thị trường và ladder khẩn cấp (S003)
 
 Task Mode:
 MAJOR
 
 Status:
-DONE
+VERIFYING (implementation + toàn bộ E1 hoàn tất; đang chờ đóng E2 — CHECK-A3-10)
 
 File định nghĩa:
-`docs/tasks/T-04-chot-lo-trinh-va-dong-bang-tieu-chi.md`
+`docs/tasks/WP-A3-regime-va-vong-doi-ladder.md`
 
 Required Gate Progress:
-12 / 12 PASS — toàn bộ REQUIRED check của T-04 đạt, bằng chứng E1. Chi tiết trong file task và
-trong biên bản `docs/sessions/S002-t04-gate-freeze.md`.
+9 / 10 PASS (E1); CHECK-A3-10 (E2 độc lập) đang thực hiện. Chi tiết evidence trong file task
+và biên bản `docs/sessions/S003-wp-a3-regime-ladder.md`.
 
-Kết quả bàn giao của T-04:
-- 15 file định nghĩa task cho WP-A1…WP-D2, tổng **125 REQUIRED check** đã đóng băng
-  (trạng thái mặc định `NOT_TESTED` — đúng theo `EVIDENCE_STANDARD.md`, không phải thiếu sót).
-- DEC-009 trở thành **CHECK-B1-02, Priority = REQUIRED** trong Completion Gate của WP-B1.
-- WP-A2 giữ Tier C / Opus / high theo DEC-008, có ghi `Manual Override` và giá trị router thô.
-- Đối chiếu độ phủ: 40/40 định danh finding (34 `F-xxx`, 3 `V-xx`, 3 `S-xxx`) có nơi thuộc về.
-- Hai phát hiện mới của T-04: **PH-01** (sai số đếm trong tóm tắt S001) và **PH-02** → **BLK-003**.
+Kết quả chính của S003 (tới thời điểm snapshot):
+- Baseline E1 tái hiện đủ F-001, F-021, F-022, F-030 ở tầng engine/regime TRƯỚC khi sửa.
+- Regression test viết TRƯỚC fix: 12 FAIL đúng kỳ vọng → sau fix 18/18 PASS.
+- Toàn bộ suite: **87 passed, 0 failed, 0 skipped** — không test cũ nào bị sửa/nới lỏng.
+- Impact BEFORE/AFTER trên cùng dataset synth: mọi sai lệch truy về [F5] ST §14 và ST §18.3+[F1].
+- Phát hiện mới ngoài scope: **PH-03** → RSK-010 (không sửa, chờ chủ dự án).
 
 Primary Agent Tier:
-C
+D
 
 Primary Effort:
-xhigh
+max
 
 Model Routing Score:
-2.80 (D3 R3 B2 A3 X3) → floor `cognitive:A>=3&X>=3` → C
+3.5 (D4 R4 B3 A3 X3) → floors `cognitive:A>=3&X>=3`, `cognitive:D>=4&X>=3`, `safety_business:min_C` → D
 
 Effort Routing Score:
-2.60 (U2 V2 H3 C3 F3) → xhigh
+3.65 (U3 V4 H4 C3 F4) → floor `safety_business:min_high` → max
 
 Runtime Supported Effort Levels:
 low / medium / high / xhigh / max
@@ -182,18 +179,13 @@ Escalation Tier:
 D
 
 Escalation Effort:
-xhigh
+max
 
 Escalation Triggers:
-- Số lượng work package vượt khả năng đóng băng gate trong một phiên → chia T-04 thành nhiều
-  phiên, KHÔNG nâng Tier.
-- Chủ dự án chưa chốt DEC-005 → `MISSING_INPUT`, chuyển BLOCKED riêng cho nhánh T-08/WP-C2,
-  KHÔNG chặn nhánh lớp A (theo RCP-001, DEC-005 không nằm trên đường găng tới verdict).
-
-Lưu ý bàn giao: RCP-001 đã được phê duyệt và áp dụng vào bảng roadmap chuẩn ở trên. Việc còn lại
-của T-04 là soạn Ready Gate/Completion Gate chi tiết cho 15 work package — hiện chúng mới có
-routing metadata (Tier/Effort) và dependency, chưa có file định nghĩa task đầy đủ theo
-`governance/templates/TASK_DEFINITION_TEMPLATE.md`.
+- Theo file task WP-A3 (CAPABILITY_CEILING / CONFLICT DETECTED / metric đổi không giải thích
+  được / phải chạm capital.py|score.py). Không trigger nào kích hoạt trong S003: một phương án
+  thiết kế duy nhất (tách state/label) đạt đồng thời [F1] và vòng đời đóng; mọi sai lệch metric
+  giải thích được; không chạm capital.py/score.py.
 
 ## Micro Tasks (Inline)
 
@@ -436,13 +428,31 @@ cả dữ liệu thật lẫn dữ liệu tổng hợp. Chạy `ethdca synth && 
 Đây là rủi ro thẳng vào tính toàn vẹn của verdict — tức vào chính cổng mở đường cho app.
 Xem finding F-005. Giảm thiểu: **WP-A1** (RCP-001).
 
-### RSK-009 — Vòng đời Crash ladder hở, vốn có thể bị khoá vĩnh viễn (mức: cao) — S001 XÁC NHẬN (E1)
+### RSK-009 — Vòng đời Crash ladder hở, vốn có thể bị khoá vĩnh viễn (mức: cao) — ĐÃ REMEDIATE tại S003 (WP-A3)
 S001 phát hiện và kiểm chứng bằng chạy thật (E1): khi giai đoạn RECOVERY kết thúc lúc thị trường
 còn yếu, regime chuyển thành STRESSED chứ không phải NORMAL, nên nhánh dọn Crash ladder ở
 `engine.py:415` không bao giờ chạy. Reserve của Crash zone không được giải phóng, kéo theo không
 tạo được ladder mới và cash ratio tăng giả tạo — có thể bóp méo chính FS-02 và FS-07.
 Đây đồng thời là vi phạm [F1] (STRESSED phải không có hiệu ứng execution).
 Xem finding F-001. Giảm thiểu: **WP-A3** (RCP-001).
+
+**Cập nhật S003 (2026-08-23):** WP-A3 đã tách trạng thái nền khỏi nhãn STRESSED
+(`RegimeTracker.state`/`.label`, CONVENTIONS #14) và nhánh dọn chạy cho MỌI kết cục kết thúc
+Recovery; bằng chứng E1: baseline tái hiện lock 27.2 đơn vị trước fix → 0 sau fix, chuỗi test
+CHECK-A3-01/02, suite 87 PASS. Trạng thái risk: **đóng khi WP-A3 DONE** (chờ E2 CHECK-A3-10).
+
+### RSK-010 — Nghi vấn `smart_reservable` trừ `deployed` luỹ kế XUYÊN THÁNG làm Smart ladder gần như không được tạo lại từ tháng 2 (mức: cao — NGHI VẤN, chưa kết luận) — PH-03, S003
+Quan sát E1 tại S003 (impact run 90 tháng dữ liệu tổng hợp, cả TRƯỚC lẫn SAU fix WP-A3 — tức
+tồn tại từ trước, KHÔNG phải hồi quy của WP-A3): chỉ **2** Smart ladder được tạo trong 90 tháng.
+Đọc code: `smart_reservable(pool, month_smart_budget, unlock)` tính
+`unlocked(≤ ngân sách THÁNG ~30) − pool.reserved − pool.deployed`, trong đó `pool.deployed` là
+luỹ kế TOÀN ĐỜI; từ tháng 2 trở đi `deployed ≫ unlocked` nên hàm trả 0 vĩnh viễn — Smart chỉ còn
+giải ngân qua Month-End settle, không qua ladder. Có dấu hiệu mâu thuẫn ST §6 (unlock/peak là
+khái niệm THEO THÁNG — "Peak reset khi sang accounting month mới").
+**Ngoài ownership WP-A3** (không thuộc F-001/021/022/030; chạm `capital.py` là vùng cấm Scope
+Lock) → ghi nhận theo đúng chỉ thị "không tiện tay sửa". Cần chủ dự án quyết định: gắn định danh
+finding chính thức (F-035?) và giao cho WP nào, hay xác nhận là hành vi chủ đích rồi ghi
+CONVENTIONS. Nếu là defect thật, ảnh hưởng kết quả mô phỏng LỚN hơn WP-A3 nhiều.
 
 ## Active Risks — Governance / Tooling
 

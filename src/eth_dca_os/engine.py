@@ -38,6 +38,25 @@ TZ_OFFSET = 7 * 3600  # Asia/Ho_Chi_Minh, không DST
 NOON = 12 * 3600
 DAY = 86400.0
 
+# Thứ tự pool §15.1 [F2]: Base -> Smart -> Opportunity
+_POOL_RANK = {"BASE": 0, "SMART": 1, "OPPORTUNITY": 2}
+
+
+def zone_order_key(zone, ladder) -> tuple:
+    """Khoá sắp thứ tự thực thi khi nhiều zone cùng trigger — Strategy §15.1 [F2].
+
+    1. Giữa các pool: Base -> Smart -> Opportunity; Crash ladder xếp theo pool
+       NGUỒN VỐN của nó (zone.pool phản ánh nguồn vốn thật — xem CONVENTIONS #16),
+       và SAU các ladder Smart/Opportunity thường cùng pool.
+    2. Trong cùng pool: ladder có created_at sớm hơn xử lý trước.
+    3. Trong cùng ladder: zone_index tăng dần.
+    max_zones_per_cycle áp SAU khi đã sắp thứ tự này.
+    """
+    return (_POOL_RANK.get(zone.pool, 3),
+            1 if ladder.type == "CRASH" else 0,
+            ladder.created_at,
+            zone.zone_index)
+
 
 @dataclass
 class RunResult:
@@ -139,7 +158,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     opp_used_today = 0.0
     cooldown_until = -np.inf
     last_exec_price = np.nan
-    prev_regime = "NORMAL"
+    prev_state = "NORMAL"           # trạng thái NỀN trước đó ([F1]: execution không đọc nhãn)
     eth_total = 0.0
     counters = {
         "cooldown_override": {"NORMAL": 0, "STRESSED": 0, "CRASH": 0, "RECOVERY": 0},
@@ -237,7 +256,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         z.action_expires_at = ts_close + exec_cfg.action_ttl_seconds
         zone_meta[z.zone_id] = {"recommended": close_price}
         counters["triggered_actions"] += 1
-        if exec_cfg.p2p_unavailable_in_crash and regime.regime == "CRASH" \
+        if exec_cfg.p2p_unavailable_in_crash and regime.state == "CRASH" \
                 and exec_cfg.funding_policy == "ON_DEMAND":
             z.execute_at = None  # funding không khả dụng suốt TTL -> MISSED
             return
@@ -365,19 +384,27 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 counters["base_early"] += 1
             flags["score_advanced"] = True  # tối đa một tranche mỗi lần score mới active
 
-        # 10. Market Regime + STRESSED
-        prev_regime = regime.regime
+        # 10. Market Regime + nhãn STRESSED. Mọi nhánh execution dưới đây so trên
+        # regime.state (trạng thái nền); nhãn STRESSED chỉ dùng reporting ([F1] §17.3).
+        prev_state = regime.state
         regime.update(ts, r7 if not np.isnan(r7) else None,
                       c["r24"][i] if not np.isnan(c["r24"][i]) else None,
                       None if np.isnan(oscore) else oscore)
-        if regime.regime == "CRASH" and prev_regime != "CRASH":
+        if regime.state == "CRASH" and prev_state != "CRASH":
             # cancel Opportunity zone xung đột -> release -> snapshot -> crash ladder [F5]
             for lad in ladders:
                 if lad.type == "OPPORTUNITY" and lad.status == "ACTIVE":
                     cancel_open_zones(lad, ts, "CRASH_ENTRY")
                     lad.status = "CANCELLED"
-            opp_avail = opportunity_reservable(opp_fund, o_unl, opp_active,
-                                               opp_used_today, cfg.opportunity_daily_limit_pct)
+            # [F5] ST §14: snapshot = Smart AVAILABLE + Opportunity AVAILABLE (đã unlock,
+            # chưa nằm trong reservation nào) đo NGAY SAU cancel/release. KHÔNG áp daily
+            # limit vào snapshot (F-021); daily limit cưỡng chế ở khâu triển khai — bước 14.
+            if opp_active and o_unl > 0:
+                opp_avail = min(opp_fund.available,
+                                max(0.0, opp_fund.total * o_unl
+                                    - opp_fund.reserved - opp_fund.deployed))
+            else:
+                opp_avail = 0.0
             smart_avail = smart_reservable(smart_pool, month_smart_budget, eff_smart_unlock)
             snapshot = opp_avail + smart_avail
             if snapshot > 1e-9 and not np.isnan(adr30):
@@ -392,7 +419,6 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     if take_opp > 0 and opp_fund.reserve(take_opp, "CRASH_ZONE", ts):
                         parts.append(("OPPORTUNITY", take_opp))
                         opp_avail -= take_opp
-                        opp_used_today += take_opp
                         want -= take_opp
                     take_smart = min(want, smart_avail)
                     if take_smart > 0 and smart_pool.reserve(take_smart, "CRASH_ZONE", ts):
@@ -402,9 +428,22 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     z.reserved_vnd = sum(a for _, a in parts)
                     z.target_vnd = z.reserved_vnd
                     reserve_map[z.zone_id] = parts
+                # F-030: pool label của Crash ladder = pool cấp ĐA SỐ tổng reserve
+                # (tie-break §15.1 [F2] xếp theo pool nguồn vốn; hoà -> OPPORTUNITY,
+                # xem CONVENTIONS #16). Label thống nhất cả ladder để zone_index giữ
+                # đúng thứ tự trong cùng ladder.
+                smart_funded = sum(a for z in lad.zones
+                                   for p, a in reserve_map.get(z.zone_id, [])
+                                   if p == "SMART")
+                opp_funded = sum(a for z in lad.zones
+                                 for p, a in reserve_map.get(z.zone_id, [])
+                                 if p == "OPPORTUNITY")
+                src_pool = "SMART" if smart_funded > opp_funded else "OPPORTUNITY"
+                for z in lad.zones:
+                    z.pool = src_pool
                 ladders.append(lad)
                 log(ts, regime.last_entry_reason, ladder=lad.ladder_id)
-        if regime.regime == "RECOVERY" and prev_regime == "CRASH":
+        if regime.state == "RECOVERY" and prev_state == "CRASH":
             for lad in ladders:
                 if lad.type == "CRASH" and lad.status == "ACTIVE":
                     lad.status = "SUSPENDED"
@@ -412,9 +451,13 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                         if z.status == "ACTIVE":
                             z.status = "SUSPENDED"
                             z.suspended_at = ts
-        if regime.regime == "NORMAL" and prev_regime == "RECOVERY":
+        if regime.state == "NORMAL" and prev_state == "RECOVERY":
+            # ST §18.3: hết 72h Recovery -> CANCEL crash zone chưa hit + release reserve.
+            # So trên TRẠNG THÁI NỀN nên chạy cho MỌI kết cục recovery-end, kể cả khi
+            # nhãn báo cáo là STRESSED (F-001). Quét mọi crash ladder còn mở để các
+            # ladder tồn đọng từ episode trước (re-entry) cũng được đóng.
             for lad in ladders:
-                if lad.type == "CRASH" and lad.status == "SUSPENDED":
+                if lad.type == "CRASH" and lad.status in ("ACTIVE", "SUSPENDED"):
                     cancel_open_zones(lad, ts, "RECOVERY_END")
                     lad.status = "CANCELLED"
 
@@ -501,13 +544,11 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     z.status = "TRIGGERED"
             candidates.extend([z for z in lad.zones if z.status == "TRIGGERED"])
 
-        # 14. chuyển TRIGGERED -> ACTION_PENDING: thứ tự pool -> created_at -> zone_index,
+        # 14. chuyển TRIGGERED -> ACTION_PENDING: thứ tự §15.1 [F2] (zone_order_key),
         # max_zones_per_cycle áp SAU khi sắp thứ tự; cooldown/override; INVALID chặn
         if candidates and dq != "INVALID":
-            pool_rank = {"BASE": 0, "SMART": 1, "OPPORTUNITY": 2}
             lad_by_id = {l.ladder_id: l for l in ladders}
-            candidates.sort(key=lambda z: (pool_rank.get(z.pool, 3),
-                                           lad_by_id[z.ladder_id].created_at, z.zone_index))
+            candidates.sort(key=lambda z: zone_order_key(z, lad_by_id[z.ladder_id]))
             created = 0
             ts_close = ts + 900.0
             local_hour = int(((ts_close + TZ_OFFSET) % DAY) // 3600)
@@ -516,6 +557,19 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     break
                 if in_cooldown and not override_ok:
                     continue  # zone giữ TRIGGERED, xét lại cycle sau (CONVENTIONS #6)
+                if lad_by_id[z.ladder_id].type == "CRASH":
+                    # ST §14: "Toàn bộ daily limit ... vẫn áp dụng trong Crash" — cưỡng chế
+                    # ở khâu triển khai trên PHẦN VỐN OPPORTUNITY của zone (CONVENTIONS #4).
+                    # Zone bị chặn giữ TRIGGERED, xét lại cycle sau như max_zones (§15.1).
+                    opp_part = sum(a for p, a in reserve_map.get(z.zone_id, [])
+                                   if p == "OPPORTUNITY")
+                    if opp_part > 1e-12:
+                        headroom = max(0.0, opp_fund.total * cfg.opportunity_daily_limit_pct
+                                       - opp_used_today)
+                        if opp_part > headroom + 1e-9:
+                            log(ts, "DAILY_LIMIT_BLOCK", zone=z.zone_id)
+                            continue
+                        opp_used_today += opp_part
                 if in_cooldown and override_ok:
                     counters["cooldown_override"][regime.regime] += 1
                     log(ts, "COOLDOWN_OVERRIDE", zone=z.zone_id)
