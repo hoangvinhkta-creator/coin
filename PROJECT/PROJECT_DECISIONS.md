@@ -205,3 +205,131 @@ Impact:
 Can Revisit After:
 Chỉ khi chủ dự án cung cấp bộ tài liệu V2.1.3 thật và chấp nhận rủi ro đã nêu. Kể cả khi đó,
 Master Index §6 vẫn cấm vá tại chỗ; thay đổi hypothesis phải mở V2.2.
+
+---
+
+## DEC-007 — RCP-001 được phê duyệt và áp dụng kèm bốn điều kiện
+
+Date:
+2026-08-23 (áp dụng RCP-001)
+
+Task:
+Áp dụng ROADMAP CHANGE PROPOSAL RCP-001
+
+Decision:
+Chủ dự án phê duyệt `PROJECT/ROADMAP_CHANGE_PROPOSAL_001.md` và cho phép áp dụng vào bảng
+roadmap chuẩn, kèm bốn quyết định:
+
+1. **APPROVED** — cấu trúc 15 work package và cách gom 33 finding theo nguyên nhân gốc, giữ
+   nguyên dependency graph và nguyên tắc phân loại theo ảnh hưởng thực tế (không theo severity).
+2. **APPROVED WITH CONDITION** — phân lớp A/B/C/D giữ nguyên như đề xuất (bao gồm WP-A2 ở lớp A,
+   F-006/F-008 ở lớp C, F-023 ở lớp A), với điều kiện bắt buộc cho F-017 (nằm trong WP-B1): nếu
+   remediation ảnh hưởng Gate 1, mọi kết quả Gate 1 tạo trước đó là STALE/INVALIDATED và Gate 1
+   phải chạy lại trước khi dùng cho verdict. Xem DEC-009.
+3. **APPROVED** — bỏ T-06A như task độc lập, hấp thụ toàn bộ phạm vi vào WP-A1. Không được mất
+   requirement nào của T-06A cũ; WP-A1 phải bao gồm tối thiểu: Python version, dependency/lock
+   hash, git commit SHA, dataset hash, strategy config hash, execution config hash, manifest
+   hash, seed.
+4. **OVERRIDE ROUTER** — WP-A2 dùng Tier C/Opus thay vì Tier B/Sonnet mà router trả, vì router có
+   defect biên dấu phẩy động (GOVDEF-001). Xem DEC-008.
+
+Reason:
+Kết quả S001 (33 finding, 0 CRITICAL/8 HIGH/15 MEDIUM/7 LOW/3 spec defect) cần được phản ánh vào
+roadmap trước khi bắt đầu bất kỳ remediation nào, theo yêu cầu tường minh của chủ dự án và theo
+`00_SESSION_ORCHESTRATION.md` mục "Roadmap Change Rule".
+
+Impact:
+- Bảng roadmap chuẩn trong `PROJECT/PROJECT_PROGRESS.md` tăng từ 14 lên 28 task.
+- Đường găng tới verdict dài thêm ba mắt xích: T-04 → WP-A3 → WP-A4 → WP-A6 → T-06 → WP-B1 → T-07.
+- DEC-005 xác nhận không nằm trên đường găng tới verdict; chỉ chặn nhánh T-08/WP-C2.
+- BLK-001 xác nhận chỉ chặn đúng một điểm: T-06.
+- T-03 giữ nguyên BLOCKED; CHECK-03-01 sẽ được thoả bởi WP-C1, không hạ Completion Gate.
+- Chưa remediation hoặc sửa code sản phẩm nào được phép trong bước áp dụng này.
+
+Can Revisit After:
+T-04, khi soạn Ready Gate/Completion Gate chi tiết cho từng work package có thể phát hiện cần
+điều chỉnh phạm vi hoặc thứ tự — dùng khối `COMPLETION GATE CHANGE PROPOSAL`, không sửa im lặng.
+
+---
+
+## DEC-008 — Ghi đè thủ công routing của WP-A2 (Tier C, không dùng Tier B từ router)
+
+Date:
+2026-08-23 (áp dụng RCP-001, quyết định 4)
+
+Task:
+RCP-001 — routing của WP-A2
+
+Decision:
+WP-A2 ("Bật các hạng mục đã viết nhưng pipeline chưa chạy") dùng **Tier C / Opus**, ghi đè kết
+quả tự động của `routing_engine.py` (Tier B / Sonnet). Effort giữ nguyên `high` — giá trị này do
+router tính đúng và không bị ảnh hưởng bởi defect gây ra việc ghi đè Tier.
+
+Reason:
+`routing_engine.py` có defect biên dấu phẩy động (xem GOVDEF-001): với đầu vào
+D=2, R=2, B=2, A=1, X=3, giá trị `model_score` **hiển thị** đúng `2.0` nhưng giá trị nội bộ dùng
+để so sánh là `1.9999999999999998`, khiến hàm `tier_from_score` (so sánh `s < 2`) trả về Tier B
+thay vì Tier C như bảng `AGENT_CAPABILITY_MATRIX.md` quy định cho khoảng 2.00–2.99.
+
+Chủ dự án xác nhận: đây là lỗi công cụ, không phải chấm điểm đầu vào sai; task tính hợp lệ ảnh
+hưởng trực tiếp tới tính hợp lệ của backtest (đấu nối benchmark B/C/D, ablation, coverage, XIRR
+vào pipeline chính) nên xứng đáng Tier C.
+
+Impact:
+- Bảng roadmap chuẩn ghi Tier C cho WP-A2 kèm chú thích "ghi đè thủ công, xem DEC-008".
+- Không tạo xung đột với `validate_routing.py` vì WP-A2 chưa có file task riêng dưới `docs/tasks/`
+  (chỉ tồn tại trong bảng roadmap và mục "Routing sơ bộ"); khi T-04 soạn file task đầy đủ cho
+  WP-A2, file đó phải ghi rõ "Manual Override: YES — DEC-008" bên cạnh giá trị router thô, và
+  `validate_routing.py` cần được cập nhật ở một task riêng (MICRO-GOVDEF-001 hoặc kế tiếp) để
+  chấp nhận override có ghi nhận thay vì báo lỗi khớp tuyệt đối.
+- Không sửa `routing_engine.py` trong quyết định này.
+
+Can Revisit After:
+Khi MICRO-GOVDEF-001 hoàn tất và router được sửa tổng quát, chạy lại routing cho WP-A2 để xác
+nhận nó tự nhiên rơi vào Tier C mà không cần override thủ công nữa.
+
+---
+
+## DEC-009 — Quy tắc Gate 1 staleness: remediation ảnh hưởng Gate 1 bắt buộc chạy lại Gate 1
+
+Date:
+2026-08-23 (áp dụng RCP-001, điều kiện của quyết định 2)
+
+Task:
+RCP-001 — Lớp B, WP-B1 (đặc biệt phần đóng F-017 — Control F)
+
+Decision:
+Nếu bất kỳ remediation nào (không giới hạn ở F-017) thay đổi một trong các điều sau theo cách có
+khả năng ảnh hưởng Gate 1:
+- input,
+- calculation,
+- execution behavior,
+- dataset interpretation,
+- strategy behavior,
+- backtest behavior,
+
+thì **mọi kết quả Gate 1 được tạo trước remediation đó phải coi là STALE/INVALIDATED**.
+Gate 1 **bắt buộc phải chạy lại** trước khi bất kỳ kết quả nào của nó được dùng làm căn cứ cho
+verdict.
+
+Áp dụng cụ thể trước mắt: F-017 (Control F giữ đúng profile tranche theo tháng) nằm trong WP-B1,
+tức về nguyên tắc thuộc lớp B ("must fix before verdict", làm sau T-06). Nếu khi thực thi WP-B1
+xác nhận sửa F-017 chạm vào logic dùng chung với Gate 1, thì phần việc đó phải kéo theo chạy lại
+Gate 1 trước khi WP-B1 được coi là hoàn tất, và trước khi T-07 (DUYỆT verdict) được mở.
+
+Reason:
+Chủ dự án yêu cầu tường minh bảo vệ stopping rule: không được dùng kết quả Gate 1 cũ sau một
+remediation có ảnh hưởng tới Gate 1, để tránh verdict dựa trên hỗn hợp code cũ (Gate 1) và code
+mới (Gate 3/controls) không tương thích.
+
+Impact:
+- Dependency column của WP-B1 trong bảng roadmap chuẩn ghi rõ quy tắc này.
+- T-04 phải đưa quy tắc này vào Completion Gate của WP-B1 dưới dạng một REQUIRED check tường
+  minh (ví dụ: "Xác định remediation có ảnh hưởng Gate 1 hay không; nếu có, Gate 1 đã được chạy
+  lại và kết quả mới được ghi nhận").
+- Đường găng có thể kéo dài thêm nếu điều kiện này kích hoạt (một vòng lặp về T-06 trước khi
+  GATE-B đóng) — chấp nhận được vì Master Index §6 vẫn cấm chạy lại official run để "làm đẹp"
+  kết quả; đây là chạy lại vì tính hợp lệ, không phải để cải thiện con số.
+
+Can Revisit After:
+Khi WP-B1 thực thi và xác định rõ F-017 có chạm Gate 1 hay không.

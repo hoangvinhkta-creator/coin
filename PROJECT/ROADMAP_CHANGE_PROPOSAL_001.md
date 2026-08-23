@@ -620,3 +620,50 @@ Chủ dự án cần quyết bốn điểm:
 
 Sau khi được duyệt, bảng roadmap chuẩn sẽ được cập nhật và `sync_easy_roadmap.py` được chạy
 trong cùng phiên theo `ROADMAP_SYNC_STANDARD.md`.
+
+---
+
+# ADDENDUM — APPROVAL RECORD
+
+Ngày duyệt: 2026-08-23
+Trạng thái: **APPROVED WITH CONDITIONS — ĐÃ ÁP DỤNG**
+
+Chủ dự án phê duyệt đề xuất này với bốn quyết định. Nguyên văn tóm tắt (chi tiết đầy đủ:
+`PROJECT/PROJECT_DECISIONS.md` DEC-007, DEC-008, DEC-009):
+
+**DECISION 1 — Cấu trúc work package: APPROVED.**
+Giữ nguyên 15 work package, cách gom theo nguyên nhân gốc, và nguyên tắc phân loại theo ảnh
+hưởng thực tế (official run / verdict / productization) thay vì severity.
+
+**DECISION 2 — Phân lớp A/B/C/D: APPROVED WITH CONDITION.**
+Giữ nguyên WP-A2 ở lớp A, F-006 và F-008 ở lớp C, F-023 ở lớp A, F-017 ở lớp B.
+Điều kiện bắt buộc thêm cho F-017/WP-B1: nếu remediation ảnh hưởng Gate 1 (input, calculation,
+execution behavior, dataset interpretation, strategy behavior, backtest behavior), mọi kết quả
+Gate 1 tạo trước đó là STALE/INVALIDATED và Gate 1 phải chạy lại trước khi dùng cho verdict.
+Ghi thành quy tắc chính thức: **DEC-009**.
+
+**DECISION 3 — T-06A: APPROVED.**
+Bỏ T-06A như task độc lập, hấp thụ toàn bộ phạm vi vào WP-A1. Không mất requirement nào.
+WP-A1 phải lưu tối thiểu: Python version, dependency/lock hash, git commit SHA, dataset hash,
+strategy config hash, execution config hash, manifest hash, seed.
+
+**DECISION 4 — WP-A2 routing: OVERRIDE ROUTER.**
+Tier C/Opus thay vì Tier B/Sonnet mà `routing_engine.py` trả, vì router có defect biên dấu phẩy
+động (xác nhận là **GOVDEF-001**, tách khỏi finding sản phẩm ETH DCA). Effort giữ `high` (đúng,
+không bị ảnh hưởng). Ghi thành: **DEC-008**.
+
+**Áp dụng vào bảng roadmap chuẩn:** `PROJECT/PROJECT_PROGRESS.md` mục "Overall Roadmap" đã được
+cập nhật từ 14 lên 28 task theo đúng ADDED/CHANGED/REMOVED ở mục 6 của đề xuất này.
+`PROJECT/LO_TRINH_DE_HIEU.md` được sinh lại bằng `sync_easy_roadmap.py` từ bảng đã cập nhật.
+
+**Governance defect phát sinh trong quá trình duyệt:** `routing_engine.py` so sánh dấu phẩy động
+không có epsilon tại các mốc biên nguyên. Xử lý bằng ba artifact riêng, không gộp vào finding
+S001: artifact `docs/reviews/GOVDEF-001-routing-engine-boundary.md`, task
+`MICRO-GOVDEF-001` (trong `PROJECT_PROGRESS.md` mục Micro Tasks), risk `GOV-RSK-001` (mục
+"Active Risks — Governance / Tooling"). Không sửa `routing_engine.py` trong bước áp dụng này.
+
+**Không thực hiện trong bước áp dụng này** (đúng yêu cầu của chủ dự án):
+- Không sửa `src/`, `webapp/`, `tests/`, `docs/spec/`.
+- Không bắt đầu thực thi bất kỳ work package nào.
+- Không bắt đầu S002.
+- DEC-005 giữ nguyên PENDING, không tự chốt.
