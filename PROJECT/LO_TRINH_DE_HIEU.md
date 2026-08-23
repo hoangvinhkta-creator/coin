@@ -7,9 +7,9 @@
 | Tick | Tên việc | Mục đích | Mức xử lý | Thứ tự/phụ thuộc |
 |---|---|---|---|---|
 | ✅ | T-00 — Mở dự án và dựng bộ điều hành | Chọn profile, khởi tạo trạng thái dự án, lập kế hoạch khảo sát và lộ trình sơ bộ | C — Opus — xhigh | Không phụ thuộc. Mở đường cho T-01 |
-| ⬜ | T-01 — Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C — Opus — xhigh | Sau T-00. Chế độ AUDIT read-only |
-| ⬜ | T-02 — Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C — Opus — xhigh | Sau T-01. Song song được với T-03 |
-| ⬜ | T-03 — Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C — Opus — high | Sau T-01. Song song được với T-02 |
+| ✅ | T-01 — Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C — Opus — xhigh | Sau T-00. Chế độ AUDIT read-only |
+| ✅ | T-02 — Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C — Opus — xhigh | Sau T-01. Song song được với T-03 |
+| 🟡 | T-03 — Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C — Opus — high | Sau T-01. Song song được với T-02 |
 | ⬜ | T-04 — Chốt lộ trình và đóng băng tiêu chí | Biến kết quả khảo sát thành lộ trình chính thức, có tiêu chí nghiệm thu đóng băng | C — Opus — xhigh | Sau T-01, T-02, T-03 |
 | ⬜ | T-05 — DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | Duyệt — Con người — - | Sau T-04. Chặn T-06, T-08 |
 | ⬜ | T-06A — Ghim phiên bản thư viện và ghi môi trường vào run record | Không ghim thì kết quả chạy chính thức không tái lập lại được về sau | B — Sonnet — high | Sau T-04. BẮT BUỘC xong trước T-06 |

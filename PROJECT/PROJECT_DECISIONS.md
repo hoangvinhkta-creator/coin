@@ -168,3 +168,40 @@ trọng yếu một cách im lặng.
 
 Can Revisit After:
 T-05 (cần quyết định của chủ dự án) và sau đó là T-07 (đọc verdict thật).
+
+---
+
+## DEC-006 — Source of Truth cho compliance audit là V2.1.5, không phải V2.1.3
+
+Date:
+2026-08-23 (S001)
+
+Task:
+S001 — Discovery & Baseline
+
+Decision:
+Compliance matrix của S001 đối chiếu implementation với bộ **V2.1.5**.
+
+Reason:
+Chủ dự án mở S001 với chỉ định "V2.1.3 là ACTIVE Source of Truth". Agent nêu `CONFLICT DETECTED`
+thay vì tự chọn, theo `CLAUDE.md` mục "Conflict Rule" và Master Index §2 ("Agent không được tự
+chọn"). Ba bằng chứng được trình:
+
+1. Không file V2.1.3 nào tồn tại trong repo, và `git log --all` cho thấy chưa từng tồn tại.
+   Chỉ có bộ V2_1_5 (8 file).
+2. `00_MASTER_INDEX_V2_1_5.md:31` — `V2.1.3 | SUPERSEDED | Không giao agent. Có regression đã
+   được sửa ở V2.1.4.`
+3. `05_IMPLEMENTATION_PLAN_V2_1_5.md:8` — "V2.1.5 là source of truth duy nhất. Không kế thừa
+   ngầm bất kỳ điều gì từ V1, V2.0, V2.1, V2.1.1, V2.1.2, V2.1.3 hay V2.1.4."
+
+Chủ dự án đã chọn phương án "Dùng V2.1.5".
+
+Impact:
+- Compliance đo theo V2.1.5. Nếu đo theo V2.1.3 thì sẽ gắn cờ sai ở đúng những chỗ V2.1.4/V2.1.5
+  đã sửa regression.
+- S001 đã kiểm riêng và **không phát hiện regression kế thừa** nào: bảy sửa đổi F1–F7 đều có dấu
+  vết hiện thực trong code.
+
+Can Revisit After:
+Chỉ khi chủ dự án cung cấp bộ tài liệu V2.1.3 thật và chấp nhận rủi ro đã nêu. Kể cả khi đó,
+Master Index §6 vẫn cấm vá tại chỗ; thay đổi hypothesis phải mở V2.2.

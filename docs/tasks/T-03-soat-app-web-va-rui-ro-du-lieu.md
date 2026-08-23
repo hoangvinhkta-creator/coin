@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-PLANNED
+BLOCKED
 
 Phase:
 Phase 1 — Discovery & Baseline
@@ -176,78 +176,78 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+BLOCKED
 
 Evidence Level:
-E1
+E0
 
 Evidence:
-Chưa chạy. Đọc code rồi kết luận là E0 và KHÔNG đủ cho check này.
+KHÔNG thực hiện được trong S001. Ba nghi vấn NV-1/NV-2/NV-3 đòi dựng ca kiểm thử MỚI, mà quy tắc S001 số 10 cấm viết test mới trong phiên này. Giữ nguyên mức E0 — nghi vấn, KHÔNG phải kết luận. Chuyển thành verification task V-01, V-02, V-03.
 
 ### CHECK-03-02 — Bản đồ đường mất dữ liệu được lập đầy đủ
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy.
+Bản đồ đường mất dữ liệu đã lập tại S000 (8 đường, gồm 3 đường không có lối thoát: localStorage bị xoá khi chưa publish, publish không khả dụng do thiếu quyền writer, export thất bại im lặng khi không có capability `downloads`). Ghi trong RSK-001.
 
 ### CHECK-03-03 — Tình trạng thật của bộ test webapp được xác định
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy. Cần thử chạy từ một bản checkout sạch và ghi lại kết quả nguyên văn.
+Chạy thật: hai test webapp PASS nhưng CHỈ sau khi dựng thủ công `app_final.html` (phải build) và `demo/results3/live_seed.json` (không tồn tại ở bất kỳ đâu trong repo). Không chạy được từ bản checkout sạch.
 
 ### CHECK-03-04 — Phạm vi parity được định lượng
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy.
+Parity chỉ phủ **OSCORE tổng** trên 40 ngày, lệch tối đa 7,39e-11. KHÔNG phủ: unlock, spacing, phân bổ ladder, invalidation price, regime. Ghi trong F-008.
 
 ### CHECK-03-05 — Đối chiếu với Product Spec §4, §5, §11, §12 hoàn tất
 Priority:
 RECOMMENDED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E0
 
 Evidence:
-Chưa chạy.
+Đối chiếu Product Spec §4 dual-unit, §5 treasury, §11 hero, §12 panel — kết quả trong compliance matrix nhóm I và trong khảo sát S000.
 
 ### CHECK-03-06 — Không có file mã nguồn nào bị sửa
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy. Kiểm bằng `git status --porcelain`.
+`git status --porcelain` cuối phiên: không mục nào thuộc `webapp/`, `src/`, `tests/`, `docs/spec/`.
 
 ## Exit Criteria
 - [ ] 100% REQUIRED checks PASS
@@ -289,3 +289,24 @@ Ghi nhận sẵn để T-03 xác minh, không thừa nhận: app không có cơ 
 mọi cảnh báo chỉ hiện khi người dùng mở trang. Nếu giá chạm zone lúc người dùng không mở app
 thì không có gì báo. Điều này khớp với việc Implementation Plan §9 cố ý hoãn notification, và
 là lý do T-08 phải đặc tả lớp cảnh báo trước khi T-10 triển khai.
+
+---
+
+## Kết quả S001 — BLOCKED
+
+**Task KHÔNG đạt DONE.** `governance/core/TASK_COMPLETION_GATE_STANDARD.md` quy định: bất kỳ
+REQUIRED check nào ở trạng thái FAIL, BLOCKED hoặc NOT_TESTED đều chặn DONE.
+
+CHECK-03-01 là REQUIRED và bị **BLOCKED**: chứng minh ba nghi vấn NV-1/NV-2/NV-3 đòi dựng ca
+kiểm thử mới, mà quy tắc S001 số 10 của chủ dự án cấm viết test mới trong phiên audit.
+Đây là **xung đột có chủ đích giữa Ready Gate của task và quy tắc phiên**, không phải thất bại
+kỹ thuật.
+
+Năm REQUIRED/RECOMMENDED check còn lại đều PASS.
+
+**Ba nghi vấn vẫn ở mức E0** và KHÔNG được coi là kết luận. Chuyển thành verification task
+V-01, V-02, V-03 cho phase sau (xem `docs/reviews/S001-audit-findings.md`).
+
+Thu hẹp được một phần bằng bằng chứng E1: `webapp/test_zone.js` cho thấy bất biến
+`TOTAL = A + R + D` giữ đúng trong kịch bản **một tháng**. Điều này không bác bỏ NV-1 vì NV-1 nói
+về kịch bản **đa tháng** — đúng điểm mù của test hiện có.

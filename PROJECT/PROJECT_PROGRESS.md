@@ -19,22 +19,22 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — kết phiên S000 (cập nhật sau khi khảo sát nền trả kết quả E1)
+2026-08-23 — kết phiên S001 (AUDIT READ-ONLY)
 
 Overall Status:
-PLANNING
+IN_PROGRESS
 
 Current Phase:
-Phase 1 — Discovery & Baseline (chưa bắt đầu)
+Phase 1 — Discovery & Baseline (HOÀN TẤT). Kế tiếp: Phase 2 — Chốt hướng đi (T-04)
 
 Current Task:
-T-01 — Kiểm kê hiện trạng toàn repo
+T-04 — Chốt lộ trình và đóng băng tiêu chí (chưa mở, chờ chỉ thị của chủ dự án)
 
 Current Task Mode:
-SPIKE
+MAJOR
 
 Next Recommended Task:
-T-01, mở trong phiên S001 chạy ở chế độ AUDIT read-only.
+T-04 (phiên S002). KHÔNG tự mở — chủ dự án đã yêu cầu dừng sau S001.
 
 ## Overall Roadmap
 
@@ -52,9 +52,9 @@ Completion Gate tại T-04, không đóng băng bây giờ.
 | Status | Task ID | Tên việc | Mục đích | Tier | Effort | Thứ tự/phụ thuộc |
 |---|---|---|---|---|---|---|
 | DONE | T-00 | Mở dự án và dựng bộ điều hành | Chọn profile, khởi tạo trạng thái dự án, lập kế hoạch khảo sát và lộ trình sơ bộ | C | xhigh | Không phụ thuộc. Mở đường cho T-01 |
-| PLANNED | T-01 | Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C | xhigh | Sau T-00. Chế độ AUDIT read-only |
-| PLANNED | T-02 | Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C | xhigh | Sau T-01. Song song được với T-03 |
-| PLANNED | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. Song song được với T-02 |
+| DONE | T-01 | Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C | xhigh | Sau T-00. Chế độ AUDIT read-only |
+| DONE | T-02 | Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C | xhigh | Sau T-01. Song song được với T-03 |
+| BLOCKED | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. Song song được với T-02 |
 | PLANNED | T-04 | Chốt lộ trình và đóng băng tiêu chí | Biến kết quả khảo sát thành lộ trình chính thức, có tiêu chí nghiệm thu đóng băng | C | xhigh | Sau T-01, T-02, T-03 |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. Chặn T-06, T-08 |
 | PLANNED | T-06A | Ghim phiên bản thư viện và ghi môi trường vào run record | Không ghim thì kết quả chạy chính thức không tái lập lại được về sau | B | high | Sau T-04. BẮT BUỘC xong trước T-06 |
@@ -69,17 +69,17 @@ Completion Gate tại T-04, không đóng băng bây giờ.
 ## Current Task Snapshot
 
 Task:
-T-01 — Kiểm kê hiện trạng toàn repo
+T-04 — Chốt lộ trình và đóng băng tiêu chí
 
 Task Mode:
-SPIKE
+MAJOR
 
 Status:
 PLANNED
 
 Required Gate Progress:
-0 / 0 PASS — Completion Gate sơ bộ đã soạn trong `docs/tasks/T-01-kiem-ke-hien-trang.md`,
-sẽ chốt khi mở phiên S001.
+0 / 0 PASS — Ready Gate và Completion Gate của T-04 CHƯA soạn. Sẽ soạn khi chủ dự án cho phép
+mở S002. Chủ dự án đã yêu cầu dừng sau S001, không tự chuyển phase.
 
 Primary Agent Tier:
 C
@@ -88,10 +88,10 @@ Primary Effort:
 xhigh
 
 Model Routing Score:
-2.2 (D3 R2 B1 A2 X3) → base tier C, không áp floor nào
+2.80 (D3 R3 B2 A3 X3) → floor `cognitive:A>=3&X>=3` → C
 
 Effort Routing Score:
-2.7 (U3 V2 H3 C4 F2) → xhigh, không áp floor nào
+2.60 (U2 V2 H3 C3 F3) → xhigh
 
 Runtime Supported Effort Levels:
 low / medium / high / xhigh / max
@@ -106,9 +106,14 @@ Escalation Effort:
 xhigh
 
 Escalation Triggers:
-- Phát hiện sai lệch giữa code và spec ở mức không thể kết luận trong một phiên
-  → phân loại `CAPABILITY_CEILING` theo `AGENT_CAPABILITY_MATRIX.md` Stage 4 trước khi nâng Tier.
-- Thiếu dữ liệu/quyền để kiểm chứng → `MISSING_INPUT`, chuyển BLOCKED, KHÔNG nâng Tier.
+- Số lượng finding vượt khả năng xếp thứ tự trong một phiên → chia T-04 thành nhiều phiên,
+  KHÔNG nâng Tier.
+- Chủ dự án chưa chốt DEC-005 → `MISSING_INPUT`, chuyển BLOCKED, KHÔNG nâng Tier.
+
+Lưu ý bàn giao: kết quả S001 đề xuất chèn một phase "đóng cổng verdict" (R-01…R-04, R-07, R-08,
+T-06A, V-01/02/03) vào trước T-06. Đề xuất này CHƯA được đưa vào bảng roadmap — theo
+`00_SESSION_ORCHESTRATION.md` mục "Roadmap Change Rule", việc tái cấu trúc roadmap phải đi qua
+khối `ROADMAP CHANGE PROPOSAL` và được chủ dự án chấp thuận, không làm im lặng.
 
 ## Micro Tasks (Inline)
 
@@ -158,7 +163,7 @@ App web hiện lưu state trong localStorage của trình duyệt cộng cơ ch�
 riêng tư, đổi máy, hoặc publish thất bại đều có thể làm mất dữ liệu chưa xuất ra ngoài.
 Giảm thiểu: T-09B. Cho tới khi T-09B xong, chủ dự án nên xuất file JSON định kỳ.
 
-### RSK-002 — Hai bản cài đặt chiến lược trôi khỏi nhau (mức: cao)
+### RSK-002 — Hai bản cài đặt chiến lược trôi khỏi nhau (mức: cao) — S001 XÁC NHẬN (E1)
 Implementation Plan §1 yêu cầu live và backtest dùng chung một core strategy function. Trang
 tĩnh không chạy được Python nên `webapp/engine.js` là bản cài đặt thứ hai của cùng đặc tả.
 Cơ chế chặn hiện có là parity check OSCORE 40 ngày (lệch tối đa 7.4e-11 lần kiểm gần nhất),
@@ -193,7 +198,13 @@ Ghi nhận thêm: hai test ghi ảnh chụp màn hình vào thư mục làm vi�
 
 Định lượng mức bảo vệ hồi quy thật sự (có assertion nào fail được không): T-03.
 
-### RSK-005 — Quy ước không thuộc spec đang nằm trong đường ra verdict (mức: trung bình)
+### RSK-005 — Quy ước không thuộc spec đang nằm trong đường ra verdict (mức: trung bình) — S001 XÁC NHẬN VÀ MỞ RỘNG (E1)
+S001 xác nhận và phát hiện quy ước không được ghi ở nhiều chỗ hơn dự kiến: ngoài ánh xạ
+gate-fail → verdict, còn có ngưỡng số tự đặt của FS-02/FS-07/FS-12, phạm vi tính FS-03/FS-07 chỉ
+trên window W5, và tham số `shift_days=10` của Control G. `verdict.py` còn ghi rằng ánh xạ được
+tài liệu hoá ở `docs/CONVENTIONS.md`, nhưng file đó không có mục nào về verdict.
+Xem finding F-015, F-016, F-026.
+
 `src/eth_dca_os/verdict.py` ánh xạ "gate nào trượt → verdict nào". Implementation Plan §5 không
 quy định ánh xạ này; đây là quy ước triển khai. Cần ghi nhận rõ trong T-02 để không bị coi nhầm
 là điều khoản spec. Nếu muốn nâng thành chuẩn thì phải qua V2.2, không vá tại chỗ V2.1.5.
@@ -214,8 +225,35 @@ Hệ quả về thứ tự công việc: phải xử lý **trước** khi chạy
 chính thức mang khiếm khuyết không sửa được về sau. Đó là lý do T-06A được chèn vào lộ trình
 và đặt làm điều kiện tiên quyết của T-06.
 
+### RSK-007 — Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run (mức: cao)
+S001 phát hiện (E1): Benchmark B/C/D, ablation §2.3, volume z-score §2.4, bảng coverage §4 và
+XIRR §16 đều đã được cài đặt đúng nhưng **không nơi nào trong pipeline gọi chúng**. Hệ quả: một
+official run sẽ phát ra verdict kèm báo cáo thiếu, và nguyên tắc Backtest §22 ("luật đơn giản
+thắng nếu kết quả tương đương") không thể áp dụng vì không có B/C/D để so.
+Ngoài ra ba Failure Signal (FS-02, FS-06, FS-12) không bao giờ được truyền input nên luôn UNKNOWN,
+trong khi verdict BUILD vẫn phát ra bình thường.
+Xem finding F-002, F-003, F-004, F-012, F-013.
+Giảm thiểu đề xuất: R-02, R-03 — trước T-06.
+
+### RSK-008 — Run trên dữ liệu tổng hợp vẫn được ghi nhận là official (mức: cao)
+S001 xác nhận (E1): cờ `official` chỉ phụ thuộc việc có dùng `--dev-limit` hay không, hoàn toàn
+không kiểm nguồn dữ liệu; và `lineage.json` ghi `source` là chuỗi cố định `'see fetch/synth'` cho
+cả dữ liệu thật lẫn dữ liệu tổng hợp. Chạy `ethdca synth && ethdca run all` sẽ tạo record mang
+`official: true` trên dữ liệu nhân tạo, không có trường nào cho phép phát hiện về sau.
+Đây là rủi ro thẳng vào tính toàn vẹn của verdict — tức vào chính cổng mở đường cho app.
+Xem finding F-005. Giảm thiểu đề xuất: R-04 — trước T-06.
+
+### RSK-009 — Vòng đời Crash ladder hở, vốn có thể bị khoá vĩnh viễn (mức: cao)
+S001 phát hiện và kiểm chứng bằng chạy thật (E1): khi giai đoạn RECOVERY kết thúc lúc thị trường
+còn yếu, regime chuyển thành STRESSED chứ không phải NORMAL, nên nhánh dọn Crash ladder ở
+`engine.py:415` không bao giờ chạy. Reserve của Crash zone không được giải phóng, kéo theo không
+tạo được ladder mới và cash ratio tăng giả tạo — có thể bóp méo chính FS-02 và FS-07.
+Đây đồng thời là vi phạm [F1] (STRESSED phải không có hiệu ứng execution).
+Xem finding F-001. Giảm thiểu đề xuất: R-01.
+
 ## Open Regression Items
-- None
+- None. S001 không phát hiện code nào bám theo hành vi của V2.1.1–V2.1.4 trái với V2.1.5;
+  bảy sửa đổi F1–F7 đều có dấu vết hiện thực.
 
 ## Recent Decisions
 - DEC-001 — Chọn profile PRODUCT
@@ -227,6 +265,11 @@ và đặt làm điều kiện tiên quyết của T-06.
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S001 — DISCOVERY & BASELINE (AUDIT READ-ONLY) — 2026-08-23 — Đối chiếu toàn bộ implementation
+  với spec V2.1.5 theo chín nhóm A–I. Sinh Compliance Matrix, Audit Findings (33 finding: 0
+  CRITICAL, 8 HIGH, 15 MEDIUM, 7 LOW, 3 spec defect; 18/33 có bằng chứng chạy thật) và Discovery
+  Baseline. Không sửa một dòng mã sản phẩm nào. Kết luận: **S001 PASS WITH FINDINGS**.
+  Biên bản: `docs/sessions/S001-discovery-baseline.md`.
 - S000 — PROJECT OPEN — 2026-08-23 — Chọn profile PRODUCT, khởi tạo trạng thái dự án, lập kế
   hoạch khảo sát (T-01..T-03) và lộ trình sơ bộ 14 task. Không sửa một dòng code sản phẩm nào.
   Biên bản: `docs/sessions/S000-project-open.md`.

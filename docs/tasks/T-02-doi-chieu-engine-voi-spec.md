@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-PLANNED
+DONE
 
 Phase:
 Phase 1 — Discovery & Baseline
@@ -199,78 +199,78 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy.
+Năm module tầng 1 (`score`, `capital`, `engine`, `manifests`, `gates`/`verdict`) được đối chiếu tới từng công thức và hằng số. Kết quả trong `docs/reviews/S001-compliance-matrix.md` nhóm B, C, D, G.
 
 ### CHECK-02-02 — Con số manifest được đếm thật bằng cách chạy generator
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy. Không được chấp nhận việc đọc `RELEASE_CHECK` rồi ghi PASS — đó là E0.
+`ethdca freeze` chạy thật: Gate 2 `ofat_candidates 19 → ofat_valid 18`, `interaction 200`, `denominator 219`, ứng viên bị loại đúng `base_pct=0.7` lý do `smart_pct < 0.15`. Gate 3 `deterministic 14, sampled 100, size 114`. Không đọc RELEASE_CHECK rồi ghi PASS.
 
 ### CHECK-02-03 — Mười bốn mệnh đề bắt buộc đều có kết luận
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy. Mệnh đề không kiểm được phải ghi KHÔNG KẾT LUẬN ĐƯỢC kèm lý do, không được ghi PASS.
+Đủ 14 mệnh đề có kết luận dứt khoát — xem phụ lục trong compliance matrix. Kết quả: 5 XÁC NHẬN, 6 XÁC NHẬN một phần, 2 BÁC BỎ, 2 KHÔNG KẾT LUẬN ĐƯỢC. Không mệnh đề nào ghi PASS thiếu căn cứ.
 
 ### CHECK-02-04 — Độ phủ thật của test suite được định lượng
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy.
+Độ phủ thật được định lượng: danh sách requirement §19/§21 chưa có test nằm trong `docs/reviews/S001-audit-findings.md` mục 'Requirement của spec CHƯA CÓ TEST'. §21.3 gần như trống.
 
 ### CHECK-02-05 — Mọi quy ước không thuộc spec được liệt kê
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E0
 
 Evidence:
-Chưa chạy.
+Liệt kê trong findings F-015, F-016, F-026 và mục 'Code tồn tại nhưng KHÔNG truy được về requirement V2.1.5'.
 
 ### CHECK-02-06 — Không có file mã nguồn nào bị sửa
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Chưa chạy. Kiểm bằng `git status --porcelain`.
+`git status --porcelain` cuối phiên: không mục nào thuộc `src/`, `tests/`, `webapp/`, `docs/spec/`.
 
 ## Exit Criteria
 - [ ] 100% REQUIRED checks PASS
@@ -311,3 +311,13 @@ tính ra**, không phải hình thức code.
 `docs/CONVENTIONS.md` liệt kê 13 điểm spec cố ý để ngỏ mà engine tự chốt quy ước. Những điểm đó
 **không phải nonconformance** — nhưng phải được xác nhận là code thật sự làm đúng quy ước đã
 ghi, và phải kiểm xem có quy ước nào đang được dùng mà chưa được ghi vào CONVENTIONS không.
+
+---
+
+## Kết quả S001
+
+Task hoàn tất. Đầu ra: `docs/reviews/S001-compliance-matrix.md` và `S001-audit-findings.md`.
+
+Sáu REQUIRED check đều PASS. **Hai mệnh đề bắt buộc bị BÁC BỎ** (mệnh đề 10 — [F1] STRESSED có
+hiệu ứng execution; và phần vận hành của mệnh đề 7 — Benchmark C/D không được chạy).
+Không tự sửa finding nào.
