@@ -19,7 +19,7 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — kết phiên S000
+2026-08-23 — kết phiên S000 (cập nhật sau khi khảo sát nền trả kết quả E1)
 
 Overall Status:
 PLANNING
@@ -57,7 +57,8 @@ Completion Gate tại T-04, không đóng băng bây giờ.
 | PLANNED | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. Song song được với T-02 |
 | PLANNED | T-04 | Chốt lộ trình và đóng băng tiêu chí | Biến kết quả khảo sát thành lộ trình chính thức, có tiêu chí nghiệm thu đóng băng | C | xhigh | Sau T-01, T-02, T-03 |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. Chặn T-06, T-08 |
-| PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Sau T-05. Cần máy/VPS có mạng Binance |
+| PLANNED | T-06A | Ghim phiên bản thư viện và ghi môi trường vào run record | Không ghim thì kết quả chạy chính thức không tái lập lại được về sau | B | high | Sau T-04. BẮT BUỘC xong trước T-06 |
+| PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Sau T-05 và T-06A. Cần máy/VPS có mạng Binance |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | Sau T-06. Chặn T-11 |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05. Song song được với T-06 |
 | PLANNED | T-09A | Sửa lỗi kế toán trong app web | Vá 3 lỗi có thể làm sai sổ vốn trước khi app được dùng với tiền thật | C | high | Sau T-03 và T-04 |
@@ -132,6 +133,13 @@ hoặc VPS nước ngoài, copy `data/raw/` về, rồi xác minh bằng cách c
 máy và đối chiếu hash manifest phải trùng khớp.
 Cần từ chủ dự án: một máy hoặc VPS truy cập được `data.binance.vision` và `api.binance.com`.
 
+Bằng chứng E1 thu tại S000 (2026-08-23): cả ba host đều bị chặn ở tầng proxy, không phải lỗi
+cấu hình phía repo.
+`api.binance.com` → `curl: (56) CONNECT tunnel failed, response 403`
+`data-api.binance.vision` → `curl: (56) CONNECT tunnel failed, response 403`
+`api.coingecko.com` → `curl: (56) CONNECT tunnel failed, response 403`
+PyPI thì thông, nên đây là chặn có chọn lọc theo host, không phải mất mạng.
+
 ### BLK-002 — Tính năng cảnh báo chưa được đặc tả
 Ảnh hưởng: T-10, và là lý do T-08 tồn tại.
 Mô tả: `docs/spec/01_PRODUCT_SPEC_V2_1_5.md` không có mục nào về alert/cảnh báo/notification.
@@ -158,24 +166,53 @@ nhưng parity chỉ phủ OSCORE tổng — chưa phủ unlock, spacing, phân b
 regime. Mỗi tính năng port thêm sang JS sẽ mở rộng bề mặt trôi nhanh hơn khả năng phát hiện.
 Giảm thiểu: mở rộng phạm vi parity trước khi port thêm; xác nhận trong T-02/T-03.
 
-### RSK-003 — Nghi vấn ba lỗi kế toán trong app web (mức: cao, chưa xác minh)
-Ghi nhận từ khảo sát S000, CHƯA được kiểm chứng bằng test chạy thật nên vẫn là nghi vấn:
-(a) hàm chọn tháng hiện hành trả về tháng có key lớn nhất chứ không phải tháng của ladder, nên
-release vốn có thể trả nhầm pool khi có nhiều tháng; (b) mức unlock không giới hạn số vốn được
-reserve, có thể reserve phần vốn chưa mở khóa; (c) trạng thái dữ liệu INVALID không chặn tạo
-action mới như Strategy §3 yêu cầu.
-Xác minh: T-03. Sửa: T-09A. Không sửa trong S001 vì S001 là read-only.
+### RSK-003 — Nghi vấn ba lỗi kế toán trong app web (mức: trung bình, một phần đã được loại trừ)
+Ghi nhận ban đầu từ việc đọc code: (a) hàm chọn tháng hiện hành trả về tháng có key lớn nhất
+chứ không phải tháng của ladder, nên release vốn có thể trả nhầm pool khi có nhiều tháng;
+(b) mức unlock không giới hạn số vốn được reserve; (c) trạng thái dữ liệu INVALID không chặn
+tạo action mới như Strategy §3 yêu cầu.
 
-### RSK-004 — Bộ test của app web không phải test thật (mức: trung bình)
-Hai file test của webapp là script in ra console, không có assertion nào có thể fail, và cần
-`app_final.html` cùng thư mục `demo/` — cả hai đều không có trong repo. Nghĩa là chúng không
-chạy được từ một bản checkout sạch và không bảo vệ được hồi quy.
-Xác minh và định lượng: T-03.
+Cập nhật sau bằng chứng E1 tại S000: `webapp/test_zone.js` chạy thật và cho thấy bất biến kế
+toán **giữ đúng trong kịch bản một tháng** — tổng bảo toàn 3.000.000 qua đủ chuỗi thao tác
+fill toàn phần → fill một phần → invalidation → release, và không pool nào âm.
+Nghĩa là (a) **chưa bị bác bỏ nhưng cũng chưa được tái hiện**: test hiện có chỉ dùng một tháng,
+đúng vào điểm mù của nghi vấn. (b) và (c) chưa có ca kiểm thử nào chạm tới.
+
+Còn lại phải xác minh ở T-03 bằng ca kiểm thử **đa tháng** cho (a), và ca kiểm thử riêng cho
+(b), (c). Sửa: T-09A. Không sửa trong S001 vì S001 là read-only.
+
+### RSK-004 — Bộ test app web không chạy được từ bản checkout sạch (mức: trung bình)
+Bằng chứng E1 tại S000: hai test webapp **chạy được và cho kết quả đúng**, nhưng chỉ sau khi
+dựng thủ công hai thứ không có trong repo — `webapp/app_final.html` (phải build) và
+`demo/results3/live_seed.json` (**không tồn tại ở bất kỳ đâu trong repo**).
+Nghĩa là không ai clone repo về mà chạy được test của app, và không có gì bảo vệ hồi quy tự động.
+
+Ghi nhận thêm: hai test ghi ảnh chụp màn hình vào thư mục làm việc hiện hành. Nếu chạy từ trong
+`webapp/` sẽ để lại `app-dash.png` và `app-zone.png` trong repo, mà hai file này không nằm trong
+`.gitignore`.
+
+Định lượng mức bảo vệ hồi quy thật sự (có assertion nào fail được không): T-03.
 
 ### RSK-005 — Quy ước không thuộc spec đang nằm trong đường ra verdict (mức: trung bình)
 `src/eth_dca_os/verdict.py` ánh xạ "gate nào trượt → verdict nào". Implementation Plan §5 không
 quy định ánh xạ này; đây là quy ước triển khai. Cần ghi nhận rõ trong T-02 để không bị coi nhầm
 là điều khoản spec. Nếu muốn nâng thành chuẩn thì phải qua V2.2, không vá tại chỗ V2.1.5.
+
+### RSK-006 — Không ghim phiên bản thư viện, nên kết quả không tái lập được theo thời gian (mức: cao)
+Bằng chứng E1 tại S000: `pyproject.toml` chỉ đặt sàn (`numpy>=1.26`, `pandas>=2.1`,
+`pyarrow>=14`), không có lockfile và không có trần. Khi cài mới, pip kéo về `numpy 2.4.6`,
+`pandas 3.0.5`, `pyarrow 25.0.1` — vượt xa sàn tới hai thế hệ lớn. Toàn bộ 69 test vẫn PASS
+trên bộ này, đó là tín hiệu tốt về độ bền, nhưng là **may mắn chứ không phải bảo đảm**.
+
+Vì sao mức cao: Implementation Plan §7 đặt tính tái lập làm tiêu chí nghiệm thu —
+"cùng dataset hash + config hash + manifest hash + seed thì tái lập chính xác cùng kết quả".
+Run record hiện lưu hash của config, manifest, dataset và seed, **nhưng không lưu phiên bản thư
+viện**. Một thay đổi dấu phẩy động trong numpy/pandas ở phiên bản sau có thể làm official run
+không tái lập được, mà không ai phát hiện — vì mọi hash đầu vào vẫn trùng khớp.
+
+Hệ quả về thứ tự công việc: phải xử lý **trước** khi chạy official run, nếu không thì kết quả
+chính thức mang khiếm khuyết không sửa được về sau. Đó là lý do T-06A được chèn vào lộ trình
+và đặt làm điều kiện tiên quyết của T-06.
 
 ## Open Regression Items
 - None
@@ -191,8 +228,41 @@ Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
 - S000 — PROJECT OPEN — 2026-08-23 — Chọn profile PRODUCT, khởi tạo trạng thái dự án, lập kế
-  hoạch khảo sát (T-01..T-03) và lộ trình sơ bộ 13 task. Không sửa một dòng code sản phẩm nào.
+  hoạch khảo sát (T-01..T-03) và lộ trình sơ bộ 14 task. Không sửa một dòng code sản phẩm nào.
   Biên bản: `docs/sessions/S000-project-open.md`.
+
+## Bằng chứng nền thu tại S000
+
+Đây là bằng chứng **E1 — chạy thật**, khác với các quan sát đọc code (E0) đã nêu ở mục rủi ro.
+T-01 vẫn phải chạy lại để xác nhận trạng thái tại thời điểm S001, nhưng không cần dò lại từ đầu.
+
+| Hạng mục | Kết quả | Mức |
+|---|---|---|
+| Test suite Python | **69 passed, 0 failed, 0 skipped, 0 error** trong 372,63s | E1 |
+| Môi trường | Python 3.11.15, node v22.22.2, git 2.43.0 | E1 |
+| Thư viện thực cài | numpy 2.4.6, pandas 3.0.5, pyarrow 25.0.1, pytest 9.1.1 | E1 |
+| Mạng tới Binance/CoinGecko | Cả ba host trả 403 ở tầng proxy; PyPI thông | E1 |
+| `ethdca synth` | 2,0s — 262.748 nến 15m, 3.102 nến ngày | E1 |
+| `ethdca freeze` Gate 2 | 19 ứng viên OFAT → loại 1 (`base_pct=0.7`, lý do `smart_pct < 0.15`) → 18 hợp lệ; 200 interaction; **mẫu số 219** | E1 |
+| `ethdca freeze` Gate 3 | 14 deterministic + 100 sampled = **114 config** | E1 |
+| Parity engine JS ↔ Python | Lệch tối đa **7,39e-11** trên 40 ngày — hai bản đồng thuận | E1 |
+| Bất biến kế toán ladder (một tháng) | Tổng bảo toàn 3.000.000 qua fill toàn phần → fill một phần → invalidation → release; không pool nào âm | E1 |
+| Build quine của webapp | Self-check đạt, template giải mã lại được | E1 |
+| CLI | 6 lệnh: `fetch`, `synth`, `freeze`, `run`, `verdict`, `export-live` | E1 |
+| `results/`, `data/`, `.venv/` trong repo | Không tồn tại — xác nhận chưa từng có official run | E1 |
+
+Điều này làm đổi đánh giá ban đầu theo hướng tốt hơn: **mã nguồn khỏe hơn tài liệu gợi ý**.
+Đây không phải prototype dở dang. T-02 vì vậy nên tập trung vào **tuân thủ spec** chứ không phải
+sức khỏe cơ bản của engine.
+
+Cảnh báo quan trọng về ý nghĩa của các validator governance: chúng đang PASS trên **tập rỗng** —
+0 evidence record, 0 MAJOR task file, 0 task DONE. `PROJECT STATE` chỉ vừa chuyển từ FAIL sang
+PASS trong chính phiên S000 này. Khung đã có, nội dung thì chưa. Không được đọc các dòng PASS đó
+như bằng chứng chất lượng dự án.
+
+Ghi chú về con số manifest: việc `freeze` đếm ra đúng 219 và 114 chứng minh **thuật toán sinh
+manifest chạy ra đúng số lượng**. Nó KHÔNG chứng minh **nội dung từng config đúng ngữ nghĩa**
+spec. T-02 vẫn phải đối chiếu nội dung, không được dừng ở con số.
 
 ## Routing sơ bộ cho task chưa có file định nghĩa
 
@@ -202,6 +272,7 @@ U/V/H/C/F = Uncertainty, Verification, Horizon, Context, Failure cost.
 
 - T-00 — D3 R2 B1 A3 X3 → 2.35 → C (floor `cognitive:A>=3&X>=3`); U3 V2 H3 C4 F2 → 2.7 → xhigh
 - T-04 — D3 R3 B2 A3 X3 → 2.80 → C (floor `cognitive:A>=3&X>=3`); U2 V2 H3 C3 F3 → 2.60 → xhigh
+- T-06A — D2 R2 B2 A1 X2 → 1.85 → B (không floor); U1 V2 H2 C2 F2 → 1.80 → high
 - T-06 — D2 R3 B3 A1 X3 → 2.45 → C (floor `safety_business:min_C`); U2 V4 H3 C3 F3 → 3.00 → xhigh
 - T-08 — D3 R3 B2 A3 X3 → 2.80 → C (2 floor); U3 V2 H3 C3 F3 → 2.80 → xhigh
 - T-09A — D3 R3 B2 A1 X2 → 2.35 → C (floor `safety_business:min_C`); U1 V3 H2 C2 F3 → 2.25 → high

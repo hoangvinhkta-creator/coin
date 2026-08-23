@@ -37,7 +37,7 @@ code hiện có được viết trước khi governance vào repo và chưa có 
 **3. Lập kế hoạch khảo sát.** Ba task định nghĩa đầy đủ (T-01, T-02, T-03) với Ready Gate,
 Completion Gate sơ bộ, escalation trigger và ranh giới phạm vi rõ ràng.
 
-**4. Lộ trình sơ bộ 13 task** qua 6 phase, mọi Tier/Effort được tính bằng
+**4. Lộ trình sơ bộ 14 task** qua 6 phase, mọi Tier/Effort được tính bằng
 `routing_engine.py` chứ không chọn tay.
 
 ### Hai phát hiện làm đổi hình dạng lộ trình
@@ -67,10 +67,10 @@ phát triển bị chặn egress tới Binance nên mọi kiểm chứng chạy 
 - [x] 00.5 Khảo sát sản phẩm app: Product Spec, webapp hiện tại, khoảng cách
 - [x] 00.6 Chọn profile và ghi `PROJECT/PROJECT_PROFILE.md`
 - [x] 00.7 Quyết định S001 chạy chế độ AUDIT read-only
-- [x] 00.8 Tạo 6 phase và 13 task
+- [x] 00.8 Tạo 6 phase và 14 task
 - [x] 00.9 Lập đồ thị phụ thuộc sơ bộ
 - [x] 00.10 Chấm Difficulty/Risk/Blast Radius cho mọi task
-- [x] 00.11 Tính Tier + Effort bằng `routing_engine.py` cho toàn bộ 13 task
+- [x] 00.11 Tính Tier + Effort bằng `routing_engine.py` cho toàn bộ 14 task
 - [x] 00.12 Soạn Completion Gate sơ bộ cho T-01, T-02, T-03
 - [x] 00.13 Khởi tạo `PROJECT/PROJECT_PROGRESS.md` theo bảng roadmap chuẩn
 - [x] 00.14 Chạy `sync_easy_roadmap.py` sinh `PROJECT/LO_TRINH_DE_HIEU.md`
@@ -111,12 +111,45 @@ NOT_TESTED:
 | CHECK-00-05 — Routing hợp lệ | PASS | E1 | `validate_routing.py` → `ROUTING VALIDATION: PASS (0 MAJOR task file(s) checked)`, exit=0. Ba task file của Phase 1 ở chế độ SPIKE nên validator không kiểm; routing của chúng vẫn được ghi đầy đủ trong file và tính bằng `routing_engine.py` | Agent S000 | 2026-08-23 |
 | CHECK-00-06 — Không sửa mã sản phẩm | PASS | E1 | `git status --porcelain` cuối phiên: chỉ có thay đổi trong `PROJECT/`, `docs/tasks/`, `docs/sessions/`. Không có mục nào thuộc `src/`, `webapp/`, `tests/`, `docs/spec/` | Agent S000 | 2026-08-23 |
 
-Ghi chú về mức bằng chứng của phần khảo sát:
-Các nhận định về hiện trạng code trong phiên này (số module, số dòng, ba nghi vấn lỗi kế toán,
-tình trạng bộ test webapp) đến từ việc **đọc code**, nên ở mức **E0 — tuyên bố của agent**.
-Chúng được ghi vào `PROJECT/PROJECT_PROGRESS.md` dưới dạng **rủi ro chưa xác minh** (RSK-003,
-RSK-004), không phải sự thật đã chứng minh. T-01 và T-03 có nhiệm vụ nâng chúng lên E1 bằng
-cách chạy thật. Không được trích dẫn chúng như kết luận đã kiểm chứng.
+### Bằng chứng nền E1 thu được cuối phiên
+
+Một khảo sát nền đã chạy thật trong phiên này và trả về bằng chứng E1. Chi tiết đầy đủ ở
+`PROJECT/PROJECT_PROGRESS.md` mục "Bằng chứng nền thu tại S000". Tóm tắt:
+
+| Hạng mục | Kết quả |
+|---|---|
+| Test suite Python | **69 passed, 0 failed, 0 skipped** trong 372,63s |
+| Mạng tới Binance / CoinGecko | Cả ba host trả **403** ở tầng proxy; PyPI thông |
+| `ethdca freeze` | Đếm ra đúng **219** (Gate 2) và **114** (Gate 3) |
+| Parity engine JS ↔ Python | Lệch tối đa **7,39e-11** trên 40 ngày |
+| Bất biến kế toán ladder (một tháng) | Tổng bảo toàn qua fill → partial → invalidation → release |
+| `results/`, `data/` trong repo | Không tồn tại — xác nhận chưa từng có official run |
+
+Điều này **đổi đánh giá ban đầu theo hướng tốt hơn**: mã nguồn khỏe hơn tài liệu gợi ý.
+Hệ quả: T-02 nên tập trung vào tuân thủ spec, không phải sức khỏe cơ bản của engine.
+
+### Hai điều chỉnh sau bằng chứng
+
+**RSK-003 hạ từ cao xuống trung bình.** Bất biến kế toán giữ đúng trong kịch bản một tháng.
+Nhưng nghi vấn (a) nói về kịch bản **đa tháng** — đúng vào điểm mù của test hiện có, nên chưa
+bị bác bỏ. Nghi vấn (b) và (c) chưa có ca kiểm thử nào chạm tới. T-03 giữ nguyên nhiệm vụ.
+
+**Thêm RSK-006 và task T-06A.** `pyproject.toml` chỉ đặt sàn thư viện, không có lockfile.
+Khi cài mới, pip kéo về numpy 2.4.6 / pandas 3.0.5 — vượt sàn hai thế hệ lớn. Test vẫn xanh,
+nhưng run record lưu hash config/manifest/dataset/seed mà **không lưu phiên bản thư viện**.
+Implementation Plan §7 đặt tính tái lập làm tiêu chí nghiệm thu, nên đây là khiếm khuyết thật:
+official run chạy hôm nay có thể không tái lập được về sau mà không ai phát hiện, vì mọi hash
+đầu vào vẫn trùng. Phải xử lý **trước** T-06 — đó là lý do T-06A được chèn vào lộ trình.
+
+### Ghi chú về mức bằng chứng còn lại
+
+Các nhận định chưa được chạy thật — ba nghi vấn lỗi kế toán, đối chiếu app với Product Spec,
+danh sách tính năng còn thiếu — vẫn ở mức **E0, tuyên bố của agent**, và được ghi dưới dạng
+rủi ro chưa xác minh. Không được trích dẫn chúng như kết luận đã kiểm chứng.
+
+Cảnh báo quan trọng: các validator governance đang **PASS trên tập rỗng** — 0 evidence record,
+0 MAJOR task file, 0 task DONE. `PROJECT STATE` chỉ vừa chuyển FAIL → PASS trong chính phiên
+này. Khung đã có, nội dung thì chưa. Đừng đọc những dòng PASS đó như bằng chứng chất lượng.
 
 ## Files Changed
 
@@ -128,7 +161,7 @@ Created:
 
 Modified:
 - `PROJECT/PROJECT_PROFILE.md` (từ khung trống → hồ sơ đầy đủ)
-- `PROJECT/PROJECT_PROGRESS.md` (từ khung trống → trạng thái + roadmap 13 task)
+- `PROJECT/PROJECT_PROGRESS.md` (từ khung trống → trạng thái + roadmap 14 task)
 - `PROJECT/PROJECT_DECISIONS.md` (từ khung trống → 5 quyết định)
 - `PROJECT/LO_TRINH_DE_HIEU.md` (sinh tự động bằng script, không sửa tay)
 
@@ -159,6 +192,8 @@ Risk:
 - **RSK-003** — Ba nghi vấn lỗi kế toán trong app web (cao, chưa xác minh). Xác minh: T-03.
 - **RSK-004** — Bộ test webapp không phải test thật (trung bình). Xác minh: T-03.
 - **RSK-005** — Quy ước không thuộc spec nằm trong đường ra verdict (trung bình). Xác minh: T-02.
+- **RSK-006** — Không ghim phiên bản thư viện nên kết quả không tái lập theo thời gian (cao).
+  Giảm thiểu: T-06A, bắt buộc xong trước T-06.
 
 Chi tiết: `PROJECT/PROJECT_PROGRESS.md`.
 

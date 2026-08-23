@@ -12,7 +12,8 @@
 | ⬜ | T-03 — Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C — Opus — high | Sau T-01. Song song được với T-02 |
 | ⬜ | T-04 — Chốt lộ trình và đóng băng tiêu chí | Biến kết quả khảo sát thành lộ trình chính thức, có tiêu chí nghiệm thu đóng băng | C — Opus — xhigh | Sau T-01, T-02, T-03 |
 | ⬜ | T-05 — DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | Duyệt — Con người — - | Sau T-04. Chặn T-06, T-08 |
-| ⬜ | T-06 — Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C — Opus — xhigh | Sau T-05. Cần máy/VPS có mạng Binance |
+| ⬜ | T-06A — Ghim phiên bản thư viện và ghi môi trường vào run record | Không ghim thì kết quả chạy chính thức không tái lập lại được về sau | B — Sonnet — high | Sau T-04. BẮT BUỘC xong trước T-06 |
+| ⬜ | T-06 — Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C — Opus — xhigh | Sau T-05 và T-06A. Cần máy/VPS có mạng Binance |
 | ⬜ | T-07 — DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | Duyệt — Con người — - | Sau T-06. Chặn T-11 |
 | ⬜ | T-08 — Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C — Opus — xhigh | Sau T-05. Song song được với T-06 |
 | ⬜ | T-09A — Sửa lỗi kế toán trong app web | Vá 3 lỗi có thể làm sai sổ vốn trước khi app được dùng với tiền thật | C — Opus — high | Sau T-03 và T-04 |
