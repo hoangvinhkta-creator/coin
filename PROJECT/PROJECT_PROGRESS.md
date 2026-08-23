@@ -19,24 +19,26 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — RCP-001 đã được phê duyệt và áp dụng
+2026-08-23 — S002 hoàn tất T-04: đóng băng Ready Gate + Completion Gate cho 15 work package
 
 Overall Status:
 IN_PROGRESS
 
 Current Phase:
-Phase 1 — Discovery & Baseline (HOÀN TẤT). Roadmap đã được tái cấu trúc theo RCP-001.
-Kế tiếp: T-04 — Chốt lộ trình và đóng băng Completion Gate cho từng work package.
+Phase 1.5 — Roadmap Finalization (HOÀN TẤT tại S002). Toàn bộ 15 work package của RCP-001 đã có
+file định nghĩa task với Ready Gate và Completion Gate **đã đóng băng**.
+Kế tiếp: Phase 2 — Lớp A (bắt buộc sửa trước official run). Chưa gói nào được bắt đầu.
 
 Current Task:
-T-04 — Chốt lộ trình và đóng băng tiêu chí (chưa mở, chờ chỉ thị của chủ dự án)
+Không có task nào đang thực thi. T-04 đã DONE tại S002.
 
 Current Task Mode:
 MAJOR
 
 Next Recommended Task:
-T-04, ở phiên S002. KHÔNG tự mở — chủ dự án yêu cầu chỉ áp dụng roadmap change ở bước này,
-không bắt đầu implementation hay S002 trong cùng lượt.
+Chủ dự án chọn một trong các task đã ở trạng thái READY: **WP-A3** (khuyến nghị — mắt xích đầu
+tiên của đường găng), WP-A1, WP-C1 (khuyến nghị vì lý do an toàn dữ liệu thật), WP-D1, WP-D2.
+KHÔNG tự mở — agent dừng sau T-04 theo chỉ thị của chủ dự án.
 
 ## Overall Roadmap
 
@@ -52,9 +54,13 @@ tài liệu này.
 
 Roadmap này áp dụng **RCP-001** (`PROJECT/ROADMAP_CHANGE_PROPOSAL_001.md`), được chủ dự án phê
 duyệt ngày 2026-08-23 kèm bốn điều kiện — xem mục "Roadmap Change Applied" bên dưới.
-Các work package (WP-*) là **roadmap sơ bộ**: theo `00_SESSION_ORCHESTRATION.md`
-("Do not freeze distant task details before discovery is sufficient"), Ready Gate và Completion
-Gate đầy đủ của từng gói sẽ được soạn và đóng băng tại T-04, không đóng băng bây giờ.
+
+**Cập nhật S002:** 15 work package không còn là roadmap sơ bộ. Mỗi gói đã có file định nghĩa task
+đầy đủ dưới `docs/tasks/`, với Ready Gate, Completion Gate (REQUIRED checks + Evidence Level),
+Exit Criteria và Escalation Triggers **đã đóng băng** ngày 2026-08-23. Theo
+`TASK_COMPLETION_GATE_STANDARD.md` mục "After Freeze", agent **không được xoá hoặc làm yếu REQUIRED
+check** để task đi qua; mọi thay đổi phải dùng khối `COMPLETION GATE CHANGE PROPOSAL`.
+Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.md`.
 
 | Status | Task ID | Tên việc | Mục đích | Tier | Effort | Thứ tự/phụ thuộc |
 |---|---|---|---|---|---|---|
@@ -62,11 +68,11 @@ Gate đầy đủ của từng gói sẽ được soạn và đóng băng tại 
 | DONE | T-01 | Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C | xhigh | Sau T-00. Chế độ AUDIT read-only |
 | DONE | T-02 | Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C | xhigh | Sau T-01. Song song được với T-03 |
 | BLOCKED | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. Chuyển DONE khi WP-C1 hoàn tất và ba nghi vấn có kết luận E1 |
-| PLANNED | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. Mở đường cho toàn bộ WP-* |
+| DONE | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. HOÀN TẤT tại S002 — 15 file task đã đóng băng gate |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
-| PLANNED | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
-| PLANNED | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04. Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier ghi đè thủ công — router trả B, xem DEC-008/GOVDEF-001 |
-| PLANNED | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. Song song với WP-A1, WP-A2, WP-C1 (đóng F-001, F-021, F-022, F-030) |
+| READY | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
+| BLOCKED | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04, và cần **BLK-003** được gỡ. Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier ghi đè thủ công — router trả B, xem DEC-008/GOVDEF-001 |
+| READY | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. Song song với WP-A1, WP-A2, WP-C1 (đóng F-001, F-021, F-022, F-030) |
 | PLANNED | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (đóng F-023, F-025, F-032) |
 | PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3 (vốn không bị khoá thì số đo mới đúng) — đóng phần đo lường của F-002, và F-016 |
 | PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4 (đóng F-018, F-019) |
@@ -75,16 +81,16 @@ Gate đầy đủ của từng gói sẽ được soạn và đóng băng tại 
 | PLANNED | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | Sau T-06. Song song với WP-B1, WP-B3 |
 | PLANNED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Sau T-06. Song song với WP-B1, WP-B2. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | Sau T-06 và **GATE-B** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE). Chặn T-11 |
-| PLANNED | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | Sau T-01 (đã DONE). Độc lập hoàn toàn — có thể chạy ngay, song song với toàn bộ lớp A. Gỡ BLOCKED cho T-03 khi xong (đóng V-01, V-02, V-03, F-027) |
-| PLANNED | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | Sau T-05 (DEC-005 quyết phạm vi). Cần ADR quyết định phạm vi trước khi bắt đầu — xem WP-C2 Notes (đóng F-006) |
+| READY | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | Sau T-01 (đã DONE). Độc lập hoàn toàn — có thể chạy ngay, song song với toàn bộ lớp A. Gỡ BLOCKED cho T-03 khi xong (đóng V-01, V-02, V-03, F-027) |
+| BLOCKED | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | Sau T-05 (DEC-005 còn PENDING → BLOCKED). Cần ADR quyết định phạm vi trước khi bắt đầu (đóng F-006) |
 | PLANNED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | Sau WP-C2 (đóng F-020) |
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6 (không khoá parity vào hành vi sắp đổi). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
 | PLANNED | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi nếu WP-C1 xác nhận là có thật, trước khi app được dùng với tiền thật | C | high | Sau WP-C1. Nếu WP-C1 bác bỏ cả ba nghi vấn, T-09A có thể thu hẹp phạm vi hoặc CANCELLED |
 | PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
-| PLANNED | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | Không phụ thuộc, làm bất cứ lúc nào (đóng F-028, F-029, F-031, F-034) |
-| PLANNED | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
+| READY | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | Không phụ thuộc, làm bất cứ lúc nào (đóng F-028, F-029, F-031, F-034) |
+| READY | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
 | PLANNED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD |
 
 ## Roadmap Change Applied — RCP-001
@@ -130,18 +136,28 @@ cho WP-A2 hay bất kỳ task nào khác.
 ## Current Task Snapshot
 
 Task:
-T-04 — Chốt lộ trình và đóng băng tiêu chí
+T-04 — Chốt lộ trình và đóng băng tiêu chí (HOÀN TẤT tại S002)
 
 Task Mode:
 MAJOR
 
 Status:
-PLANNED
+DONE
+
+File định nghĩa:
+`docs/tasks/T-04-chot-lo-trinh-va-dong-bang-tieu-chi.md`
 
 Required Gate Progress:
-0 / 0 PASS — Ready Gate và Completion Gate của T-04 CHƯA soạn. T-04 sẽ soạn Ready Gate +
-Completion Gate cho từng work package (WP-A1…WP-D2) trước khi bất kỳ gói nào được thực thi.
-Chủ dự án yêu cầu chỉ áp dụng roadmap change ở bước này — chưa mở T-04, chưa bắt đầu S002.
+12 / 12 PASS — toàn bộ REQUIRED check của T-04 đạt, bằng chứng E1. Chi tiết trong file task và
+trong biên bản `docs/sessions/S002-t04-gate-freeze.md`.
+
+Kết quả bàn giao của T-04:
+- 15 file định nghĩa task cho WP-A1…WP-D2, tổng **125 REQUIRED check** đã đóng băng
+  (trạng thái mặc định `NOT_TESTED` — đúng theo `EVIDENCE_STANDARD.md`, không phải thiếu sót).
+- DEC-009 trở thành **CHECK-B1-02, Priority = REQUIRED** trong Completion Gate của WP-B1.
+- WP-A2 giữ Tier C / Opus / high theo DEC-008, có ghi `Manual Override` và giá trị router thô.
+- Đối chiếu độ phủ: 40/40 định danh finding (34 `F-xxx`, 3 `V-xx`, 3 `S-xxx`) có nơi thuộc về.
+- Hai phát hiện mới của T-04: **PH-01** (sai số đếm trong tóm tắt S001) và **PH-02** → **BLK-003**.
 
 Primary Agent Tier:
 C
@@ -201,6 +217,13 @@ nguyên (ví dụ 2.0) có thể bị tính sai một bậc Tier/Effort do sai s
 (`1.9999999999999998` thay vì `2.0`). Chi tiết đầy đủ, bằng chứng tái lập:
 `docs/reviews/GOVDEF-001-routing-engine-boundary.md`.
 
+Phạm vi được làm rõ tại T-04 (S002), theo đúng câu đã có sẵn trong DEC-008 mục Impact
+("`validate_routing.py` cần được cập nhật ở một task riêng — MICRO-GOVDEF-001 hoặc kế tiếp"):
+task này bao gồm **cả** `validate_routing.py`, để công cụ chấp nhận một manual override **có ghi
+nhận** (kèm `Manual Override` và `Router Raw Output` trong file task) thay vì báo lỗi khớp tuyệt
+đối. Đây là làm rõ phạm vi đã được DEC-008 dự liệu, không phải quyết định mới. Việc mở task này
+vẫn cần chỉ thị của chủ dự án — xem BLK-003 và DEC-010.
+
 Ràng buộc bắt buộc khi sửa: tổng quát hoá cách so sánh (làm tròn trước khi so sánh, hoặc dùng
 epsilon nhất quán với `EPS` đã dùng ở nơi khác trong codebase, ví dụ `capital.py`).
 **Không hard-code ngoại lệ riêng cho bất kỳ task nào** (kể cả WP-A2, task đã kích hoạt phát hiện
@@ -240,6 +263,37 @@ PyPI thì thông, nên đây là chặn có chọn lọc theo host, không phả
 
 Không bypass BLK-001. Không đổi nguồn dữ liệu. Không dùng dữ liệu tổng hợp để tạo official
 verdict.
+
+### BLK-003 — `validate_routing.py` chưa biểu diễn được manual override đã được phê duyệt
+Ảnh hưởng: **chỉ WP-A2**.
+
+Mô tả: `governance/scripts/governance/validate_routing.py` so khớp **tuyệt đối** giữa
+`Primary Agent Tier` trong file task và kết quả của `routing_engine.py`. Khi T-04 soạn file định
+nghĩa cho WP-A2 với Tier C theo DEC-008, validator báo:
+
+```
+ROUTING VALIDATION: FAIL
+- docs/tasks/WP-A2-dau-noi-hang-muc-vao-pipeline.md: Tier 'C' != router B
+```
+
+Đây **không phải defect mới**. DEC-008 mục Impact đã ghi trước rằng tình huống này sẽ xảy ra và
+rằng `validate_routing.py` "cần được cập nhật ở một task riêng (MICRO-GOVDEF-001 hoặc kế tiếp) để
+chấp nhận override có ghi nhận thay vì báo lỗi khớp tuyệt đối". T-04 làm đúng phần được giao và
+không làm phần được giao cho task khác.
+
+Vì sao nó chặn WP-A2: `CLAUDE.md` mục "Every Implementation Session" điểm 9 yêu cầu
+`validate_routing.py` **PASS trước khi thực thi** một MAJOR task; `ROADMAP_SYNC_STANDARD.md` cũng
+yêu cầu chạy validator này trước roadmap sync. Vì vậy WP-A2 giữ trạng thái `BLOCKED` cho tới khi
+điều kiện được gỡ.
+
+Đường gỡ (cần chủ dự án quyết định — xem DEC-010):
+1. Cho phép mở `MICRO-GOVDEF-001` (đã mở rộng phạm vi để phủ cả `validate_routing.py`), hoặc
+2. Miễn trừ bằng văn bản, ghi vào `PROJECT/PROJECT_DECISIONS.md`.
+
+**Không được gỡ bằng cách hạ Tier WP-A2 về B** — DEC-008 cấm, và làm vậy là hạ tiêu chuẩn để
+validator xanh.
+
+Bằng chứng E1: `docs/reviews/S002-coverage-regression-check.md` mục PH-02.
 
 ### BLK-002 — Tính năng cảnh báo chưa được đặc tả
 Ảnh hưởng: T-10, và là lý do T-08 tồn tại.
@@ -373,8 +427,15 @@ Giảm thiểu triệt để: **MICRO-GOVDEF-001**.
 Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md`.
 
 ## Open Regression Items
-- None. S001 không phát hiện code nào bám theo hành vi của V2.1.1–V2.1.4 trái với V2.1.5;
-  bảy sửa đổi F1–F7 đều có dấu vết hiện thực.
+- None ở tầng mã nguồn. S001 không phát hiện code nào bám theo hành vi của V2.1.1–V2.1.4 trái với
+  V2.1.5; bảy sửa đổi F1–F7 đều có dấu vết hiện thực.
+- **PH-01 (tài liệu, không phải mã nguồn)** — bảng "Tổng hợp" của `docs/reviews/S001-audit-findings.md`
+  ghi MEDIUM 15 và Tổng 33, nhưng đếm thật trên chính danh mục được liệt kê cho **34 định danh
+  `F-xxx`** (HIGH 8 + MEDIUM 19 + LOW 7) cộng 3 `S-xxx`. Con số 33 đã được chép sang tài liệu này và
+  sang RCP-001. **Không finding nào bị rơi** — RCP-001 §2 và §6 phân đủ 34 `F-xxx` vào 15 gói, và
+  T-04 xác nhận 40/40 định danh có nơi thuộc về. T-04 **không tự sửa** con số trong biên bản audit
+  của phiên đã đóng; chờ chủ dự án quyết định cách đính chính.
+  Bằng chứng E1: `docs/reviews/S002-coverage-regression-check.md` mục PH-01.
 
 ## Recent Decisions
 - DEC-001 — Chọn profile PRODUCT
@@ -386,10 +447,22 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md`.
 - DEC-007 — RCP-001 được phê duyệt và áp dụng kèm bốn điều kiện
 - DEC-008 — Ghi đè thủ công routing của WP-A2 (Tier C, không dùng Tier B từ router)
 - DEC-009 — Quy tắc Gate 1 staleness: remediation ảnh hưởng Gate 1 bắt buộc chạy lại Gate 1
+- DEC-010 — PENDING: cách gỡ BLK-003 (xung đột giữa override DEC-008 và `validate_routing.py`)
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S002 — ROADMAP FINALIZATION / GATE FREEZE (T-04) — 2026-08-23 — Soạn và đóng băng Ready Gate +
+  Completion Gate đầy đủ cho toàn bộ 15 work package của RCP-001 (**125 REQUIRED check**), cộng file
+  định nghĩa cho chính T-04 (12 REQUIRED check). Chính thức hoá DEC-009 thành `CHECK-B1-02`
+  (REQUIRED) của WP-B1. Bảo toàn override DEC-008 cho WP-A2 (Tier C / Opus / high) kèm giá trị
+  router thô. Bảo toàn đủ 8 trường provenance của T-06A cũ trong WP-A1. Tách rõ trách nhiệm đo lường
+  (WP-A5) khỏi trách nhiệm chính sách verdict (WP-B1). Đối chiếu độ phủ bằng script: 40/40 định danh
+  finding có nơi thuộc về. Phát hiện PH-01 (sai số đếm trong tóm tắt S001) và PH-02 → **BLK-003**.
+  Không sửa `src/`, `webapp/`, `tests/`, `docs/spec/`, `governance/`. Không bắt đầu work package nào.
+  Kết luận: **T-04 DONE — PASS WITH FINDINGS**.
+  Biên bản: `docs/sessions/S002-t04-gate-freeze.md`.
+  Đối chiếu: `docs/reviews/S002-coverage-regression-check.md`.
 - RCP-001 — ROADMAP CHANGE APPLIED — 2026-08-23 — Chủ dự án phê duyệt RCP-001 kèm bốn điều kiện
   (cấu trúc 15 work package; phân lớp A/B/C/D với quy tắc Gate 1 staleness cho F-017; bỏ T-06A,
   hấp thụ vào WP-A1; ghi đè routing của WP-A2 lên Tier C). Bảng roadmap chuẩn được cập nhật từ
@@ -435,6 +508,12 @@ Cảnh báo quan trọng về ý nghĩa của các validator governance: chúng 
 đọc các dòng PASS đó như bằng chứng chất lượng dự án.
 
 ## Routing sơ bộ cho task chưa có file định nghĩa
+
+**Cập nhật S002:** mục này không còn là nguồn routing cho 15 work package — cả 15 đã có file định
+nghĩa đầy đủ dưới `docs/tasks/`, và file task là nguồn routing chính thức theo
+`ROADMAP_SYNC_STANDARD.md`. Các giá trị dưới đây được **giữ lại làm dấu vết lịch sử** và đã được
+T-04 xác minh lại bằng `routing_engine.py` (E1): 15/15 khớp, ngoại lệ duy nhất là override DEC-008
+của WP-A2. Task còn lại chưa có file định nghĩa (T-05…T-11) vẫn dùng mục này.
 
 Ghi lại để lộ trình có bằng chứng routing, sẽ soạn thành file task đầy đủ và đóng băng tại T-04.
 Ký hiệu: D/R/B/A/X = Difficulty, Risk, Blast Radius, Ambiguity, Cross-system.
@@ -490,13 +569,33 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 ## Next Session
 
 Recommended Session:
-S002 — thực hiện T-04: soạn Ready Gate + Completion Gate đầy đủ cho 15 work package của RCP-001
-theo `governance/templates/TASK_DEFINITION_TEMPLATE.md`, rồi đóng băng trước khi work package
-đầu tiên bắt đầu.
+S003 — thực thi **một** work package đã READY. Khuyến nghị theo hai tiêu chí khác nhau:
+
+- **Theo đường găng:** `WP-A3` — Sửa vòng đời trạng thái thị trường và ladder khẩn cấp (D/Fable/max).
+  Đây là mắt xích đầu tiên của T-04 → WP-A3 → WP-A4 → WP-A6 → GATE-A → T-06, và mọi gói lớp A khác
+  đều chờ nó ở mức độ nào đó.
+- **Theo an toàn dữ liệu thật:** `WP-C1` — Kiểm chứng ba nghi vấn ở app web (C/Opus/xhigh). Nếu chủ
+  dự án đang dùng app để ghi giao dịch tiền thật, ba nghi vấn này — nếu đúng — đang làm sai sổ vốn
+  ngay lúc này. Gói này độc lập hoàn toàn và chạy song song được với lớp A.
+
+Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
+`WP-A1`, `WP-A3`, `WP-C1`, `WP-D1`, `WP-D2`.
+
+Task đang BLOCKED và lý do:
+- `WP-A2` — BLK-003 (validator routing chưa biểu diễn được override DEC-008)
+- `WP-C2` — DEC-005 còn PENDING (thuộc T-05, thẩm quyền chủ dự án)
+- `T-03` — chờ WP-C1 (giữ nguyên, không hạ Completion Gate)
+
+Cần chủ dự án quyết định:
+1. **DEC-010** — cách gỡ BLK-003 (mở MICRO-GOVDEF-001, hay miễn trừ có ghi nhận).
+2. **DEC-005** — phạm vi công cụ trước verdict (T-05). Không chặn lớp A.
+3. **PH-01** — cách đính chính số đếm finding trong biên bản S001.
+4. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
+   Không gói nào trong 15 gói cần nó, nên chưa gấp.
 
 Purpose:
-Biến routing metadata và dependency graph hiện có (bảng roadmap chuẩn + RCP-001) thành file task
-đầy đủ, có Ready Gate, Completion Gate, Evidence requirements và Exit Criteria cho từng gói.
+Bắt đầu thực thi chương trình remediation với Completion Gate đã được đóng băng từ trước, để tiêu
+chí không bị uốn theo kết quả.
 
 KHÔNG tự mở — chủ dự án sẽ ra chỉ thị riêng.
 
@@ -504,12 +603,14 @@ Files to read first:
 1. `CLAUDE.md`
 2. `PROJECT/PROJECT_PROFILE.md`
 3. `PROJECT/PROJECT_PROGRESS.md` (file này)
-4. `PROJECT/PROJECT_DECISIONS.md` (đặc biệt DEC-007, DEC-008, DEC-009)
-5. `PROJECT/ROADMAP_CHANGE_PROPOSAL_001.md`
-6. `docs/reviews/S001-compliance-matrix.md` và `S001-audit-findings.md`
-7. `docs/reviews/GOVDEF-001-routing-engine-boundary.md`
-8. `governance/templates/TASK_DEFINITION_TEMPLATE.md`
+4. `PROJECT/PROJECT_DECISIONS.md`
+5. File định nghĩa của work package được chọn, dưới `docs/tasks/`
+6. `docs/sessions/S002-t04-gate-freeze.md`
+7. `docs/reviews/S001-audit-findings.md` — phần finding mà gói đó đóng
+8. `docs/spec/` — các điều khoản được viện dẫn trong Completion Gate của gói
 
-Nhắc trước khi mở T-04/S002:
-Không sửa `src/`, `webapp/`, `tests/`, `docs/spec/` cho tới khi work package đầu tiên chính thức
-READY và bắt đầu thực thi. T-04 chỉ soạn kế hoạch và đóng băng gate, không remediation.
+Nhắc trước khi mở S003:
+Completion Gate của cả 15 gói đã **đóng băng** ngày 2026-08-23. Không được xoá hay làm yếu bất kỳ
+REQUIRED check nào để gói đi qua. Nếu một check hoá ra sai hoặc bất khả thi, dùng khối
+`COMPLETION GATE CHANGE PROPOSAL` theo `TASK_COMPLETION_GATE_STANDARD.md` và trình chủ dự án —
+không sửa im lặng.

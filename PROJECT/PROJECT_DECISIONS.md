@@ -333,3 +333,76 @@ Impact:
 
 Can Revisit After:
 Khi WP-B1 thực thi và xác định rõ F-017 có chạm Gate 1 hay không.
+
+---
+
+## DEC-010 — PENDING: cách gỡ BLK-003 (override DEC-008 và `validate_routing.py`)
+
+Date:
+2026-08-23 (S002 / T-04) — **CHƯA CHỐT, chờ chủ dự án quyết định**
+
+Task:
+T-04 — Chốt lộ trình và đóng băng tiêu chí
+
+Vấn đề:
+
+T-04 soạn file định nghĩa đầy đủ cho WP-A2 với `Primary Agent Tier: C` theo **DEC-008**. Kể từ khi
+file đó tồn tại với `Task Mode: MAJOR`, `governance/scripts/governance/validate_routing.py` — vốn so
+khớp **tuyệt đối** giữa Tier trong file và kết quả `routing_engine.py` — báo:
+
+```
+ROUTING VALIDATION: FAIL
+- docs/tasks/WP-A2-dau-noi-hang-muc-vao-pipeline.md: Tier 'C' != router B
+```
+
+Đây là **lỗi duy nhất**; 14 work package còn lại cộng T-04 đều khớp router tuyệt đối.
+
+RULE CONFLICT
+
+Higher-priority rule:
+DEC-008 (quyết định của chủ dự án, đã phê duyệt) — WP-A2 dùng Tier C/Opus, và file task phải ghi rõ
+`Manual Override: YES — DEC-008` bên cạnh giá trị router thô.
+
+Lower-priority rule:
+`governance/core/ROADMAP_SYNC_STANDARD.md` — "A Tier/Effort value that does not match the
+deterministic router is invalid"; và `CLAUDE.md` điểm 9 — "require `validate_routing.py` to PASS
+before execution".
+
+Why both cannot be satisfied:
+`validate_routing.py` không có cách biểu diễn một override **có ghi nhận**. Nó chỉ so khớp chuỗi.
+Vì `routing_engine.py` có defect biên dấu phẩy động (GOVDEF-001) khiến nó trả Tier B cho một điểm
+số hiển thị đúng `2.0`, việc tuân thủ validator đồng nghĩa với việc **vi phạm DEC-008 và vi phạm
+chính bảng routing trong `AGENT_CAPABILITY_MATRIX.md`**.
+
+Risk:
+Trung bình, có giới hạn. Hệ quả là **một work package (WP-A2) không thể chuyển sang thực thi**, chứ
+không phải sai kết quả tính toán nghiệp vụ. WP-A2 không nằm trên đường găng tới verdict.
+
+Đã được dự đoán trước:
+DEC-008 mục Impact đã ghi nguyên văn rằng tình huống này sẽ xảy ra và rằng `validate_routing.py`
+"cần được cập nhật ở một task riêng (MICRO-GOVDEF-001 hoặc kế tiếp) để chấp nhận override có ghi
+nhận thay vì báo lỗi khớp tuyệt đối". Vì vậy đây **không phải xung đột mới**, mà là điểm mà DEC-008
+đã hoãn lại và bây giờ đến hạn.
+
+Vì sao T-04 không tự xử lý:
+Chủ dự án chỉ thị tường minh cho S002 rằng T-04 không sửa `routing_engine.py`, và DEC-008 giao việc
+sửa validator cho một task riêng. T-04 làm đúng phần được giao (ghi override vào file task) và dừng
+tại ranh giới đó.
+
+Các phương án:
+- **PA-1 (khuyến nghị)** — cho phép mở `MICRO-GOVDEF-001` với phạm vi đã được làm rõ: sửa
+  `routing_engine.py` (so sánh biên tổng quát, không hard-code ngoại lệ) **và** cập nhật
+  `validate_routing.py` để chấp nhận override có ghi nhận. Sau khi sửa, chạy lại routing cho WP-A2
+  để xác nhận nó tự nhiên rơi vào Tier C mà không cần override.
+- **PA-2** — miễn trừ bằng văn bản: chủ dự án ghi nhận rằng `validate_routing.py` được phép FAIL cho
+  đúng dòng WP-A2, và WP-A2 vẫn được mở. Rẻ hơn nhưng để lại một validator đỏ thường trực, làm mất
+  giá trị tín hiệu của chính validator đó.
+- **PA-3** — hạ Tier WP-A2 về B để validator xanh. **Bị DEC-008 cấm** và là hạ tiêu chuẩn để công
+  cụ hài lòng. Nêu ra để loại bỏ tường minh, không phải để cân nhắc.
+
+Required decision:
+Chủ dự án chọn PA-1 hoặc PA-2. Cho tới lúc đó **WP-A2 = BLOCKED** (BLK-003).
+
+Can Revisit After:
+Ngay khi chủ dự án quyết định. Nếu chọn PA-1, DEC-008 có thể được đóng lại hoàn toàn sau khi router
+được sửa.
