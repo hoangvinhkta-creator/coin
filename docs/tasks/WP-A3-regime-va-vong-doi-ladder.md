@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-VERIFYING
+DONE
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -293,10 +293,13 @@ unlock, ladder, cooldown, limit và execution đều không đổi. Không đư�
 Đây là mệnh đề số 10 của Impl Plan §7 đã bị BÁC BỎ ở S001.
 
 Kết quả: `test_check_a3_03_f1_stressed_no_effect_on_five_surfaces` — chạy engine HAI lần trên
-cùng dataset 18 ngày (có smart ladder, cooldown block, crash, daily-limit block, recovery,
-opportunity ladder): run A nhãn chuẩn; run B ép `_derive_label` trả STRESSED cho toàn bộ thời
+cùng dataset 18 ngày: run A nhãn chuẩn; run B ép `_derive_label` trả STRESSED cho toàn bộ thời
 gian nền NORMAL (phân kỳ nhãn tối đa; test assert hai run có nhãn khác nhau thật và trạng thái
-nền identical — counterfactual "chỉ khác nhãn" đúng nghĩa đen). Khẳng định bằng chạy thật:
+nền identical — counterfactual "chỉ khác nhãn" đúng nghĩa đen). Sau follow-up E2 (F-E2-01),
+kịch bản TỰ KHẲNG ĐỊNH bằng assert tiền đề rằng cả năm bề mặt có sự kiện thật trong run A:
+fill SMART (S0 + S1 sau khi cooldown giữ TRIGGERED), fill CRASH (C0, và C1 sau một lần
+DAILY_LIMIT_BLOCK thật), fill OPPORTUNITY (O0), ≥1 sự kiện DAILY_LIMIT_BLOCK, đủ ba loại
+ladder — phép so sánh không còn khả năng so hai tập rỗng. Khẳng định bằng chạy thật:
 execution (purchases identical từng field trừ trường nhãn; eth_total identical), ladder (mọi
 ladder/zone identical), unlock (ledger RESERVE/DEPLOY/RELEASE ba pool identical từng entry),
 cooldown (tổng override bằng nhau; timestamp mọi fill identical), limit (counters
@@ -424,8 +427,10 @@ ca chuyển Opportunity ladder sang Crash ladder. Mệnh đề 3 của Impl Plan
 LUẬN ĐƯỢC**; gói này phải đưa nó về kết luận.
 
 Kết quả: `test_check_a3_07_accounting_invariants_multi_transition` (chuỗi CRASH → RECOVERY →
-re-enter CRASH → RECOVERY → NORMAL qua HAI tháng, có fill giữa chừng, có cancel Opportunity
-ladder tại crash entry — đúng ca "chuyển Opportunity sang Crash") + `test_check_a3_02_long_run_
+re-enter CRASH → RECOVERY → NORMAL, có fill S1+C1 cùng nến giữa chừng; sau follow-up E2, kịch
+bản có Opportunity ladder tồn tại TRƯỚC crash và assert tiền đề rằng release reason
+`CRASH_ENTRY` THẬT SỰ xảy ra — đúng ca "chuyển Opportunity sang Crash" ngay trong test này,
+ngoài độ phủ sẵn có ở test long-run) + `test_check_a3_02_long_run_
 no_orphan_reserve` (4 năm dữ liệu tổng hợp): replay TỪNG entry ledger của cả ba pool khớp số dư
 `available/reserved/deployed_after` ghi tại entry (tức bất biến giữ tại MỌI thời điểm có dịch
 chuyển vốn, không chỉ cuối run), không số dư âm, tổng ba pool == tổng contribution (không
@@ -459,7 +464,11 @@ không giải thích được. Sai lệch không giải thích được là dấ
 Kết quả: cùng dataset tổng hợp (SYNTH_SEED 20260822, sinh một lần dùng chung), cùng config,
 cùng cửa sổ 2019-01→2026-06; BEFORE đo trên HEAD 5645a74 TRƯỚC khi sửa. Bảng so sánh đầy đủ
 14 nhóm metric với giải thích từng dòng bằng điều khoản spec: biên bản
-`docs/sessions/S003-wp-a3-regime-ladder.md` mục "Impact BEFORE → AFTER". Tóm tắt: mọi sai lệch
+`docs/sessions/S003-wp-a3-regime-ladder.md` mục "Impact BEFORE → AFTER". Tái lập được từ repo
+(đóng F-E2-02): công cụ đo commit tại `tests/wp_a3_impact_tool.py`; chạy lại bằng công cụ đã
+commit cho kết quả **khớp HOÀN TOÀN** cả hai bản đo (BEFORE qua git worktree `5645a74` với
+`--src`, provenance `code_path` ghi trong JSON output). Reviewer E2 cũng tự spot-check trên
+cửa sổ/dataset riêng: mọi chiều hướng khớp giải thích (mục E của bản review). Tóm tắt: mọi sai lệch
 quy về đúng hai requirement được khôi phục — [F5] ST §14 (snapshot 99.30→111.13; fill CRASH
 24.77→26.82; ít Opportunity ladder song song trong crash hơn 20→18 vì snapshot claim trọn phần
 unlocked) và ST §18.3 + [F1] (release RECOVERY_END 74.54→84.31, chạy cho mọi kết cục recovery-
@@ -508,7 +517,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E2
@@ -518,20 +527,44 @@ Yêu cầu: phiên reviewer độc lập theo "Solo Independent Review Procedure
 repo, chạy lại CHECK-A3-01, A3-03, A3-07 và tự tìm thêm ít nhất một kịch bản khoá vốn khác. Lưu tại
 `docs/reviews/` theo `governance/templates/E2_INDEPENDENT_REVIEW_TEMPLATE.md`.
 
+Kết quả: `docs/reviews/E2-WP-A3-regime-ladder.md` (Review ID E2-WP-A3-001) — phiên reviewer
+ĐỘC LẬP (không chung ngữ cảnh với phiên implementer), bắt đầu từ commit `347ba7c`, đọc gate
+đóng băng, xem diff `5645a74..347ba7c`, coi mọi PASS của implementer là narrative chưa tin cậy.
+Kết luận của reviewer: **E2 PASS**.
+- CHECK-A3-01/A3-03/A3-07: reviewer tự chạy lại test VÀ kiểm chứng chéo bằng kịch bản/validator
+  RIÊNG (kịch bản khác hẳn: entry qua vế Return24H với sập giá thật, recovery-end vào STRESSED
+  qua r24; counterfactual NGƯỢC chiều — ép nhãn không-bao-giờ-STRESSED; replay ledger trên cửa
+  sổ khác 2020-06→2022-12), kèm đối chứng trên code cũ `5645a74`: cùng kịch bản riêng của
+  reviewer, code cũ kẹt SMART 18.7 / release RECOVERY_END = 0 — khoá vốn thật trước fix.
+- Kịch bản khoá vốn tự tìm: 4 kịch bản mới (ACTION_PENDING đúng lúc recovery-end; SUSPENDED
+  quá 7 ngày; bullish invalidation với zone TRIGGERED bị cooldown chặn; TTL/MISSED trong CRASH
+  với p2p off) + 1 long-run cửa sổ khác — **không tìm thấy đường khoá vốn mới nào**.
+- 4 mismatch (M1–M4) về độ chính xác narrative/tái lập, gốc từ 2 finding hạ tầng test
+  (F-E2-01: harness dùng `asi8//10**9` sai đơn vị trên pandas 3 → spec giá theo ngày bất động
+  âm thầm; F-E2-02: script đo impact chưa commit) — không mismatch nào lật kết luận check nào.
+Follow-up của reviewer đã được thực hiện NGAY trong S003 (sau review, trước khi đóng task):
+harness sửa epoch-seconds đúng đơn vị + assert tự kiểm chống tái diễn; kịch bản a3_03/a3_07
+được làm giàu và TỰ KHẲNG ĐỊNH tiền đề (daily-limit block thật, fill CRASH/OPPORTUNITY thật,
+ca cancel Opportunity tại crash entry thật); công cụ đo impact commit tại
+`tests/wp_a3_impact_tool.py` và tái lập HOÀN TOÀN cả hai bản đo BEFORE/AFTER (BEFORE qua git
+worktree `5645a74`, provenance `code_path` ghi trong JSON); 18/18 + toàn suite chạy lại xanh.
+
 Executed By:
-...
+Reviewer session E2-WP-A3-001 (độc lập); follow-up: S003 agent
 
 Timestamp:
-...
+2026-08-23
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-A3-10)
-- [ ] Mọi sai lệch kết quả mô phỏng được định lượng và quy về một điều khoản spec
-- [ ] Quyết định thiết kế (tách nhãn dẫn xuất hay phương án tương đương) được ghi lại
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-009 được cập nhật trạng thái
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [x] 100% REQUIRED checks PASS — 10/10 (bảng evidence ở trên)
+- [x] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-A3-10 — reviewer độc lập E2 PASS)
+- [x] Mọi sai lệch kết quả mô phỏng được định lượng và quy về một điều khoản spec (CHECK-A3-08)
+- [x] Quyết định thiết kế (tách nhãn dẫn xuất) được ghi lại — `docs/CONVENTIONS.md` #14
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-009 được cập nhật trạng thái (CLOSED)
+- [x] Session handoff được viết — `docs/sessions/S003-wp-a3-regime-ladder.md`
+- [x] Không hạ REQUIRED check nào để đạt DONE — gate giữ nguyên văn như khi đóng băng;
+      một lỗi gõ vô tình vào văn bản yêu cầu CHECK-A3-08 trong lúc điền evidence đã được
+      phát hiện và khôi phục nguyên văn ngay trong phiên
 
 ## Escalation Triggers
 

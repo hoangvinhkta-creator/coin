@@ -19,25 +19,26 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — S003 mở WP-A3 (Ready Gate PASS, chuyển IN_PROGRESS)
+2026-08-23 — S003 hoàn tất WP-A3: DONE (10/10 REQUIRED PASS; E2 PASS; đóng F-001/F-021/F-022/F-030)
 
 Overall Status:
 IN_PROGRESS
 
 Current Phase:
-Phase 2 — Lớp A (bắt buộc sửa trước official run). WP-A3 là gói đầu tiên được thực thi.
+Phase 2 — Lớp A (bắt buộc sửa trước official run). WP-A3 (mắt xích đầu đường găng) đã DONE;
+WP-A4 hết bị chặn bởi WP-A3.
 
 Current Task:
-WP-A3 — Sửa vòng đời trạng thái thị trường và ladder khẩn cấp (S003)
+Không có task nào đang thực thi. WP-A3 đã DONE tại S003.
 
 Current Task Mode:
-MAJOR
+MAJOR (phiên vừa hoàn tất; không task nào đang IN_PROGRESS)
 
 Next Recommended Task:
-Chủ dự án chọn một trong các task đã ở trạng thái READY: **WP-A3** (khuyến nghị — mắt xích đầu
-tiên của đường găng), WP-A1, **WP-A2** (nay READY, Tier C tự nhiên sau MICRO-GOVDEF-001), WP-C1
-(khuyến nghị vì lý do an toàn dữ liệu thật), WP-D1, WP-D2.
-KHÔNG tự mở — agent dừng sau MICRO-GOVDEF-001 theo chỉ thị của chủ dự án.
+Chủ dự án chọn một trong các task đã ở trạng thái READY: **WP-A4** (khuyến nghị — mắt xích kế
+tiếp trên đường găng T-04 → WP-A3 ✅ → WP-A4 → WP-A6 → GATE-A → T-06; tuần tự sau WP-A3 vì cùng
+sửa `engine.py`), WP-A1, WP-A2, WP-C1 (khuyến nghị vì lý do an toàn dữ liệu thật), WP-D1, WP-D2.
+KHÔNG tự mở — agent dừng sau WP-A3 theo chỉ thị của chủ dự án (S003 mục 20).
 
 ## Overall Roadmap
 
@@ -71,8 +72,8 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
 | READY | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
 | READY | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04 (DONE). Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier C nay route tự nhiên sau MICRO-GOVDEF-001 (trước đó là ghi đè theo DEC-008) — xem GOVDEF-001 mục Resolution |
-| VERIFYING | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. Song song với WP-A1, WP-A2, WP-C1 (đóng F-001, F-021, F-022, F-030) |
-| PLANNED | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (đóng F-023, F-025, F-032) |
+| DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
+| READY | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (DONE tại S003) — nay READY (đóng F-023, F-025, F-032) |
 | PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3 (vốn không bị khoá thì số đo mới đúng) — đóng phần đo lường của F-002, và F-016 |
 | PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4 (đóng F-018, F-019) |
 | PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Sau T-05 và **GATE-A** (WP-A1…WP-A6 đều DONE). Cần máy/VPS có mạng Binance — BLK-001 chặn đúng tại đây |
@@ -141,20 +142,24 @@ Task Mode:
 MAJOR
 
 Status:
-VERIFYING (implementation + toàn bộ E1 hoàn tất; đang chờ đóng E2 — CHECK-A3-10)
+DONE — 10/10 REQUIRED PASS (E1 toàn bộ; E2 cho CHECK-A3-10 với kết luận reviewer độc lập
+**E2 PASS**); Exit Criteria 7/7.
 
 File định nghĩa:
 `docs/tasks/WP-A3-regime-va-vong-doi-ladder.md`
 
 Required Gate Progress:
-9 / 10 PASS (E1); CHECK-A3-10 (E2 độc lập) đang thực hiện. Chi tiết evidence trong file task
-và biên bản `docs/sessions/S003-wp-a3-regime-ladder.md`.
+10 / 10 PASS. Chi tiết evidence trong file task và biên bản
+`docs/sessions/S003-wp-a3-regime-ladder.md`; bản E2: `docs/reviews/E2-WP-A3-regime-ladder.md`.
 
-Kết quả chính của S003 (tới thời điểm snapshot):
+Kết quả chính của S003:
 - Baseline E1 tái hiện đủ F-001, F-021, F-022, F-030 ở tầng engine/regime TRƯỚC khi sửa.
 - Regression test viết TRƯỚC fix: 12 FAIL đúng kỳ vọng → sau fix 18/18 PASS.
 - Toàn bộ suite: **87 passed, 0 failed, 0 skipped** — không test cũ nào bị sửa/nới lỏng.
-- Impact BEFORE/AFTER trên cùng dataset synth: mọi sai lệch truy về [F5] ST §14 và ST §18.3+[F1].
+- Impact BEFORE/AFTER trên cùng dataset synth: mọi sai lệch truy về [F5] ST §14 và ST §18.3+[F1];
+  công cụ đo commit tại `tests/wp_a3_impact_tool.py`, tái lập HOÀN TOÀN.
+- E2 độc lập PASS; 2 finding hạ tầng test của reviewer (F-E2-01/F-E2-02) đã xử lý ngay trong
+  phiên; 4 kịch bản khoá vốn reviewer tự thử: không đường khoá vốn mới.
 - Phát hiện mới ngoài scope: **PH-03** → RSK-010 (không sửa, chờ chủ dự án).
 
 Primary Agent Tier:
@@ -436,10 +441,11 @@ tạo được ladder mới và cash ratio tăng giả tạo — có thể bóp 
 Đây đồng thời là vi phạm [F1] (STRESSED phải không có hiệu ứng execution).
 Xem finding F-001. Giảm thiểu: **WP-A3** (RCP-001).
 
-**Cập nhật S003 (2026-08-23):** WP-A3 đã tách trạng thái nền khỏi nhãn STRESSED
+**Cập nhật S003 (2026-08-23): CLOSED.** WP-A3 (DONE) đã tách trạng thái nền khỏi nhãn STRESSED
 (`RegimeTracker.state`/`.label`, CONVENTIONS #14) và nhánh dọn chạy cho MỌI kết cục kết thúc
 Recovery; bằng chứng E1: baseline tái hiện lock 27.2 đơn vị trước fix → 0 sau fix, chuỗi test
-CHECK-A3-01/02, suite 87 PASS. Trạng thái risk: **đóng khi WP-A3 DONE** (chờ E2 CHECK-A3-10).
+CHECK-A3-01/02, suite 87 PASS; E2 độc lập PASS — reviewer tự dựng kịch bản khác (kẹt 18.7 trên
+code cũ, release đủ trên code mới) và không tìm thấy đường khoá vốn mới sau 4 kịch bản tự nghĩ.
 
 ### RSK-010 — Nghi vấn `smart_reservable` trừ `deployed` luỹ kế XUYÊN THÁNG làm Smart ladder gần như không được tạo lại từ tháng 2 (mức: cao — NGHI VẤN, chưa kết luận) — PH-03, S003
 Quan sát E1 tại S003 (impact run 90 tháng dữ liệu tổng hợp, cả TRƯỚC lẫn SAU fix WP-A3 — tức
@@ -509,6 +515,30 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S003 — WP-A3: REGIME & VÒNG ĐỜI CRASH LADDER — 2026-08-23 — Gói đầu tiên của lớp A và là gói
+  duy nhất lớp A làm đổi kết quả mô phỏng. Ready Gate xác nhận lại (T-04 DONE, routing D/Fable/max
+  tự nhiên, validator PASS). Baseline E1 tái hiện đủ 4 finding TRƯỚC khi sửa (F-001: kẹt 27.2
+  SMART vĩnh viễn sau CRASH→RECOVERY→STRESSED; F-021: snapshot [F5] 34 thay vì 36; F-030: mọi
+  crash zone dán nhãn OPPORTUNITY dù 30/34 vốn SMART; F-022: thoát CRASH sau 49h toàn None).
+  Test-first: 18 test mới, 12 FAIL đúng kỳ vọng trước fix. Remediation: tách
+  `RegimeTracker.state`/`.label` (CONVENTIONS #14 — [F1] bảo đảm bằng cấu trúc), None không
+  được coi là bằng chứng transition (CONVENTIONS #15), snapshot [F5] đúng nghĩa đen + daily
+  limit cưỡng chế ở khâu triển khai với `DAILY_LIMIT_BLOCK` (CONVENTIONS #4/#5), pool label
+  theo đa số nguồn vốn + `zone_order_key` bổ sung vế "crash sau ladder thường" (CONVENTIONS
+  #16). Chỉ chạm `regime.py`, `engine.py`, `tests/`, `docs/CONVENTIONS.md` — đúng Scope Lock,
+  không chạm `capital.py`/`score.py`/`webapp/`/`docs/spec/`. Suite 87/87 PASS, không test cũ
+  nào bị sửa/nới lỏng. Impact BEFORE/AFTER cùng seed/dataset: mọi sai lệch quy về [F5] ST §14
+  và ST §18.3+[F1]; nhãn label_transitions identical; công cụ đo commit tại
+  `tests/wp_a3_impact_tool.py` (tái lập HOÀN TOÀN, kể cả BEFORE qua git worktree). E2 độc lập:
+  **E2 PASS** (`docs/reviews/E2-WP-A3-regime-ladder.md`) — reviewer tự dựng kịch bản khác chứng
+  minh khoá vốn trước fix (kẹt 18.7, release 0) và giải phóng đủ sau fix; 4 kịch bản khoá vốn
+  tự nghĩ + long-run: không đường khoá vốn mới; 2 finding hạ tầng test (F-E2-01 đơn vị
+  datetime64 trong harness, F-E2-02 script đo chưa commit) được xử lý ngay trong phiên và chạy
+  lại xanh. Phát hiện mới ngoài scope: PH-03 → RSK-010 (nghi vấn `smart_reservable` trừ
+  deployed xuyên tháng — chờ chủ dự án). WP-A4 chuyển PLANNED → READY. BLK-001 giữ nguyên;
+  không official run, không verdict; số liệu synthetic chỉ phục vụ verification (DEC-003).
+  Kết luận: **WP-A3 DONE — 10/10 REQUIRED PASS, E2 PASS**.
+  Biên bản: `docs/sessions/S003-wp-a3-regime-ladder.md`.
 - MICRO-GOVDEF-001 — SỬA BOUNDARY DEFECT + OVERRIDE MECHANISM — 2026-08-23 — Chủ dự án phê duyệt
   PA-1 cho DEC-010. Sửa tổng quát `routing_engine.py` (làm tròn `model_score`/`effort_score` về
   cùng độ chính xác hiển thị **trước khi** so sánh biên Tier/Effort — không epsilon tuỳ tiện, không
@@ -640,17 +670,18 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 ## Next Session
 
 Recommended Session:
-S003 — thực thi **một** work package đã READY. Khuyến nghị theo hai tiêu chí khác nhau:
+S004 — thực thi **một** work package đã READY. Khuyến nghị theo hai tiêu chí khác nhau:
 
-- **Theo đường găng:** `WP-A3` — Sửa vòng đời trạng thái thị trường và ladder khẩn cấp (D/Fable/max).
-  Đây là mắt xích đầu tiên của T-04 → WP-A3 → WP-A4 → WP-A6 → GATE-A → T-06, và mọi gói lớp A khác
-  đều chờ nó ở mức độ nào đó.
+- **Theo đường găng:** `WP-A4` — Xử lý đúng khi dữ liệu thiếu hoặc hỏng (C/Opus/xhigh). Mắt xích
+  kế tiếp của T-04 → WP-A3 ✅ → WP-A4 → WP-A6 → GATE-A → T-06. Tuần tự sau WP-A3 vì cùng sửa
+  `engine.py` (nay WP-A3 đã DONE nên hết ràng buộc); hành vi dữ liệu xấu sẽ khoá vào vòng đời
+  regime đã sửa (CONVENTIONS #15 là điểm nối trực tiếp).
 - **Theo an toàn dữ liệu thật:** `WP-C1` — Kiểm chứng ba nghi vấn ở app web (C/Opus/xhigh). Nếu chủ
   dự án đang dùng app để ghi giao dịch tiền thật, ba nghi vấn này — nếu đúng — đang làm sai sổ vốn
   ngay lúc này. Gói này độc lập hoàn toàn và chạy song song được với lớp A.
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
-`WP-A1`, `WP-A2` (mới, sau MICRO-GOVDEF-001), `WP-A3`, `WP-C1`, `WP-D1`, `WP-D2`.
+`WP-A1`, `WP-A2`, `WP-A4` (mới, sau WP-A3), `WP-C1`, `WP-D1`, `WP-D2`.
 
 Task đang BLOCKED và lý do:
 - `WP-C2` — DEC-005 còn PENDING (thuộc T-05, thẩm quyền chủ dự án)
@@ -659,12 +690,14 @@ Task đang BLOCKED và lý do:
 Cần chủ dự án quyết định:
 1. **DEC-005** — phạm vi công cụ trước verdict (T-05). Không chặn lớp A.
 2. **PH-01** — cách đính chính số đếm finding trong biên bản S001.
-3. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
+3. **PH-03 / RSK-010** (mới, S003) — nghi vấn `smart_reservable` trừ deployed xuyên tháng:
+   gắn định danh finding chính thức và giao WP nào, hay xác nhận là hành vi chủ đích.
+4. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
    Không gói nào trong 15 gói cần nó, nên chưa gấp.
 
 Purpose:
-Bắt đầu thực thi chương trình remediation với Completion Gate đã được đóng băng từ trước, để tiêu
-chí không bị uốn theo kết quả.
+Tiếp tục chương trình remediation lớp A trên đường găng tới official run, với Completion Gate đã
+đóng băng từ T-04.
 
 KHÔNG tự mở — chủ dự án sẽ ra chỉ thị riêng.
 
@@ -674,9 +707,10 @@ Files to read first:
 3. `PROJECT/PROJECT_PROGRESS.md` (file này)
 4. `PROJECT/PROJECT_DECISIONS.md`
 5. File định nghĩa của work package được chọn, dưới `docs/tasks/`
-6. `docs/sessions/S002-t04-gate-freeze.md`
-7. `docs/reviews/S001-audit-findings.md` — phần finding mà gói đó đóng
-8. `docs/spec/` — các điều khoản được viện dẫn trong Completion Gate của gói
+6. `docs/sessions/S003-wp-a3-regime-ladder.md` (phiên gần nhất; ngữ nghĩa regime/ladder mới)
+7. `docs/CONVENTIONS.md` #14–#16 (nếu gói chạm engine/regime)
+8. `docs/reviews/S001-audit-findings.md` — phần finding mà gói đó đóng
+9. `docs/spec/` — các điều khoản được viện dẫn trong Completion Gate của gói
 
 Nhắc trước khi mở S003:
 Completion Gate của cả 15 gói đã **đóng băng** ngày 2026-08-23. Không được xoá hay làm yếu bất kỳ

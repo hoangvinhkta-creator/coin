@@ -401,7 +401,9 @@ def test_check_a3_03_f1_stressed_no_effect_on_five_surfaces(monkeypatch):
         {"oscore": 55.0},                                    # Day 2: smart ladder + S0 fill
         {"low_dip": 94.0},                                   # Day 3: S1 trigger, đang cooldown
         {},                                                  # Day 4: cooldown hết -> S1 fill
-        {"oscore": 80.0, "return7": -0.16, "price": 100.5},  # Day 5: CRASH
+        # Day 5: CRASH; low 91 xuyên cả C1 -> C0 tạo action (opp 3.77 <= headroom 4) rồi C1
+        # bị DAILY_LIMIT_BLOCK (opp 2.23 > headroom còn lại 0.23); C1 fill lại Day 7 sau cooldown
+        {"oscore": 80.0, "return7": -0.16, "price": 100.5, "low_dip": 91.0},
         {"oscore": 50.0, "return7": -0.05},
         {},
         {},                                                  # Day 8: RECOVERY
@@ -410,8 +412,8 @@ def test_check_a3_03_f1_stressed_no_effect_on_five_surfaces(monkeypatch):
         {"return7": -0.11},                                  # Day 11: hết recovery -> STRESSED
         {}, {},
         {"return7": -0.02},                                  # Day 14: hết stress -> NORMAL
-        {"oscore": 70.0},                                    # Day 15: opportunity ladder mới
-        {"price": 93.0},                                     # Day 16: O1 confirm bằng CLOSE
+        {"oscore": 85.0},                                    # Day 15: opportunity ladder + O0 fill
+        {"price": 93.0},                                     # Day 16: r24 -7% -> nhãn phân kỳ tiếp
         {}, {},
     ]
 
@@ -428,13 +430,22 @@ def test_check_a3_03_f1_stressed_no_effect_on_five_surfaces(monkeypatch):
     res_a, rec_a = run(False)
     res_b, rec_b = run(True)
 
-    # tiền đề: nhãn thực sự khác nhau giữa hai run (counterfactual có nghĩa)
+    # tiền đề 1: nhãn thực sự khác nhau giữa hai run (counterfactual có nghĩa)
     labels_a = {b for _, _, b in rec_a.transitions}
     labels_b = {b for _, _, b in rec_b.transitions}
     assert ("STRESSED" in labels_b) and (labels_a != labels_b or
                                          rec_a.transitions != rec_b.transitions)
     # trạng thái nền giống hệt nhau
     assert rec_a.state_transitions == rec_b.state_transitions
+    # tiền đề 2 (chống kịch bản degenerate — bài học F-E2-01): cả năm bề mặt phải có
+    # SỰ KIỆN THẬT trong run A để phép so sánh không rỗng
+    assert any(p["source"] == "SMART" for p in res_a.purchases)          # unlock/ladder/fill
+    assert any(p["source"] == "CRASH" for p in res_a.purchases)          # crash fill thật
+    assert any(p["source"] == "OPPORTUNITY" for p in res_a.purchases)    # opportunity fill thật
+    assert any(d["reason_code"] == "DAILY_LIMIT_BLOCK"
+               for d in res_a.decision_log)                              # limit block thật
+    assert res_a.counters["triggered_actions"] >= 4                      # cooldown giữ TRIGGERED
+    assert {l.type for l in rec_a.ladders} == {"SMART", "CRASH", "OPPORTUNITY"}
 
     # 1) EXECUTION: mọi giao dịch identical (trừ trường nhãn reporting)
     assert _strip_regime(res_a.purchases) == _strip_regime(res_b.purchases)
@@ -482,11 +493,12 @@ def test_check_a3_07_accounting_invariants_multi_transition(monkeypatch):
     không double reservation (mọi RESERVE đều đi tới đúng một RELEASE hoặc DEPLOY)."""
     days = [
         {"price": 100.0, "oscore": 20.0, "return7": 0.00},
-        {"oscore": 60.0},                                     # smart ladder trước crash
-        {}, {},
-        {"oscore": 80.0, "return7": -0.16, "price": 100.5},   # CRASH #1
-        {"oscore": 50.0, "return7": -0.05},
-        {"low_dip": 91.0},                                    # C1 trigger trong CRASH
+        {"oscore": 60.0},                                     # smart ladder trước crash + S0 fill
+        {"oscore": 70.0},                                     # opportunity ladder trước crash
+        {},
+        {"oscore": 80.0, "return7": -0.16, "price": 100.5},   # CRASH #1: cancel opp ladder
+        {"oscore": 50.0, "return7": -0.05},                   #   -> release -> snapshot [F5]
+        {"low_dip": 91.0},                                    # S1 + C1 trigger cùng nến
         {},                                                   # RECOVERY #1
         {"oscore": 80.0, "return7": -0.16},                   # re-enter CRASH #2
         {"oscore": 50.0, "return7": -0.05},
@@ -497,6 +509,14 @@ def test_check_a3_07_accounting_invariants_multi_transition(monkeypatch):
         {}, {},
     ]
     res, rec = run_case(days, monkeypatch)
+
+    # tiền đề (chống kịch bản degenerate): ca "chuyển Opportunity ladder sang Crash ladder"
+    # phải THẬT SỰ xảy ra — có opp ladder trước crash, bị cancel + release tại crash entry
+    assert any(l.type == "OPPORTUNITY" for l in rec.ladders)
+    crash_entry_rel = [e for e in rec.pool("OPPORTUNITY").ledger
+                       if e["entry_type"] == "RELEASE" and e["reason_code"] == "CRASH_ENTRY"]
+    assert crash_entry_rel, "opportunity ladder phải bị cancel + release tại crash entry"
+    assert any(p["source"] == "CRASH" for p in res.purchases)   # fill CRASH thật trong chuỗi
 
     for name in ("BASE", "SMART", "OPPORTUNITY"):
         pool = rec.pool(name)

@@ -126,7 +126,12 @@ def build_dataset(day_specs: list[dict], first_local_day: str = "2023-03-01",
     close = np.empty(n)
     low_override = np.full(n, np.nan)
     # warmup: giá phẳng bằng giá Day 1
-    day_of = ((idx.asi8 // 10**9) + TZ) // int(DAY)
+    # Epoch-seconds KHÔNG phụ thuộc đơn vị datetime64 của pandas (ns hay us) — cùng idiom với
+    # engine._epoch_seconds. KHÔNG dùng idx.asi8 // 10**9: trên pandas >= 3, date_range trả
+    # datetime64[us] và asi8 là micro-giây, làm ánh xạ ngày sụp đổ âm thầm (finding F-E2-01).
+    epoch_s = ((idx - pd.Timestamp(0, tz="UTC")) / pd.Timedelta(seconds=1)) \
+        .to_numpy(float).astype("int64")
+    day_of = (epoch_s + TZ) // int(DAY)
     day0 = int((start_utc.value // 10**9 + TZ) // DAY)             # ordinal local day của Day 1
     price_by_day = {}
     p = base_price
@@ -149,6 +154,16 @@ def build_dataset(day_specs: list[dict], first_local_day: str = "2023-03-01",
     dip = ~np.isnan(low_override)
     low[dip] = np.minimum(low[dip], low_override[dip])
     volume = np.full(n, 1000.0)
+
+    # Tự kiểm (chống tái diễn F-E2-01): mọi price/low_dip đã đặt phải THỰC SỰ xuất hiện
+    # trong dataset — nếu ánh xạ ngày hỏng, spec giá sẽ bất động âm thầm và test chứng minh
+    # ít hơn narrative của nó.
+    specified_prices = {float(s["price"]) for s in day_specs if "price" in s}
+    missing_p = specified_prices - set(np.unique(close).tolist())
+    assert not missing_p, f"build_dataset: price đã đặt không xuất hiện trong close: {missing_p}"
+    specified_dips = {float(s["low_dip"]) for s in day_specs if "low_dip" in s}
+    missing_d = specified_dips - set(np.unique(low).tolist())
+    assert not missing_d, f"build_dataset: low_dip đã đặt không xuất hiện trong low: {missing_d}"
 
     eth15 = pd.DataFrame({"open_time": idx, "open": open_, "high": high,
                           "low": low, "close": close, "volume": volume})

@@ -13,7 +13,8 @@ Project Profile:
 PRODUCT
 
 Status:
-(điền ở mục Kết quả cuối — xem "Result")
+DONE — 10/10 REQUIRED check PASS (E1 toàn bộ; E2 cho CHECK-A3-10 với kết luận reviewer độc lập
+**E2 PASS**); mọi follow-up của reviewer thuộc thẩm quyền phiên đã thực hiện xong trước khi đóng.
 
 Model/Effort thực thi:
 Tier D (Fable) / max — đúng routing đã đóng băng trong file task (xác nhận lại bằng
@@ -27,13 +28,37 @@ Python 3.11.15 · numpy 2.4.6 · pandas 3.0.5 · pyarrow 25.0.1 · pytest 9.1.1
 
 ## Result
 
-WP-A3 hoàn tất chuỗi: Ready Gate PASS → baseline E1 tái hiện đủ 4 finding → regression test
-viết TRƯỚC fix (12 FAIL đúng kỳ vọng) → remediation trong `regime.py` + `engine.py` →
-18/18 test WP-A3 PASS → toàn bộ suite PASS → impact BEFORE/AFTER được định lượng và giải
-thích từng sai lệch bằng điều khoản spec → E2 độc lập.
+**WP-A3 = DONE.** Chuỗi đầy đủ: Ready Gate PASS → baseline E1 tái hiện đủ 4 finding →
+regression test viết TRƯỚC fix (12 FAIL đúng kỳ vọng) → remediation trong `regime.py` +
+`engine.py` → 18/18 test WP-A3 PASS → toàn bộ suite PASS (87/87) → impact BEFORE/AFTER được
+định lượng và giải thích từng sai lệch bằng điều khoản spec → reviewer độc lập kết luận
+**E2 PASS** → follow-up của reviewer được thực hiện ngay trong phiên → chạy lại toàn bộ xanh.
 
 Chi tiết trạng thái từng REQUIRED check: xem "Completion Gate Summary" bên dưới và evidence
 trong `docs/tasks/WP-A3-regime-va-vong-doi-ladder.md`.
+
+## E2 độc lập (CHECK-A3-10) và xử lý follow-up
+
+Reviewer session độc lập (không chung ngữ cảnh) rà soát commit `347ba7c` theo Solo Independent
+Review Procedure; bản review: `docs/reviews/E2-WP-A3-regime-ladder.md` (E2-WP-A3-001).
+Kết luận reviewer: **E2 PASS** — tự chạy lại CHECK-A3-01/03/07 bằng kịch bản/validator RIÊNG
+(kể cả đối chứng code cũ `5645a74`: kịch bản riêng của reviewer cho thấy khoá vốn thật 18.7
+trước fix, release = 0), và thử 4 kịch bản khoá vốn tự nghĩ + 1 long-run cửa sổ khác mà
+**không tìm thấy đường khoá vốn mới nào**.
+
+Reviewer ghi 2 finding hạ tầng kiểm chứng (không phải lỗi engine) và 4 mismatch narrative bắt
+nguồn từ chúng; toàn bộ follow-up thuộc thẩm quyền phiên implementer đã được thực hiện TRONG
+S003, trước khi đóng task:
+
+| Finding của reviewer | Xử lý trong S003 (sau review, trước khi đóng) |
+|---|---|
+| F-E2-01 (MEDIUM): `wp_a3_harness.build_dataset` dùng `idx.asi8 // 10**9` — sai đơn vị trên pandas 3 (datetime64[us]) → spec `price`/`low_dip` theo ngày bất động âm thầm; narrative A3-03/A3-07 mô tả nhiều hơn test chứng minh (M1–M3) | Sửa epoch-seconds bằng phép chia Timedelta (cùng idiom `engine._epoch_seconds`, độc lập đơn vị) + **assert tự kiểm** trong builder (mọi price/low_dip đã đặt phải xuất hiện thật trong dataset — chống tái diễn). Làm giàu kịch bản a3_03 (thêm low_dip ngày crash, oscore 85 ngày 15) và a3_07 (thêm opportunity ladder trước crash) rồi thêm **assert tiền đề** để test tự khẳng định: run A có fill SMART/CRASH/OPPORTUNITY thật, ≥1 DAILY_LIMIT_BLOCK thật, ca release `CRASH_ENTRY` (chuyển Opportunity→Crash) thật. Narrative evidence A3-03/A3-07 trong file task được cập nhật khớp sự kiện thực. Chạy lại: 18/18 PASS; toàn suite chạy lại xanh (xem Verification Evidence). |
+| F-E2-02 (LOW): script đo impact không được commit → bảng CHECK-A3-08 không tái lập từ repo (M4) | Commit công cụ tại `tests/wp_a3_impact_tool.py` (tham số `--src` cho phép đo BEFORE trên git worktree ở commit cũ, gỡ editable finder, assert + ghi provenance `code_path` vào JSON). Chạy lại bằng công cụ đã commit: **khớp HOÀN TOÀN** cả hai bản đo BEFORE (worktree `5645a74`) và AFTER với số liệu trong bảng impact của biên bản này. |
+| O-1: xác nhận độc lập PH-03 | Giữ nguyên ghi nhận RSK-010/PH-03 — chờ chủ dự án (ngoài scope WP-A3). |
+| O-2: engine cho phép tạo ladder mới trong CRASH bằng vốn vừa release; vòng đời vẫn đóng | Ghi nhận quan sát; spec không cấm tường minh; không đổi hành vi trong WP-A3 (ngoài 4 finding sở hữu). Nếu chủ dự án muốn cấm/giới hạn → convention mới hoặc V2.2. |
+
+Hai finding F-E2-01/F-E2-02 nằm ở tầng test/công cụ đo, không đổi hành vi engine; các sửa
+follow-up chỉ chạm `tests/` (vùng Allowed) và tài liệu — không chạm `src/` sau khi review.
 
 ## Ready Gate (xác nhận lại khi mở task — 2026-08-23)
 
@@ -46,6 +71,33 @@ trong `docs/tasks/WP-A3-regime-va-vong-doi-ladder.md`.
 | Routing WP-A3 | Router trả D/max tự nhiên, khớp file task; phiên chạy đúng D/Fable/max |
 | Scope Lock | Load từ file task; chỉ được chạm `regime.py`, `engine.py`, `ladders.py`, `tests/`, `docs/CONVENTIONS.md` |
 | Trạng thái | WP-A3 chuyển READY → IN_PROGRESS trong PROJECT_PROGRESS, sync roadmap PASS |
+
+## Completion Gate Summary
+
+Required: 10 (CHECK-A3-01 … CHECK-A3-10, toàn bộ REQUIRED)
+PASS: 10
+FAIL: 0
+BLOCKED: 0
+NOT_TESTED: 0
+
+## Verification Evidence
+
+| Check ID | Status | Evidence Level | Evidence | Executed By | Timestamp |
+|---|---|---|---|---|---|
+| CHECK-A3-01 | PASS | E1 | test engine-level kịch bản F-001 + multi-episode; BEFORE FAIL (`SUSPENDED != CANCELLED`, kẹt 27.2) → AFTER release đủ tại tick recovery-end, reason RECOVERY_END | S003 agent | 2026-08-23 |
+| CHECK-A3-02 | PASS | E1 | bảng liệt kê vòng đời đầy đủ + long-run 4 năm không reserve mồ côi; impact 7,5 năm stuck=0 | S003 agent | 2026-08-23 |
+| CHECK-A3-03 | PASS | E1 | counterfactual hai run chỉ khác nhãn, 5 bề mặt identical; kịch bản tự khẳng định (fill S/C/O + DAILY_LIMIT_BLOCK thật) | S003 agent | 2026-08-23 |
+| CHECK-A3-04 | PASS | E1 | None không thoát/không vào/không đứt-quãng-mà-vẫn-exit; dữ liệu thật vẫn exit đúng 48h | S003 agent | 2026-08-23 |
+| CHECK-A3-05 | PASS | E1 | snapshot 36 đúng [F5]; daily limit ở khâu triển khai với dưới/đúng/vượt boundary | S003 agent | 2026-08-23 |
+| CHECK-A3-06 | PASS | E1 | pool label theo đa số nguồn vốn (SMART/OPPORTUNITY); `zone_order_key` kiểm trực tiếp thứ tự [F2] + crash-sau-thường | S003 agent | 2026-08-23 |
+| CHECK-A3-07 | PASS | E1 | replay ledger từng entry, 3 pool; multi-transition 2 episode/2 tháng; tổng = contribution; không double reservation | S003 agent | 2026-08-23 |
+| CHECK-A3-08 | PASS | E1 | bảng impact 14 nhóm metric, mỗi dòng quy về điều khoản spec; công cụ đo đã commit, tái lập HOÀN TOÀN | S003 agent | 2026-08-23 |
+| CHECK-A3-09 | PASS | E1 | suite đầy đủ 87 passed / 0 failed / 0 skipped (456.49s); chạy lại sau follow-up E2: xem dòng cuối mục này | S003 agent | 2026-08-23 |
+| CHECK-A3-10 | PASS | E2 | `docs/reviews/E2-WP-A3-regime-ladder.md` — reviewer độc lập kết luận E2 PASS; 4 kịch bản khoá vốn tự tìm + long-run: không đường khoá vốn mới | Reviewer E2-WP-A3-001 | 2026-08-23 |
+
+Chạy lại toàn suite SAU follow-up E2 (harness fix + kịch bản giàu + công cụ impact):
+**87 passed, 0 failed, 0 skipped — 454.08s (0:07:34)**. Trước đó, lần chạy sau remediation:
+87 passed / 456.49s; lần chạy độc lập của reviewer: 87 passed / 467.43s.
 
 ## Baseline E1 — tái hiện TRƯỚC khi sửa (bắt buộc theo chỉ thị S003 mục 4)
 
@@ -216,8 +268,10 @@ Modified:
 - `docs/tasks/WP-A3-regime-va-vong-doi-ladder.md` — điền evidence Completion Gate
 
 Created:
-- `tests/wp_a3_harness.py` — harness quan sát + builder kịch bản (không đổi hành vi engine)
-- `tests/test_wp_a3_lifecycle.py` — 18 test cho CHECK-A3-01…A3-07
+- `tests/wp_a3_harness.py` — harness quan sát + builder kịch bản (không đổi hành vi engine;
+  sau follow-up E2: epoch-seconds độc lập đơn vị + assert tự kiểm)
+- `tests/test_wp_a3_lifecycle.py` — 18 test cho CHECK-A3-01…A3-07 (kịch bản tự khẳng định)
+- `tests/wp_a3_impact_tool.py` — công cụ đo impact CHECK-A3-08, tái lập từ repo (BT §20)
 - `docs/sessions/S003-wp-a3-regime-ladder.md` — biên bản này
 - `docs/reviews/E2-WP-A3-regime-ladder.md` — bản rà soát độc lập E2 (reviewer session riêng)
 
