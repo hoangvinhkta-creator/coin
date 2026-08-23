@@ -336,10 +336,10 @@ Khi WP-B1 thực thi và xác định rõ F-017 có chạm Gate 1 hay không.
 
 ---
 
-## DEC-010 — PENDING: cách gỡ BLK-003 (override DEC-008 và `validate_routing.py`)
+## DEC-010 — RESOLVED: PA-1 phê duyệt cho BLK-003 (override DEC-008 và `validate_routing.py`)
 
 Date:
-2026-08-23 (S002 / T-04) — **CHƯA CHỐT, chờ chủ dự án quyết định**
+2026-08-23 (S002 / T-04, PENDING) — **RESOLVED tại MICRO-GOVDEF-001, cùng ngày**
 
 Task:
 T-04 — Chốt lộ trình và đóng băng tiêu chí
@@ -403,6 +403,47 @@ Các phương án:
 Required decision:
 Chủ dự án chọn PA-1 hoặc PA-2. Cho tới lúc đó **WP-A2 = BLOCKED** (BLK-003).
 
+**Quyết định của chủ dự án: PA-1.** Ghi nhận nguyên văn: *"Tôi phê duyệt PA-1 cho DEC-010."*
+(chỉ thị mở `MICRO-GOVDEF-001`).
+
+## Thực thi PA-1 (MICRO-GOVDEF-001, 2026-08-23)
+
+- `governance/scripts/governance/routing_engine.py`: thêm `SCORE_DECIMALS = 3`; `model_score` và
+  `effort_score` được làm tròn **một lần, ngay sau khi tính**, và giá trị đã làm tròn đó — không
+  phải giá trị dấu phẩy động thô — được dùng cho cả hiển thị lẫn mọi so sánh biên Tier/Effort.
+  Không phải epsilon tuỳ tiện: trọng số công thức chỉ có tối đa 2 chữ số thập phân, nên giá trị
+  toán học đúng của mọi tổng có trọng số luôn có tối đa 2 chữ số thập phân có nghĩa; làm tròn 3 chữ
+  số chỉ loại bỏ nhiễu biểu diễn nhị phân (~1e-15), không bao giờ đổi giá trị thật.
+- `governance/scripts/governance/validate_routing.py`: bổ sung hàm `check_override` — chấp nhận một
+  mismatch giữa Tier/Effort khai báo và router **chỉ khi** cả bốn điều kiện đều đúng: (1) trường
+  `Manual Override: YES — DEC-###` tồn tại (regex tổng quát, không hard-code số); (2) `DEC-###` đó
+  có heading thật trong `PROJECT_DECISIONS.md`; (3) trường `Router Raw Output` khớp chính xác với
+  kết quả `route()` tính lại tại chỗ từ đúng Routing Inputs của file (chặn baseline giả mạo/lỗi
+  thời); (4) override chỉ được **leo thang** Tier/Effort, không bao giờ được hạ.
+- Test mới: `governance/scripts/governance/test_routing_engine.py` — 37 check, gồm quét brute-force
+  toàn bộ 5^5 × 5^5 tổ hợp đầu vào hợp lệ (0 lệch còn lại) và 6 kịch bản override hợp lệ/không hợp
+  lệ tổng hợp (độc lập với WP-A2, để chứng minh cơ chế tổng quát chứ không chỉ vá đúng một trường
+  hợp).
+
+**Kết quả cho WP-A2:** route lại với đúng Routing Inputs (D=2,R=2,B=2,A=1,X=3; U=1,V=3,H=2,C=3,F=2)
+cho **Tier C tự nhiên** — không cần nhánh override nữa. File
+`docs/tasks/WP-A2-dau-noi-hang-muc-vao-pipeline.md` giữ nguyên `Primary Agent Tier: C`,
+`Primary Effort: high`, và toàn bộ dấu vết `Manual Override: YES — DEC-008` /
+`Router Raw Output` gốc — chỉ bổ sung ghi chú cập nhật, không xoá gì. `validate_routing.py` chạy
+trên toàn bộ 16 file MAJOR task: `ROUTING VALIDATION: PASS (16 MAJOR task file(s) checked, 0
+accepted manual override(s))`.
+
+**Regression:** đối chiếu routing trước/sau trên cả 16 file — đúng một dòng đổi (WP-A2, Tier B → C).
+Không task nào khác trong repo đổi Tier hoặc Effort.
+
+**Hệ quả cho các quyết định liên quan:**
+- **BLK-003 RESOLVED.**
+- **GOV-RSK-001 CLOSED.**
+- **WP-A2 chuyển `BLOCKED` → `READY`.**
+- **DEC-008 "Can Revisit After" đã xảy ra:** xác nhận WP-A2 tự nhiên rơi vào Tier C mà không cần
+  override thủ công nữa — đúng như DEC-008 dự đoán. DEC-008 vẫn giữ nguyên làm quyết định lịch sử
+  (nó là căn cứ đúng tại thời điểm được đưa ra); không sửa lại nội dung DEC-008 ở trên.
+
 Can Revisit After:
-Ngay khi chủ dự án quyết định. Nếu chọn PA-1, DEC-008 có thể được đóng lại hoàn toàn sau khi router
-được sửa.
+Không cần revisit — đã thực thi PA-1 và xác nhận đủ evidence E1. Nếu về sau `routing_engine.py`
+đổi công thức trọng số, chạy lại toàn bộ `test_routing_engine.py` trước khi merge.

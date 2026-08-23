@@ -19,7 +19,7 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — S002 hoàn tất T-04: đóng băng Ready Gate + Completion Gate cho 15 work package
+2026-08-23 — MICRO-GOVDEF-001 hoàn tất: sửa boundary defect, WP-A2 chuyển READY (Tier C tự nhiên)
 
 Overall Status:
 IN_PROGRESS
@@ -30,15 +30,16 @@ file định nghĩa task với Ready Gate và Completion Gate **đã đóng băn
 Kế tiếp: Phase 2 — Lớp A (bắt buộc sửa trước official run). Chưa gói nào được bắt đầu.
 
 Current Task:
-Không có task nào đang thực thi. T-04 đã DONE tại S002.
+Không có task nào đang thực thi. T-04 và MICRO-GOVDEF-001 đều đã DONE.
 
 Current Task Mode:
-MAJOR
+MICRO (phiên vừa hoàn tất; không có task MAJOR nào đang IN_PROGRESS)
 
 Next Recommended Task:
 Chủ dự án chọn một trong các task đã ở trạng thái READY: **WP-A3** (khuyến nghị — mắt xích đầu
-tiên của đường găng), WP-A1, WP-C1 (khuyến nghị vì lý do an toàn dữ liệu thật), WP-D1, WP-D2.
-KHÔNG tự mở — agent dừng sau T-04 theo chỉ thị của chủ dự án.
+tiên của đường găng), WP-A1, **WP-A2** (nay READY, Tier C tự nhiên sau MICRO-GOVDEF-001), WP-C1
+(khuyến nghị vì lý do an toàn dữ liệu thật), WP-D1, WP-D2.
+KHÔNG tự mở — agent dừng sau MICRO-GOVDEF-001 theo chỉ thị của chủ dự án.
 
 ## Overall Roadmap
 
@@ -71,7 +72,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. HOÀN TẤT tại S002 — 15 file task đã đóng băng gate |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
 | READY | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
-| BLOCKED | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04, và cần **BLK-003** được gỡ. Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier ghi đè thủ công — router trả B, xem DEC-008/GOVDEF-001 |
+| READY | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04 (DONE). Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier C nay route tự nhiên sau MICRO-GOVDEF-001 (trước đó là ghi đè theo DEC-008) — xem GOVDEF-001 mục Resolution |
 | READY | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. Song song với WP-A1, WP-A2, WP-C1 (đóng F-001, F-021, F-022, F-030) |
 | PLANNED | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (đóng F-023, F-025, F-032) |
 | PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3 (vốn không bị khoá thì số đo mới đúng) — đóng phần đo lường của F-002, và F-016 |
@@ -205,7 +206,7 @@ Do NOT duplicate or rewrite the checklist here.
 
 ### MICRO-GOVDEF-001 — Sửa lỗi so sánh boundary trong routing_engine.py
 Status:
-PLANNED
+DONE
 
 Checklist Reference:
 `governance/templates/MICRO_TASK_CHECKLIST.md`
@@ -234,9 +235,43 @@ này).
 Đủ điều kiện MICRO. Chấm điểm tham khảo (không bắt buộc với MICRO): D1 R2 B2 A1 X1 → 1.45 → B;
 U1 V2 H1 C1 F2 → 1.45 → medium.
 
-Evidence Summary:
-Chưa thực hiện. Ready Gate và Completion Gate theo `MICRO_TASK_CHECKLIST.md` sẽ áp dụng khi
-task này được mở.
+Evidence Summary (2026-08-23, chủ dự án phê duyệt PA-1 cho DEC-010):
+
+**Compact Ready Gate** (`MICRO_TASK_CHECKLIST.md`) — đủ điều kiện, xác nhận lại khi mở: yêu cầu rõ
+ràng (sửa boundary comparison + validator override); Risk 2 <= 2; Blast Radius 2 <= 2; không đổi
+kiến trúc/auth/schema/thao tác phá huỷ; phạm vi hẹp và đã biết (`routing_engine.py`,
+`validate_routing.py`, test governance mới); phương pháp kiểm chứng đã biết (brute-force toàn không
+gian đầu vào + test override tổng hợp).
+
+**Compact Completion Gate:**
+- [x] Hành vi dự định đã cài đặt — `routing_engine.py` làm tròn `model_score`/`effort_score` về 3
+  chữ số **trước khi** so sánh biên (căn cứ: trọng số chỉ có tối đa 2 chữ số thập phân, nên làm
+  tròn 3 chữ số loại bỏ đúng nhiễu IEEE-754 ~1e-15, không đổi giá trị thật) — không phải epsilon
+  tuỳ tiện, không hard-code WP-A2 hay bất kỳ task nào.
+- [x] `validate_routing.py` chấp nhận manual override có ghi nhận (decision reference tồn tại
+  trong `PROJECT_DECISIONS.md`, `Router Raw Output` xác thực khớp router hiện tại, chỉ được leo
+  thang Tier/Effort chứ không hạ) — hàm `check_override`, tổng quát cho mọi `DEC-###`.
+- [x] Verification thực sự chạy: brute-force toàn bộ 5^5 × 5^5 tổ hợp đầu vào cho **0** lệch còn
+  lại; `governance/scripts/governance/test_routing_engine.py` — **37/37 check PASS**, gồm 6 ca
+  override hợp lệ/không hợp lệ tổng hợp (không phụ thuộc WP-A2).
+- [x] Evidence ghi theo `EVIDENCE_STANDARD.md`, mức E1 (chạy thật): xem
+  `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resolution".
+- [x] Không mở rộng phạm vi ngoài dự kiến — `git diff` xác nhận chỉ chạm
+  `governance/scripts/governance/routing_engine.py`, `validate_routing.py` (thêm), file task
+  `WP-A2` (chỉ bổ sung ghi chú, không xoá dấu vết), và các artifact governance liên quan. Không
+  chạm `src/`, `webapp/`, `tests/`, `docs/spec/`.
+- [x] Regression liên quan đã PASS: `routing_engine.py`/`validate_routing.py` chạy lại trên toàn bộ
+  16 file MAJOR task hiện có — **đúng một dòng đổi** (WP-A2, Tier B → C), không task nào khác đổi
+  Tier/Effort. `ROUTING VALIDATION: PASS (16 MAJOR task file(s) checked, 0 accepted manual
+  override(s))`.
+- [x] `PROJECT/PROJECT_PROGRESS.md` inline Micro Task entry được cập nhật — mục này.
+
+**Kết quả:** BLK-003 RESOLVED. GOV-RSK-001 CLOSED. WP-A2 chuyển `BLOCKED` → `READY`, giữ nguyên
+Tier C / Opus / Effort high (nay route tự nhiên, không cần override — nhưng dấu vết DEC-008/Manual
+Override/Router Raw Output trong file WP-A2 được **giữ nguyên**, không xoá).
+
+Chi tiết đầy đủ: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resolution".
+Test: `governance/scripts/governance/test_routing_engine.py`.
 
 ## Active Blockers
 
@@ -264,8 +299,9 @@ PyPI thì thông, nên đây là chặn có chọn lọc theo host, không phả
 Không bypass BLK-001. Không đổi nguồn dữ liệu. Không dùng dữ liệu tổng hợp để tạo official
 verdict.
 
-### BLK-003 — `validate_routing.py` chưa biểu diễn được manual override đã được phê duyệt
-Ảnh hưởng: **chỉ WP-A2**.
+### BLK-003 — RESOLVED (`validate_routing.py` chưa biểu diễn được manual override đã được phê duyệt)
+Trạng thái: **RESOLVED — 2026-08-23, tại MICRO-GOVDEF-001.**
+Ảnh hưởng khi còn mở: **chỉ WP-A2**.
 
 Mô tả: `governance/scripts/governance/validate_routing.py` so khớp **tuyệt đối** giữa
 `Primary Agent Tier` trong file task và kết quả của `routing_engine.py`. Khi T-04 soạn file định
@@ -294,6 +330,14 @@ yêu cầu chạy validator này trước roadmap sync. Vì vậy WP-A2 giữ tr
 validator xanh.
 
 Bằng chứng E1: `docs/reviews/S002-coverage-regression-check.md` mục PH-02.
+
+**Cách đã gỡ (2026-08-23):** chủ dự án phê duyệt **PA-1**. `routing_engine.py` được sửa tổng quát
+(làm tròn điểm số về cùng độ chính xác hiển thị trước khi so sánh biên); `validate_routing.py` được
+bổ sung cơ chế chấp nhận manual override có ghi nhận. Sau fix, `validate_routing.py` PASS cho toàn
+bộ 16 file MAJOR task, và WP-A2 route Tier C **tự nhiên** (không cần nhánh override nữa, dù nhánh đó
+đã được xây và kiểm chứng độc lập cho các trường hợp tương lai). Không hạ Tier WP-A2 về B.
+Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resolution";
+`MICRO-GOVDEF-001` ở mục "Micro Tasks (Inline)".
 
 ### BLK-002 — Tính năng cảnh báo chưa được đặc tả
 Ảnh hưởng: T-10, và là lý do T-08 tồn tại.
@@ -405,7 +449,7 @@ Xem finding F-001. Giảm thiểu: **WP-A3** (RCP-001).
 Rủi ro của bản thân bộ công cụ governance dùng chung, **tách khỏi rủi ro sản phẩm ETH DCA** ở
 mục trên. Không tính vào 33 finding của S001.
 
-### GOV-RSK-001 — Sai số biên dấu phẩy động trong routing_engine.py có thể under-route task đúng biên (mức: trung bình)
+### GOV-RSK-001 — Sai số biên dấu phẩy động trong routing_engine.py có thể under-route task đúng biên (mức: trung bình) — CLOSED
 Phát hiện khi áp dụng RCP-001 (2026-08-23), tái lập được (E1): `tier_from_score` và
 `effort_from_score` so sánh `<` trực tiếp trên giá trị dấu phẩy động chưa làm tròn/chưa có
 epsilon. Một task có điểm nền đúng bằng 2.0 (biên Tier B/C) có thể nhận `model_score` nội bộ là
@@ -423,8 +467,11 @@ toán nghiệp vụ.
 
 Giảm thiểu tạm thời đã áp dụng cho WP-A2: **manual override** theo DEC-008, ghi nhận công khai
 trong bảng roadmap.
-Giảm thiểu triệt để: **MICRO-GOVDEF-001**.
-Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md`.
+Giảm thiểu triệt để: **MICRO-GOVDEF-001** — **HOÀN TẤT 2026-08-23**. `routing_engine.py` làm tròn
+điểm số về cùng độ chính xác hiển thị trước khi so sánh biên; xác nhận bằng quét toàn bộ 5^5 × 5^5
+tổ hợp đầu vào cho 0 lệch còn lại (`test_routing_engine.py`, 37/37 PASS). WP-A2 nay route Tier C tự
+nhiên, không cần override. Không task nào khác trong 16 file MAJOR hiện có bị ảnh hưởng.
+Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resolution".
 
 ## Open Regression Items
 - None ở tầng mã nguồn. S001 không phát hiện code nào bám theo hành vi của V2.1.1–V2.1.4 trái với
@@ -447,11 +494,25 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md`.
 - DEC-007 — RCP-001 được phê duyệt và áp dụng kèm bốn điều kiện
 - DEC-008 — Ghi đè thủ công routing của WP-A2 (Tier C, không dùng Tier B từ router)
 - DEC-009 — Quy tắc Gate 1 staleness: remediation ảnh hưởng Gate 1 bắt buộc chạy lại Gate 1
-- DEC-010 — PENDING: cách gỡ BLK-003 (xung đột giữa override DEC-008 và `validate_routing.py`)
+- DEC-010 — RESOLVED: PA-1 phê duyệt cho BLK-003; `routing_engine.py`/`validate_routing.py` đã sửa
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- MICRO-GOVDEF-001 — SỬA BOUNDARY DEFECT + OVERRIDE MECHANISM — 2026-08-23 — Chủ dự án phê duyệt
+  PA-1 cho DEC-010. Sửa tổng quát `routing_engine.py` (làm tròn `model_score`/`effort_score` về
+  cùng độ chính xác hiển thị **trước khi** so sánh biên Tier/Effort — không epsilon tuỳ tiện, không
+  hard-code task nào). Bổ sung cơ chế `check_override` vào `validate_routing.py`: chấp nhận manual
+  override chỉ khi có decision reference tồn tại thật trong `PROJECT_DECISIONS.md`, `Router Raw
+  Output` xác thực khớp router hiện tại, và override chỉ được leo thang chứ không hạ Tier/Effort.
+  Thêm `governance/scripts/governance/test_routing_engine.py` (37 check, gồm quét toàn bộ 5^5×5^5
+  tổ hợp đầu vào — 0 lệch còn lại — và 6 ca override hợp lệ/không hợp lệ tổng hợp). Kết quả: WP-A2
+  route Tier C **tự nhiên** (giữ nguyên Model Opus, Effort high), không cần override — chuyển
+  `BLOCKED` → `READY`. BLK-003 RESOLVED, GOV-RSK-001 CLOSED. Đối chiếu trước/sau trên toàn bộ 16
+  file MAJOR task: đúng một dòng đổi (WP-A2, Tier B → C), không task nào khác bị ảnh hưởng. Không
+  sửa `src/`, `webapp/`, `tests/`, `docs/spec/`. Không bắt đầu WP nào, không mở S003.
+  Kết luận: **MICRO-GOVDEF-001 DONE**.
+  Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resolution".
 - S002 — ROADMAP FINALIZATION / GATE FREEZE (T-04) — 2026-08-23 — Soạn và đóng băng Ready Gate +
   Completion Gate đầy đủ cho toàn bộ 15 work package của RCP-001 (**125 REQUIRED check**), cộng file
   định nghĩa cho chính T-04 (12 REQUIRED check). Chính thức hoá DEC-009 thành `CHECK-B1-02`
@@ -579,18 +640,16 @@ S003 — thực thi **một** work package đã READY. Khuyến nghị theo hai 
   ngay lúc này. Gói này độc lập hoàn toàn và chạy song song được với lớp A.
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
-`WP-A1`, `WP-A3`, `WP-C1`, `WP-D1`, `WP-D2`.
+`WP-A1`, `WP-A2` (mới, sau MICRO-GOVDEF-001), `WP-A3`, `WP-C1`, `WP-D1`, `WP-D2`.
 
 Task đang BLOCKED và lý do:
-- `WP-A2` — BLK-003 (validator routing chưa biểu diễn được override DEC-008)
 - `WP-C2` — DEC-005 còn PENDING (thuộc T-05, thẩm quyền chủ dự án)
 - `T-03` — chờ WP-C1 (giữ nguyên, không hạ Completion Gate)
 
 Cần chủ dự án quyết định:
-1. **DEC-010** — cách gỡ BLK-003 (mở MICRO-GOVDEF-001, hay miễn trừ có ghi nhận).
-2. **DEC-005** — phạm vi công cụ trước verdict (T-05). Không chặn lớp A.
-3. **PH-01** — cách đính chính số đếm finding trong biên bản S001.
-4. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
+1. **DEC-005** — phạm vi công cụ trước verdict (T-05). Không chặn lớp A.
+2. **PH-01** — cách đính chính số đếm finding trong biên bản S001.
+3. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
    Không gói nào trong 15 gói cần nó, nên chưa gấp.
 
 Purpose:

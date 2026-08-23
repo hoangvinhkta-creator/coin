@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-BLOCKED
+READY
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -17,7 +17,10 @@ Completion Gate Freeze:
 FROZEN — 2026-08-23 (T-04 / S002)
 
 Routing Status:
-ROUTED — MANUAL OVERRIDE
+ROUTED — MANUAL OVERRIDE (HISTORICAL). Sau MICRO-GOVDEF-001 (2026-08-23), `routing_engine.py` tự
+tính đúng Tier C cho các Routing Inputs bên dưới mà không cần override — xem ghi chú cuối trường
+`Manual Override` và `Router Raw Output`. Giữ nguyên nhãn MANUAL OVERRIDE để không mất dấu vết
+DEC-008, đúng yêu cầu của chủ dự án.
 
 Routing Inputs (all integers 0-4):
 D: 2
@@ -41,14 +44,27 @@ Primary Effort:
 high
 
 Manual Override:
-YES — DEC-008. Router thô trả Tier **B** (Sonnet) vì defect biên dấu phẩy động GOVDEF-001:
-`model_score` hiển thị `2.0` nhưng giá trị nội bộ là `1.9999999999999998`, nên `tier_from_score`
-(so sánh `s < 2`) rơi vào nhánh B, trong khi `AGENT_CAPABILITY_MATRIX.md` quy định 2.00–2.99 → C.
-Effort `high` là giá trị router tính đúng và **không** bị override.
+YES — DEC-008. Router thô **tại thời điểm phê duyệt DEC-008** trả Tier **B** (Sonnet) vì defect
+biên dấu phẩy động GOVDEF-001: `model_score` hiển thị `2.0` nhưng giá trị nội bộ là
+`1.9999999999999998`, nên `tier_from_score` (so sánh `s < 2`) rơi vào nhánh B, trong khi
+`AGENT_CAPABILITY_MATRIX.md` quy định 2.00–2.99 → C. Effort `high` là giá trị router tính đúng và
+**không** bị override.
+
+**Cập nhật sau MICRO-GOVDEF-001 (2026-08-23):** `routing_engine.py` được sửa để làm tròn `model_score`
+về cùng độ chính xác với giá trị hiển thị (3 chữ số thập phân) **trước khi** so sánh với các mốc
+Tier, thay vì so sánh trên giá trị dấu phẩy động chưa xử lý sai số. Chạy lại router với đúng các
+Routing Inputs bên dưới cho **Tier C tự nhiên**, không cần override nữa — xác nhận đúng
+`Can Revisit After` của DEC-008. Trường này được **giữ nguyên, không xoá**, làm dấu vết governance:
+Tier C của WP-A2 luôn có căn cứ, dù là qua override (trước fix) hay qua routing tự nhiên (sau fix).
 
 Router Raw Output:
 tier=B, model=Sonnet, base_tier=B, model_score=2.0, effort=high, effort_score=2.15,
 model_floors=none, effort_floors=none, warnings=none
+
+(Giá trị trên là router THÔ tại thời điểm DEC-008, trước MICRO-GOVDEF-001 — giữ nguyên làm bằng
+chứng lịch sử của defect GOVDEF-001. Router hiện tại, sau fix, cho: tier=C, model=Opus,
+base_tier=C, model_score=2.0, effort=high, effort_score=2.15 — khớp `Primary Agent Tier`/
+`Primary Effort` phía trên mà không cần override.)
 
 Model Routing Score:
 2.0
@@ -57,14 +73,17 @@ Effort Routing Score:
 2.15
 
 Applied Model Floor:
-none (Tier C đến từ override DEC-008, không phải từ floor)
+none (Tier C đến từ override DEC-008 trước fix; sau MICRO-GOVDEF-001, Tier C đến từ chính router,
+vẫn không qua floor nào — xem `Router Raw Output`)
 
 Applied Effort Floor:
 none
 
 Routing Warnings:
-manual_override_dec_008 — `validate_routing.py` hiện so khớp tuyệt đối với router nên sẽ báo FAIL
-cho đúng file này. Xem Ready Gate và `docs/reviews/GOVDEF-001-routing-engine-boundary.md`.
+none. **Lịch sử:** trước MICRO-GOVDEF-001, cảnh báo ở đây là
+`manual_override_dec_008 — validate_routing.py hiện so khớp tuyệt đối với router nên sẽ báo FAIL
+cho đúng file này`. Điều đó không còn đúng — `validate_routing.py` nay PASS cho file này (xác nhận
+E1, xem Ready Gate). Giữ ghi chú lịch sử để không mất dấu vết.
 
 Runtime Supported Effort Levels:
 low / medium / high / xhigh / max
@@ -136,9 +155,13 @@ tương đương" — **không thể áp dụng**, vì chiến lược V2.1.5 ch
 
 ## Dependencies
 - T-04 (DONE)
-- **BLK-003** — `validate_routing.py` chưa biểu diễn được manual override DEC-008 (xem Ready Gate).
-  Rủi ro nền: **GOV-RSK-001**; artifact: `docs/reviews/GOVDEF-001-routing-engine-boundary.md`;
-  đường xử lý triệt để: `MICRO-GOVDEF-001`
+- ~~**BLK-003**~~ — **RESOLVED** tại `MICRO-GOVDEF-001` (2026-08-23). `validate_routing.py` được
+  cập nhật để (a) làm tròn điểm số như `routing_engine.py` trước khi so sánh biên, và (b) chấp nhận
+  manual override có ghi nhận (decision reference tồn tại trong `PROJECT_DECISIONS.md`, Router Raw
+  Output xác thực, và chỉ được leo thang Tier/Effort chứ không được hạ). Sau fix, WP-A2 route Tier C
+  **tự nhiên**, không cần nhánh override nữa. Rủi ro nền **GOV-RSK-001** đã đóng cùng lúc.
+  Bằng chứng: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` (mục Resolution),
+  `governance/scripts/governance/test_routing_engine.py`.
 
 ## Blocks
 - WP-A5 (cần benchmark/diagnostic được chạy để đo đủ dữ liệu)
@@ -183,13 +206,11 @@ Do not touch without Scope Expansion:
 - [x] Escalation triggers được định nghĩa
 - [x] Completion Gate được finalize
 - [x] Completion Gate được đóng băng trước khi thực thi
-- [ ] **Dependency T-04 DONE** — thoả sau S002
-- [ ] **BLK-003 được gỡ:** `python governance/scripts/governance/validate_routing.py` PASS, hoặc
-      công cụ đã chấp nhận được manual override có ghi nhận (MICRO-GOVDEF-001 hoặc task kế tiếp),
-      hoặc chủ dự án miễn trừ bằng văn bản có ghi nhận trong `PROJECT/PROJECT_DECISIONS.md`.
-      Căn cứ: `CLAUDE.md` mục "Every Implementation Session" điểm 9 — *require `validate_routing.py`
-      to PASS before execution*; và `ROADMAP_SYNC_STANDARD.md` — *before roadmap sync, run
-      `validate_routing.py`*. **Không được hạ Tier WP-A2 về B để làm validator xanh** (DEC-008).
+- [x] **Dependency T-04 DONE** — thoả sau S002
+- [x] **BLK-003 được gỡ:** `python governance/scripts/governance/validate_routing.py` PASS —
+      xác nhận E1: `ROUTING VALIDATION: PASS (16 MAJOR task file(s) checked, 0 accepted manual
+      override(s))`. WP-A2 route Tier C tự nhiên sau fix, không cần nhánh override.
+      **Không hạ Tier WP-A2 về B** — Tier vẫn là C, đúng ràng buộc của DEC-008.
 - [ ] Xác nhận lại toàn bộ Ready Gate khi mở task
 
 ## Completion Gate
