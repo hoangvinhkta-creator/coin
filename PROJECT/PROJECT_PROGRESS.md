@@ -34,7 +34,8 @@ Current Task Mode:
 MAJOR
 
 Next Recommended Task:
-T-04 (phiên S002). KHÔNG tự mở — chủ dự án đã yêu cầu dừng sau S001.
+Phê duyệt RCP-001 (xem mục "Pending Roadmap Change Proposal"). Sau khi duyệt mới mở T-04 ở phiên
+S002. KHÔNG tự mở.
 
 ## Overall Roadmap
 
@@ -65,6 +66,31 @@ Completion Gate tại T-04, không đóng băng bây giờ.
 | PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08 và T-09B |
 | PLANNED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07 và chỉ khi verdict = BUILD |
+
+## Pending Roadmap Change Proposal
+
+### RCP-001 — CHỜ PHÊ DUYỆT
+Tài liệu: `PROJECT/ROADMAP_CHANGE_PROPOSAL_001.md`
+Ngày trình: 2026-08-23
+Nguồn: 33 finding của S001 + R-01…R-11 + V-01…V-03 + RSK-002…RSK-009 + BLK-001, BLK-002
+
+Đề xuất: gom thành **15 work package** theo 10 nguyên nhân gốc, chia bốn lớp
+A (trước official run) / B (trước verdict) / C (trước productization) / D (defer).
+ADDED 15 · CHANGED 5 (T-03, T-06, T-07, T-09A, T-10/T-11) · REMOVED 1 (T-06A, bị WP-A1 thay thế).
+Tổng lộ trình sẽ thành 28 task nếu được duyệt.
+
+**Bảng roadmap chuẩn ở mục "Overall Roadmap" phía trên CHƯA bị sửa.** Theo
+`00_SESSION_ORCHESTRATION.md` mục "Roadmap Change Rule", thay đổi lộ trình phải được trình và
+chấp thuận trước khi áp dụng. Vì bảng chuẩn không đổi, `PROJECT/LO_TRINH_DE_HIEU.md` vẫn đồng bộ
+với nó — hai roadmap không có state riêng.
+
+Hai phát hiện của RCP-001 làm đổi cách hiểu về lộ trình:
+1. **BLK-001 chỉ chặn đúng một điểm là T-06.** Không work package nào trong 15 gói cần dữ liệu
+   Binance thật, nên toàn bộ chương trình remediation chạy được trong khi BLK-001 vẫn còn.
+2. **DEC-005 rời khỏi đường găng tới verdict.** DEC-005 quyết định phạm vi app; toàn bộ lớp A là
+   backtest engine. Lớp A khởi động được mà không cần chốt DEC-005.
+
+Chủ dự án cần quyết bốn điểm nêu ở mục 11 của tài liệu đề xuất.
 
 ## Current Task Snapshot
 
@@ -265,6 +291,10 @@ Xem finding F-001. Giảm thiểu đề xuất: R-01.
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- RCP-001 — ROADMAP CHANGE PROPOSAL — 2026-08-23 — Chuyển 33 finding của S001 thành 15 work
+  package có dependency graph và phân lớp A/B/C/D. **CHƯA ÁP DỤNG, chờ phê duyệt.**
+  Không sửa bảng roadmap chuẩn, không sửa mã sản phẩm, không bắt đầu S002.
+  Tài liệu: `PROJECT/ROADMAP_CHANGE_PROPOSAL_001.md`.
 - S001 — DISCOVERY & BASELINE (AUDIT READ-ONLY) — 2026-08-23 — Đối chiếu toàn bộ implementation
   với spec V2.1.5 theo chín nhóm A–I. Sinh Compliance Matrix, Audit Findings (33 finding: 0
   CRITICAL, 8 HIGH, 15 MEDIUM, 7 LOW, 3 spec defect; 18/33 có bằng chứng chạy thật) và Discovery
