@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-IN_PROGRESS
+DONE
 
 Phase:
 Phase 6 — Lớp D: hoãn được / tuỳ chọn
@@ -356,7 +356,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -364,19 +364,23 @@ E1
 Evidence:
 Yêu cầu: output test suite đầy đủ.
 
+**Kết quả (S005):** `python -m pytest tests/` → **99 passed in 431.57s (0:07:11)** —
+0 failed, 0 skipped, 0 xfail, exit code 0 (95 test trước WP-D1 + 4 test mới
+`test_wp_d1_debt_cleanup.py`). Không test nào bị sửa để "cho qua"; không skip/nới lỏng.
+
 Executed By:
-...
+Agent phiên S005 (Tier B / medium)
 
 Timestamp:
-...
+2026-08-24T07:56Z
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ)
-- [ ] Kết quả mô phỏng không đổi, trừ ngoại lệ đã nêu rõ
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [x] 100% REQUIRED checks PASS (6/6: CHECK-D1-01..06)
+- [x] Mức evidence yêu cầu được thoả (E1 toàn bộ)
+- [x] Kết quả mô phỏng không đổi, trừ ngoại lệ đã nêu rõ (cooldown_override 35→31 sự kiện)
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật
+- [x] Session handoff được viết (`docs/sessions/S005-wp-d1-debt-cleanup.md`)
+- [x] Không hạ REQUIRED check nào để đạt DONE
 
 ## Escalation Triggers
 
@@ -397,13 +401,18 @@ xuất hiện ở nơi không ai ngờ.
 ## Changed Files Registry
 
 Created:
-- (dự kiến) test nhỏ trong `tests/`
+- `tests/test_wp_d1_debt_cleanup.py` — 4 test test-first (F-028/029/031/034)
+- `docs/sessions/S005-wp-d1-debt-cleanup.md` — session handoff
 
 Modified:
-- (dự kiến) `src/eth_dca_os/engine.py`, `ladders.py`, `benchmarks.py`, `tests/`
+- `src/eth_dca_os/engine.py` — `expires_at` Smart ladder tính đúng cuối accounting month
+  (F-028); bộ đếm `cooldown_override` đếm theo sự kiện (F-031)
+- `src/eth_dca_os/ladders.py` — `ladder_completed()` bỏ PARTIALLY_FILLED khỏi tập kết thúc (F-029)
+- `docs/tasks/WP-D1-no-ky-thuat-khong-anh-huong-hanh-vi.md` — evidence + Status DONE
+- `PROJECT/PROJECT_PROGRESS.md` (+ `PROJECT/LO_TRINH_DE_HIEU.md` sinh tự động)
 
 Deleted:
-- (dự kiến) `benchmarks._noon_candles`
+- `benchmarks._noon_candles` (dead code, F-034)
 
 Migration Impact:
 - Không

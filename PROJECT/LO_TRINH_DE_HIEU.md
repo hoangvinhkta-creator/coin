@@ -32,7 +32,7 @@
 | ⬜ | T-09A — Sửa lỗi kế toán trong app web | Vá lỗi nếu WP-C1 xác nhận là có thật, trước khi app được dùng với tiền thật | C — Opus — high | Sau WP-C1. Nếu WP-C1 bác bỏ cả ba nghi vấn, T-09A có thể thu hẹp phạm vi hoặc CANCELLED |
 | ⬜ | T-09B — Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D — Fable — xhigh | Sau T-04. Nên làm trước T-10 |
 | ⬜ | T-10 — Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C — Opus — xhigh | Sau T-08, T-09B, WP-C4 |
-| 🟡 | WP-D1 — Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B — Sonnet — medium | Không phụ thuộc, làm bất cứ lúc nào (đóng F-028, F-029, F-031, F-034) |
+| ✅ | WP-D1 — Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B — Sonnet — medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
 | 🟡 | WP-D2 — Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C — Opus — xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
 | ⬜ | T-11 — Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D — Fable — max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD |
 
