@@ -567,11 +567,39 @@ Yêu cầu: test suite PASS đầy đủ; và chạy cùng seed/dataset trước
 gói provenance, không phải gói đổi hành vi — mọi sai lệch kết quả mô phỏng là dấu hiệu gói đã đi
 ra ngoài phạm vi.
 
+TEST SUITE: `pytest tests/` — 130/130 PASS, exit code 0, không FAIL, không skip.
+
+ĐỐI CHIẾU SỐ LIỆU TRƯỚC–SAU: cùng một dataset tổng hợp (seed 42, 2020-01-01..2023-12-31) chạy
+`run_gate1` ở HAI phiên bản mã — worktree tại d72fbc4 và working tree sau remediation — rồi so
+snapshot metric bằng `==`, không dung sai:
+
+    BEFORE == AFTER : True
+
+    dataset_hash   = 3ba67072ba769d0d4abb315003e1607f2acd3fcc1acef63bfaeb6f7c36ddc5e3  (không đổi)
+    primary_median = 96.23260701438292
+    final_eth      = 56.03896168942767
+    ae_by_window   = W1 90.11972716149029  W2 107.20019002978864  W3 91.53173036360930
+                     W4 91.43746206075359  W5 101.64416673297248  W6 93.09823928306028
+                     W7 98.75055998074536  W8 100.26314001913342  W9 97.11604113387443
+
+Snapshot gồm: dataset_hash, chín AE theo window, primary_median, pooled_median_descriptive,
+anchor_set_medians, gate1.pass, oos.ae, concentration, cash_ratio, counters_w5, xirr, final_eth.
+`dataset_hash` không đổi là điều đáng chú ý: nhãn nguồn nay được ghi vào lineage nhưng hash tập dữ
+liệu vẫn tính từ hash các file parquet, nên việc gắn nhãn KHÔNG làm đứt tính so sánh với các run cũ.
+
+Hai điểm phải nói rõ để không bị đọc thành mạnh hơn thực tế:
+- `oos.ae` và `xirr` là NaN ở CẢ HAI phiên bản — dataset tổng hợp kết thúc 2023-12-31 nên cửa sổ OOS
+  không có dữ liệu. Chúng so bằng nhau do `json` dùng chung một đối tượng NaN khi parse, tức đây là
+  đặc thù kỹ thuật; điều có ý nghĩa là cả hai phiên bản cùng ở trạng thái NaN.
+- Khối `bootstrap_descriptive` không nằm trong snapshot này (mọi trường của nó là list/dict nên bị
+  bộ lọc scalar loại). Nó được phủ riêng bởi `test_a1_09_reproducibility_same_seed_same_metrics`,
+  test này so toàn bộ khối bootstrap giữa hai run.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 ### Audit độc lập
 
