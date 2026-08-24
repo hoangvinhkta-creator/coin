@@ -13,9 +13,10 @@ Project Profile:
 PRODUCT
 
 Status:
-IN_PROGRESS — implementation + E1 hoàn tất (11/12 REQUIRED check có evidence E1 PASS);
-CHECK-A7-12 (E2 độc lập) đang chờ reviewer session. Trạng thái này sẽ được cập nhật
-thành DONE chỉ khi Completion Gate cho phép.
+DONE — 12/12 REQUIRED check PASS (E1 toàn bộ; E2 cho CHECK-A7-12 với kết luận reviewer
+độc lập **E2 PASS WITH FOLLOW-UPS** — follow-up không chặn DONE); mọi follow-up thuộc
+thẩm quyền phiên đã thực hiện xong trước khi đóng (F-E2A7-02 → CONVENTIONS #17;
+F-E2A7-03 → ghi vào PROGRESS mục PH-04).
 
 Model/Effort thực thi:
 Tier D (Fable) / max — đúng routing đã đóng băng trong file task WP-A7
@@ -28,15 +29,17 @@ Python 3.11.15 · numpy 2.4.6 · pandas 3.0.5 · pyarrow 25.0.1 · pytest 9.1.1
 
 Base commit khi mở phiên: `68bd8be` (task definition WP-A7 frozen, Status READY).
 
-## Result (tính đến thời điểm handoff này)
+## Result
 
-Chuỗi đã thực hiện: Ready Gate xác nhận lại (20/20) → baseline BEFORE tái hiện F-035
-đúng root cause đã triage → test-first A–G viết TRƯỚC fix (7 FAIL đúng kỳ vọng + 1 PASS
-guard) → remediation PA-A trong `capital.py` + đúng MỘT hook trong `engine.py` → 8/8 test
-WP-A7 PASS → regression WP-A3 + capital + engine 34/34 PASS → toàn suite **95/95 PASS**
-(87 test trước + 8 test mới, 354s) → impact BEFORE/AFTER đo trên cùng dataset tổng hợp
-cố định, mọi sai lệch truy vết về điều khoản spec → phát hiện mới NGOÀI scope được ghi
-nhận là PH-04 (không sửa) → chờ E2 độc lập cho CHECK-A7-12.
+**WP-A7 = DONE.** Chuỗi đầy đủ: Ready Gate xác nhận lại (20/20) → baseline BEFORE tái
+hiện F-035 đúng root cause đã triage → test-first A–G viết TRƯỚC fix (7 FAIL đúng kỳ
+vọng + 1 PASS guard) → remediation PA-A trong `capital.py` + đúng MỘT hook trong
+`engine.py` → 8/8 test WP-A7 PASS → regression WP-A3 + capital + engine 34/34 PASS →
+toàn suite **95/95 PASS** (87 test trước + 8 test mới, 354s) → impact BEFORE/AFTER đo
+trên cùng dataset tổng hợp cố định, mọi sai lệch truy vết về điều khoản spec → phát
+hiện mới NGOÀI scope ghi nhận là PH-04 (không sửa) → reviewer độc lập kết luận
+**E2 PASS WITH FOLLOW-UPS** → follow-up thuộc thẩm quyền phiên thực hiện ngay →
+Completion Gate 12/12 PASS → F-035 RESOLVED, RSK-010 CLOSED.
 
 ## Ready Gate (xác nhận lại khi mở task — 2026-08-24)
 
@@ -246,12 +249,49 @@ và quyền vốn phân kỳ, dimension không còn mechanically dead") — Đ�
 4. `docs/reviews/PH-03-triage-smart-unlock-scope.md`
 5. `tests/test_wp_a7_monthly_scope.py`
 
-## E2 độc lập (CHECK-A7-12)
+## E2 độc lập (CHECK-A7-12) và xử lý follow-up
 
-(Sẽ điền sau khi reviewer session độc lập hoàn tất — theo Solo Independent Review
-Procedure; report tại `docs/reviews/E2-WP-A7-*.md`.)
+Reviewer E2-WP-A7-001 (phiên riêng, bắt đầu từ trạng thái repo tại 39a8c22, diff từ
+68bd8be, coi mọi tuyên bố implementer là không đáng tin): report đầy đủ tại
+`docs/reviews/E2-WP-A7-monthly-smart-scope.md`. Kết luận: **E2 PASS WITH FOLLOW-UPS**
+— cả 5 nội dung bắt buộc PASS bằng probe reviewer tự dựng (probe1–probe7):
 
-## Files changed (S004, tính đến commit 1)
+1. Monthly scope: PASS — probe1 unit 4 tháng (budget 40, unlock từng phần, release giữa
+   tháng) + engine 5 tháng (5 ladder, tháng 5 eligible 35.7143 gồm cap-overflow);
+   BEFORE cùng probe: [40, 0, 0, 0].
+2. Conservation: PASS — probe2 6 tháng / 2 crash vắt ranh giới / replayer độc lập từng
+   entry; tổng == contribution 600; OVERFLOW khớp 1-1 hai vế.
+3. Mode alive: PASS — probe3 TỰ DỰNG (crash chiếm vốn → hoãn tạo ladder qua điểm phân
+   kỳ): 3 mode phân kỳ tới tận **eth_total** (0.4486 / 0.4387 / 0.3920) — mạnh hơn mức
+   test_c; eligible khớp dự đoán canonical từng mode (30×1.0 / 30×0.9 / 30×(15/35)).
+4. Opportunity non-regression: PASS — AST text hai hàm giống hệt; lưới 648 điểm
+   BEFORE==AFTER; engine cap 80/overflow đúng; chỉ SMART được mở sổ.
+5. No new lock/leak: PASS — probe5a crash vắt HAI ranh giới (carry drain về 0, mọi
+   tháng trọn quyền 30); probe5b interleaving đối kháng vs reference per-lot:
+   **worst over-grant = +0.000000** (không tồn tại cấp quyền dư), chỉ under-grant tạm
+   thời đúng chiều bảo thủ BT §1, tự hết ở lần mở sổ kế.
+
+Đối chiếu chéo: mọi con số then chốt của S004 tái lập chính xác (7F/1P, 8/8, 34/34,
+95 passed, baseline 21.480751489892178/392/2/0.9106, AFTER 543/1045.9713/21.6370346).
+**Không phát hiện mâu thuẫn.** Gate frozen xác nhận không bị sửa câu chữ.
+
+Finding của reviewer và xử lý trong phiên:
+- **F-E2A7-01 (LOW)** — định lượng giới hạn carry-first đã khai báo (under-grant tạm
+  thời, tối đa cỡ carry, không over-grant). Không hành động (đúng như CONVENTIONS #17).
+- **F-E2A7-02 (LOW hygiene)** — bộ đếm tháng trên pool không mở sổ tích luỹ không ngữ
+  nghĩa. **Đã xử lý ngay trong S004**: bổ sung quy ước "phạm vi hiệu lực của bộ đếm
+  tháng" vào CONVENTIONS #17 (cấm mã tương lai đọc bộ đếm của pool chưa mở sổ).
+- **F-E2A7-03 (INFO)** — tinh chỉnh PH-04: hai mệnh đề đỡ là thuộc tính dataset, không
+  phải bất biến cấu trúc; sức phân giải trên dataset chính thức là câu hỏi empirical.
+  **Đã ghi vào PROGRESS** mục PH-04 (chờ owner cùng PH-04).
+- Follow-up glob validator (`TASK-*.md` vs `WP-*`): tồn đọng tooling từ S003, ngoài
+  scope — đã có trong danh sách chờ chủ dự án.
+
+## Files changed (S004 — commit 1 `39a8c22` + commit 2 đóng gói)
+
+Commit 2 bổ sung: `docs/reviews/E2-WP-A7-monthly-smart-scope.md` (report E2),
+CONVENTIONS #17 (bổ sung F-E2A7-02), task file WP-A7 (CHECK-A7-12 + DONE + Exit
+Criteria), PROGRESS/LO_TRINH (WP-A7 DONE, RSK-010 CLOSED, PH-04 tinh chỉnh), file này.
 
 - `src/eth_dca_os/capital.py` — Pool: bộ đếm tháng + `open_accounting_month`;
   `reserve/release/deploy_from_reserved/deploy_from_available` cập nhật bộ đếm

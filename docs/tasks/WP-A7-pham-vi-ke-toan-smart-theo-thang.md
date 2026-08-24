@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-IN_PROGRESS
+DONE
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -235,7 +235,9 @@ Nếu remediation cần vượt scope: **ESCALATE trước** bằng `SCOPE_CHANG
 - [x] A7.6 Non-regression Opportunity Fund (cumulative, cap, rollover, overflow)
 - [x] A7.7 Chạy regression WP-A3 và toàn bộ suite
 - [x] A7.8 Đo impact BEFORE/AFTER trên cùng dataset/seed, quy từng sai lệch về requirement
-- [ ] A7.9 Phiên rà soát độc lập E2
+- [x] A7.9 Phiên rà soát độc lập E2 → **E2 PASS WITH FOLLOW-UPS**
+      (`docs/reviews/E2-WP-A7-monthly-smart-scope.md`; follow-up trong thẩm quyền đã
+      thực hiện ngay trong S004)
 
 ## Ready Gate
 
@@ -789,7 +791,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E2
@@ -811,11 +813,43 @@ Lưu tại `docs/reviews/` theo `governance/templates/E2_INDEPENDENT_REVIEW_TEMP
 **Không được hạ E2 xuống E1 vì "test đã đủ".** Nếu môi trường không tạo được E2 đúng governance:
 gói **không** được DONE; ghi BLOCKED và nêu chính xác thiếu gì.
 
+**Kết quả (S004):**
+Phiên reviewer độc lập E2-WP-A7-001 (bắt đầu từ trạng thái repo tại commit 39a8c22,
+diff từ 68bd8be, tự chạy lại mọi kiểm chứng bằng probe1–probe7 riêng) — report đầy đủ:
+`docs/reviews/E2-WP-A7-monthly-smart-scope.md`. Kết luận reviewer: **E2 PASS WITH
+FOLLOW-UPS** — cả NĂM nội dung bắt buộc PASS bằng bằng chứng reviewer tự tạo:
+1. Monthly scope — PASS (probe1: unit 4 tháng budget 40/unlock từng phần + engine 5
+   tháng; BEFORE cùng probe: [40, 0, 0, 0] — đúng F-035);
+2. Multi-month conservation — PASS (probe2: 6 tháng, 2 crash vắt ranh giới, replayer
+   độc lập KHÔNG dùng harness, replay từng entry; tổng == contribution 600);
+3. Mode no longer dead — PASS (probe3 TỰ DỰNG — crash chiếm vốn hoãn tạo ladder qua
+   điểm phân kỳ: 3 mode phân kỳ tới tận eth_total 0.4486/0.4387/0.3920 trên engine
+   run thật — mạnh hơn mức test_c yêu cầu);
+4. Opportunity non-regression — PASS (probe4: AST text hai hàm giống hệt từng ký tự;
+   lưới 648 điểm BEFORE==AFTER 0 khác biệt; engine cap/overflow đúng);
+5. No new lock/leak — PASS (probe5a: crash vắt HAI ranh giới tháng, carry drain về 0,
+   mọi tháng trọn quyền; probe5b: interleaving đối kháng vs reference per-lot —
+   worst over-grant = +0.000000, chỉ tồn tại under-grant tạm thời đúng chiều bảo thủ
+   BT §1, tự hết ở lần mở sổ kế).
+Đối chiếu chéo: mọi con số then chốt của implementer đều tái lập chính xác (7F/1P
+before, 8/8, 34/34, 95 passed, baseline/AFTER full synth từng chữ số); **không phát
+hiện mâu thuẫn**; câu chữ gate frozen xác nhận không bị sửa khi điền evidence.
+Finding của reviewer: F-E2A7-01 (LOW — định lượng giới hạn carry-first ĐÃ khai báo ở
+CONVENTIONS #17, không hành động), F-E2A7-02 (LOW hygiene — bộ đếm tháng trên pool
+không mở sổ; **đã xử lý trong phiên**: bổ sung quy ước cấm đọc vào CONVENTIONS #17),
+F-E2A7-03 (INFO — tinh chỉnh PH-04, đã ghi vào PROJECT_PROGRESS mục PH-04). Không
+finding HIGH/CRITICAL mới. Follow-up ngoài scope (PH-04 + glob validator) đã ghi nhận
+cho chủ dự án. Reviewer xác nhận follow-up không chặn DONE.
+
+Status cụ thể: PASS — **E2** (reviewer độc lập, counterexample tự dựng, report theo
+template, không hạ cấp).
+
 Executed By:
-...
+Reviewer độc lập E2-WP-A7-001 (phiên riêng); implementer S004 chỉ điền evidence block
+này từ report của reviewer, không thay đổi kết luận
 
 Timestamp:
-...
+2026-08-24T04:36Z (report reviewer) / 2026-08-24T07:15Z (điền block)
 
 ## Gate staleness (DEC-009)
 
@@ -830,20 +864,22 @@ Hiện trạng ghi rõ: **NO CURRENT OFFICIAL RESULT TO INVALIDATE** — repo ch
 Dependency bảo đảm: **WP-A7 DONE trước T-06**.
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS (12/12)
-- [ ] Không REQUIRED check nào ở trạng thái UNKNOWN / NOT_TESTED / BLOCKED
-- [ ] Mức evidence được thoả: **E1** toàn bộ; **E2 PASS** cho CHECK-A7-12
-- [ ] Full regression PASS (suite Python đầy đủ + bộ test WP-A3)
-- [ ] Governance validators PASS
-- [ ] Impact BEFORE/AFTER được ghi lại và quy về requirement
-- [ ] **F-035 resolved**
-- [ ] **RSK-010 đủ điều kiện đóng**
-- [ ] Không finding HIGH/CRITICAL mới chưa xử lý **trong phạm vi WP-A7**
-- [ ] Không Gate result nào bị dùng lại sai sau quy tắc staleness
-- [ ] Quyết định thiết kế phạm vi kế toán được ghi lại (`docs/CONVENTIONS.md`)
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-010 cập nhật trạng thái
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [x] 100% REQUIRED checks PASS (12/12)
+- [x] Không REQUIRED check nào ở trạng thái UNKNOWN / NOT_TESTED / BLOCKED
+- [x] Mức evidence được thoả: **E1** toàn bộ; **E2 PASS** cho CHECK-A7-12
+- [x] Full regression PASS (suite Python đầy đủ 95/95 + bộ test WP-A3 34/34)
+- [x] Governance validators PASS (lưu ý giới hạn đã ghi nhận: `validate_evidence` /
+      `validate_task_completion` quét glob `TASK-*.md` → PASS trên tập rỗng với file `WP-*`)
+- [x] Impact BEFORE/AFTER được ghi lại và quy về requirement (CHECK-A7-09 + handoff S004)
+- [x] **F-035 resolved** (CHECK-A7-01/02/08 PASS + E2 xác nhận độc lập)
+- [x] **RSK-010 đủ điều kiện đóng** (đóng tại PROJECT_PROGRESS cùng phiên)
+- [x] Không finding HIGH/CRITICAL mới chưa xử lý **trong phạm vi WP-A7**
+      (F-E2A7-01 LOW không hành động; F-E2A7-02 LOW đã xử lý; F-E2A7-03 INFO + PH-04 ngoài scope, đã ghi nhận cho owner)
+- [x] Không Gate result nào bị dùng lại sai sau quy tắc staleness (chưa từng có official result — xem Gate staleness)
+- [x] Quyết định thiết kế phạm vi kế toán được ghi lại (`docs/CONVENTIONS.md` #17, kèm bổ sung F-E2A7-02)
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-010 cập nhật trạng thái
+- [x] Session handoff được viết (`docs/sessions/S004-wp-a7-monthly-smart-scope.md`)
+- [x] Không hạ REQUIRED check nào để đạt DONE
 
 ## Escalation Triggers
 
@@ -873,7 +909,7 @@ Gate 2 bị vô hiệu — và Master Index §6 không cho chạy lại để s�
 Created:
 - `tests/test_wp_a7_monthly_scope.py` — 8 test A–G test-first
 - `docs/sessions/S004-wp-a7-monthly-smart-scope.md` — session handoff
-- `docs/reviews/E2-WP-A7-*.md` — (sau phiên E2)
+- `docs/reviews/E2-WP-A7-monthly-smart-scope.md` — report E2 độc lập (E2-WP-A7-001)
 
 Modified:
 - `src/eth_dca_os/capital.py` — Pool: bộ đếm tháng (`month_reserved`, `month_deployed`,

@@ -88,3 +88,8 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     (`month_reserved + month_deployed`) không đổi nên vô hại. `deploy_from_available`
     (Base/Month-End) tính vào `month_deployed` của tháng đang mở. Bộ đếm tháng reconcile
     được một cách tất định từ ledger + mốc mở sổ (kiểm bằng test F của WP-A7).
+    **Phạm vi hiệu lực của bộ đếm tháng**: bộ đếm chỉ có ngữ nghĩa trên pool đã được
+    engine mở sổ (`open_accounting_month` — hiện chỉ SMART). Trên pool không mở sổ
+    (BASE/OPPORTUNITY — `month_opened_at is None`) các trường `month_*` tích luỹ không
+    ngữ nghĩa; mã tương lai KHÔNG được đọc bộ đếm tháng của pool chưa từng mở sổ
+    (follow-up F-E2A7-02, phiên E2 WP-A7).
