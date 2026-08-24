@@ -501,7 +501,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     and eff_smart_unlock > 0):
                 unlocked = smart_reservable(smart_pool, month_smart_budget, eff_smart_unlock)
                 if unlocked > 1e-9:
-                    month_end_ts = ts + 31 * DAY
+                    # cuối accounting month (giờ local) — F-028: trước đây dùng ts + 31 ngày
+                    # cố định, sai nghĩa; expiry THẬT của Smart ladder không đọc field này
+                    # (xem expire_smart_ladders, dựa trên phát hiện month rollover), nên đây
+                    # chỉ là sửa dữ liệu cho đúng nghĩa, không đổi hành vi (WP-D1/F-028).
+                    next_month_local = lts.replace(day=1) + pd.DateOffset(months=1)
+                    month_end_ts = next_month_local.value / 1e9 - TZ_OFFSET
                     lad = create_smart_ladder(o, ssp, unlocked, oscore, ts, month_end_ts)
                     for z in lad.zones:
                         if smart_pool.reserve(z.target_vnd, f"SMART_ZONE_S{z.zone_index}", ts):
@@ -553,6 +558,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             lad_by_id = {l.ladder_id: l for l in ladders}
             candidates.sort(key=lambda z: zone_order_key(z, lad_by_id[z.ladder_id]))
             created = 0
+            override_counted_this_cycle = False
             ts_close = ts + 900.0
             local_hour = int(((ts_close + TZ_OFFSET) % DAY) // 3600)
             for z in candidates:
@@ -574,7 +580,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                             continue
                         opp_used_today += opp_part
                 if in_cooldown and override_ok:
-                    counters["cooldown_override"][regime.regime] += 1
+                    # đếm theo SỰ KIỆN override (một cycle), không theo zone được tạo action
+                    # (WP-D1/F-031; BT §16/§21 dòng 301 — "tần suất cooldown override theo
+                    # regime" là số liệu chẩn đoán, không phải input cho quyết định engine)
+                    if not override_counted_this_cycle:
+                        counters["cooldown_override"][regime.regime] += 1
+                        override_counted_this_cycle = True
                     log(ts, "COOLDOWN_OVERRIDE", zone=z.zone_id)
                 create_action(z, lad_by_id[z.ladder_id], ts_close, cl, local_hour)
                 created += 1

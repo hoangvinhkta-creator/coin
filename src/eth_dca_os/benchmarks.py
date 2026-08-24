@@ -26,21 +26,6 @@ def _month_key(local_seconds: float) -> str:
     return pd.Timestamp(local_seconds, unit="s").strftime("%Y-%m")
 
 
-def _noon_candles(ts: np.ndarray):
-    """index nến đầu tiên tại/sau 12:00 local mỗi ngày -> dict (day_ord -> idx)."""
-    local = ts + TZ_OFFSET
-    day_ord = (local // DAY).astype(int)
-    tod = local % DAY
-    out = {}
-    for i in range(len(ts)):
-        d = day_ord[i]
-        if tod[i] >= NOON and d not in out:
-            out[d] = i
-        elif d not in out and (i + 1 == len(ts) or day_ord[i + 1] != d):
-            pass
-    return out, local, day_ord
-
-
 def _monthly_buy_points(ts: np.ndarray, buy_day: int):
     """(month_key -> candle idx) tại Day `buy_day` 12:00 local (nến hợp lệ đầu tiên sau đó)."""
     local = ts + TZ_OFFSET

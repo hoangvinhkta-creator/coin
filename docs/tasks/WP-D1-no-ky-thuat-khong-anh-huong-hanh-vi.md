@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-READY
+IN_PROGRESS
 
 Phase:
 Phase 6 — Lớp D: hoãn được / tuỳ chọn
@@ -140,11 +140,11 @@ Do not touch without Scope Expansion:
 - `webapp/`, `docs/spec/`
 
 ## Subtasks
-- [ ] D1.1 Sửa hoặc bỏ `expires_at` của Smart ladder để dữ liệu không còn sai nghĩa (F-028)
-- [ ] D1.2 Sửa `ladder_completed()` cho khớp ST §8 (F-029)
-- [ ] D1.3 Cho bộ đếm cooldown override đếm theo sự kiện (F-031)
-- [ ] D1.4 Xoá dead code `_noon_candles` (F-034)
-- [ ] D1.5 Chứng minh kết quả mô phỏng không đổi
+- [x] D1.1 Sửa hoặc bỏ `expires_at` của Smart ladder để dữ liệu không còn sai nghĩa (F-028)
+- [x] D1.2 Sửa `ladder_completed()` cho khớp ST §8 (F-029)
+- [x] D1.3 Cho bộ đếm cooldown override đếm theo sự kiện (F-031)
+- [x] D1.4 Xoá dead code `_noon_candles` (F-034)
+- [x] D1.5 Chứng minh kết quả mô phỏng không đổi (impact tool BEFORE/AFTER, xem CHECK-D1-05)
 
 ## Ready Gate
 
@@ -160,7 +160,10 @@ Do not touch without Scope Expansion:
 - [x] Escalation triggers được định nghĩa
 - [x] Completion Gate được finalize
 - [x] Completion Gate được đóng băng trước khi thực thi
-- [ ] Xác nhận lại toàn bộ Ready Gate khi mở task
+- [x] Xác nhận lại toàn bộ Ready Gate khi mở task — S005 2026-08-24: routing tái xác nhận
+      bằng `routing_engine.py` (D1 R1 B1 A1 X1 → 1.0 → Tier B; U1 V1 H1 C1 F1 → 1.0 → medium;
+      không floor, không warning, khớp roadmap), `validate_routing.py` PASS (17 file);
+      T-04 vẫn DONE; git status sạch, HEAD `1f4c2b7`, không nhánh nào đụng scope WP-D1
 
 ## Completion Gate
 
@@ -174,7 +177,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -183,18 +186,31 @@ Evidence:
 Yêu cầu: hoặc trường mang đúng cuối accounting month, hoặc trường bị bỏ. Trong cả hai trường hợp,
 test khẳng định engine vẫn xử lý expiry đúng như trước. Đóng F-028.
 
+**Kết quả (S005):** chọn phương án "trường mang đúng cuối accounting month" (giữ field vì
+`Ladder.expires_at` dùng chung cho cả OPPORTUNITY — không được xoá khỏi dataclass).
+`engine.py`: thay `month_end_ts = ts + 31 * DAY` bằng tính đúng mốc đầu tháng kế tiếp theo
+giờ local (`lts.replace(day=1) + pd.DateOffset(months=1)`, quy đổi lại epoch UTC). Baseline
+BEFORE tái hiện: trên tháng 31 ngày (March) hai giá trị trùng nhau NGẪU NHIÊN (không phân
+biệt được) — test dùng tháng 30 ngày (April 2023) để loại trừ trùng hợp; FAIL trước fix
+đúng 86400s (lệch một ngày), PASS sau fix (khớp `pytest.approx`).
+Hành vi expiry KHÔNG đổi: `expire_smart_ladders()` xác định hết hạn Smart bằng phát hiện
+month rollover (`month_key != cur_month`), KHÔNG đọc `.expires_at` — xác nhận bằng grep
+(field chỉ được đọc ở nhánh `lad.type == "OPPORTUNITY"`, engine.py) và bằng chạy thật
+(`test_f028...`: `lad.status == "EXPIRED"` đúng thời điểm, không đổi so với trước).
+Test: `tests/test_wp_d1_debt_cleanup.py::test_f028_smart_expires_at_matches_accounting_month_end` — PASS.
+
 Executed By:
-...
+Agent phiên S005 (Tier B / medium)
 
 Timestamp:
-...
+2026-08-24T07:35Z
 
 #### CHECK-D1-02 — `ladder_completed()` khớp Strategy §8
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -203,18 +219,32 @@ Evidence:
 Yêu cầu: `PARTIALLY_FILLED` không còn được coi là trạng thái kết thúc; phần chưa fill còn `RESERVED`
 tới hết TTL. Test khẳng định trực tiếp. Đóng F-029. Ngữ nghĩa phải nhất quán với WP-C3.
 
+**Kết quả (S005):** `ladders.py::ladder_completed()` bỏ `PARTIALLY_FILLED` khỏi tập trạng
+thái được coi là "đã kết thúc" — khớp ST §8 ("Phần còn lại TIẾP TỤC ở RESERVED cho tới hết
+ACTION_TTL") và khớp `OPEN_ZONE_STATUSES` (đã coi PARTIALLY_FILLED là còn mở từ trước —
+mâu thuẫn nội bộ cũ nay được giải). Baseline BEFORE: hàm trả `True` sai cho ladder còn zone
+PARTIALLY_FILLED. Xác nhận PARTIALLY_FILLED hiện KHÔNG reachable ở bất kỳ đường code thật
+nào trong engine (grep: không nơi nào gán `z.status = "PARTIALLY_FILLED"`) — WP-C3 (partial
+fill ở tầng sản phẩm) chưa triển khai, nên không có xung đột với gói đó ở thời điểm này;
+ngữ nghĩa mới đã nhất quán sẵn cho khi WP-C3 hiện thực hoá partial fill.
+Escalation trigger "hàm CÓ được gọi ở đâu đó" — đã kiểm tra: KHÔNG, zero caller trong
+`src/`, `tests/`, `webapp/` (không kích hoạt).
+Test: `tests/test_wp_d1_debt_cleanup.py::test_f029_ladder_completed_partially_filled_not_terminal`
+— 4 kịch bản (còn PARTIALLY_FILLED / mọi zone kết thúc thật + có EXECUTED / mọi zone kết
+thúc nhưng không EXECUTED / còn zone mở) — PASS.
+
 Executed By:
-...
+Agent phiên S005 (Tier B / medium)
 
 Timestamp:
-...
+2026-08-24T07:35Z
 
 #### CHECK-D1-03 — Bộ đếm cooldown override đếm theo sự kiện override
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -224,18 +254,36 @@ Yêu cầu: test dựng ca một sự kiện override tạo action cho nhiều z
 một lần. Đóng F-031. Lưu ý: số liệu chẩn đoán đổi giá trị — điều này **được phép** và phải được ghi
 nhận là đổi số liệu, không phải đổi hành vi.
 
+**Kết quả (S005):** `engine.py` thêm cờ `override_counted_this_cycle` (reset mỗi cycle,
+trong khối "14. chuyển TRIGGERED -> ACTION_PENDING"); `counters["cooldown_override"][regime]`
+chỉ `+= 1` lần đầu tiên trong cycle khi `in_cooldown and override_ok`, các zone tiếp theo
+cùng cycle không tăng thêm. `log(ts, "COOLDOWN_OVERRIDE", zone=...)` GIỮ NGUYÊN mỗi zone
+(không thuộc phạm vi finding — vẫn là log chi tiết đúng nghĩa).
+Kịch bản tự dựng (`test_f031...`): Smart ladder 3 zone (S0=100, S1≈94.6, S2≈89.2); Day2
+dip vừa đủ trigger MỘT MÌNH S0 → exec → mở cooldown 48h, `last_exec_price≈100`; Day3 dip
+sâu (85) trigger CẢ S1 và S2; candle đầu day3 (open=100) chưa đủ chiết khấu 7%
+(`override_ok=False`) nên hai zone giữ TRIGGERED; candle kế (open=90, đủ chiết khấu) →
+`in_cooldown=True` và `override_ok=True` cho CẢ HAI zone TRONG CÙNG MỘT cycle (xác nhận
+tiền đề bằng chạy thật: hai dòng `COOLDOWN_OVERRIDE` trong decision_log cùng `ts`).
+BEFORE: `sum(counters["cooldown_override"].values()) == 2`. AFTER: `== 1`.
+Đổi số liệu chẩn đoán được ghi nhận rõ ở CHECK-D1-05 (impact BEFORE/AFTER trên dataset
+tổng hợp: tổng sự kiện 35→31; KHÔNG có consumer nào khác đọc counter này ngoài
+`res.counters` — xác nhận grep `gates.py`/`verdict.py`/`metrics.py`/`reporting.py`/
+`diagnostics.py`: không match).
+Test: `tests/test_wp_d1_debt_cleanup.py::test_f031_cooldown_override_counts_once_per_event_not_per_zone` — PASS.
+
 Executed By:
-...
+Agent phiên S005 (Tier B / medium)
 
 Timestamp:
-...
+2026-08-24T07:35Z
 
 #### CHECK-D1-04 — Dead code `_noon_candles` được xoá
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -243,11 +291,19 @@ E1
 Evidence:
 Yêu cầu: hàm không còn trong `benchmarks.py`; grep chứng minh không nơi nào gọi nó. Đóng F-034.
 
+**Kết quả (S005):** hàm `_noon_candles` (benchmarks.py, kèm nhánh `pass` chết) đã bị xoá.
+`grep -rn "_noon_candles" src/ tests/ webapp/` sau khi xoá: chỉ còn match trong chính
+`tests/test_wp_d1_debt_cleanup.py` (tên test + docstring) — không còn tham chiếu nào trong
+mã sản phẩm. Import `TZ_OFFSET, NOON, DAY` ở đầu `benchmarks.py` vẫn dùng bởi các hàm khác
+trong file (`_monthly_buy_points`, v.v.) — xác nhận không phát sinh import thừa/lint issue.
+Test: `tests/test_wp_d1_debt_cleanup.py::test_f034_noon_candles_removed` — PASS
+(`not hasattr(benchmarks, "_noon_candles")`).
+
 Executed By:
-...
+Agent phiên S005 (Tier B / medium)
 
 Timestamp:
-...
+2026-08-24T07:35Z
 
 ### Regression
 
@@ -256,7 +312,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -266,11 +322,34 @@ Yêu cầu: cùng seed và dataset, metric của chiến lược và của toàn
 hoàn toàn**. Đây là mệnh đề định nghĩa gói này. Ngoại lệ duy nhất được phép là bộ đếm cooldown
 override (CHECK-D1-03) — phải nêu rõ.
 
+**Kết quả (S005):** đo bằng `tests/wp_a3_impact_tool.py` trên CÙNG dataset synth cố định
+(SYNTH_SEED mặc định, cửa sổ 2019-01-01→2026-06-01) — BEFORE chạy qua git worktree tại
+`1f4c2b7` (HEAD trước S005) với `--src`, AFTER chạy trên working tree hiện tại (4 fix áp
+dụng). So sánh 66 trường phẳng của JSON output:
+- **Khác biệt DUY NHẤT ngoài metadata** (`tag`, `code_path` — dự kiến, chỉ nhãn/đường dẫn):
+  `counters.cooldown_override.CRASH` 12→9, `counters.cooldown_override.NORMAL` 7→6
+  (STRESSED 16→16, RECOVERY 0→0 không đổi; tổng sự kiện 35→31) — ĐÚNG NGOẠI LỆ đã khai báo.
+- **Mọi thứ khác trùng khớp bit-for-bit**: `eth_total` = 21.6370346047919 cả hai phía;
+  `purchases_count` = 543 cả hai; **danh sách 543 purchase record so sánh bằng `==` python
+  cho kết quả `True` tuyệt đối** (ts/source/nominal/reason từng phần tử); toàn bộ
+  `final_pools` (BASE/SMART/OPPORTUNITY: available/reserved/deployed/total), toàn bộ
+  `label_transitions`/`state_transitions`, `smart_ladders_created`/`opp_ladders_created`/
+  `crash_ladders_created`, `releases_count_by_reason`/`releases_total_by_reason`,
+  `avg_cash_ratio_vs_contributed`, `daily_limit_blocks`, `stuck_crash_reserve_at_end` —
+  tất cả giống hệt.
+Đây là bằng chứng mạnh hơn yêu cầu tối thiểu của check (không chỉ metric tổng hợp mà cả
+TOÀN BỘ chuỗi purchase record, đến từng bản ghi).
+Benchmark module (`benchmarks.py`): F-034 chỉ xoá dead code không được gọi — không có hàm
+benchmark nào (`Benchmark A–D`, `F`, `G`) phụ thuộc `_noon_candles` (xác nhận bằng grep
+trước khi xoá); do đó không cần đo lại benchmark riêng — thay đổi không thể ảnh hưởng.
+File: `wp_a3_impact_WP_D1_BEFORE.json` / `wp_a3_impact_WP_D1_AFTER.json` /
+`wp_a3_purchases_WP_D1_{BEFORE,AFTER}.json` (lưu phiên).
+
 Executed By:
-...
+Agent phiên S005 (Tier B / medium)
 
 Timestamp:
-...
+2026-08-24T07:40Z
 
 #### CHECK-D1-06 — Toàn bộ test suite PASS
 Priority:
