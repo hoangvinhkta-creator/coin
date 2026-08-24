@@ -19,19 +19,18 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-24 — S005 hoàn tất: **WP-D1 DONE** (6/6 REQUIRED check PASS; F-028/F-029/F-031/
-F-034 đóng; kết quả mô phỏng trùng khớp bit-for-bit trừ ngoại lệ đã khai báo)
+2026-08-24 — S006 hoàn tất: **WP-A2 DONE** (10/10 REQUIRED check PASS; F-003/F-004/F-012/
+F-013/F-014 đóng; RSK-007 giảm thiểu một phần — phần FS còn lại thuộc WP-A5)
 
 Overall Status:
 IN_PROGRESS
 
 Current Phase:
-Phase 2 — Lớp A (bắt buộc sửa trước official run) song song Phase 6 — Lớp D (hoãn được).
-Hai mắt xích đường găng WP-A3 và WP-A7 đã DONE; nhánh song song còn lại của đường găng là
-WP-A4. **WP-D1 (lớp D, không phụ thuộc/không chặn) đã DONE tại S005.**
+Phase 2 — Lớp A (bắt buộc sửa trước official run). Bốn gói lớp A đã DONE: WP-A2, WP-A3,
+WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A4, WP-A5, WP-A6**.
 
 Current Task:
-Không có (S005 vừa đóng WP-D1; chờ chỉ thị của chủ dự án)
+Không có (S006 vừa đóng WP-A2; chờ chỉ thị của chủ dự án)
 
 Current Task Mode:
 —
@@ -39,10 +38,12 @@ Current Task Mode:
 Next Recommended Task:
 Chủ dự án chọn một trong các task đang READY: **WP-A4** (khuyến nghị — mắt xích còn lại
 của cặp song song trên đường găng T-04 → WP-A3 ✅ → {WP-A4 ∥ WP-A7 ✅} → WP-A6 → GATE-A →
-T-06; nhánh làm việc hiện đã push xong mọi thay đổi `engine.py` nên WP-A4 rebase/merge
-tuần tự sau các hook nhỏ của WP-A3/WP-A7/WP-D1), WP-A1, WP-A2 (mở khoá WP-A5 cùng với
-WP-A7 ✅), WP-C1, WP-D2.
-KHÔNG tự mở — agent dừng sau WP-D1 theo chỉ thị của chủ dự án (S005).
+T-06; nhánh làm việc đã push xong mọi thay đổi `engine.py` nên WP-A4 rebase/merge tuần tự
+sau các hook nhỏ của WP-A3/WP-A7/WP-D1), **WP-A1** (prerequisite GATE-A, độc lập),
+WP-C1, WP-D2.
+**WP-A5 nay đã đủ dependency** (WP-A2 ✅ + WP-A3 ✅ + WP-A7 ✅) — xem mục Next Session;
+lưu ý WP-A5 cùng sửa `pipeline.py` với WP-A2 nên phải tuần tự hoá (WP-A2 đã push xong).
+KHÔNG tự mở — agent dừng sau WP-A2 theo chỉ thị của chủ dự án (S006).
 
 ## Overall Roadmap
 
@@ -75,10 +76,10 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. HOÀN TẤT tại S002 — 15 file task đã đóng băng gate |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
 | READY | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
-| READY | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04 (DONE). Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier C nay route tự nhiên sau MICRO-GOVDEF-001 (trước đó là ghi đè theo DEC-008) — xem GOVDEF-001 mục Resolution |
+| DONE | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | **DONE tại S006** (10/10 REQUIRED PASS; đấu nối thuần tuý — 4 module chỉ-đọc 0 dòng đổi; chiến lược + Benchmark A không đổi 159/159 trường) (đóng F-003, F-004, F-012, F-013, F-014). Tier C route tự nhiên sau MICRO-GOVDEF-001, xác nhận lại tại S006 |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
 | READY | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (DONE tại S003) — READY. Song song roadmap với WP-A7, KHÔNG bị chặn bởi F-035; ba điều kiện bắt buộc ghi ở RCP-002 §Điều kiện phê duyệt (đóng F-023, F-025, F-032) |
-| PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3, **WP-A7** (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical) — đóng phần đo lường của F-002, và F-016 |
+| READY | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | **Đủ dependency từ S006**: WP-A2 ✅, WP-A3 ✅, WP-A7 ✅ (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical). Tuần tự hoá với WP-A2 trên `pipeline.py` — đóng phần đo lường của F-002, và F-016 |
 | PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4, **WP-A7**. Completion Gate cuối cùng KHÔNG được chạy trước khi WP-A7 DONE (đường xử lý Smart hiện suy biến) — đóng F-018, F-019 |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
 | PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Hai nhóm điều kiện ĐỘC LẬP, phải thoả CẢ HAI: (A) nội tại — T-05 và **GATE-A** (WP-A1…**WP-A7** đều DONE); (B) hạ tầng — BLK-001 (mạng Binance). Gỡ BLK-001 KHÔNG cho phép chạy T-06 khi GATE-A chưa PASS |
@@ -483,8 +484,17 @@ Giảm thiểu: **WP-A1** (RCP-001) — thay thế T-06A, đóng đủ cả 8 tr
 (Python version, dependency/lock hash, git commit SHA, dataset hash, strategy config hash,
 execution config hash, manifest hash, seed), không chỉ ghim thư viện.
 
-### RSK-007 — Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run (mức: cao) — S001 XÁC NHẬN (E1)
-S001 phát hiện (E1): Benchmark B/C/D, ablation §2.3, volume z-score §2.4, bảng coverage §4 và
+### RSK-007 — Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run (mức: cao) — **GIẢM THIỂU MỘT PHẦN tại S006 (WP-A2 DONE); còn mở phần WP-A5**
+**Cập nhật S006 (2026-08-24):** WP-A2 (DONE) đã đấu nối **toàn bộ** phần thuộc quyền sở hữu của
+nó: Benchmark B/C/D (F-003), ablation §2.3 + volume z-score §2.4 kèm bảng chênh lệch (F-004),
+bảng coverage §4 (F-012), XIRR §16 (F-013), bootstrap 1000/block length cho official (F-014).
+Bằng chứng E1: 9 test wiring chạy `run_gate1` thật (8 FAIL trước fix → 9/9 PASS sau fix), spy
+đo trực tiếp `n_sims` 200→1000; đấu nối KHÔNG đổi kết quả chiến lược/Benchmark A (159 trường
+metric, 0 khác biệt). Nguyên tắc BT §22 nay áp dụng được.
+**Phần CÒN MỞ:** ba Failure Signal (FS-02, FS-06, FS-12) vẫn không được truyền input nên luôn
+UNKNOWN — thuộc **WP-A5** (chưa bắt đầu). Risk chỉ đóng hoàn toàn khi WP-A5 DONE.
+
+Nội dung gốc S001 (giữ nguyên để audit) — S001 phát hiện (E1): Benchmark B/C/D, ablation §2.3, volume z-score §2.4, bảng coverage §4 và
 XIRR §16 đều đã được cài đặt đúng nhưng **không nơi nào trong pipeline gọi chúng**. Hệ quả: một
 official run sẽ phát ra verdict kèm báo cáo thiếu, và nguyên tắc Backtest §22 ("luật đơn giản
 thắng nếu kết quả tương đương") không thể áp dụng vì không có B/C/D để so.
@@ -647,6 +657,21 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S006 — WP-A2 — 2026-08-24 — **DONE.** Đấu nối các hạng mục đã viết nhưng pipeline chưa
+  gọi (đóng **F-003, F-004, F-012, F-013, F-014**; RSK-007 giảm thiểu một phần). Routing
+  xác nhận lại: router trả **Tier C tự nhiên**, không qua override — MICRO-GOVDEF-001 không
+  hồi quy. Ready Gate 13/13 → baseline BEFORE tái hiện đủ 5 finding với phân biệt
+  A/B/C/D/E (code tồn tại / có test / pipeline gọi / output chứa / downstream dùng) →
+  test-first 9 test wiring (8 FAIL + 1 PASS đúng kỳ vọng: hàm `xirr` vốn đã đúng) →
+  remediation THUẦN ĐẤU NỐI trong `pipeline.py` + `diagnostics.py` (+1 dòng `cli.py`
+  truyền `dev_limit`, đã khai báo ranh giới scope) → 9/9 PASS → **CHECK-A2-08: 4 module
+  chỉ-đọc (`benchmarks/metrics/windows/bootstrap`) 0 dòng đổi** → **CHECK-A2-09: 159
+  trường metric của chiến lược + Benchmark A, 0 khác biệt** (đo qua worktree, assert
+  provenance) → full regression PASS → Completion Gate 10/10. Payload official nay có
+  `benchmarks` A–D, `diagnostics.ablation` (3 model), `volume_zscore_variant` + bảng
+  chênh lệch, `coverage_table`, `xirr`, và bootstrap **1000/block length** (spy đo trực
+  tiếp 200→1000). Không finding/risk mới. Artifact:
+  `docs/sessions/S006-wp-a2-pipeline-wiring.md`, `tests/test_wp_a2_pipeline_wiring.py`.
 - S005 — WP-D1 — 2026-08-24 — **DONE.** Dọn 4 khoản nợ kỹ thuật không ảnh hưởng hành vi
   (đóng **F-028, F-029, F-031, F-034**). Ready Gate 12/12 xác nhận lại (routing B/Sonnet/
   medium khớp roadmap) → baseline E0/E1 tái hiện đủ 4 finding tại 1f4c2b7 → kiểm tra rủi
@@ -885,7 +910,7 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 ## Next Session
 
 Recommended Session:
-S006 — chủ dự án quyết định:
+S007 — chủ dự án quyết định:
 
 - **Theo đường găng — ưu tiên cao nhất:** `WP-A4` (C/Opus/xhigh) — mắt xích còn lại của
   cặp song song {WP-A4 ∥ WP-A7 ✅} trước WP-A6. Nhánh làm việc đã push xong mọi thay đổi
@@ -893,15 +918,16 @@ S006 — chủ dự án quyết định:
   hoá merge của RCP-002 thoả tự nhiên; hai điều kiện còn lại vẫn áp dụng (assert tiền đề
   không suy biến trên đường Smart — nay là hành vi ĐÚNG sau F-035 fix; không hard-code kỳ
   vọng vốn/ETH nhiều tháng).
-- **Mở khoá WP-A5:** `WP-A2` (C/Opus — override DEC-008) — WP-A5 giờ chỉ còn chờ WP-A2.
+- **Nay đã đủ dependency:** `WP-A5` (C/Opus/xhigh) — WP-A2 ✅ + WP-A3 ✅ + WP-A7 ✅.
+  Lưu ý tuần tự hoá: WP-A5 cùng sửa `pipeline.py` với WP-A2 (đã push xong, không còn phiên
+  nào giữ file).
 - **Theo an toàn dữ liệu thật:** `WP-C1` (C/Opus/xhigh) — độc lập hoàn toàn với lớp A.
 - `WP-D1` đã **DONE** — không còn trong danh sách READY.
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
-`WP-A1`, `WP-A2`, `WP-A4`, `WP-C1`, `WP-D2`.
+`WP-A1`, `WP-A4`, `WP-A5` (mới đủ dependency), `WP-C1`, `WP-D2`.
 
 Task đang PLANNED, chưa đủ điều kiện READY:
-- `WP-A5` — chờ WP-A2 (WP-A3 ✅, WP-A7 ✅)
 - `WP-A6` — chờ WP-A4 (WP-A3 ✅, WP-A7 ✅)
 - `WP-C4` — chờ WP-A4, WP-A6 (WP-A3 ✅, WP-A7 ✅)
 

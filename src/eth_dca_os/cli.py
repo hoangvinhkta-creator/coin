@@ -74,7 +74,7 @@ def main(argv=None):
         state_file = out_dir / "pipeline_state.json"
         if args.what in ("gate1", "all"):
             print("Gate 1 + OOS ...")
-            g1 = run_gate1(prep, out_dir)
+            g1 = run_gate1(prep, out_dir, dev_limit=args.dev_limit)
             results["gate1"] = g1
             from .reporting import print_gate1_report
             print(print_gate1_report(g1))

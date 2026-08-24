@@ -8,7 +8,14 @@ import numpy as np
 import pandas as pd
 
 from . import MASTER_SEED
-from .benchmarks import random_anchor_control, random_timing_control, run_benchmark_A
+from .benchmarks import (
+    random_anchor_control,
+    random_timing_control,
+    run_benchmark_A,
+    run_benchmark_B,
+    run_benchmark_C,
+    run_benchmark_D,
+)
 from .bootstrap import block_bootstrap_ae
 from .config import (
     BASELINE_STRATEGY,
@@ -19,7 +26,7 @@ from .config import (
 )
 from .data.dataset import load_dataset
 from .diagnostics import run_all as run_diagnostics
-from .engine import run_engine
+from .engine import _epoch_seconds, run_engine
 from .failure_signals import evaluate_failure_signals
 from .gates import evaluate_gate1, evaluate_gate2, evaluate_gate3, evaluate_oos
 from .indicators import compute_daily_indicators
@@ -31,11 +38,12 @@ from .metrics import (
     oos_metrics,
     shortfall_attribution,
     window_metrics,
+    xirr,
 )
 from .reporting import save_run
 from .score import compute_scores
 from .verdict import decide_verdict
-from .windows import OOS_START
+from .windows import OOS_START, coverage_table, gate_windows, primary_median
 
 
 class Prepared:
@@ -61,8 +69,74 @@ class Prepared:
         return pd.Timestamp(last).tz_localize(None).normalize()
 
 
+def _bootstrap_sims(dev_limit: int | None) -> int:
+    """Backtest §13: official run = 1000 mô phỏng MỖI block length; chỉ dev/smoke mới hạ 200.
+
+    Cùng quy ước dev/official với `run_gate2`/`run_gate3`/`run_controls`: `dev_limit=None`
+    nghĩa là official (WP-A2/F-014 — trước đây pipeline ghi đè cứng xuống 200).
+    """
+    return 200 if dev_limit else 1000
+
+
+def _benchmark_comparison(prep: Prepared, exec_cfg: ExecutionConfig, wm: dict,
+                          contribution: float = 100.0) -> dict:
+    """AE của chiến lược so với TỪNG benchmark A–D trên đúng chín window pre-OOS.
+
+    Backtest §22 chỉ có nghĩa khi chiến lược được đối chiếu với cả ba benchmark đơn giản
+    hơn, không riêng A (WP-A2/F-003). Mọi benchmark nhận CÙNG (start, end, contribution,
+    exec_cfg) với engine — điều kiện equal capital rule §12.1 (CHECK-A2-07).
+    Không sửa công thức benchmark nào; đây thuần tuý là lời gọi + tổng hợp.
+    """
+    runners = {
+        "A": lambda s, e: run_benchmark_A(prep.dataset, s, e, contribution, exec_cfg),
+        "B": lambda s, e: run_benchmark_B(prep.dataset, s, e, contribution, exec_cfg),
+        "C": lambda s, e: run_benchmark_C(prep.dataset, prep.indicators, s, e,
+                                          contribution, exec_cfg),
+        "D": lambda s, e: run_benchmark_D(prep.dataset, prep.indicators, s, e,
+                                          contribution, exec_cfg),
+    }
+    out = {name: {"ae_by_window": {}, "eth_by_window": {}, "contributed_by_window": {}}
+           for name in runners}
+    for w in gate_windows():
+        start = pd.Timestamp(w.start)
+        end = pd.Timestamp(w.end) + pd.Timedelta(days=1)   # end inclusive -> exclusive
+        eth_v2 = wm["windows"][w.window_id]["eth_v2"]
+        for name, run in runners.items():
+            r = run(start, end)
+            ae = (eth_v2 / r["eth"] * 100.0) if r["eth"] > 0 else np.nan
+            out[name]["ae_by_window"][w.window_id] = ae
+            out[name]["eth_by_window"][w.window_id] = r["eth"]
+            out[name]["contributed_by_window"][w.window_id] = r["contributed"]
+    for name in out:
+        out[name]["primary_median_ae"] = primary_median(out[name]["ae_by_window"])
+    return out
+
+
+def _xirr_payload(dataset, full_run) -> dict:
+    """XIRR / money-weighted return của chiến lược (Backtest §16, WP-A2/F-013).
+
+    Dòng tiền = mỗi contribution ngoài (âm) + giá trị ETH cuối kỳ theo giá đóng cửa
+    cuối dataset (dương). Dùng `metrics.xirr` sẵn có, không sửa công thức.
+    """
+    d1 = dataset["ETHUSDT_1d"]
+    final_price = float(d1["close"].to_numpy(float)[-1])
+    flows = [(float(ts), -float(amt)) for ts, amt in full_run.contributions]
+    if not flows:
+        return {"xirr": float("nan"), "n_cashflows": 0,
+                "final_eth": full_run.eth_total, "final_price": final_price}
+    end_ts = float(_epoch_seconds(d1["open_time"])[-1])
+    final_value = full_run.eth_total * final_price
+    flows.append((end_ts, final_value))
+    return {"xirr": float(xirr(flows)), "n_cashflows": len(flows),
+            "final_eth": float(full_run.eth_total), "final_price": final_price,
+            "total_contributed": float(sum(-a for _, a in flows[:-1])),
+            "final_value_usdt": float(final_value)}
+
+
 def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
-              exec_cfg: ExecutionConfig = GATE1_LOW_FRICTION) -> dict:
+              exec_cfg: ExecutionConfig = GATE1_LOW_FRICTION,
+              dev_limit: int | None = None) -> dict:
+    """`dev_limit` CHỈ dùng dev/smoke (giảm số mô phỏng bootstrap); official = None."""
     scores = prep.scores(cfg.score_weights)
     wm = window_metrics(prep.dataset, scores, cfg, exec_cfg)
     g1 = evaluate_gate1(wm)
@@ -72,7 +146,7 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
     # bootstrap + concentration + cash trên window giữa (W5) làm đại diện chẩn đoán
     rep = wm["windows"]["W5"]
     boot = block_bootstrap_ae(rep["result"].purchases, rep["bench"]["purchases"],
-                              n_sims=200, master_seed=MASTER_SEED)
+                              n_sims=_bootstrap_sims(dev_limit), master_seed=MASTER_SEED)
     conc = concentration(rep)
     cash = cash_ratio_stats(rep["result"])
     payload = {
@@ -81,8 +155,13 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
         "diagnostics": diag, "bootstrap_descriptive": boot,
         "concentration": conc, "cash_ratio": cash,
         "counters_w5": rep["result"].counters,
+        "benchmarks": _benchmark_comparison(prep, exec_cfg, wm),
+        "official": dev_limit is None,
+        "dev_limit": dev_limit,
     }
     payload["window_metrics"]["ae_by_window"] = wm["ae_by_window"]
+    # Backtest §4: bảng coverage weight bắt buộc trong MỌI báo cáo (WP-A2/F-012)
+    payload["window_metrics"]["coverage_table"] = coverage_table()
     rec = save_run(out_dir, "GATE1", payload,
                    strategy_config_hash=cfg.hash, execution_config_hash=exec_cfg.hash,
                    dataset_hash=prep.dataset_hash, start_date="2019-01-01",
@@ -93,6 +172,8 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
                       pd.Timestamp("2019-01-01"), prep.oos_end())
     payload["_full_run_monthly_deployments"] = full.monthly_deployments
     payload["_full_run_eth"] = full.eth_total
+    # Backtest §16: XIRR / money-weighted return (WP-A2/F-013)
+    payload["xirr"] = _xirr_payload(prep.dataset, full)
     return payload
 
 
