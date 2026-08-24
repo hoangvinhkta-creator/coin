@@ -194,7 +194,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -222,7 +222,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -257,7 +257,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -291,7 +291,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -337,7 +337,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+FAIL — E2 (F-E2A1-01: nhãn nguồn mặc định fail-open trong `fetch_all`)
 
 Evidence Level:
 E1
@@ -378,7 +378,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -417,7 +417,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+FAIL — E2 (F-E2A1-01 + F-E2A1-02: hai đường biến dữ liệu chưa chứng minh được thành official)
 
 Evidence Level:
 E1
@@ -476,7 +476,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -522,7 +522,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+NOT_TESTED — vế "cài môi trường sạch từ lockfile" chưa chạy được (proxy chặn cài gói)
 
 Evidence Level:
 E1
@@ -557,7 +557,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — E1 (test tự động) + E2 (reviewer độc lập tự chạy lại)
 
 Evidence Level:
 E1
@@ -608,7 +608,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+FAIL
 
 Evidence Level:
 E2
@@ -619,11 +619,34 @@ Yêu cầu: một phiên reviewer độc lập theo "Solo Independent Review Pro
 CHECK-A1-06, A1-07, A1-09 và ghi bằng chứng riêng. Lưu tại `docs/reviews/` theo
 `governance/templates/E2_INDEPENDENT_REVIEW_TEMPLATE.md`.
 
+KẾT QUẢ: **E2 FAIL** (lần rà soát thứ hai, trên commit 2f20e6c).
+Báo cáo: `docs/reviews/E2-WP-A1-provenance.md`.
+
+Điểm số reviewer tự chấm: 7 PASS / 2 FAIL / 1 NOT_TESTED trên CHECK-A1-01..A1-10.
+
+HAI FINDING CHẶN — cả hai đều là mặc định FAIL-OPEN do chính lượt remediation này đưa vào, tức
+đúng nguyên tắc mà gói này tuyên bố bảo vệ:
+
+- F-E2A1-01 (CAO) — `fetch_all`: `sources[key] = used[0] if used else SOURCE_REST`. Series mà
+  KHÔNG cơ chế nào tạo ra (0 dòng) vẫn được dán nhãn `binance_rest` — một nguồn THẬT, đủ tư cách
+  official. Reviewer chứng minh bằng stub hai hàm I/O (không cần mạng): một lần fetch không lấy
+  được dòng nào cho `official_eligibility -> (True, 'verified')`. Nằm trên đúng đường đi của
+  official run T-06.
+- F-E2A1-02 (TRUNG BÌNH-CAO) — `official_eligibility` chỉ duyệt entry CÓ trong lineage, không
+  kiểm lineage phủ đủ ba series mà `load_dataset` nạp. Lineage khai 1/3 series (nhãn real, hash
+  đúng) cho `(True, 'verified')` trong khi hai series còn lại vẫn synthetic.
+
+FINDING KHÁC: F-E2A1-03 (provenance im lặng suy biến ngoài editable install), F-E2A1-04 (không
+phân biệt worktree bẩn), F-E2A1-05 và F-E2A1-07 (hai assertion không thể FAIL vì lý do chúng
+tuyên bố — cùng LỚP defect đã hạ gục E2 lần trước, khác hình thức), F-E2A1-06 (lockfile không
+ghim tzdata hệ điều hành), F-E2A1-08 (`data_source: "mixed"` không nằm trong taxonomy, official
+run thật gần như chắc chắn sinh ra), F-E2A1-09 (`run_controls` ghi `official` không tính đường dev).
+
 Executed By:
-...
+Phiên reviewer độc lập (Opus / xhigh), không phải người cài đặt
 
 Timestamp:
-...
+2026-08-24
 
 ## Exit Criteria
 - [ ] 100% REQUIRED checks PASS
@@ -633,6 +656,28 @@ Timestamp:
 - [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-006 và RSK-008 được cập nhật trạng thái
 - [ ] Session handoff được viết
 - [ ] Không hạ REQUIRED check nào để đạt DONE
+
+## Trạng thái gate sau E2 lần hai (2026-08-24)
+
+WP-A1 **KHÔNG DONE**. Completion Gate chưa đóng:
+
+| Check | Trạng thái |
+|---|---|
+| A1-01, A1-02, A1-03, A1-04, A1-06, A1-08, A1-10 | PASS (E1 + E2 tự chạy lại) |
+| A1-05, A1-07 | FAIL (F-E2A1-01, F-E2A1-02) |
+| A1-09 | NOT_TESTED (vế môi trường sạch từ lockfile) |
+| A1-11 | FAIL (E2 FAIL) |
+
+Exit Criteria chưa thoả: "100% REQUIRED checks PASS" và "không defect nghiêm trọng nào chưa xử lý".
+Ba mục còn hở: `PROJECT/PROJECT_PROGRESS.md` chưa cập nhật, RSK-006/RSK-008 chưa cập nhật trạng
+thái, chưa viết session handoff. **GATE-A không đóng được → T-06 chưa mở.**
+
+ĐỀ XUẤT ESCALATION (chủ dự án quyết, không tự chọn): reviewer khuyến nghị `VERIFICATION_DEPTH`
+— giữ Tier C, nâng Effort xhigh → max — thay vì `CAPABILITY_CEILING`, với lý do kiến trúc dẫn xuất
+đã đúng và hai defect chặn là hai GIÁ TRỊ MẶC ĐỊNH fail-open, không phải bế tắc về cách tiếp cận.
+Lưu ý ngược lại: đây là lần thứ HAI E2 bác bỏ gói này, nên `ESCALATION_PROTOCOL.md` ("không vá đi
+vá lại một implementation đang hỏng") áp dụng — vòng sửa thứ ba cần chủ dự án phê duyệt tường minh
+chứ không tự động tiếp tục.
 
 ## Escalation Triggers
 
