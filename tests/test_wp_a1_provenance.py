@@ -68,12 +68,23 @@ def synth_raw(tmp_path_factory) -> Path:
     return raw
 
 
+def _git_head() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
+
+
 @pytest.fixture(scope="module")
 def gate1_official(synth_raw, tmp_path_factory):
-    """Kịch bản chính xác của F-005: `ethdca synth` rồi `run` KHÔNG có `--dev-limit`."""
+    """Kịch bản chính xác của F-005: `ethdca synth` rồi `run` KHÔNG có `--dev-limit`.
+
+    HEAD được chụp NGAY TRƯỚC khi chạy: bất biến của CHECK-A1-03 là `code_commit` khớp HEAD
+    *tại thời điểm run*, nên đó mới là mốc đối chiếu đúng — một commit xảy ra trong lúc run
+    kéo dài không được biến thành FAIL giả.
+    """
     out = tmp_path_factory.mktemp("wp_a1_out")
+    head = _git_head()
     payload = run_gate1(Prepared(synth_raw), out)
-    return payload, out
+    return payload, out, head
 
 
 def _records(out_dir: Path, run_type: str) -> list[dict]:
@@ -84,7 +95,7 @@ def _records(out_dir: Path, run_type: str) -> list[dict]:
 # ============ CHECK-A1-01 — Run record chứa đủ 8 nhóm trường provenance bắt buộc
 
 def test_a1_01_run_record_has_all_provenance_fields(gate1_official):
-    payload, _ = gate1_official
+    payload, _, _ = gate1_official
     rec = payload["run_record"]
 
     missing = [f for f in PROVENANCE_FIELDS if f not in rec]
@@ -104,7 +115,7 @@ def test_a1_01_run_record_has_all_provenance_fields(gate1_official):
 # ============ CHECK-A1-02 — sensitivity_manifest_hash được ghi cho GATE2 và GATE3
 
 def test_a1_02_manifest_hash_gate1(gate1_official):
-    payload, _ = gate1_official
+    payload, _, _ = gate1_official
     mh = payload["run_record"]["sensitivity_manifest_hash"]
     assert mh and len(mh) == 64, f"không phải SHA256 hex: {mh!r}"
 
@@ -133,15 +144,12 @@ def test_a1_02_manifest_hash_gate2_gate3(synth_raw, tmp_path):
 # ============ CHECK-A1-03 — simulation_seed và code_commit đúng giá trị
 
 def test_a1_03_simulation_seed_and_code_commit(gate1_official):
-    payload, _ = gate1_official
+    payload, _, head_at_run = gate1_official
     rec = payload["run_record"]
 
     assert isinstance(rec["simulation_seed"], int), "simulation_seed phải là số (F-010)"
-
-    git_head = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], cwd=REPO_ROOT, text=True).strip()
-    assert rec["code_commit"] == git_head, \
-        f"code_commit {rec['code_commit']} != git HEAD {git_head}"
+    assert rec["code_commit"] == head_at_run, \
+        f"code_commit {rec['code_commit']} != git HEAD lúc chạy {head_at_run}"
 
 
 def test_a1_03_simulation_seed_is_derived_not_constant():
@@ -226,7 +234,7 @@ def test_a1_05_build_lineage_rejects_unknown_taxonomy(tmp_path, synth_raw):
 
 def test_a1_06_synthetic_cannot_be_official(gate1_official):
     """Kịch bản F-005: synth + run KHÔNG dev-limit. Trước WP-A1 cho official=True."""
-    payload, out = gate1_official
+    payload, out, _ = gate1_official
 
     assert payload["official"] is False, \
         f"dữ liệu synthetic vẫn official=True (F-005); lý do={payload.get('official_reason')!r}"
