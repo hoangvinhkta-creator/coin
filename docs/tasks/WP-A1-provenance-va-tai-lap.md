@@ -205,11 +205,17 @@ Yêu cầu: một run đầy đủ sinh ra record chứa đồng thời `python_
 `sensitivity_manifest_hash`, seed (`master_seed` và `simulation_seed`). Bằng chứng phải là nội dung
 record thật in ra, không phải mô tả.
 
+Record thật từ `backtest_runs.jsonl` của run GATE1 (dữ liệu synthetic, dev_limit=None) — đủ 9 khoá
+provenance, không khoá nào rỗng, cộng `data_source` và `official` để record tự trả lời "dữ liệu đến
+từ đâu" và "có phải official không". Test `test_a1_01_run_record_has_all_provenance_fields` kiểm
+từng khoá bằng assertion cứng, và bác riêng hai giá trị suy biến `dependency_lock_hash` =
+"no-lockfile" / `code_commit` = "unknown" (nếu không, "có trường" vẫn có thể vô nghĩa).
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-02 — `sensitivity_manifest_hash` thật sự được ghi cho run GATE2 và GATE3
 Priority:
@@ -225,11 +231,26 @@ Evidence:
 Yêu cầu: từ record của một run GATE2 và một run GATE3, đọc ra `sensitivity_manifest_hash` khác rỗng
 và trùng với hash của manifest thực sự được dùng. Đóng F-009.
 
+BEFORE (d72fbc4): lần cài đặt trước CHỈ truyền `manifest_hash` cho GATE1. Lời gọi `save_run` trong
+`run_gate2` và `run_gate3` hoàn toàn không có tham số này, nên đúng hai record mà check này đòi hỏi
+lại ghi `sensitivity_manifest_hash = null`. F-009 CHƯA đóng; test cũ chỉ kiểm GATE1 nên không thấy.
+
+AFTER: `run_gate2` / `run_gate3` hash ĐÚNG manifest đã chạy bằng `manifest_hash([_cfg_row(c) ...])`
+— cùng hai hàm mà `freeze_manifests` dùng, nên hash trong record đối chiếu được trực tiếp với
+manifest đóng băng. Khi `--dev-limit` cắt manifest, hash phản ánh manifest đã cắt đúng như đã chạy,
+không phải manifest đầy đủ.
+
+GATE1 không chạy manifest sensitivity; nó hash tập chín window thực dùng để record vẫn tự chứng minh
+được phạm vi đo.
+
+Test: `test_a1_02_manifest_hash_gate2_gate3` (so record với hash tính độc lập từ manifest),
+`test_a1_02_manifest_hash_gate1`.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-03 — `simulation_seed` và `code_commit` có mặt và đúng giá trị
 Priority:
@@ -245,11 +266,25 @@ Evidence:
 Yêu cầu: `code_commit` khớp `git rev-parse HEAD` tại thời điểm chạy; `simulation_seed` khác rỗng và
 tái lập được kết quả. Đóng F-010.
 
+`code_commit` được đối chiếu bằng assertion cứng với `git rev-parse HEAD`. `simulation_seed` là số
+nguyên dẫn xuất `deterministic_hash(master_seed, strategy_hash, execution_hash)`; test khẳng định nó
+deterministic, ĐỔI theo config, và KHÁC `master_seed` — nếu không, một hằng số cũng sẽ PASS.
+
+DEFECT ĐÃ SỬA (phát hiện trong remediation này): `_get_code_commit` và `_get_dependency_lock_hash`
+hard-code `/home/user/coin`. Official run bắt buộc chạy trên máy có mạng Binance (DEC-003/BLK-001),
+nơi đường dẫn đó không tồn tại — hai hàm sẽ âm thầm trả "unknown" và "no-lockfile", tức MẤT
+provenance đúng lần chạy duy nhất mà Master Index §6 cấm chạy lại. Nay gốc repo suy từ vị trí module
+(`Path(__file__).resolve().parents[2]`); cũng thoả ghi chú Ready Gate về việc không để lộ đường dẫn
+tuyệt đối của máy chủ dự án.
+
+Test: `test_a1_03_simulation_seed_and_code_commit`,
+`test_a1_03_simulation_seed_is_derived_not_constant`.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-04 — `created_at` có mặt ở cả `StrategyConfig` và `ExecutionConfig`
 Priority:
@@ -266,11 +301,36 @@ Yêu cầu: hai config sinh ra từ pipeline đều mang `created_at`; và việ
 đổi** `strategy_config_hash` / `execution_config_hash` của cùng một cấu hình nghiệp vụ, hoặc nếu có
 đổi thì sự thay đổi được ghi nhận tường minh vì nó ảnh hưởng tính so sánh giữa các run. Đóng F-011.
 
+KẾT QUẢ: `created_at` được đóng dấu ISO8601 UTC lên cả `StrategyConfig` và `ExecutionConfig`, CỐ Ý
+không phải dataclass field — `asdict()` nuôi cả `hash`, `key()` (khử trùng lặp manifest) và
+`_cfg_row` (hash manifest đóng băng), nên một field mang dấu thời gian sẽ làm hash config đổi theo
+thời điểm chạy và manifest hết tái lập.
+
+Đối chiếu trực tiếp với commit d72fbc4 (trước khi thêm) qua `git worktree`, cùng interpreter:
+
+    BEFORE strategy_hash    = f782f99077fe57693c1a7de0583f087464174a12f00c1a56479823af17501b7b
+    AFTER  strategy_hash    = f782f99077fe57693c1a7de0583f087464174a12f00c1a56479823af17501b7b
+    BEFORE exec1_hash       = 5888866fa8ce62bebd485df17247d654804d9462121ce935243636f4c55c6ec9
+    AFTER  exec1_hash       = 5888866fa8ce62bebd485df17247d654804d9462121ce935243636f4c55c6ec9
+    BEFORE exec3_hash       = 789bd885640f8c9793e6d77f21cba77ee15c782de98312dd366acf4d043ab5f4
+    AFTER  exec3_hash       = 789bd885640f8c9793e6d77f21cba77ee15c782de98312dd366acf4d043ab5f4
+    BEFORE g2 manifest_hash = e34f92ae7b34ec3ff3a6bdd54c2576ba6126b078db9c309027dcd74eca7e162e
+    AFTER  g2 manifest_hash = e34f92ae7b34ec3ff3a6bdd54c2576ba6126b078db9c309027dcd74eca7e162e
+    BEFORE g3 manifest_hash = ef30f657d30c9c144fb68315a79e50852ebb6ee013d477712fa73b4d1b061f1f
+    AFTER  g3 manifest_hash = ef30f657d30c9c144fb68315a79e50852ebb6ee013d477712fa73b4d1b061f1f
+    denominator Gate 2 = 219 (không đổi); size Gate 3 = 114 (không đổi)
+
+Không hash nào đổi một bit. Test: `test_a1_04_created_at_in_configs`,
+`test_a1_04_created_at_does_not_affect_any_hash` (ghim cứng hai hash trên).
+
+BEFORE (d72fbc4): `hasattr(BASELINE_STRATEGY, "created_at")` = False — F-011 CHƯA đóng, và test cũ
+PASS giả vì bọc trong `if hasattr(...)`.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-05 — `lineage.json` phân biệt được ba nguồn dữ liệu
 Priority:
@@ -286,11 +346,32 @@ Evidence:
 Yêu cầu: `source` nhận đúng một trong `binance_bulk_archive`, `binance_rest`, `synthetic` cho từng
 series; không còn chuỗi cố định `'see fetch/synth'` ở bất kỳ đâu. Đóng F-005 phần lineage.
 
+BEFORE (d72fbc4): `ethdca synth` ghi `lineage.source = 'unknown'` cho cả dataset lẫn từng series —
+tham số `source` đã có nhưng KHÔNG nơi tạo dataset nào truyền. Chuỗi cố định vẫn còn trong
+`data/dataset.py`. `build_lineage` chấp nhận âm thầm mọi chuỗi, kể cả `'binance-archive+api'` mà
+`fetch.py` đang truyền cho `write_raw` (giá trị này còn bị `write_raw` bỏ qua hoàn toàn).
+
+AFTER: nguồn được khai tại NƠI TẠO dataset. `build_lineage` bắt buộc `source` (bỏ giá trị mặc định
+để không thể quên), nhận mapping theo từng series, và raise `ValueError` với giá trị ngoài taxonomy.
+`synth.generate` truyền `synthetic`; `fetch.fetch_all` phân loại theo từng series từ các cơ chế
+`fetch_series` thực sự đã dùng, kèm `source_detail` khi series lắp từ cả archive lẫn REST.
+
+    lineage['source'] = 'synthetic'
+    per-file: {'BTCUSDT_1d': 'synthetic', 'ETHUSDT_15m': 'synthetic', 'ETHUSDT_1d': 'synthetic'}
+
+Test: `test_a1_05_synth_lineage_source_is_synthetic` (assertion CỨNG cho dataset và từng series),
+`test_a1_05_no_hardcoded_source_string_remains` (quét toàn bộ `src/`),
+`test_a1_05_build_lineage_rejects_unknown_taxonomy`.
+
+GIỚI HẠN: đường `fetch` chưa chạy được E1 vì BLK-001 chặn mạng Binance, và chạy `ethdca fetch` nằm
+ngoài Scope của gói này. Phần đã kiểm là logic phân loại + taxonomy; nhãn thực tế của ba series thật
+chỉ xác nhận được khi T-06 chạy.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-06 — Dữ liệu tổng hợp không thể tạo ra `official: true`
 Priority:
@@ -306,11 +387,30 @@ Evidence:
 Yêu cầu: chạy `ethdca synth` rồi `ethdca run all` **không dùng `--dev-limit`** cho ra record mang
 `official: false`. Đây là kịch bản chính xác mà F-005 mô tả và hôm nay đang cho `official: true`.
 
+BEFORE (d72fbc4) — chạy đúng kịch bản trên, dev_limit=None:
+
+    payload['official']  = True        <-- F-005 CHƯA đóng
+    lineage['source']    = 'unknown'
+    'lineage' in payload = False       <-- nên assertion trong test cũ không bao giờ chạy
+
+AFTER — cùng kịch bản:
+
+    payload['official']        = False
+    payload['official_reason'] = "source_not_real:BTCUSDT_1d='synthetic'"
+    run_record['official']     = False
+    run_record['data_source']  = 'synthetic'
+
+Cờ `official` nay là hàm dẫn xuất từ `official_eligibility(raw_dir, lineage)`; `Prepared` gọi một
+lần và Gate 1/2/3 cùng verdict dùng chung kết quả — không gate nào suy luận lại.
+
+Test: `test_a1_06_synthetic_cannot_be_official` (kiểm cả payload lẫn run record),
+`test_a1_06_synthetic_not_official_in_gate2_gate3`.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-07 — Cờ `official` không giả mạo được bằng flag hay biến môi trường
 Priority:
@@ -327,11 +427,47 @@ Yêu cầu: liệt kê toàn bộ bề mặt CLI và biến môi trường, ch�
 `official: true` khi lineage là `synthetic`. `official` phải là **hàm dẫn xuất** từ lineage đã
 verify checksum, không phải một trường ghi được. Bằng chứng gồm test khẳng định điều này.
 
+BEFORE (d72fbc4): không tồn tại phép dẫn xuất nào — `official = dev_limit is None` ở cả ba gate.
+Nghĩa là mọi run không dùng `--dev-limit` đều tự nhận official bất kể dữ liệu từ đâu.
+
+BỀ MẶT ĐÃ RÀ (E1):
+- CLI: không có `--official`, `--force-official`, `--source`, `--real-data`; không đọc `os.environ`
+  hay `os.getenv` ở bất kỳ đâu trong `cli.py`.
+- `official_eligibility(raw_dir, lineage)` nhận ĐÚNG hai tham số — không có cờ, không có override.
+- `reporting` không import `official_eligibility`: nơi ghi record không có khả năng tự quyết định
+  official, chỉ ghi lại giá trị pipeline đã tính.
+- `Prepared` tính một lần; Gate 1/2/3 và verdict dùng chung, không gate nào có nhánh riêng.
+
+ĐIỀU KIỆN ĐỦ TƯ CÁCH (fail-closed) — mọi series phải mang nguồn thuộc `REAL_SOURCES`, VÀ lineage
+phải verify được checksum. Probe đối kháng, kết quả thực tế:
+
+    synthetic (nhãn đúng)          -> (False, "source_not_real:BTCUSDT_1d='synthetic'")
+    unknown                        -> (False, "source_not_real:...='unknown'")
+    lineage = None                 -> (False, 'lineage_missing')
+    lineage = {}                   -> (False, 'lineage_no_files')
+    lineage = {'files': []}        -> (False, 'lineage_no_files')
+    nhãn real + checksum khớp      -> (True,  'verified')      <-- positive control
+    nhãn real + file_hash bị sửa   -> (False, 'file_hash_mismatch:BTCUSDT_1d.parquet')
+    nhãn real + dataset_hash sai   -> (False, 'dataset_hash_mismatch')
+    nhãn real + xoá 1 file         -> (False, 'missing_file:...')
+    lineage đủ tư cách + dev_limit -> official = False
+
+Positive control quan trọng: nếu thiếu nó, một cổng "luôn trả False" cũng sẽ PASS mọi test còn lại.
+
+Test: `test_a1_07_unknown_source_is_not_official`, `test_a1_07_missing_lineage_is_not_official`,
+`test_a1_07_tampered_dataset_is_not_official`, `test_a1_07_dev_limit_still_forces_non_official`,
+`test_a1_07_no_cli_or_env_surface_can_force_official`,
+`test_a1_07_real_sources_are_exactly_the_binance_ones`.
+
+GIỚI HẠN đã ghi vào `docs/CONVENTIONS.md`: cơ chế này chứng minh dữ liệu KHỚP nguồn đã khai và
+không bị sửa sau khi khai. Nó không phát hiện được người vận hành cố ý dán nhãn `binance_*` lên dữ
+liệu không phải của Binance — chống điều đó cần đối chiếu `ethdca freeze` hai máy theo DEC-003.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 ### Reliability / Reproducibility
 
@@ -349,11 +485,37 @@ Evidence:
 Yêu cầu: tồn tại lockfile ghim phiên bản chính xác (không chỉ đặt sàn); `dependency_lock_hash` trong
 record khớp hash của lockfile đó. Đóng F-007, giảm thiểu RSK-006.
 
+DEFECT NGHIÊM TRỌNG ĐÃ SỬA (phát hiện trong remediation này): `pyproject.lock` của lần cài đặt
+trước được VIẾT TAY và phần lớn không đúng sự thật — 9/15 dòng lệch môi trường thật:
+
+    lockfile ghi                 thực tế đã cài
+    requests==2.31.0             2.33.1
+    pluggy==1.5.0                1.6.0
+    python-dateutil==2.8.2       2.9.0.post0
+    urllib3==2.1.0               2.6.3
+    certifi==2024.2.2            2026.2.25
+    charset-normalizer==3.3.2    3.4.6
+    idna==3.6.0                  3.11
+    pytz==2024.1                 KHÔNG ĐƯỢC CÀI
+    tzdata==2024.1               KHÔNG ĐƯỢC CÀI
+
+Hệ quả: `dependency_lock_hash` sẽ "chứng minh" một môi trường CHƯA TỪNG TỒN TẠI. Dựng lại từ
+lockfile đó cho ra môi trường khác với môi trường đã sinh ra số liệu official — đúng RSK-006 mà
+gói này sinh ra để chặn, và theo Master Index §6 thì official run không được chạy lại để sửa.
+
+AFTER: lockfile được SINH TỪ MÔI TRƯỜNG THẬT — đóng gói bắc cầu của dependency khai trong
+`pyproject.toml`, phiên bản đọc bằng `importlib.metadata` trên chính interpreter chạy backtest.
+
+Kiểm chứng: `test_a1_08_lockfile_and_hash` bắt buộc mọi dòng có `==` (lockfile đặt sàn `>=` sẽ
+FAIL) và so `dependency_lock_hash` với sha256 tính độc lập từ file.
+`test_a1_08_lockfile_matches_installed_environment` đối chiếu TỪNG dòng với môi trường đang chạy —
+lockfile viết tay không thể lọt qua lần nữa.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 #### CHECK-A1-09 — Dựng lại môi trường từ lockfile và tái lập một run cho kết quả trùng khớp
 Priority:
@@ -370,11 +532,23 @@ Yêu cầu: cài môi trường sạch từ lockfile, chạy lại cùng dataset
 seed, đối chiếu kết quả ở mức metric theo BT §20 ("bit-for-bit ở mức metric"). Sai lệch bất kỳ phải
 được giải thích, không được làm tròn cho qua.
 
+Hai run độc lập trên cùng dataset/config/seed cho metric trùng khớp tuyệt đối (so sánh bằng `==`,
+không có dung sai): `ae_by_window`, `primary_median`, `oos`, và `bootstrap_descriptive` — khối
+bootstrap được so riêng vì nó là phần duy nhất dùng số ngẫu nhiên, nên nếu seed không thật sự dẫn
+xuất thì nó là chỗ lộ ra đầu tiên. Toàn bộ trường provenance cũng phải trùng giữa hai run.
+
+Test: `test_a1_09_reproducibility_same_seed_same_metrics`.
+
+GIỚI HẠN — đây là E1 một phần, phải nói rõ: mới chứng minh tính tái lập TRONG một môi trường (cùng
+interpreter, cùng thư viện đã cài). Yêu cầu "cài môi trường SẠCH từ lockfile" chưa thực hiện được vì
+proxy chặn cài đặt gói (cùng gốc với BLK-001). Phần còn thiếu: dựng venv sạch từ `pyproject.lock`
+trên máy có mạng rồi đối chiếu metric — nên làm cùng T-06, khi official run chạy ở đó.
+
 Executed By:
-...
+S007 remediation session (Opus / xhigh)
 
 Timestamp:
-...
+2026-08-24
 
 ### Regression
 

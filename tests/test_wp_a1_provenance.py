@@ -310,9 +310,12 @@ def test_a1_07_no_cli_or_env_surface_can_force_official():
     assert params == ["raw_dir", "lineage"], \
         f"official_eligibility nhận thêm tham số ngoài lineage: {params}"
 
-    # `save_run` chỉ GHI official do pipeline tính; không tự suy luận nguồn
-    save_src = inspect.getsource(__import__("eth_dca_os.reporting", fromlist=["save_run"]).save_run)
-    assert "official_eligibility" not in save_src
+    # Nơi GHI record không được có khả năng tự quyết định official: `reporting` thậm chí
+    # không nhìn thấy phép dẫn xuất, nên chỉ ghi lại giá trị pipeline đã tính.
+    import eth_dca_os.reporting as reporting_mod
+    assert not hasattr(reporting_mod, "official_eligibility"), \
+        "reporting import phép dẫn xuất official — record có thể tự nhận official"
+    assert "official" in inspect.signature(reporting_mod.save_run).parameters
 
 
 def test_a1_07_real_sources_are_exactly_the_binance_ones():
@@ -337,6 +340,39 @@ def test_a1_08_lockfile_and_hash(gate1_official):
 
     expected = hashlib.sha256(lock.read_bytes()).hexdigest()
     assert gate1_official[0]["run_record"]["dependency_lock_hash"] == expected
+
+
+def test_a1_08_lockfile_matches_installed_environment():
+    """Lockfile phải MÔ TẢ ĐÚNG môi trường đã chạy, không chỉ có dạng `pkg==x.y.z`.
+
+    Bản lockfile đầu của WP-A1 được viết tay và 9/15 dòng sai phiên bản thật (kể cả hai gói
+    không hề được cài). Một `dependency_lock_hash` như vậy "chứng minh" một môi trường chưa
+    từng tồn tại — đúng thất bại RSK-006 mà gói này phải chặn. Test này khép đường đó lại.
+    """
+    import importlib.metadata as md
+
+    lock = lockfile_path()
+    assert lock is not None
+    pinned = {}
+    for line in lock.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            name, version = line.split("==", 1)
+            pinned[name.lower().replace("_", "-")] = version
+    assert pinned, "lockfile không ghim gói nào"
+
+    wrong, absent = [], []
+    for name, version in sorted(pinned.items()):
+        try:
+            installed = md.version(name)
+        except md.PackageNotFoundError:
+            absent.append(name)
+            continue
+        if installed != version:
+            wrong.append(f"{name}: lock={version} nhưng đã cài={installed}")
+
+    assert not absent, f"lockfile ghim gói KHÔNG được cài: {absent}"
+    assert not wrong, "lockfile lệch môi trường thật:\n  " + "\n  ".join(wrong)
 
 
 # ============ CHECK-A1-09 — Tái lập run cho kết quả trùng khớp ở mức metric

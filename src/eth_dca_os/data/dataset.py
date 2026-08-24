@@ -66,8 +66,8 @@ def build_lineage(raw_dir: str | Path, source: str | Mapping[str, str],
                   source_detail: Mapping[str, list[str]] | None = None) -> dict:
     """Ghi lineage.json: symbol, interval, source, khoảng thời gian, row/missing count, hash.
 
-    WP-A1/F-005: `source` phải là một trong `VALID_SOURCES`, không phải chuỗi cố định
-    `'see fetch/synth'`. Truyền một chuỗi để áp cho mọi series, hoặc mapping
+    WP-A1/F-005: `source` phải là một trong `VALID_SOURCES` — không còn một chuỗi cố định
+    dùng chung cho mọi nguồn. Truyền một chuỗi để áp cho mọi series, hoặc mapping
     `"<symbol>_<interval>" -> source` khi mỗi series có nguồn riêng (CHECK-A1-05 yêu cầu
     phân loại theo TỪNG series). `source` là tham số bắt buộc: nơi tạo dataset là nơi duy
     nhất biết dữ liệu đến từ đâu, nên không có giá trị mặc định để quên.

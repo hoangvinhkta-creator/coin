@@ -1,22 +1,31 @@
-# Lockfile generated for eth-dca-os V2.1.5
-# Generated: 2026-08-24
+# Lockfile ghim dependency cho eth-dca-os (WP-A1/A1.6, đóng F-007, giảm thiểu RSK-006).
+#
+# SINH TỪ MÔI TRƯỜNG THẬT, không viết tay: đóng gói bắc cầu của các dependency khai trong
+# `pyproject.toml` (numpy, pandas, pyarrow, requests + pytest cho dev), phiên bản đọc bằng
+# `importlib.metadata` trên chính interpreter đã chạy backtest.
+#
+# `dependency_lock_hash` trong mỗi run record là sha256 của CHÍNH file này. Một dòng ghim
+# sai phiên bản sẽ khiến record "chứng minh" một môi trường chưa từng tồn tại — đúng thất
+# bại mà gói này sinh ra để chặn. `test_a1_08_lockfile_matches_installed_environment` đối
+# chiếu từng dòng với môi trường đang chạy, nên lockfile viết tay không thể lọt qua.
+#
 # Python: 3.11.15
-# This file pins exact versions of all dependencies for reproducibility (WP-A1/F-007)
+#
+# Cập nhật: chạy lại đoạn sinh trong `test_a1_08_*` (hoặc `scripts/` nếu về sau có) trên
+# môi trường mục tiêu, KHÔNG sửa tay từng dòng.
 
+certifi==2026.2.25
+charset-normalizer==3.4.6
+idna==3.11
+iniconfig==2.3.0
 numpy==2.4.6
-pandas==3.0.5
-pyarrow==25.0.1
-requests==2.31.0
-pytest==9.1.1
-pluggy==1.5.0
 packaging==24.0
-
-# Transitive dependencies
-python-dateutil==2.8.2
-pytz==2024.1
-tzdata==2024.1
+pandas==3.0.5
+pluggy==1.6.0
+pyarrow==25.0.1
+Pygments==2.21.0
+pytest==9.1.1
+python-dateutil==2.9.0.post0
+requests==2.33.1
 six==1.16.0
-urllib3==2.1.0
-certifi==2024.2.2
-charset-normalizer==3.3.2
-idna==3.6.0
+urllib3==2.6.3
