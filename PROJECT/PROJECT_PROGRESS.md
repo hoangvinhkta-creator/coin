@@ -19,7 +19,7 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-23 — S003 hoàn tất WP-A3: DONE (10/10 REQUIRED PASS; E2 PASS; đóng F-001/F-021/F-022/F-030)
+2026-08-24 — Triage PH-03: XÁC NHẬN DEFECT → **F-035** (HIGH); RCP-002 đề xuất WP-A7, chờ phê duyệt
 
 Overall Status:
 IN_PROGRESS
@@ -160,7 +160,8 @@ Kết quả chính của S003:
   công cụ đo commit tại `tests/wp_a3_impact_tool.py`, tái lập HOÀN TOÀN.
 - E2 độc lập PASS; 2 finding hạ tầng test của reviewer (F-E2-01/F-E2-02) đã xử lý ngay trong
   phiên; 4 kịch bản khoá vốn reviewer tự thử: không đường khoá vốn mới.
-- Phát hiện mới ngoài scope: **PH-03** → RSK-010 (không sửa, chờ chủ dự án).
+- Phát hiện mới ngoài scope: **PH-03** → RSK-010. **Đã triage 2026-08-24: DEFECT, cấp F-035
+  (HIGH); đề xuất WP-A7 tại RCP-002, chờ phê duyệt.** Không sửa trong WP-A3 — đúng Scope Lock.
 
 Primary Agent Tier:
 D
@@ -447,18 +448,37 @@ Recovery; bằng chứng E1: baseline tái hiện lock 27.2 đơn vị trước 
 CHECK-A3-01/02, suite 87 PASS; E2 độc lập PASS — reviewer tự dựng kịch bản khác (kẹt 18.7 trên
 code cũ, release đủ trên code mới) và không tìm thấy đường khoá vốn mới sau 4 kịch bản tự nghĩ.
 
-### RSK-010 — Nghi vấn `smart_reservable` trừ `deployed` luỹ kế XUYÊN THÁNG làm Smart ladder gần như không được tạo lại từ tháng 2 (mức: cao — NGHI VẤN, chưa kết luận) — PH-03, S003
-Quan sát E1 tại S003 (impact run 90 tháng dữ liệu tổng hợp, cả TRƯỚC lẫn SAU fix WP-A3 — tức
-tồn tại từ trước, KHÔNG phải hồi quy của WP-A3): chỉ **2** Smart ladder được tạo trong 90 tháng.
-Đọc code: `smart_reservable(pool, month_smart_budget, unlock)` tính
-`unlocked(≤ ngân sách THÁNG ~30) − pool.reserved − pool.deployed`, trong đó `pool.deployed` là
-luỹ kế TOÀN ĐỜI; từ tháng 2 trở đi `deployed ≫ unlocked` nên hàm trả 0 vĩnh viễn — Smart chỉ còn
-giải ngân qua Month-End settle, không qua ladder. Có dấu hiệu mâu thuẫn ST §6 (unlock/peak là
-khái niệm THEO THÁNG — "Peak reset khi sang accounting month mới").
-**Ngoài ownership WP-A3** (không thuộc F-001/021/022/030; chạm `capital.py` là vùng cấm Scope
-Lock) → ghi nhận theo đúng chỉ thị "không tiện tay sửa". Cần chủ dự án quyết định: gắn định danh
-finding chính thức (F-035?) và giao cho WP nào, hay xác nhận là hành vi chủ đích rồi ghi
-CONVENTIONS. Nếu là defect thật, ảnh hưởng kết quả mô phỏng LỚN hơn WP-A3 nhiều.
+### RSK-010 — Phạm vi kế toán của Smart unlock sai: Smart ladder ngừng hình thành từ tháng thứ ba (mức: cao) — **XÁC NHẬN LÀ DEFECT → F-035**
+Trạng thái: **CONFIRMED DEFECT** (nâng cấp từ "nghi vấn" tại phiên triage PH-03, 2026-08-24).
+Finding chính thức: **F-035** · Severity **HIGH** · Evidence **E1** (chứng minh cấu trúc + chạy
+thật), có xác nhận độc lập kế thừa từ reviewer E2-WP-A3-001.
+
+`smart_reservable` so ngân sách Smart **theo tháng** với `pool.deployed` **luỹ kế toàn đời**
+(`Pool` không có vòng đời tháng, trong khi Data Model §5 `monthly_budgets` định nghĩa
+`smart_available/reserved/deployed_vnd` là trường của bản ghi **tháng** có `status OPEN/CLOSED`).
+Vì Month-End (ST §10) giải ngân hết phần Smart mỗi tháng, `deployed` tăng ~một ngân sách tháng
+mỗi tháng ⇒ từ tháng thứ ba hàm trả **0 tất định, vĩnh viễn, không phụ thuộc dữ liệu**, kể cả ở
+`SMART_UNLOCK = 1.00`.
+
+Hệ quả đo được (90 tháng dữ liệu tổng hợp): **2** Smart ladder; **99,98%** vốn Smart bỏ qua cơ
+chế ladder (ST §12) và chảy qua luật phần dư cuối tháng; **chiều `smart_unlock_mode` — 1 trong 8
+chiều bắt buộc của Gate 2 (BT §9) — trơ hoàn toàn**, ba mode HWM/NO_HWM/DECAY_HWM cho kết quả
+**trùng khít bit-for-bit** trong khi ST §6 yêu cầu báo cáo đóng góp riêng từng mode; snapshot
+[F5] của Crash ladder bị triệt tiêu phần Smart (che ~78% tác dụng thật của remediation F-021 vừa
+xong ở WP-A3).
+
+**Official backtest KHÔNG đáng tin trước khi sửa** (Gate 1/2/3 đều đo trên engine mà 30% vốn
+không đi qua cơ chế được đặc tả). Áp dụng **DEC-009**: mọi kết quả Gate 1 tạo trước remediation
+là STALE/INVALIDATED — hiện `no current result to invalidate` (chưa từng có official run), nên
+điều kiện chuyển thành dependency bắt buộc: **phải DONE trước T-06**.
+
+Tồn tại **trước** WP-A3, **không phải hồi quy** của WP-A3; WP-A3 giữ nguyên DONE và gate FROZEN.
+Ownership đề xuất: **work package mới WP-A7** (lớp A, đường găng, routing D/Fable/max tính bằng
+router) — **chờ phê duyệt** tại `PROJECT/ROADMAP_CHANGE_PROPOSAL_002.md`. Bảng roadmap chuẩn
+**chưa** được sửa.
+
+Triage đầy đủ (requirement canonical, root cause, bằng chứng, phân lớp, ảnh hưởng gate, đánh giá
+WP-A4): `docs/reviews/PH-03-triage-smart-unlock-scope.md`.
 
 ## Active Risks — Governance / Tooling
 
@@ -515,6 +535,24 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S003-TRIAGE — PH-03 / RSK-010 — 2026-08-24 — Triage governance + kỹ thuật, **không remediation**.
+  Kết luận: PH-03 = **DEFECT**, cấp finding chính thức **F-035** (HIGH, E1). Requirement canonical
+  bị vi phạm: **DM §5** (`monthly_budgets` định nghĩa `smart_deployed_vnd` là trường của bản ghi
+  THÁNG), củng cố bởi ST §4/§6/§12 và ST §10. Root cause: `smart_reservable` trừ `pool.deployed`
+  luỹ kế toàn đời khỏi một tử số theo tháng; `Pool` không có vòng đời tháng. Chứng minh cấu trúc:
+  ở `unlock = 1.00`, hàm trả **0.000 từ tháng thứ hai sau khi tháng đầu đóng sổ**, tất định và
+  không phụ thuộc dữ liệu. Quan sát 90 tháng: 2 Smart ladder; 135.249/135.251 lời gọi trả 0;
+  **99,98%** vốn Smart đi qua Month-End thay vì ladder. Hệ quả nặng nhất: **chiều
+  `smart_unlock_mode` của Gate 2 (BT §9) trơ hoàn toàn** — ba mode cho kết quả trùng khít
+  bit-for-bit, vi phạm ST §6. Kết luận official run: **không đáng tin trước khi sửa**; DEC-009 áp
+  dụng phòng ngừa (`no current result to invalidate`). Phân lớp: **A — MUST FIX BEFORE OFFICIAL
+  RUN**, chứng minh bằng dependency. Ownership đề xuất: **WP-A7 mới** (RCP-002, chờ phê duyệt) —
+  không nhét vào WP-A3 đã DONE, không sửa gate FROZEN của WP-A4/WP-A6. **WP-A4 MAY PROCEED IN
+  PARALLEL** kèm 3 điều kiện (assert tiền đề không suy biến; không hard-code kỳ vọng vốn/ETH nhiều
+  tháng; tuần tự hoá thao tác trên `engine.py`). Không sửa `src/`, `tests/`, `webapp/`,
+  `docs/spec/`; không chạy official backtest; không mở WP nào.
+  Artifact: `docs/reviews/PH-03-triage-smart-unlock-scope.md`,
+  `PROJECT/ROADMAP_CHANGE_PROPOSAL_002.md`.
 - S003 — WP-A3: REGIME & VÒNG ĐỜI CRASH LADDER — 2026-08-23 — Gói đầu tiên của lớp A và là gói
   duy nhất lớp A làm đổi kết quả mô phỏng. Ready Gate xác nhận lại (T-04 DONE, routing D/Fable/max
   tự nhiên, validator PASS). Baseline E1 tái hiện đủ 4 finding TRƯỚC khi sửa (F-001: kẹt 27.2
@@ -690,8 +728,10 @@ Task đang BLOCKED và lý do:
 Cần chủ dự án quyết định:
 1. **DEC-005** — phạm vi công cụ trước verdict (T-05). Không chặn lớp A.
 2. **PH-01** — cách đính chính số đếm finding trong biên bản S001.
-3. **PH-03 / RSK-010** (mới, S003) — nghi vấn `smart_reservable` trừ deployed xuyên tháng:
-   gắn định danh finding chính thức và giao WP nào, hay xác nhận là hành vi chủ đích.
+3. **RCP-002** (mới) — phê duyệt/từ chối việc thêm **WP-A7** (sở hữu **F-035**, lớp A, đường
+   găng, D/Fable/max) vào roadmap chuẩn; nếu duyệt, cho phép soạn và đóng băng gate cho WP-A7.
+   Kèm câu hỏi thứ tự thực thi giữa WP-A7 và WP-A4. Triage đã kết luận PH-03 = DEFECT (F-035),
+   nên câu hỏi "có phải defect không" đã đóng.
 4. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
    Không gói nào trong 15 gói cần nó, nên chưa gấp.
 
