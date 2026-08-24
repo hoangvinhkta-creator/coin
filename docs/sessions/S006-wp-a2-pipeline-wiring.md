@@ -127,6 +127,22 @@ CHECK-A2-09 chứng minh 0/159 trường đổi. Phần mở rộng là **nội 
 hành vi backtest. Hiện trạng: **NO CURRENT OFFICIAL RESULT TO INVALIDATE** (repo chưa từng
 có official run; BLK-001 vẫn mở). Không chạy official Gate trong phiên này.
 
+## Full regression
+
+`python -m pytest tests/` → **108 passed in 525.31s (0:08:45)**, 0 failed, 0 skipped,
+exit code 0 (99 test trước WP-A2 + 9 test wiring mới). Không test cũ nào bị sửa/skip/nới
+lỏng — diff `tests/` chỉ THÊM một file mới. Thời gian tăng (431s → 525s) là hệ quả trực
+tiếp và đúng đắn của bootstrap 1000 mô phỏng/block length (BT §13), tức chính hành vi mà
+CHECK-A2-06 yêu cầu.
+
+## Governance validators
+
+structure / project_state / routing / easy_roadmap / evidence / task_completion — PASS.
+**Giới hạn đã biết, không coi là bằng chứng chất lượng của WP-A2:** `validate_evidence` và
+`validate_task_completion` quét glob `TASK-*.md`, không khớp quy ước `WP-*.md` của repo →
+PASS trên **tập rỗng** (0 record, 0 DONE task được kiểm). Tồn đọng tooling từ S003, ngoài
+scope WP-A2, vẫn nằm trong danh sách chờ chủ dự án.
+
 ## Finding / risk mới
 
 Không phát hiện finding hay risk mới. Không hàm nào "được cho là đúng" hoá ra sai khi chạy

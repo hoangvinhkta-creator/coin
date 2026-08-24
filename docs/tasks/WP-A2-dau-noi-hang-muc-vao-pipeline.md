@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-IN_PROGRESS
+DONE
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -503,7 +503,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -511,19 +511,28 @@ E1
 Evidence:
 Yêu cầu: output test suite đầy đủ; không test nào bị skip hoặc nới lỏng để gói này đi qua.
 
+**Kết quả (S006):** `python -m pytest tests/` → **108 passed in 525.31s (0:08:45)** —
+0 failed, 0 skipped, 0 xfail, exit code 0 (99 test trước WP-A2 + 9 test wiring mới).
+**Không test cũ nào bị sửa, skip hay nới lỏng** để gói này đi qua: diff `tests/` chỉ THÊM
+đúng một file mới (`test_wp_a2_pipeline_wiring.py`), không đụng file test nào có sẵn.
+Thời gian suite tăng (431s → 525s) là do official run nay chạy bootstrap 1000 mô phỏng mỗi
+block length thay vì 200 — đúng yêu cầu BT §13 và chính là hành vi mà CHECK-A2-06 đòi hỏi.
+
 Executed By:
-...
+Agent phiên S006 (Tier C / high)
 
 Timestamp:
-...
+2026-08-24T09:05Z
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ)
-- [ ] Không công thức nào bị sửa ngoài phạm vi đấu nối
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-007 được cập nhật trạng thái
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [x] 100% REQUIRED checks PASS (10/10: CHECK-A2-01..10)
+- [x] Mức evidence yêu cầu được thoả (E1 toàn bộ)
+- [x] Không công thức nào bị sửa ngoài phạm vi đấu nối (CHECK-A2-08: 4 module chỉ-đọc
+      0 dòng đổi; ranh giới `cli.py` +1 dòng đã khai báo minh bạch)
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-007 cập nhật trạng thái
+      (GIẢM THIỂU MỘT PHẦN — phần Failure Signal còn lại thuộc WP-A5)
+- [x] Session handoff được viết (`docs/sessions/S006-wp-a2-pipeline-wiring.md`)
+- [x] Không hạ REQUIRED check nào để đạt DONE
 
 ## Escalation Triggers
 
@@ -546,11 +555,18 @@ này không sửa được sau khi T-06 đã chạy**. GATE-A không đóng.
 ## Changed Files Registry
 
 Created:
-- Không dự kiến
+- `tests/test_wp_a2_pipeline_wiring.py` — 9 test wiring test-first
+- `docs/sessions/S006-wp-a2-pipeline-wiring.md` — session handoff
 
 Modified:
-- (dự kiến) `src/eth_dca_os/pipeline.py`, `diagnostics.py`, `reporting.py`
-- (dự kiến) `tests/`
+- `src/eth_dca_os/pipeline.py` — `_bootstrap_sims`, `_benchmark_comparison`, `_xirr_payload`;
+  `run_gate1` nhận `dev_limit`, payload thêm `benchmarks`/`coverage_table`/`xirr`/`official`
+- `src/eth_dca_os/diagnostics.py` — `run_all` gọi ablation + volume z-score; `_oscore_delta_summary`
+- `src/eth_dca_os/cli.py` — 1 dòng truyền `dev_limit` (ranh giới scope đã khai báo)
+- `docs/tasks/WP-A2-dau-noi-hang-muc-vao-pipeline.md` — evidence + Status DONE
+- `PROJECT/PROJECT_PROGRESS.md` (+ `PROJECT/LO_TRINH_DE_HIEU.md` sinh tự động)
+- `reporting.py` — KHÔNG cần sửa: `write_report`/`save_run` đã truyền payload nguyên vẹn nên
+  các mục mới tự có mặt trong report official
 
 Deleted:
 - Không
