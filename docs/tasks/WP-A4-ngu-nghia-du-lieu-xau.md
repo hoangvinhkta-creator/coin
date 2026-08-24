@@ -129,6 +129,14 @@ truy được **bản ghi nào** bị ảnh hưởng bởi gap, chỉ biết **c
 
 ## Parallel-Safe With
 - WP-A1, WP-A2, WP-C1, WP-D1, WP-D2
+- **WP-A7** — song song **về roadmap** (không có phụ thuộc ngữ nghĩa; WP-A4 sở hữu ST §3 / BT §18,
+  WP-A7 sở hữu DM §5 / ST §4-§6-§12). Ba điều kiện bắt buộc do **RCP-002** (2026-08-24) đặt ra:
+  1. Test của WP-A4 phải **assert tiền đề không suy biến** nếu requirement cần Smart ladder tồn
+     tại (bài học F-E2-01 của S003) — nếu không, test sẽ chứng minh ít hơn narrative của nó.
+  2. **Không hard-code** kỳ vọng VND/ETH nhiều tháng phụ thuộc vào hành vi lỗi F-035.
+  3. Thao tác trên `engine.py` phải được **tuần tự hoá khi merge**: "parallel" là roadmap
+     parallelism, KHÔNG cho phép hai agent đồng thời sửa/merge cùng vùng `engine.py` mà không có
+     branch isolation và merge ordering rõ ràng.
 
 ## Expected Touch Area
 

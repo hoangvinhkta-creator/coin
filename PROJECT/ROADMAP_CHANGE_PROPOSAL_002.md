@@ -3,12 +3,46 @@
 Ngày: 2026-08-24
 Nguồn: triage PH-03 sau khi WP-A3 được chấp nhận DONE
 (`docs/reviews/PH-03-triage-smart-unlock-scope.md`)
-Trạng thái: **CHƯA ÁP DỤNG — CHỜ PHÊ DUYỆT CỦA CHỦ DỰ ÁN**
+Trạng thái: **APPROVED WITH CONDITIONS — ĐÃ ÁP DỤNG (2026-08-24)**
 
-Theo `governance/core/00_SESSION_ORCHESTRATION.md` mục "Roadmap Change Rule", tài liệu này trình
-bày thay đổi lộ trình **trước khi** thực hiện. Bảng roadmap chuẩn trong
-`PROJECT/PROJECT_PROGRESS.md` **chưa bị sửa**, nên `PROJECT/LO_TRINH_DE_HIEU.md` vẫn đồng bộ với
-nó. Không sửa `src/`, `webapp/`, `tests/`, `docs/spec/`. Không mở task nào.
+Theo `governance/core/00_SESSION_ORCHESTRATION.md` mục "Roadmap Change Rule", tài liệu này được
+trình **trước khi** thực hiện. Chủ dự án đã phê duyệt kèm điều kiện bổ sung (§Điều kiện phê duyệt
+bên dưới) và cho phép áp dụng. Bảng roadmap chuẩn trong `PROJECT/PROJECT_PROGRESS.md` **đã được
+cập nhật**, `PROJECT/LO_TRINH_DE_HIEU.md` **đã sinh lại bằng generator**. Không sửa `src/`,
+`webapp/`, `tests/`, `docs/spec/`. **Không mở task nào — đặc biệt không bắt đầu WP-A7.**
+
+---
+
+## Điều kiện phê duyệt (chủ dự án, 2026-08-24) — đã phản ánh vào roadmap
+
+1. **F-035 / RSK-010** — chấp thuận kết luận triage: PH-03 = DEFECT; F-035; severity HIGH;
+   RSK-010 = CONFIRMED DEFECT; lớp **A**; ownership = **WP-A7 mới**. Không gộp ngược vào WP-A3 /
+   WP-A4 / WP-A6 vì gate của chúng đã FROZEN và ownership không phù hợp.
+2. **WP-A7** — chấp thuận tạo. Routing xác nhận lại bằng router thực tế tại thời điểm áp dụng.
+   **Không bắt đầu remediation.** WP-A7 phải có task definition + Ready Gate + Completion Gate
+   được **đóng băng ở một bước riêng** trước khi thực thi.
+3. **Dependency bắt buộc** — WP-A7 là prerequisite của WP-A5, WP-A6, WP-C4, GATE-A, T-06.
+   Đặc biệt: **WP-A6 không được chạy Completion Gate cuối cùng trước khi WP-A7 DONE**, vì F-035
+   làm Smart ladder suy biến sau những tháng đầu nên một số đường xử lý Smart sẽ không được
+   chứng minh đại diện cho behavior thật sau remediation. **Không dùng test fixture suy biến hiện
+   tại để né dependency này.**
+4. **WP-A5** — measurement tạo trước khi F-035 được sửa **không** phải canonical evidence cho
+   engine cuối cùng. Dependency: WP-A2 ∧ WP-A3 ∧ WP-A7.
+5. **WP-C4** — không đóng băng parity JS/Python trên behavior Smart capital đã xác nhận là sai.
+6. **GATE-A** — không PASS khi WP-A7 chưa DONE; danh sách tường minh đã cập nhật thành
+   WP-A1…WP-A7. Không để T-06 READY chỉ vì A1–A6 DONE.
+7. **Gate staleness** — áp DEC-009 cho F-035. Hiện ghi rõ **NO CURRENT OFFICIAL RESULT TO
+   INVALIDATE**; dependency bảo đảm WP-A7 DONE trước T-06.
+8. **WP-A4** — `MAY PROCEED IN PARALLEL` về semantic dependency, giữ ba điều kiện của triage.
+   "Parallel" là **roadmap parallelism**: không cho phép hai agent đồng thời sửa/merge cùng vùng
+   `engine.py` mà không có branch isolation và merge ordering rõ ràng.
+9. **T-06** — ghi rõ hai loại prerequisite độc lập: (A) internal correctness = GATE-A gồm WP-A7;
+   (B) external infrastructure = BLK-001. **Không được giải BLK-001 rồi chạy T-06 nếu GATE-A
+   chưa PASS.**
+10. **WP-A3** — giữ DONE, không reopen, không sửa Completion Gate, không làm mất evidence E1/E2.
+    Ghi nhận: F-035 tồn tại **trước** WP-A3 và làm giảm **độ lớn** của một số quan sát liên quan
+    Smart, nhưng **không invalidate** các correctness finding mà WP-A3 đã chứng minh trong phạm vi
+    của nó.
 
 ---
 

@@ -19,14 +19,15 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-24 — Triage PH-03: XÁC NHẬN DEFECT → **F-035** (HIGH); RCP-002 đề xuất WP-A7, chờ phê duyệt
+2026-08-24 — **RCP-002 ĐÃ ÁP DỤNG**: thêm WP-A7 (sở hữu F-035), roadmap 28 → 29 task, GATE-A và
+T-06 cập nhật dependency
 
 Overall Status:
 IN_PROGRESS
 
 Current Phase:
 Phase 2 — Lớp A (bắt buộc sửa trước official run). WP-A3 (mắt xích đầu đường găng) đã DONE;
-WP-A4 hết bị chặn bởi WP-A3.
+WP-A4 hết bị chặn bởi WP-A3. RCP-002 đã áp dụng: thêm **WP-A7** vào lớp A (đóng F-035).
 
 Current Task:
 Không có task nào đang thực thi. WP-A3 đã DONE tại S003.
@@ -36,7 +37,7 @@ MAJOR (phiên vừa hoàn tất; không task nào đang IN_PROGRESS)
 
 Next Recommended Task:
 Chủ dự án chọn một trong các task đã ở trạng thái READY: **WP-A4** (khuyến nghị — mắt xích kế
-tiếp trên đường găng T-04 → WP-A3 ✅ → WP-A4 → WP-A6 → GATE-A → T-06; tuần tự sau WP-A3 vì cùng
+tiếp trên đường găng T-04 → WP-A3 ✅ → {WP-A4 ∥ WP-A7} → WP-A6 → GATE-A → T-06; tuần tự sau WP-A3 vì cùng
 sửa `engine.py`), WP-A1, WP-A2, WP-C1 (khuyến nghị vì lý do an toàn dữ liệu thật), WP-D1, WP-D2.
 KHÔNG tự mở — agent dừng sau WP-A3 theo chỉ thị của chủ dự án (S003 mục 20).
 
@@ -73,10 +74,11 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | READY | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011) |
 | READY | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | Sau T-04 (DONE). Song song với WP-A1, WP-A3 (đóng F-003, F-004, F-012, F-013, F-014). Tier C nay route tự nhiên sau MICRO-GOVDEF-001 (trước đó là ghi đè theo DEC-008) — xem GOVDEF-001 mục Resolution |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
-| READY | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (DONE tại S003) — nay READY (đóng F-023, F-025, F-032) |
-| PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3 (vốn không bị khoá thì số đo mới đúng) — đóng phần đo lường của F-002, và F-016 |
-| PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4 (đóng F-018, F-019) |
-| PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Sau T-05 và **GATE-A** (WP-A1…WP-A6 đều DONE). Cần máy/VPS có mạng Binance — BLK-001 chặn đúng tại đây |
+| READY | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (DONE tại S003) — READY. Song song roadmap với WP-A7, KHÔNG bị chặn bởi F-035; ba điều kiện bắt buộc ghi ở RCP-002 §Điều kiện phê duyệt (đóng F-023, F-025, F-032) |
+| PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3, **WP-A7** (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical) — đóng phần đo lường của F-002, và F-016 |
+| PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4, **WP-A7**. Completion Gate cuối cùng KHÔNG được chạy trước khi WP-A7 DONE (đường xử lý Smart hiện suy biến) — đóng F-018, F-019 |
+| PLANNED | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | Sau WP-A3 (DONE). Song song roadmap với WP-A4 (phải tuần tự hoá merge trên `engine.py`). Chặn WP-A5, WP-A6, WP-C4, GATE-A → T-06 (đóng F-035) |
+| PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Hai nhóm điều kiện ĐỘC LẬP, phải thoả CẢ HAI: (A) nội tại — T-05 và **GATE-A** (WP-A1…**WP-A7** đều DONE); (B) hạ tầng — BLK-001 (mạng Binance). Gỡ BLK-001 KHÔNG cho phép chạy T-06 khi GATE-A chưa PASS |
 | PLANNED | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | Sau T-06. QUY TẮC BẮT BUỘC: nếu remediation của F-017 (Control F) ảnh hưởng Gate 1 → Gate 1 phải chạy lại trước khi coi kết quả hợp lệ (DEC-009) — đóng phần chính sách của F-002, F-015, F-017, F-026 |
 | PLANNED | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | Sau T-06. Song song với WP-B1, WP-B3 |
 | PLANNED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Sau T-06. Song song với WP-B1, WP-B2. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
@@ -84,7 +86,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | READY | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | Sau T-01 (đã DONE). Độc lập hoàn toàn — có thể chạy ngay, song song với toàn bộ lớp A. Gỡ BLOCKED cho T-03 khi xong (đóng V-01, V-02, V-03, F-027) |
 | BLOCKED | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | Sau T-05 (DEC-005 còn PENDING → BLOCKED). Cần ADR quyết định phạm vi trước khi bắt đầu (đóng F-006) |
 | PLANNED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | Sau WP-C2 (đóng F-020) |
-| PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6 (không khoá parity vào hành vi sắp đổi). Chặn T-10, T-11 (đóng F-008) |
+| PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
 | PLANNED | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi nếu WP-C1 xác nhận là có thật, trước khi app được dùng với tiền thật | C | high | Sau WP-C1. Nếu WP-C1 bác bỏ cả ba nghi vấn, T-09A có thể thu hẹp phạm vi hoặc CANCELLED |
 | PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
@@ -133,6 +135,59 @@ Không sửa `routing_engine.py` trong bước áp dụng roadmap này. Giải p
 hoá cách so sánh (dùng epsilon hoặc làm tròn trước khi so sánh), không hard-code ngoại lệ riêng
 cho WP-A2 hay bất kỳ task nào khác.
 
+## Roadmap Change Applied — RCP-002
+
+### Trạng thái: APPROVED WITH CONDITIONS — ĐÃ ÁP DỤNG (2026-08-24)
+
+Chủ dự án phê duyệt `PROJECT/ROADMAP_CHANGE_PROPOSAL_002.md` kèm điều kiện bổ sung. Nguồn:
+triage `docs/reviews/PH-03-triage-smart-unlock-scope.md` (PH-03 = **DEFECT** → **F-035**, HIGH).
+Roadmap chuẩn tăng từ **28 → 29 task**.
+
+Nội dung đã áp dụng:
+
+1. **Thêm WP-A7** — "Sửa phạm vi kế toán vốn Smart theo tháng", lớp **A — MUST FIX BEFORE
+   OFFICIAL RUN**, sở hữu **F-035**. Status `PLANNED` (chưa có file định nghĩa/gate → chưa
+   READY). Routing xác nhận lại bằng `routing_engine.py` tại thời điểm áp dụng: **D / Fable / max**.
+2. **Dependency bắt buộc mới** — WP-A7 là prerequisite của **WP-A5, WP-A6, WP-C4, GATE-A, T-06**.
+3. **WP-A6** — Completion Gate cuối cùng **không được chạy** trước khi WP-A7 DONE; không được
+   dùng test fixture suy biến hiện tại để né dependency này.
+4. **WP-A5** — measurement tạo trước khi F-035 được sửa **không** được coi là canonical evidence
+   cho engine cuối cùng.
+5. **WP-C4** — không đóng băng parity JS/Python trên hành vi Smart capital đã xác nhận là sai.
+6. **GATE-A** — định nghĩa lại thành `WP-A1…WP-A7 đều DONE`.
+7. **T-06** — ghi rõ **hai nhóm prerequisite ĐỘC LẬP**: (A) nội tại = GATE-A gồm WP-A7;
+   (B) hạ tầng = BLK-001. Gỡ BLK-001 **không** cho phép chạy T-06 khi GATE-A chưa PASS.
+8. **WP-A4** — `MAY PROCEED IN PARALLEL` với WP-A7 về mặt semantic dependency, kèm ba điều kiện
+   (xem RCP-002). "Parallel" ở đây là **roadmap parallelism**: không cho phép hai agent đồng thời
+   sửa/merge cùng vùng `engine.py` mà không có branch isolation và merge ordering rõ ràng.
+9. **WP-A3 giữ nguyên DONE** — không reopen, không sửa Completion Gate đã FROZEN, không làm mất
+   evidence E1/E2. Ghi nhận: F-035 tồn tại **trước** WP-A3 và làm giảm **độ lớn** của một số quan
+   sát liên quan Smart, nhưng **không invalidate** các kết luận đúng đắn mà WP-A3 đã chứng minh
+   trong phạm vi của nó.
+
+### Gate staleness (DEC-009 áp cho F-035)
+
+F-035 có khả năng thay đổi capital allocation, Smart ladder creation, execution behavior,
+deployed capital, ETH accumulated và kết quả Gate 1/2/3. Vì vậy **mọi Gate result tạo trước
+remediation F-035 phải được coi là STALE / INVALIDATED khi dùng cho verdict**.
+
+Trạng thái hiện tại: **NO CURRENT OFFICIAL RESULT TO INVALIDATE** — chưa từng có official run.
+Điều kiện vì thế chuyển thành dependency bắt buộc: **WP-A7 phải DONE trước T-06**.
+
+### Critical path sau RCP-002
+
+```
+T-04 ✅
+ └─> WP-A3 ✅
+      ├─> WP-A4  ─┐   (song song roadmap; tuần tự hoá merge trên engine.py)
+      └─> WP-A7  ─┤
+                  └─> WP-A6 ──> GATE-A ──> T-06 ──> WP-B1 ──> T-07 ──> T-11
+WP-A5: sau WP-A2 ∧ WP-A3 ∧ WP-A7 — vẫn là prerequisite của GATE-A
+WP-A1, WP-A2: prerequisite của GATE-A, không nằm trên chuỗi dài nhất
+GATE-A = WP-A1 ∧ WP-A2 ∧ WP-A3 ∧ WP-A4 ∧ WP-A5 ∧ WP-A6 ∧ WP-A7 đều DONE
+T-06 = GATE-A ∧ T-05 ∧ (BLK-001 đã gỡ)
+```
+
 ## Current Task Snapshot
 
 Task:
@@ -161,7 +216,8 @@ Kết quả chính của S003:
 - E2 độc lập PASS; 2 finding hạ tầng test của reviewer (F-E2-01/F-E2-02) đã xử lý ngay trong
   phiên; 4 kịch bản khoá vốn reviewer tự thử: không đường khoá vốn mới.
 - Phát hiện mới ngoài scope: **PH-03** → RSK-010. **Đã triage 2026-08-24: DEFECT, cấp F-035
-  (HIGH); đề xuất WP-A7 tại RCP-002, chờ phê duyệt.** Không sửa trong WP-A3 — đúng Scope Lock.
+  (HIGH); RCP-002 đã được phê duyệt và áp dụng — ownership là WP-A7 mới.** Không sửa trong WP-A3
+  — đúng Scope Lock. WP-A3 giữ nguyên DONE, gate FROZEN, evidence E1/E2 nguyên vẹn.
 
 Primary Agent Tier:
 D
@@ -473,9 +529,10 @@ là STALE/INVALIDATED — hiện `no current result to invalidate` (chưa từng
 điều kiện chuyển thành dependency bắt buộc: **phải DONE trước T-06**.
 
 Tồn tại **trước** WP-A3, **không phải hồi quy** của WP-A3; WP-A3 giữ nguyên DONE và gate FROZEN.
-Ownership đề xuất: **work package mới WP-A7** (lớp A, đường găng, routing D/Fable/max tính bằng
-router) — **chờ phê duyệt** tại `PROJECT/ROADMAP_CHANGE_PROPOSAL_002.md`. Bảng roadmap chuẩn
-**chưa** được sửa.
+Ownership: **WP-A7** (lớp A, đường găng, D/Fable/max) — **ĐÃ CHỐT**: RCP-002 được chủ dự án phê
+duyệt kèm điều kiện và **đã áp dụng** vào bảng roadmap chuẩn ngày 2026-08-24. WP-A7 là
+prerequisite của WP-A5, WP-A6, WP-C4, GATE-A, T-06.
+Trạng thái risk: **CONFIRMED DEFECT — OPEN**, sẽ đóng khi WP-A7 DONE.
 
 Triage đầy đủ (requirement canonical, root cause, bằng chứng, phân lớp, ảnh hưởng gate, đánh giá
 WP-A4): `docs/reviews/PH-03-triage-smart-unlock-scope.md`.
@@ -535,6 +592,23 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- RCP-002 — ROADMAP CHANGE APPLIED — 2026-08-24 — Chủ dự án phê duyệt RCP-002 kèm điều kiện bổ
+  sung. Áp dụng vào bảng roadmap chuẩn: **28 → 29 task**. Thêm **WP-A7** ("Sửa phạm vi kế toán vốn
+  Smart theo tháng", lớp A, sở hữu **F-035**, status `PLANNED`, routing **D/Fable/max** xác nhận
+  lại bằng `routing_engine.py` tại thời điểm áp dụng: model_score 3.25, effort_score 3.45,
+  floors `cognitive:A>=3&X>=3` + `safety_business:min_C` + `safety_business:min_high`). Dependency
+  bắt buộc: WP-A7 là prerequisite của **WP-A5, WP-A6, WP-C4, GATE-A, T-06**; WP-A6 không được chạy
+  Completion Gate cuối trước khi WP-A7 DONE; WP-A5 measurement trước F-035 không phải canonical
+  evidence; WP-C4 không đóng băng parity trên hành vi Smart capital sai. **GATE-A** định nghĩa lại
+  = WP-A1…WP-A7 đều DONE. **T-06** ghi rõ hai nhóm prerequisite độc lập (nội tại GATE-A / hạ tầng
+  BLK-001) — gỡ BLK-001 không cho phép chạy T-06 khi GATE-A chưa PASS. **WP-A4** giữ READY, song
+  song roadmap với WP-A7 kèm ba điều kiện. **WP-A3 giữ nguyên DONE**, không reopen, gate FROZEN,
+  evidence E1/E2 nguyên vẹn. DEC-009 áp cho F-035: mọi Gate result trước remediation là
+  STALE/INVALIDATED — hiện **NO CURRENT OFFICIAL RESULT TO INVALIDATE**, chuyển thành dependency
+  WP-A7 DONE trước T-06. Toàn bộ 35 finding, 11 risk, 3 blocker được bảo toàn. Không sửa `src/`,
+  `webapp/`, `tests/`, `docs/spec/`. Không bắt đầu WP nào, đặc biệt không bắt đầu WP-A7.
+  Tài liệu: `PROJECT/ROADMAP_CHANGE_PROPOSAL_002.md`,
+  `docs/reviews/PH-03-triage-smart-unlock-scope.md`.
 - S003-TRIAGE — PH-03 / RSK-010 — 2026-08-24 — Triage governance + kỹ thuật, **không remediation**.
   Kết luận: PH-03 = **DEFECT**, cấp finding chính thức **F-035** (HIGH, E1). Requirement canonical
   bị vi phạm: **DM §5** (`monthly_budgets` định nghĩa `smart_deployed_vnd` là trường của bản ghi
@@ -702,24 +776,38 @@ lưu lại để đối chiếu lịch sử: D2 R2 B2 A1 X2 → 1.85 → B; U1 V
 - WP-D1 — D1 R1 B1 A1 X1 → 1.00 → B (không floor); U1 V1 H1 C1 F1 → 1.00 → medium
 - WP-D2 — D3 R2 B2 A4 X3 → 2.70 → C (floor `cognitive:A>=3&X>=3`); U3 V2 H3 C3 F2 → 2.55 → xhigh
 
+- **WP-A7** — D3 R4 B3 A3 X3 → **3.25** → **D** (floor `cognitive:A>=3&X>=3`,
+  `safety_business:min_C`); U3 V4 H3 C3 F4 → **3.45** → **max** (floor `safety_business:min_high`)
+  · category `accounting_financial` · warnings: none.
+  Tính bằng `routing_engine.py` tại phiên triage và **xác nhận lại** tại phiên áp dụng RCP-002.
+  Chưa có file định nghĩa task → mục này là nguồn routing chính thức cho tới khi file được soạn.
+
 **GOVDEF-001 / MICRO-GOVDEF-001** — không bắt buộc full routing (MICRO). Chấm điểm tham khảo:
 D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
 Recommended Session:
-S004 — thực thi **một** work package đã READY. Khuyến nghị theo hai tiêu chí khác nhau:
+S004 — hai lựa chọn, chủ dự án quyết định:
 
-- **Theo đường găng:** `WP-A4` — Xử lý đúng khi dữ liệu thiếu hoặc hỏng (C/Opus/xhigh). Mắt xích
-  kế tiếp của T-04 → WP-A3 ✅ → WP-A4 → WP-A6 → GATE-A → T-06. Tuần tự sau WP-A3 vì cùng sửa
-  `engine.py` (nay WP-A3 đã DONE nên hết ràng buộc); hành vi dữ liệu xấu sẽ khoá vào vòng đời
-  regime đã sửa (CONVENTIONS #15 là điểm nối trực tiếp).
-- **Theo an toàn dữ liệu thật:** `WP-C1` — Kiểm chứng ba nghi vấn ở app web (C/Opus/xhigh). Nếu chủ
-  dự án đang dùng app để ghi giao dịch tiền thật, ba nghi vấn này — nếu đúng — đang làm sai sổ vốn
-  ngay lúc này. Gói này độc lập hoàn toàn và chạy song song được với lớp A.
+- **Bước governance (khuyến nghị làm trước):** soạn **file định nghĩa WP-A7** + Ready Gate +
+  Completion Gate và **đóng băng** (bước tương đương T-04 cho một gói). WP-A7 **không được bắt
+  đầu implementation** trước bước này. Đây là điều kiện chặn duy nhất còn lại của WP-A7.
+- **Bước thực thi:** một work package đã READY —
+  - **Theo đường găng:** `WP-A4` (C/Opus/xhigh). Song song roadmap với WP-A7, không bị F-035 chặn;
+    ba điều kiện của RCP-002 phải được tuân thủ (assert tiền đề không suy biến; không hard-code kỳ
+    vọng vốn/ETH nhiều tháng; tuần tự hoá merge trên `engine.py`).
+  - **Theo an toàn dữ liệu thật:** `WP-C1` (C/Opus/xhigh) — độc lập hoàn toàn với lớp A.
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
-`WP-A1`, `WP-A2`, `WP-A4` (mới, sau WP-A3), `WP-C1`, `WP-D1`, `WP-D2`.
+`WP-A1`, `WP-A2`, `WP-A4`, `WP-C1`, `WP-D1`, `WP-D2`.
+
+Task đang PLANNED, chưa đủ điều kiện READY:
+- `WP-A7` — **chờ soạn + đóng băng task definition/Ready Gate/Completion Gate** (RCP-002 chỉ tạo
+  ô roadmap, không tạo gate). Dependency kỹ thuật đã thoả: WP-A3 DONE.
+- `WP-A5` — chờ WP-A2, WP-A3 ✅, **WP-A7**
+- `WP-A6` — chờ WP-A3 ✅, WP-A4, **WP-A7**
+- `WP-C4` — chờ WP-A3 ✅, WP-A4, WP-A6, **WP-A7**
 
 Task đang BLOCKED và lý do:
 - `WP-C2` — DEC-005 còn PENDING (thuộc T-05, thẩm quyền chủ dự án)
@@ -728,10 +816,9 @@ Task đang BLOCKED và lý do:
 Cần chủ dự án quyết định:
 1. **DEC-005** — phạm vi công cụ trước verdict (T-05). Không chặn lớp A.
 2. **PH-01** — cách đính chính số đếm finding trong biên bản S001.
-3. **RCP-002** (mới) — phê duyệt/từ chối việc thêm **WP-A7** (sở hữu **F-035**, lớp A, đường
-   găng, D/Fable/max) vào roadmap chuẩn; nếu duyệt, cho phép soạn và đóng băng gate cho WP-A7.
-   Kèm câu hỏi thứ tự thực thi giữa WP-A7 và WP-A4. Triage đã kết luận PH-03 = DEFECT (F-035),
-   nên câu hỏi "có phải defect không" đã đóng.
+3. **RCP-002 — ĐÃ PHÊ DUYỆT VÀ ÁP DỤNG** (2026-08-24). Còn lại một câu hỏi thứ tự: chạy bước
+   đóng băng gate cho **WP-A7** trước, hay chạy **WP-A4** trước (hai việc song song được về
+   roadmap; chỉ cần tuần tự hoá merge trên `engine.py`).
 4. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
    Không gói nào trong 15 gói cần nó, nên chưa gấp.
 

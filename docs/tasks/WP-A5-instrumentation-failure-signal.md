@@ -137,6 +137,9 @@ Phần chính sách của F-002 thuộc WP-B1.
 - T-04 (DONE)
 - **WP-A2** (DONE) — cần các hạng mục đã đấu nối để đo được đầy đủ
 - **WP-A3** (DONE) — bắt buộc: vốn không bị khoá thì FS-02/FS-07 mới đo đúng
+- **WP-A7** (DONE) — bắt buộc, thêm bởi **RCP-002** (2026-08-24): F-035 làm chiều
+  `smart_unlock_mode` trơ và làm sai phân phối vốn qua Smart ladder. Measurement tạo TRƯỚC khi
+  F-035 được sửa **không** được coi là canonical evidence cho engine cuối cùng.
 
 ## Blocks
 - GATE-A → T-06

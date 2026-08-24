@@ -125,6 +125,8 @@ Python **sắp thay đổi**, và sau lớp A sẽ phải làm lại toàn bộ.
 - **WP-A3** (DONE)
 - **WP-A4** (DONE)
 - **WP-A6** (DONE)
+- **WP-A7** (DONE) — bắt buộc, thêm bởi **RCP-002** (2026-08-24): không đóng băng parity
+  JS/Python trên behavior Smart capital đã được xác nhận là sai (F-035).
 
 ## Blocks
 - T-10

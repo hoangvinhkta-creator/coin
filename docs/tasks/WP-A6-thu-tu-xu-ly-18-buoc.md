@@ -130,6 +130,11 @@ Thứ tự công việc là một phần của yêu cầu, không phải gợi �
 - T-04 (DONE)
 - **WP-A3** (DONE) — test thứ tự phải khoá vào hành vi cuối cùng
 - **WP-A4** (DONE) — như trên
+- **WP-A7** (DONE) — bắt buộc, thêm bởi **RCP-002** (2026-08-24).
+  **Ràng buộc tường minh:** Completion Gate cuối cùng của WP-A6 **KHÔNG được chạy** trước khi
+  WP-A7 DONE. Lý do: F-035 làm Smart ladder gần như suy biến sau những tháng đầu, nên một số
+  đường xử lý Smart trong 18 bước sẽ không được thực thi đại diện cho behavior thật sau
+  remediation. **Không được dùng test fixture suy biến hiện tại để né dependency này.**
 
 ## Blocks
 - WP-C4 (parity phải khoá vào hành vi đã chốt)
