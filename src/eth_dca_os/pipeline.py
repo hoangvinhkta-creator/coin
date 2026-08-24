@@ -162,10 +162,21 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
     payload["window_metrics"]["ae_by_window"] = wm["ae_by_window"]
     # Backtest §4: bảng coverage weight bắt buộc trong MỌI báo cáo (WP-A2/F-012)
     payload["window_metrics"]["coverage_table"] = coverage_table()
+    # WP-A1: truyền manifest_hash và simulation_seed cho provenance (A1.3–A1.4)
+    # manifest_hash tính từ gate_windows (simplified, xem manifests.py cho gate2/3)
+    import hashlib
+    mh = hashlib.sha256(json.dumps(
+        {w.window_id: (str(w.start), str(w.end)) for w in gate_windows()},
+        sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    # simulation_seed: lấy từ master_seed kèm config hash để deterministic
+    from .config import deterministic_hash
+    sim_seed = deterministic_hash(MASTER_SEED, cfg.hash, exec_cfg.hash)
     rec = save_run(out_dir, "GATE1", payload,
                    strategy_config_hash=cfg.hash, execution_config_hash=exec_cfg.hash,
-                   dataset_hash=prep.dataset_hash, start_date="2019-01-01",
-                   end_date=str(prep.oos_end().date()))
+                   dataset_hash=prep.dataset_hash, manifest_hash=mh,
+                   start_date="2019-01-01",
+                   end_date=str(prep.oos_end().date()),
+                   simulation_seed=sim_seed)
     payload["run_record"] = rec
     # giữ full-period run cho controls
     full = run_engine(prep.dataset, scores, cfg, exec_cfg,

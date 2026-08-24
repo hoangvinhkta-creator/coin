@@ -45,8 +45,12 @@ def gap_report(df: pd.DataFrame, interval: str) -> dict:
             "longest_gap": longest, "gaps": gaps}
 
 
-def build_lineage(raw_dir: str | Path) -> dict:
-    """Ghi lineage.json: symbol, interval, source, khoảng thời gian, row/missing count, hash."""
+def build_lineage(raw_dir: str | Path, source: str = "unknown") -> dict:
+    """Ghi lineage.json: symbol, interval, source, khoảng thời gian, row/missing count, hash.
+
+    WP-A1/F-005: source phải là một trong 'binance_bulk_archive', 'binance_rest', 'synthetic',
+    không phải chuỗi cố định 'see fetch/synth'.
+    """
     raw = Path(raw_dir)
     entries = []
     for p in sorted(raw.glob("*.parquet")):
@@ -54,7 +58,7 @@ def build_lineage(raw_dir: str | Path) -> dict:
         symbol, interval = p.stem.rsplit("_", 1)
         rep = gap_report(df, interval)
         entries.append({
-            "symbol": symbol, "interval": interval, "source": "see fetch/synth",
+            "symbol": symbol, "interval": interval, "source": source,
             "first_timestamp": str(df["open_time"].min()),
             "last_timestamp": str(df["open_time"].max()),
             "row_count": int(len(df)),
@@ -63,7 +67,7 @@ def build_lineage(raw_dir: str | Path) -> dict:
         })
     dataset_hash = hashlib.sha256(
         json.dumps([e["file_hash"] for e in entries]).encode()).hexdigest()
-    lineage = {"files": entries, "dataset_hash": dataset_hash}
+    lineage = {"files": entries, "dataset_hash": dataset_hash, "source": source}
     (raw / "lineage.json").write_text(json.dumps(lineage, indent=1))
     return lineage
 

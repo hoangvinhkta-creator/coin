@@ -1,7 +1,10 @@
 """Reporting & reproducibility records — Backtest §16, §20; Data Model §12."""
 from __future__ import annotations
 
+import hashlib
 import json
+import subprocess
+import sys
 import time
 import uuid
 from pathlib import Path
@@ -24,11 +27,45 @@ def _jsonable(x):
     return x
 
 
+def _get_python_version() -> str:
+    """Python version để tái lập môi trường (WP-A1/A1.4)."""
+    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+
+def _get_code_commit() -> str:
+    """Git SHA để tái lập code (WP-A1/A1.4)."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd="/home/user/coin", text=True
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+def _get_dependency_lock_hash() -> str:
+    """Hash của lockfile để tái lập dependency (WP-A1/A1.6)."""
+    lockfile_candidates = [
+        Path("/home/user/coin/pyproject.lock"),
+        Path("/home/user/coin/poetry.lock"),
+        Path("/home/user/coin/requirements.lock"),
+    ]
+    for candidate in lockfile_candidates:
+        if candidate.exists():
+            content = candidate.read_bytes()
+            return hashlib.sha256(content).hexdigest()
+    return "no-lockfile"
+
+
 def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
              strategy_config_hash: str, execution_config_hash: str,
              dataset_hash: str, manifest_hash: str | None = None,
-             start_date=None, end_date=None, verdict=None) -> dict:
-    """Ghi backtest_runs record + metrics JSON (Data Model §12, Backtest §20)."""
+             start_date=None, end_date=None, verdict=None,
+             simulation_seed: int | None = None) -> dict:
+    """Ghi backtest_runs record + metrics JSON (Data Model §12, Backtest §20).
+
+    WP-A1: Thêm trường provenance để tái lập được run (A1.1–A1.6):
+    - python_version, code_commit, dependency_lock_hash, simulation_seed
+    """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     run_id = f"{run_type.lower()}_{uuid.uuid4().hex[:12]}"
@@ -48,6 +85,11 @@ def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
         "metrics_path": str(metrics_path),
         "verdict": verdict,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        # WP-A1 provenance fields (A1.4–A1.6)
+        "python_version": _get_python_version(),
+        "code_commit": _get_code_commit(),
+        "dependency_lock_hash": _get_dependency_lock_hash(),
+        "simulation_seed": simulation_seed if simulation_seed is not None else MASTER_SEED,
     }
     runs_file = out / "backtest_runs.jsonl"
     with open(runs_file, "a") as fh:

@@ -1,0 +1,22 @@
+# Lockfile generated for eth-dca-os V2.1.5
+# Generated: 2026-08-24
+# Python: 3.11.15
+# This file pins exact versions of all dependencies for reproducibility (WP-A1/F-007)
+
+numpy==2.4.6
+pandas==3.0.5
+pyarrow==25.0.1
+requests==2.31.0
+pytest==9.1.1
+pluggy==1.5.0
+packaging==24.0
+
+# Transitive dependencies
+python-dateutil==2.8.2
+pytz==2024.1
+tzdata==2024.1
+six==1.16.0
+urllib3==2.1.0
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.6.0
