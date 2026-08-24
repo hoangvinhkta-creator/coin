@@ -69,3 +69,22 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     `(pool_rank, is_crash, created_at, zone_index)` — crash ladder đứng sau ladder thường
     cùng pool; hạch toán release/deploy vẫn theo map (pool, amount) thật của từng zone,
     không theo label.
+17. **Phạm vi kế toán vốn Smart theo accounting month** (quyết định thiết kế WP-A7, đóng
+    F-035 — phương án PA-A của bản triage): `Pool` giữ nguyên vai trò ledger audit lifetime
+    append-only (DM §6), đồng thời theo dõi bộ đếm THEO THÁNG (`month_reserved`,
+    `month_deployed`, `carry_reserved`) cho pool được engine mở sổ theo tháng (hiện chỉ
+    SMART). `smart_reservable` so `ngân_sách_tháng × effective_unlock` với phần đã
+    reserve/deploy TRONG THÁNG — cùng phạm vi (DM §5 `monthly_budgets`), kẹp trên bởi
+    `available`; "vốn đã execute không relock" (ST §6) giữ nguyên TRONG phạm vi tháng.
+    Ranh giới sổ: `open_accounting_month` chạy tại rollover, SAU Month-End settle của tháng
+    cũ và TRƯỚC contribution tháng mới (đúng cụm bước 3→5 của BT §19); mở sổ không dịch
+    chuyển vốn, không ghi/đổi ledger. **Quy tắc carry-first** cho reserve vắt tháng (nguồn
+    duy nhất: crash zone giữ vốn SMART qua ranh giới tháng — Smart ladder luôn hết hạn cuối
+    tháng): mọi reserve còn mở tại thời điểm mở sổ trở thành carry; release/deploy rút carry
+    TRƯỚC; carry **không ăn và không trả** quyền unlock của tháng mới (vốn đó đã tiêu quyền
+    của tháng nó được reserve — đếm lại là tái phạm F-035). Khi carry và lô tháng mới cùng
+    tồn tại và nhận diện lô bị lẫn: với release, chiều sai duy nhất là quyền KHÔNG được trả
+    (bảo thủ cho strategy — BT §1); với deploy-from-reserved, tổng quyền đã dùng
+    (`month_reserved + month_deployed`) không đổi nên vô hại. `deploy_from_available`
+    (Base/Month-End) tính vào `month_deployed` của tháng đang mở. Bộ đếm tháng reconcile
+    được một cách tất định từ ledger + mốc mở sổ (kiểm bằng test F của WP-A7).

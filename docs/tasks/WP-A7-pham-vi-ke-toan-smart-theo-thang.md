@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-READY
+IN_PROGRESS
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -223,17 +223,18 @@ Nếu remediation cần vượt scope: **ESCALATE trước** bằng `SCOPE_CHANG
 `COMPLETION GATE CHANGE PROPOSAL`, không tự mở rộng.
 
 ## Subtasks
-- [ ] A7.1 Chốt **quyết định thiết kế** phạm vi kế toán (hai ranh giới ứng viên đã nêu ở triage:
+- [x] A7.1 Chốt **quyết định thiết kế** phạm vi kế toán (hai ranh giới ứng viên đã nêu ở triage:
       PA-A đưa vòng đời tháng vào tầng kế toán theo DM §5, hay PA-B đưa tử số về cùng phạm vi
       luỹ kế); ghi quyết định + lý do vào `docs/CONVENTIONS.md`. Không chọn im lặng
-- [ ] A7.2 Viết test-first bộ A–G (xem Completion Gate CHECK-A7-08) và ghi nhận FAIL trước fix
-- [ ] A7.3 Cài đặt phạm vi kế toán theo tháng cho Smart, **giữ nguyên** ledger audit toàn đời
-- [ ] A7.4 Bảo đảm Month-End và ranh giới đóng/mở sổ không để trạng thái tháng cũ chui sang phép
+      → **chọn PA-A**, ghi tại CONVENTIONS #17 (S004)
+- [x] A7.2 Viết test-first bộ A–G (xem Completion Gate CHECK-A7-08) và ghi nhận FAIL trước fix
+- [x] A7.3 Cài đặt phạm vi kế toán theo tháng cho Smart, **giữ nguyên** ledger audit toàn đời
+- [x] A7.4 Bảo đảm Month-End và ranh giới đóng/mở sổ không để trạng thái tháng cũ chui sang phép
       tính unlock của tháng mới
-- [ ] A7.5 Dựng kịch bản tất định chứng minh `smart_unlock_mode` không còn trơ
-- [ ] A7.6 Non-regression Opportunity Fund (cumulative, cap, rollover, overflow)
-- [ ] A7.7 Chạy regression WP-A3 và toàn bộ suite
-- [ ] A7.8 Đo impact BEFORE/AFTER trên cùng dataset/seed, quy từng sai lệch về requirement
+- [x] A7.5 Dựng kịch bản tất định chứng minh `smart_unlock_mode` không còn trơ
+- [x] A7.6 Non-regression Opportunity Fund (cumulative, cap, rollover, overflow)
+- [x] A7.7 Chạy regression WP-A3 và toàn bộ suite
+- [x] A7.8 Đo impact BEFORE/AFTER trên cùng dataset/seed, quy từng sai lệch về requirement
 - [ ] A7.9 Phiên rà soát độc lập E2
 
 ## Ready Gate
@@ -266,7 +267,8 @@ Use `governance/core/TASK_READY_GATE_STANDARD.md`.
 - [x] Escalation triggers được định nghĩa
 - [x] Completion Gate được finalize
 - [x] **Completion Gate được ĐÓNG BĂNG trước khi implementation bắt đầu** — FROZEN 2026-08-24
-- [ ] Xác nhận lại toàn bộ Ready Gate khi mở task
+- [x] Xác nhận lại toàn bộ Ready Gate khi mở task — S004 2026-08-24, 20/20 PASS
+      (kèm kiểm tra không có push WP-A4 song song trên remote trước khi mở)
 
 ## Completion Gate
 
@@ -288,7 +290,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -303,18 +305,30 @@ Yêu cầu: test **nhiều tháng** (tối thiểu ba tháng liên tiếp) chứ
 - **Tháng 3 trở đi** — hành vi tiếp tục đúng, không suy biến dần theo số tháng.
 Không chấp nhận test một tháng. Đây là check trực tiếp đóng **F-035**.
 
+**Kết quả (S004):**
+- `tests/test_wp_a7_monthly_scope.py::test_a` (unit, BA tháng): tháng 1 deploy trọn 30.0
+  (reserve→deploy + Month-End); mở sổ tháng 2/3 → `smart_reservable(unlock=1.0)` = **30.0
+  đúng ngân sách tháng mới** ở cả tháng 2 và tháng 3, trong khi lifetime deployed bảo toàn
+  30.0/60.0. `::test_b` (engine, BỐN tháng liên tiếp oscore 60): 4/4 tháng đều tạo Smart
+  ladder, không suy biến theo số tháng.
+- BEFORE (HEAD 68bd8be): cùng test FAIL đúng cách — tháng 2+ reservable=0
+  (log test-first `FFFFF.FF`; probe cấu trúc: tháng 2→5 đều 0.000 ở unlock 1.00).
+- AFTER: 8/8 PASS (`python -m pytest tests/test_wp_a7_monthly_scope.py`).
+
+Status cụ thể: PASS — E1 (pytest chạy thật, FAIL-before/PASS-after).
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-02 — Hành vi tương đương mô hình canonical DM §5 `monthly_budgets`
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -328,18 +342,35 @@ canonical. Nếu implementation vẫn giữ một `Pool` cumulative cho mục đ
 DM §6), phải chứng minh **bằng chạy thật hoặc bằng kiểm tra chương trình** rằng giá trị cumulative
 đó **KHÔNG** được dùng sai phạm vi để tính monthly Smart unlock.
 
+**Kết quả (S004):**
+- Tương đương hành vi: `Pool` SMART mang bộ đếm THEO THÁNG `month_reserved` (≙
+  `smart_reserved_vnd`), `month_deployed` (≙ `smart_deployed_vnd`); phần available của tháng
+  = `unlocked − month_reserved − month_deployed` kẹp bởi `available` — đúng bộ ba DM §5.
+  Vòng đời tháng có điểm mở/đóng: `open_accounting_month(ts)` tại rollover (ts được lưu ở
+  `month_opened_at` ≙ `opened_at`; mở sổ tháng mới đồng nghĩa đóng sổ tháng cũ ≙
+  OPEN/CLOSED — engine chỉ có đúng một tháng OPEN tại mọi thời điểm).
+- Cumulative không dùng sai phạm vi: kiểm tra chương trình — `smart_reservable`
+  (capital.py) sau fix CHỈ đọc `month_reserved`/`month_deployed`, không còn đọc
+  `reserved`/`deployed` lifetime; xác nhận bằng chạy thật `::test_a` (lifetime deployed
+  30/60 không ảnh hưởng quyền tháng mới) và `::test_f` (ledger lifetime vẫn append-only,
+  `ledger_conservation_ok` PASS mọi pool — DM §6 giữ nguyên vai trò audit).
+- Bộ đếm tháng reconcile tất định từ ledger + mốc mở sổ (`::test_f` có replayer độc lập
+  khớp từng giá trị). Quyết định thiết kế PA-A ghi tại `docs/CONVENTIONS.md` #17.
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-03 — `smart_unlock_mode` không còn mechanically dead
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -359,18 +390,41 @@ ladder; Smart deployed; downstream execution nếu có.
 **Không** được kiểm bằng "ba mode chạy không crash". **Không** yêu cầu ba mode phải khác nhau về
 `eth_total` trên **mọi** dataset — chỉ yêu cầu chứng minh chiều này không còn trơ.
 
+**Kết quả (S004):**
+Kịch bản tất định `::test_c` (2 tháng — tháng 2: ladder tạo ở unlock 0.714, bullish
+invalidation +13% hai daily close → release, OSCORE tụt 40, 13 ngày để DECAY chạy ≥2 bậc),
+chạy engine run thật cho từng mode với unlock path được ghi lại:
+
+| Mode | Smart unlock path (điểm cuối) | `smart_reservable` cuối | Ladder (số/giá trị) | Smart deployed (tháng) | Downstream |
+|---|---|---|---|---|---|
+| HWM | eff giữ peak **0.714286** (25/35) | **14.357143** | 2 ladder; ladder tháng 2 eligible 30×0.714=21.43, INVALIDATED→release | 7.071429 | không có execution thêm sau release (kịch bản dừng ở quyền vốn) |
+| DECAY_HWM | eff tụt bậc 0.10/7 ngày → **0.614286** | **11.357143** | như trên | 7.071429 | như trên |
+| NO_HWM | eff bám hiện tại **0.142857** (5/35) | **0.000000** | như trên | 7.071429 | như trên |
+
+Ba mode cho ba unlock path KHÁC NHAU và ba giá trị quyền vốn KHÁC NHAU, đúng thứ tự
+semantics ST §6 (HWM > DECAY_HWM > NO_HWM ≥ 0, HWM > 1.0) — chiều không còn chết cơ học.
+BEFORE (68bd8be): cùng kịch bản, mọi mode reservable = 0 từ tháng 2 (test FAIL đúng cách);
+trên full synth 90 tháng, 3 mode trùng bit-for-bit eth_total 21.480751489892.
+Ghi chú trung thực: trên full synth AFTER, 3 mode vẫn trùng `eth_total` ở tầng OUTCOME vì
+engine chỉ tiêu thụ eff tại tạo ladder one-shot (peak==current) và crash snapshot
+(OSCORE≥75⇒1.0) — ghi nhận **PH-04** (ngoài scope, chờ owner; xem handoff S004). Điều này
+không vi phạm câu chữ frozen của check ("không yêu cầu khác nhau về eth_total trên mọi
+dataset — chỉ yêu cầu chứng minh chiều này không còn trơ").
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-04 — Ngữ nghĩa reset theo tháng của cả ba unlock mode
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -386,18 +440,34 @@ Yêu cầu, chứng minh bằng chạy thật:
 
 Ràng buộc: **không** được tạo một "reset pool" làm mất lịch sử audit hoặc làm hỏng Opportunity Fund.
 
+**Kết quả (S004):**
+- `::test_c2` (month reset, chạy CẢ BA mode): tháng 1 OSCORE 80 (peak cao) 30 ngày; ngày 31
+  data quality INVALID chặn tạo ladder sớm; sang tháng 2 OSCORE 45 → ladder tháng 2 eligible
+  `30×(10/35)` **cho cả ba mode** — peak 80 của tháng cũ KHÔNG vắt sang (HWM reset đúng;
+  NO_HWM không mang peak; DECAY_HWM không mang accounting state; sàn peak = SMART_UNLOCK
+  hiện tại). Reset peak dùng `su.month_reset(ts)` sẵn có (ST §6), gọi ngay SAU
+  `open_accounting_month` tại rollover.
+- reserved/deployed tháng trước không bóp unlock tháng mới: `::test_a`/`::test_a2`
+  (liên thông CHECK-A7-01).
+- Vốn còn lại xử lý theo Month-End canonical: `::test_e` (ST §10 — xem CHECK-A7-05).
+- Không "reset pool" phá audit: `open_accounting_month` không dịch chuyển vốn, không
+  ghi/đổi ledger (kiểm tra chương trình — hàm chỉ gán bộ đếm tháng); ledger lifetime
+  nguyên vẹn (`::test_f`); Opportunity Fund không đổi (`::test_d`).
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-05 — Tương tác với Month-End Policy và ranh giới đóng/mở sổ
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -411,11 +481,29 @@ Yêu cầu, chứng minh bằng chạy thật trên kịch bản bắc qua ít n
 - phần chuyển sang Opportunity Fund vẫn đúng (số tiền, hướng, cap);
 - month close/open **không để stale reserved/deployed chui sang phép tính monthly unlock**.
 
+**Kết quả (S004):**
+- `::test_e` (bắc qua ranh giới tháng, Day-28 12:00 OSCORE 40 < 45): mua **50%** phần Smart
+  còn lại, chuyển **50%** vào Opportunity Fund trong cap (ledger OVERFLOW_OUT/OVERFLOW_IN,
+  reason `MONTH_END_SMART`, số tiền hai vế khớp nhau); tháng kế tiếp vẫn tạo ladder với
+  quyền đầy đủ `30×(25/35)`=21.4286 — **deployment cuối tháng không làm tháng sau mất quyền
+  unlock** (đóng đúng vòng lặp F-035). Nhánh OSCORE ≥ 45 (mua hết) phủ trong `::test_a`/
+  `::test_b` (mỗi tháng deploy trọn ngân sách qua Month-End mà tháng sau vẫn đủ quyền).
+- Stale reserve tại ranh giới: `::test_f` — crash zone giữ vốn SMART vắt tháng trở thành
+  `carry_reserved` tại mở sổ; carry **không ăn và không trả** quyền unlock tháng mới
+  (quy tắc carry-first, CONVENTIONS #17); release/deploy carry rút carry trước, không làm
+  âm/đội `month_reserved`. Không phát hiện đường rò stale nào khác (nguồn reserve vắt
+  tháng duy nhất là crash zone — Smart ladder luôn hết hạn cuối tháng, ST §18.3).
+- Ranh giới đặt đúng BT §19 bước 3→5: settle Month-End (bước 3) → `open_accounting_month`
+  + `su.month_reset` (bước 4) → contribution tháng mới (bước 5) — kiểm bằng vị trí hook
+  trong `engine.py` + toàn bộ test rollover PASS.
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 ### Data Integrity
 
@@ -424,7 +512,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -443,18 +531,37 @@ khẳng định theo ngữ nghĩa kế toán canonical:
   (DM §5 vs DM §6): sửa F-035 **không** được thực hiện bằng cách xoá/reset lịch sử deployed toàn
   đời nếu lịch sử đó còn cần cho audit hoặc cost basis.
 
+**Kết quả (S004):**
+- `::test_f` (3 tháng, có fill, có INVALIDATED→release, có Month-End, có crash vắt ranh
+  giới tháng): `ledger_conservation_ok` PASS cho **mọi pool** — replay TỪNG entry ledger
+  khẳng định `TOTAL = AVAILABLE + RESERVED + DEPLOYED` tại mọi thời điểm dịch chuyển vốn,
+  không số dư âm, `available_after/reserved_after/deployed_after` khớp trạng thái tính lại.
+- Không tạo/mất vốn: tổng `pool.total` các pool == tổng contribution danh nghĩa.
+- Không double reservation/deployment: bộ đếm tháng của SMART reconcile **tất định** từ
+  ledger + mốc mở sổ — replayer độc lập trong test (áp lại đúng quy tắc carry-first trên
+  chuỗi entry, mốc mở sổ nhận diện bằng timestamp CONTRIBUTION) khớp từng giá trị
+  `month_reserved/month_deployed/carry_reserved`; mọi reserve đều release/deploy về đúng
+  pool nguồn theo map (pool, amount) của zone (cơ chế WP-A3 giữ nguyên).
+- Lifetime ledger KHÔNG bị xoá/reset ở bất kỳ nhánh code hay test nào: fix chỉ THÊM bộ đếm
+  tháng; `reserved/deployed/available/total` lifetime và ledger append-only giữ nguyên
+  (diff `capital.py` không đụng `_ledger_append` và các trường lifetime; `::test_a` khẳng
+  định lifetime deployed 30/60 tồn tại song song quyền tháng).
+- Toàn suite còn `tests/test_capital.py` (invariants sẵn có) PASS không sửa.
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-07 — Opportunity Fund không bị regression sang ngữ nghĩa theo tháng
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -471,11 +578,28 @@ Yêu cầu, chứng minh bằng chạy thật:
 - rollover / overflow sang Smart **của tháng đó** vẫn đúng (ST §7; BT §19 bước 6);
 - daily limit 20% giữ nguyên hành vi đã chốt ở WP-A3 (CONVENTIONS #4).
 
+**Kết quả (S004):**
+- Diff `capital.py`: hàm `opportunity_reservable` **không đổi một ký tự** — vẫn lifetime
+  semantics trên `fund.total` (ST §7 xuyên tháng); pool OPPORTUNITY **không** được engine
+  gọi `open_accounting_month` (bộ đếm tháng của nó đứng yên, không tham gia phép tính nào).
+- `::test_d` (guard hai chiều, PASS cả BEFORE lẫn AFTER — 4 tháng): Opportunity Fund
+  tích luỹ đúng cumulative qua các tháng; cap 80 = `20 × 4` được tôn trọng; overflow phần
+  vượt cap chuyển sang Smart của tháng đó (BT §19 bước 6); `opportunity_reservable` trả
+  đúng số học lifetime ở nhiều trạng thái reserved/deployed.
+- Daily limit 20%: hành vi WP-A3 (CONVENTIONS #4 — enforce tại bước 14 cho crash zone)
+  không đổi — 16/16 test WP-A3 liên quan PASS; impact `daily_limit_blocks` = 0 cả
+  BEFORE/AFTER trên cùng dataset.
+- Impact toàn kỳ: OPPORTUNITY total giữ 80.0 (cap) cả BEFORE/AFTER; khác biệt duy nhất
+  available/deployed (44.41/35.59 → 41.82/38.18) do crash fill dùng nguồn Opportunity
+  nhiều hơn — hệ quả [F5] snapshot sống lại, không phải đổi ngữ nghĩa quỹ.
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 ### Regression
 
@@ -484,7 +608,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -509,18 +633,33 @@ Bộ test bắt buộc (viết TRƯỚC khi sửa; báo cáo phải phân biệt
 | **F** | Bất biến kế toán qua nhiều tháng |
 | **G** | Regression WP-A3 (xem CHECK-A7-10) |
 
+**Kết quả (S004):**
+- Baseline BEFORE tái tạo tại HEAD 68bd8be (2026-08-24T03:45Z, log lưu phiên +
+  handoff S004): probe cấu trúc dùng hàm thật — unlock=1.00, tháng 1 reservable **30.0**,
+  tháng 2→5 **0.000** (lifetime deployed 30→120); trên synth 90 tháng: **2** Smart ladder
+  toàn kỳ, 135 249/135 251 lần gọi trả 0, tỷ lệ Smart qua ladder **0.0208%**.
+- Test-first: `tests/test_wp_a7_monthly_scope.py` viết TRƯỚC fix; chạy tại 68bd8be:
+  **`FFFFF.FF` — 7 FAIL đúng cách + 1 PASS** (test_d là guard Opportunity, phải PASS cả
+  hai phía). FAIL messages đúng bản chất từng finding (vd test_a2: "mỗi tháng phải có một
+  Smart ladder khi unlock > 0; có 1"; test_b: "assert 1 == 4"). Mapping A–G:
+  A=test_a+test_a2 · B=test_b · C=test_c (+test_c2 reset) · D=test_d · E=test_e ·
+  F=test_f · G=CHECK-A7-10.
+- AFTER: **8/8 PASS** (`python -m pytest tests/test_wp_a7_monthly_scope.py` — 8 passed).
+
+Status cụ thể: PASS — E1 (FAIL-before/PASS-after phân biệt rõ).
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-09 — Thay đổi kết quả mô phỏng được định lượng và quy về requirement
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -538,18 +677,44 @@ avg cash ratio).
 Ràng buộc: dữ liệu tổng hợp **chỉ** dùng để đo impact — **không tuyên bố strategy có edge**,
 không official verdict (DEC-003). Sai lệch không giải thích được ⇒ dấu hiệu defect mới ⇒ dừng.
 
+**Kết quả (S004):**
+Cùng dataset/seed/cửa sổ (synth SEED 20260822, 2019-01→2026-06), tool đã commit
+`tests/wp_a3_impact_tool.py`; BEFORE = tag `WP_A7_BEFORE` chạy qua git worktree tại
+68bd8be với `--src` + assert provenance `code_path`; AFTER = tag `WP_A7_AFTER`.
+Metric tối thiểu theo yêu cầu:
+
+| Metric | BEFORE | AFTER | Điều khoản |
+|---|---|---|---|
+| Smart ladder | 2 | 67 | DM §5 (F-035 fix) → ST §12 sống lại |
+| `smart_reservable` theo tháng | 135 249/135 251 lần = 0 | 6/88 lần = 0; mỗi tháng có quyền dương khi unlock > 0 | DM §5 |
+| Smart qua ladder / qua Month-End | 0.9106 / 4369.09 (0.0208%) | 1045.97 / 3224.24 (24.49%) | ST §12 vs ST §10 |
+| Capital utilization (avg cash ratio) | 0.06826 | 0.06635 | vốn Smart làm việc qua ladder |
+| Số lệnh thực thi (executed/purchases) | 36 / 392 | 193 / 543 | hệ quả ladder sống |
+| ETH accumulated | 21.480751 | 21.637035 (+0.73%) | HỆ QUẢ — không dùng làm bằng chứng đúng; cùng bậc ước lượng triage +0.79% |
+| Tổng snapshot [F5] Crash | 111.13 | 492.07 | ST §14 — thành phần Smart của snapshot sống lại (khuếch đại fix F-021/WP-A3) |
+| avg cash ratio | 0.06826 | 0.06635 | như trên |
+
+Bảng truy vết ĐẦY ĐỦ từng sai lệch (crash/opp ladder, releases theo reason,
+cooldown_override, final pools, BASE bất biến, state/label transitions bất biến...) —
+xem handoff `docs/sessions/S004-wp-a7-monthly-smart-scope.md`, mục "Impact BEFORE →
+AFTER"; **mọi dòng khác biệt đều quy về một điều khoản spec cụ thể, không còn sai lệch
+không giải thích được**. Dữ liệu tổng hợp chỉ dùng đo impact — không tuyên bố edge,
+không verdict (DEC-003; BLK-001 giữ nguyên).
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-10 — WP-A3 không bị regression
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -565,18 +730,32 @@ Nếu WP-A7 làm FAIL bất kỳ test nào của WP-A3: **WP-A7 không DONE** ch
 giải quyết **đúng requirement**. **Không reopen WP-A3 và không sửa expected value của WP-A3** để
 làm test xanh.
 
+**Kết quả (S004):**
+- `python -m pytest tests/test_wp_a3_lifecycle.py tests/test_capital.py tests/test_engine.py`
+  → **34 passed** — KHÔNG sửa một expected value nào, không reopen WP-A3. Phủ đủ: vòng đời
+  reserve Crash ladder, ngữ nghĩa `None`, [F1] năm bề mặt, [F5] snapshot + daily limit tại
+  khâu triển khai, pool labeling, bất biến kế toán.
+- Bằng chứng độc lập từ impact trên cùng dataset: `state_transitions` và
+  `label_transitions` **giống hệt** BEFORE/AFTER (regime layer không bị chạm);
+  BASE bất biến hoàn toàn; `daily_limit_blocks`/`missed`/`stuck_crash_reserve` = 0 cả
+  hai phía. `crash_snapshots_sum` tăng 111.13→492.07 là hành vi ĐÚNG được khuếch đại
+  (thành phần Smart của snapshot [F5] sống lại nhờ F-035 fix — chính là hệ quả mà triage
+  dự báo: F-035 che ~78% tác dụng fix F-021), không phải hành vi mới của regime/ladder.
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 #### CHECK-A7-11 — Toàn bộ test suite Python PASS; không test nào bị nới lỏng hoặc skip
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -586,11 +765,22 @@ Yêu cầu: output test suite đầy đủ. Nếu một test hiện có phải s
 nào, đổi gì, và **vì sao hành vi mới mới là hành vi đúng theo spec** — kèm điều khoản. Không
 skip, không nới lỏng, không xoá test để đạt xanh.
 
+**Kết quả (S004):**
+- `python -m pytest` (toàn repo): **95 passed in 354.34s** — 87 test có sẵn (S003 baseline)
+  + 8 test WP-A7 mới; 0 failed, 0 skipped, 0 xfail.
+- **KHÔNG test hiện có nào phải sửa**: hành vi đổi duy nhất là phạm vi tính
+  `smart_reservable`, và test khoá hành vi đó duy nhất
+  (`tests/test_capital.py::test_smart_reservable_no_relock`) dùng khung MỘT tháng nên đúng
+  với cả hai phạm vi (đã dự báo trong Notes của gate frozen) — pass nguyên trạng.
+  Không skip/nới lỏng/xoá test nào.
+
+Status cụ thể: PASS — E1.
+
 Executed By:
-...
+Agent phiên S004 (Tier D / max)
 
 Timestamp:
-...
+2026-08-24T04:05Z
 
 ### Audit độc lập
 
@@ -681,12 +871,20 @@ Gate 2 bị vô hiệu — và Master Index §6 không cho chạy lại để s�
 ## Changed Files Registry
 
 Created:
-- (dự kiến) test mới trong `tests/`
-- (dự kiến) `docs/reviews/E2-WP-A7-*.md`
+- `tests/test_wp_a7_monthly_scope.py` — 8 test A–G test-first
+- `docs/sessions/S004-wp-a7-monthly-smart-scope.md` — session handoff
+- `docs/reviews/E2-WP-A7-*.md` — (sau phiên E2)
 
 Modified:
-- (dự kiến) `src/eth_dca_os/capital.py`, `src/eth_dca_os/engine.py`
-- (dự kiến) `tests/`, `docs/CONVENTIONS.md`
+- `src/eth_dca_os/capital.py` — Pool: bộ đếm tháng (`month_reserved`, `month_deployed`,
+  `carry_reserved`, `month_opened_at`) + `open_accounting_month`; reserve/release/deploy
+  cập nhật bộ đếm theo quy tắc carry-first; `smart_reservable` chuyển phạm vi tháng.
+  Ledger lifetime và `opportunity_reservable` KHÔNG đổi
+- `src/eth_dca_os/engine.py` — MỘT hook `smart_pool.open_accounting_month(ts)` tại
+  rollover (sau Month-End settle, trước contribution, trước `su.month_reset`)
+- `docs/CONVENTIONS.md` — thêm quy ước #17 (PA-A)
+- `docs/tasks/WP-A7-pham-vi-ke-toan-smart-theo-thang.md` — evidence + status
+- `PROJECT/PROJECT_PROGRESS.md`, `PROJECT/LO_TRINH_DE_HIEU.md` (sinh tự động)
 
 Deleted:
 - Không

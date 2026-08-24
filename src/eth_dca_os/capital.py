@@ -3,6 +3,13 @@ Opportunity Fund cap/overflow, Base schedule state, Month-End.
 
 Mọi dịch chuyển vốn đi qua Pool (ledger-style, có audit trail) và giữ invariant
 TOTAL = AVAILABLE + RESERVED + DEPLOYED, không âm (Data Model §14).
+
+Phạm vi kế toán THEO ACCOUNTING MONTH (WP-A7, đóng F-035 — Data Model §5
+`monthly_budgets`): Pool theo dõi thêm bộ đếm month-scope
+(`month_reserved` / `month_deployed` / `carry_reserved`) cho pool được engine mở sổ
+theo tháng (`open_accounting_month`, hiện chỉ SMART). Ledger lifetime GIỮ NGUYÊN vai
+trò audit append-only (DM §6) — mở sổ không xoá/không ghi đè lịch sử. Quy tắc
+carry-first cho reserve vắt tháng: xem CONVENTIONS #17.
 """
 from __future__ import annotations
 
@@ -22,6 +29,12 @@ class Pool:
     reserved: float = 0.0
     deployed: float = 0.0
     ledger: list = field(default_factory=list)
+    # ---- phạm vi ACCOUNTING MONTH (DM §5; WP-A7/F-035) — chỉ có ý nghĩa cho pool
+    # được engine mở sổ theo tháng (SMART). Không ảnh hưởng A/R/D hay ledger.
+    month_reserved: float = 0.0   # reserve tạo TRONG tháng đang mở (quyền tháng này đã dùng)
+    month_deployed: float = 0.0   # deploy thực hiện TRONG tháng đang mở
+    carry_reserved: float = 0.0   # reserve mang từ tháng trước (runoff, ngoài quyền tháng này)
+    month_opened_at: float | None = None   # tương đương opened_at của monthly_budgets (DM §5)
 
     def _check(self):
         if self.available < -EPS or self.reserved < -EPS or self.deployed < -EPS:
@@ -39,6 +52,18 @@ class Pool:
     def total(self) -> float:
         return self.available + self.reserved + self.deployed
 
+    def open_accounting_month(self, ts: float | None = None):
+        """Đóng sổ tháng cũ / mở sổ tháng mới cho PHẠM VI unlock theo tháng (DM §5).
+
+        Không dịch chuyển vốn, không ghi ledger, không đổi A/R/D — lịch sử audit
+        lifetime giữ nguyên (DM §6). Mọi reserve còn mở tại thời điểm mở sổ trở
+        thành carry (lô tháng trước): carry không ăn và không trả quyền unlock của
+        tháng mới (CONVENTIONS #17)."""
+        self.carry_reserved = self.reserved
+        self.month_reserved = 0.0
+        self.month_deployed = 0.0
+        self.month_opened_at = ts
+
     def contribute(self, amount: float, reason: str = "CONTRIBUTION", ts=None):
         self.available += amount
         self._check()
@@ -50,6 +75,7 @@ class Pool:
             return False
         self.available -= amount
         self.reserved += amount
+        self.month_reserved += amount        # reserve mới luôn thuộc quyền tháng đang mở
         self._check()
         self._log("RESERVE", amount, reason, ts)
         return True
@@ -59,6 +85,13 @@ class Pool:
             raise InvariantError(f"release {amount} > reserved {self.reserved} in {self.name}")
         self.reserved -= amount
         self.available += amount
+        # carry-first (CONVENTIONS #17): release rút lô tháng trước trước; chỉ phần
+        # thuộc lô tháng này mới TRẢ LẠI quyền tháng này. Nếu nhận diện lô lẫn (carry
+        # và lô mới cùng tồn tại), chiều sai lệch duy nhất là quyền KHÔNG được trả —
+        # bảo thủ cho strategy (Backtest §1).
+        take = min(amount, self.carry_reserved)
+        self.carry_reserved -= take
+        self.month_reserved = max(0.0, self.month_reserved - (amount - take))
         self._check()
         self._log("RELEASE", amount, reason, ts)
 
@@ -67,6 +100,16 @@ class Pool:
             raise InvariantError(f"deploy {amount} > reserved {self.reserved} in {self.name}")
         self.reserved -= amount
         self.deployed += amount
+        # carry-first: deploy của lô tháng trước không ăn quyền tháng này (vốn đó đã
+        # tiêu quyền của tháng nó được reserve — đếm nó lần nữa là chính họ hàng của
+        # F-035). Với lô tháng này: chuyển bucket reserved -> deployed, TỔNG quyền đã
+        # dùng (month_reserved + month_deployed) không đổi, nên nhận diện lô lẫn ở
+        # nhánh này vô hại với quyền unlock.
+        take = min(amount, self.carry_reserved)
+        self.carry_reserved -= take
+        rest = amount - take
+        self.month_reserved = max(0.0, self.month_reserved - rest)
+        self.month_deployed += rest
         self._check()
         self._log("DEPLOY", amount, reason, ts)
 
@@ -76,6 +119,7 @@ class Pool:
             return False
         self.available -= amount
         self.deployed += amount
+        self.month_deployed += amount        # tiêu dùng thật của tháng đang mở (Base/Month-End)
         self._check()
         self._log("DEPLOY", amount, reason, ts)
         return True
@@ -177,12 +221,19 @@ def apply_monthly_contribution(mc: MonthlyCapital, contribution: float, cfg, ts=
 
 
 def smart_reservable(smart: Pool, budget_total: float, effective_unlock: float) -> float:
-    """Phần Smart có thể reserve thêm = unlocked - (reserved + deployed), không âm.
+    """Phần Smart có thể reserve thêm TRONG THÁNG = unlocked(tháng) − (đã reserve +
+    đã deploy TRONG THÁNG), kẹp trên bởi available. Không âm.
 
-    Vốn đã execute không relock: deployed luôn được trừ khỏi unlocked trước available.
+    Phạm vi theo ACCOUNTING MONTH (DM §5 `monthly_budgets`; ST §4/§6) — WP-A7 đóng
+    F-035: `budget_total × effective_unlock` là đại lượng theo tháng nên chỉ được so
+    với phần đã dùng TRONG THÁNG, không so với deployed luỹ kế toàn đời. "Vốn đã
+    execute không relock" (ST §6) giữ nguyên TRONG phạm vi tháng: month_deployed vẫn
+    bị trừ khi unlock tụt rồi tăng lại trong cùng tháng. Reserve mang từ tháng trước
+    (carry) không ăn quyền tháng này nhưng cũng không nằm trong available.
     """
     unlocked = budget_total * effective_unlock
-    return max(0.0, min(smart.available, unlocked - smart.reserved - smart.deployed))
+    return max(0.0, min(smart.available,
+                        unlocked - smart.month_reserved - smart.month_deployed))
 
 
 def opportunity_reservable(fund: Pool, unlock: float, hysteresis_active: bool,

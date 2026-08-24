@@ -293,6 +293,9 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     counters["delayed_data_fill"] += 1
                 settle_month_end_smart(ts, o)
             cur_month = month_key
+            # 3->4. đóng sổ tháng cũ / mở sổ tháng mới cho phạm vi unlock Smart theo
+            # tháng (DM §5; WP-A7/F-035) — SAU settle Month-End, TRƯỚC contribution.
+            smart_pool.open_accounting_month(ts)
             su.month_reset(ts)                       # 4. reset HWM theo mode
             br = apply_monthly_contribution(mc, contribution, cfg, ts)  # 5–6. contribution + cap
             res.contributions.append((ts, contribution))

@@ -19,8 +19,7 @@ Profile:
 PRODUCT
 
 Last Updated:
-2026-08-24 — **WP-A7 ĐÓNG BĂNG GATE và chuyển READY** (12 REQUIRED check, E1 toàn bộ + E2 bắt
-buộc); roadmap 29 task
+2026-08-24 — S004 mở WP-A7 (Ready Gate PASS, chuyển IN_PROGRESS)
 
 Overall Status:
 IN_PROGRESS
@@ -30,8 +29,7 @@ Phase 2 — Lớp A (bắt buộc sửa trước official run). WP-A3 (mắt xí
 WP-A4 hết bị chặn bởi WP-A3. RCP-002 đã áp dụng: thêm **WP-A7** vào lớp A (đóng F-035).
 
 Current Task:
-Không có task nào đang thực thi. WP-A3 DONE tại S003; WP-A7 vừa được đóng băng gate và chuyển
-READY (chưa bắt đầu).
+WP-A7 — Sửa phạm vi kế toán vốn Smart theo tháng (S004)
 
 Current Task Mode:
 MAJOR (phiên vừa hoàn tất; không task nào đang IN_PROGRESS)
@@ -78,7 +76,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | READY | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (DONE tại S003) — READY. Song song roadmap với WP-A7, KHÔNG bị chặn bởi F-035; ba điều kiện bắt buộc ghi ở RCP-002 §Điều kiện phê duyệt (đóng F-023, F-025, F-032) |
 | PLANNED | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | Sau WP-A2, WP-A3, **WP-A7** (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical) — đóng phần đo lường của F-002, và F-016 |
 | PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4, **WP-A7**. Completion Gate cuối cùng KHÔNG được chạy trước khi WP-A7 DONE (đường xử lý Smart hiện suy biến) — đóng F-018, F-019 |
-| READY | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | Sau WP-A3 (DONE). Song song roadmap với WP-A4 (phải tuần tự hoá merge trên `engine.py`). Chặn WP-A5, WP-A6, WP-C4, GATE-A → T-06 (đóng F-035) |
+| IN_PROGRESS | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | Sau WP-A3 (DONE). Song song roadmap với WP-A4 (phải tuần tự hoá merge trên `engine.py`). Chặn WP-A5, WP-A6, WP-C4, GATE-A → T-06 (đóng F-035) |
 | PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Hai nhóm điều kiện ĐỘC LẬP, phải thoả CẢ HAI: (A) nội tại — T-05 và **GATE-A** (WP-A1…**WP-A7** đều DONE); (B) hạ tầng — BLK-001 (mạng Binance). Gỡ BLK-001 KHÔNG cho phép chạy T-06 khi GATE-A chưa PASS |
 | PLANNED | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | Sau T-06. QUY TẮC BẮT BUỘC: nếu remediation của F-017 (Control F) ảnh hưởng Gate 1 → Gate 1 phải chạy lại trước khi coi kết quả hợp lệ (DEC-009) — đóng phần chính sách của F-002, F-015, F-017, F-026 |
 | PLANNED | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | Sau T-06. Song song với WP-B1, WP-B3 |
@@ -538,6 +536,28 @@ Trạng thái risk: **CONFIRMED DEFECT — OPEN**, sẽ đóng khi WP-A7 DONE.
 Triage đầy đủ (requirement canonical, root cause, bằng chứng, phân lớp, ảnh hưởng gate, đánh giá
 WP-A4): `docs/reviews/PH-03-triage-smart-unlock-scope.md`.
 
+### PH-04 — Ba mode `smart_unlock` phân kỳ ở tầng quyền vốn nhưng vẫn trùng kết quả cuối trên full run (GHI NHẬN S004 — chờ chủ dự án, CHƯA triage, KHÔNG remediation)
+
+Phát hiện trong S004 (WP-A7), **ngoài Scope Lock**, ghi nhận theo đúng quy trình
+"phát hiện mới không sửa trong phiên":
+
+Sau khi F-035 được sửa, ba mode HWM / NO_HWM / DECAY_HWM đã **phân kỳ thật** ở tầng
+unlock path và quyền vốn (`smart_reservable` cuối kịch bản tất định: 14.36 / 11.36 / 0.00
+— test C của WP-A7), tức chiều ablation không còn chết cơ học theo đúng câu chữ
+CHECK-A7-03. Tuy nhiên trên **full synthetic run 90 tháng**, ba mode vẫn cho `eth_total`
+trùng **bit-for-bit** (21.637034604792). Nguyên nhân cấu trúc (E1, đã xác minh bằng probe):
+engine hiện chỉ **tiêu thụ** `effective_unlock` tại đúng hai điểm — (a) tạo Smart ladder
+one-shot ở lần eff > 0 đầu tiên trong tháng, nơi peak == current nên ba mode cho cùng giá
+trị (CONVENTIONS #1); (b) crash snapshot [F5], nơi OSCORE ≥ 75 ⇒ smart_unlock = 1.0 ở mọi
+mode. ST §6 yêu cầu ba mode nằm trong Gate-2 ablation với "báo cáo đóng góp riêng" (BT §9)
+— muốn chiều này phân biệt được ở tầng OUTCOME cần một kênh tiêu thụ unlock **liên tục
+trong tháng** (ví dụ top-up/resize ladder khi eff tăng), là thay đổi hành vi engine nằm
+ngoài phạm vi WP-A7 (phạm vi kế toán) và không được đặc tả tường minh trong V2.1.5.
+
+Phương án thuộc thẩm quyền chủ dự án: (1) mở WP mới trong lớp A/B; (2) chuyển WP-D2 đề
+xuất V2.2; (3) chấp nhận như giới hạn đã biết của Gate-2 ablation dimension này. Chi tiết:
+`docs/sessions/S004-wp-a7-monthly-smart-scope.md` mục "PH-04".
+
 ## Active Risks — Governance / Tooling
 
 Rủi ro của bản thân bộ công cụ governance dùng chung, **tách khỏi rủi ro sản phẩm ETH DCA** ở
@@ -834,6 +854,9 @@ Cần chủ dự án quyết định:
    ordering rõ ràng trên `engine.py`. RCP-002 đã áp dụng xong, không còn gì chờ duyệt ở đây.
 4. **BLK-001** — máy/VPS truy cập được `data.binance.vision` và `api.binance.com`, cần cho T-06.
    Không gói nào trong 15 gói cần nó, nên chưa gấp.
+5. **PH-04** — kênh tiêu thụ unlock liên tục để ba mode `smart_unlock` phân biệt được ở tầng
+   outcome (mở WP mới / đề xuất V2.2 qua WP-D2 / chấp nhận giới hạn). Xem mục PH-04 ở
+   Active Risks.
 
 Purpose:
 Tiếp tục chương trình remediation lớp A trên đường găng tới official run, với Completion Gate đã
