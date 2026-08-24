@@ -105,7 +105,8 @@ def main(argv=None):
                   f"G p95={ctl['random_anchor']['p95']:.3f} v2={ctl['v2_eth']:.3f}")
         if args.what == "all":
             verdict_payload = run_verdict(results["gate1"], results["gate2"], results["gate3"],
-                                          results.get("controls"), out_dir, prep.dataset_hash)
+                                          results.get("controls"), out_dir, prep.dataset_hash,
+                                          data_source=prep.data_source)
             results["verdict"] = verdict_payload
             print("=== VERDICT ===")
             print(json.dumps(verdict_payload["verdict"], indent=1, ensure_ascii=False))

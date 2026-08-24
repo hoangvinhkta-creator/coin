@@ -93,3 +93,42 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     (BASE/OPPORTUNITY — `month_opened_at is None`) các trường `month_*` tích luỹ không
     ngữ nghĩa; mã tương lai KHÔNG được đọc bộ đếm tháng của pool chưa từng mở sổ
     (follow-up F-E2A7-02, phiên E2 WP-A7).
+
+## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
+
+Nguồn dữ liệu được khai báo **tại nơi dataset được tạo** — đó là nơi duy nhất biết dữ liệu
+thật sự đến từ đâu — rồi đi vào `lineage.json` cho từng series. `build_lineage()` bắt buộc
+nhận `source` (không có giá trị mặc định để quên) và từ chối mọi giá trị ngoài taxonomy.
+
+Taxonomy canonical (`data/dataset.py`):
+
+| Giá trị | Nghĩa | Đủ tư cách official? |
+|---|---|---|
+| `binance_bulk_archive` | Tải từ `data.binance.vision` (archive tháng) | Có |
+| `binance_rest` | Tải qua REST `api.binance.com/api/v3/klines` | Có |
+| `synthetic` | `ethdca synth` sinh ra | **Không** (DEC-003) |
+| `unknown` | Không xác định được nguồn | **Không** (fail-closed) |
+
+`unknown` không phải một nguồn hợp lệ về mặt nghiệp vụ — nó là trạng thái "chưa chứng minh
+được", dùng khi `lineage.json` thiếu và phải dựng lại từ file thô. Nó cố ý KHÔNG đủ tư cách
+official: thiếu thông tin phải dẫn tới từ chối, không phải mặc định chấp nhận.
+
+**Series lắp từ nhiều cơ chế.** `fetch_series` lấy các tháng đã hoàn tất từ bulk archive rồi
+lấy phần đuôi còn thiếu qua REST, nên một series có thể do cả hai cơ chế đóng góp. Quy ước:
+`source` ghi **cơ chế chính** (archive khi có, vì nó cấp các tháng đủ), còn thành phần đầy đủ
+nằm ở `source_detail` — danh sách các cơ chế đã thực sự đóng góp, theo thứ tự. Không mất mát
+thông tin, và vì cả hai đều là dữ liệu Binance thật nên lựa chọn nhãn này không ảnh hưởng tới
+tư cách official.
+
+**Cờ `official` là hàm dẫn xuất, không phải trường ghi được.** Nguồn sự thật duy nhất là
+`data.dataset.official_eligibility(raw_dir, lineage)`; `Prepared` gọi nó một lần và mọi gate
+dùng chung kết quả. Điều kiện: mọi series phải mang nguồn thuộc `REAL_SOURCES`, **và** lineage
+phải verify được checksum — từng `file_hash` khớp file trên đĩa và `dataset_hash` tái lập được
+từ danh sách đó. Thiếu lineage, thiếu file, hash lệch, hay nguồn không thật đều trả `False`
+kèm lý do, và lý do đó được ghi vào run record (`official_reason`). Không tham số, flag CLI
+hay biến môi trường nào đi vào phép dẫn xuất này (CHECK-A1-07).
+
+Giới hạn cần biết: quy ước này chứng minh dữ liệu **khớp với nguồn đã khai và không bị sửa
+sau khi khai**. Nó không thể phát hiện người vận hành cố ý dán nhãn `binance_*` lên dữ liệu
+không phải của Binance — chống điều đó cần đối chiếu với sàn (`ethdca freeze` hai máy theo
+DEC-003), nằm ngoài phạm vi WP-A1.

@@ -32,39 +32,54 @@ def _get_python_version() -> str:
     return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
 
+#: Gốc repo suy ra từ vị trí CHÍNH module này (src/eth_dca_os/reporting.py -> parents[2]).
+#: Không hard-code đường dẫn tuyệt đối: official run bắt buộc chạy trên máy có mạng Binance
+#: (DEC-003/BLK-001), nên một đường dẫn cứng sẽ âm thầm trả "unknown" đúng lần chạy quan
+#: trọng nhất. Ready Gate cũng cấm để lộ đường dẫn tuyệt đối của máy chủ dự án.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+LOCKFILE_NAMES = ("pyproject.lock", "poetry.lock", "requirements.lock")
+
+
 def _get_code_commit() -> str:
-    """Git SHA để tái lập code (WP-A1/A1.4)."""
+    """Git SHA để tái lập code (WP-A1/A1.4). Fail-closed: 'unknown' khi không xác định được."""
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd="/home/user/coin", text=True
-        ).strip()
+            ["git", "rev-parse", "HEAD"], cwd=_REPO_ROOT, text=True,
+            stderr=subprocess.DEVNULL).strip()
     except Exception:
         return "unknown"
 
 
+def lockfile_path() -> Path | None:
+    """Lockfile đang ghim dependency, hoặc None nếu chưa có (WP-A1/A1.6)."""
+    for name in LOCKFILE_NAMES:
+        candidate = _REPO_ROOT / name
+        if candidate.exists():
+            return candidate
+    return None
+
+
 def _get_dependency_lock_hash() -> str:
     """Hash của lockfile để tái lập dependency (WP-A1/A1.6)."""
-    lockfile_candidates = [
-        Path("/home/user/coin/pyproject.lock"),
-        Path("/home/user/coin/poetry.lock"),
-        Path("/home/user/coin/requirements.lock"),
-    ]
-    for candidate in lockfile_candidates:
-        if candidate.exists():
-            content = candidate.read_bytes()
-            return hashlib.sha256(content).hexdigest()
-    return "no-lockfile"
+    path = lockfile_path()
+    return hashlib.sha256(path.read_bytes()).hexdigest() if path else "no-lockfile"
 
 
 def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
              strategy_config_hash: str, execution_config_hash: str,
              dataset_hash: str, manifest_hash: str | None = None,
              start_date=None, end_date=None, verdict=None,
-             simulation_seed: int | None = None) -> dict:
+             simulation_seed: int | None = None,
+             data_source: str | None = None, official: bool = False) -> dict:
     """Ghi backtest_runs record + metrics JSON (Data Model §12, Backtest §20).
 
     WP-A1: Thêm trường provenance để tái lập được run (A1.1–A1.6):
     - python_version, code_commit, dependency_lock_hash, simulation_seed
+
+    `data_source` và `official` được TÍNH bởi pipeline từ lineage đã verify checksum
+    (`data.dataset.official_eligibility`) rồi truyền xuống đây để ghi. `save_run` chỉ ghi
+    lại, không tự suy luận và cũng không nhận giá trị từ CLI/env (WP-A1/A1.2, CHECK-A1-07).
     """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -90,6 +105,9 @@ def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
         "code_commit": _get_code_commit(),
         "dependency_lock_hash": _get_dependency_lock_hash(),
         "simulation_seed": simulation_seed if simulation_seed is not None else MASTER_SEED,
+        # WP-A1/A1.1–A1.2: record tự trả lời "dữ liệu đến từ đâu" và "có official không"
+        "data_source": data_source,
+        "official": bool(official),
     }
     runs_file = out / "backtest_runs.jsonl"
     with open(runs_file, "a") as fh:

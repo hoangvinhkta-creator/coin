@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-READY
+IN_PROGRESS
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run

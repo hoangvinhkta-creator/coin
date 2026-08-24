@@ -8,9 +8,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from dataclasses import dataclass, field, asdict, replace
 
 from . import STRATEGY_VERSION
+
+
+def _stamp_created_at(cfg) -> None:
+    """Đóng dấu `created_at` ISO8601 UTC lên một config snapshot (WP-A1/A1.5, đóng F-011).
+
+    CỐ Ý không khai báo `created_at` như một dataclass field: `asdict()` được dùng để tính
+    `hash`, `key()` (khử trùng lặp manifest) và `_cfg_row` (hash manifest đóng băng). Một
+    field mang dấu thời gian sẽ làm cả ba thứ đó đổi theo thời điểm chạy — hash config
+    không còn so sánh được giữa các run và manifest hết tái lập. Là attribute thường,
+    `created_at` quan sát được mà KHÔNG đi vào bất kỳ đường hash nào (CHECK-A1-04).
+    """
+    object.__setattr__(cfg, "created_at", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
 
 SMART_UNLOCK_MODES = ("HWM", "NO_HWM", "DECAY_HWM")
 FUNDING_POLICIES = ("ON_DEMAND", "BULK_MONTHLY")
@@ -79,6 +92,7 @@ class StrategyConfig:
         total = self.base_pct + self.smart_pct + self.opportunity_pct
         if abs(total - 1.0) > 1e-9:
             raise ValueError(f"base+smart+opportunity must equal 1.0, got {total}")
+        _stamp_created_at(self)
 
     @property
     def hash(self) -> str:
@@ -125,6 +139,7 @@ class ExecutionConfig:
         # Ràng buộc Backtest §10: BULK_MONTHLY => funding_delay = 0
         if self.funding_policy == "BULK_MONTHLY" and self.funding_delay_seconds != 0:
             raise ValueError("BULK_MONTHLY requires funding_delay = 0 (Backtest §10)")
+        _stamp_created_at(self)
 
     @property
     def hash(self) -> str:

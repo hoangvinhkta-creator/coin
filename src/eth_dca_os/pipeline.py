@@ -1,6 +1,7 @@
 """Orchestration các phase backtest — Impl Plan §3. Cache daily score theo score-weight tuple."""
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -23,14 +24,20 @@ from .config import (
     GATE3_REALISTIC,
     ExecutionConfig,
     StrategyConfig,
+    deterministic_hash,
 )
-from .data.dataset import load_dataset
+from .data.dataset import SOURCE_UNKNOWN, load_dataset, official_eligibility
 from .diagnostics import run_all as run_diagnostics
 from .engine import _epoch_seconds, run_engine
 from .failure_signals import evaluate_failure_signals
 from .gates import evaluate_gate1, evaluate_gate2, evaluate_gate3, evaluate_oos
 from .indicators import compute_daily_indicators
-from .manifests import generate_gate2_manifest, generate_gate3_manifest
+from .manifests import (
+    _cfg_row,
+    generate_gate2_manifest,
+    generate_gate3_manifest,
+    manifest_hash,
+)
 from .metrics import (
     cash_ratio_stats,
     concentration,
@@ -50,8 +57,15 @@ class Prepared:
     """Dataset + indicator + cache scores theo từng score-weight tuple (Impl Plan §4)."""
 
     def __init__(self, raw_dir: str | Path):
+        self.raw_dir = Path(raw_dir)
         self.dataset = load_dataset(raw_dir)
-        self.dataset_hash = self.dataset["lineage"]["dataset_hash"]
+        self.lineage = self.dataset["lineage"]
+        self.dataset_hash = self.lineage["dataset_hash"]
+        self.data_source = self.lineage.get("source", SOURCE_UNKNOWN)
+        # WP-A1/A1.2: cờ `official` của MỌI gate dẫn xuất từ đúng một chỗ này — lineage đã
+        # verify checksum. Không gate nào được tự suy luận lại (F-005, CHECK-A1-07).
+        self.official_eligible, self.official_reason = official_eligibility(
+            self.raw_dir, self.lineage)
         self.indicators = compute_daily_indicators(
             self.dataset["ETHUSDT_1d"], self.dataset["BTCUSDT_1d"])
         self._score_cache: dict[tuple, pd.DataFrame] = {}
@@ -156,27 +170,29 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
         "concentration": conc, "cash_ratio": cash,
         "counters_w5": rep["result"].counters,
         "benchmarks": _benchmark_comparison(prep, exec_cfg, wm),
-        "official": dev_limit is None,
+        "official": prep.official_eligible and dev_limit is None,
+        "official_reason": prep.official_reason,
+        "lineage": prep.lineage,
         "dev_limit": dev_limit,
     }
     payload["window_metrics"]["ae_by_window"] = wm["ae_by_window"]
     # Backtest §4: bảng coverage weight bắt buộc trong MỌI báo cáo (WP-A2/F-012)
     payload["window_metrics"]["coverage_table"] = coverage_table()
-    # WP-A1: truyền manifest_hash và simulation_seed cho provenance (A1.3–A1.4)
-    # manifest_hash tính từ gate_windows (simplified, xem manifests.py cho gate2/3)
-    import hashlib
+    # WP-A1/A1.3: Gate 1 không chạy manifest sensitivity — hash tập chín window nó thực sự
+    # dùng, để record vẫn tự chứng minh được phạm vi đo (Gate 2/3 hash manifest của chúng).
     mh = hashlib.sha256(json.dumps(
         {w.window_id: (str(w.start), str(w.end)) for w in gate_windows()},
         sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    # simulation_seed: lấy từ master_seed kèm config hash để deterministic
-    from .config import deterministic_hash
+    # WP-A1/A1.4: seed dẫn xuất từ master_seed + config hash để tái lập được (F-010)
     sim_seed = deterministic_hash(MASTER_SEED, cfg.hash, exec_cfg.hash)
     rec = save_run(out_dir, "GATE1", payload,
                    strategy_config_hash=cfg.hash, execution_config_hash=exec_cfg.hash,
                    dataset_hash=prep.dataset_hash, manifest_hash=mh,
                    start_date="2019-01-01",
                    end_date=str(prep.oos_end().date()),
-                   simulation_seed=sim_seed)
+                   simulation_seed=sim_seed,
+                   data_source=prep.data_source,
+                   official=payload["official"])
     payload["run_record"] = rec
     # giữ full-period run cho controls
     full = run_engine(prep.dataset, scores, cfg, exec_cfg,
@@ -206,10 +222,15 @@ def run_gate2(prep: Prepared, out_dir, limit: int | None = None) -> dict:
     g2 = evaluate_gate2(results)
     g2["dev_limit"] = limit
     payload = {"gate2": g2, "per_config": results,
-               "official": limit is None,
+               "official": prep.official_eligible and limit is None,
+               "official_reason": prep.official_reason,
                "expected_denominator": man["denominator"]}
+    # WP-A1/A1.3: hash ĐÚNG manifest đã chạy (đã cắt nếu dev), dựng bằng cùng hàm với
+    # `freeze_manifests` nên record đối chiếu được với manifest đóng băng (CHECK-A1-02).
+    mh = manifest_hash([_cfg_row(c) for c in configs])
     save_run(out_dir, "GATE2", payload, strategy_config_hash=BASELINE_STRATEGY.hash,
-             execution_config_hash=GATE1_LOW_FRICTION.hash, dataset_hash=prep.dataset_hash)
+             execution_config_hash=GATE1_LOW_FRICTION.hash, dataset_hash=prep.dataset_hash,
+             manifest_hash=mh, data_source=prep.data_source, official=payload["official"])
     return payload
 
 
@@ -249,10 +270,14 @@ def run_gate3(prep: Prepared, out_dir, limit: int | None = None) -> dict:
                    "net_edge_primary_median": realistic_payload["net_edge"]["primary_median"],
                    "oos_ae": realistic_payload["oos"]["ae"]},
                "shortfall_attribution": attr,
-               "official": limit is None, "dev_limit": limit,
+               "official": prep.official_eligible and limit is None,
+               "official_reason": prep.official_reason, "dev_limit": limit,
                "expected_manifest_size": man["size"]}
+    # WP-A1/A1.3: xem ghi chú ở `run_gate2` — cùng hàm hash với `freeze_manifests`.
+    mh = manifest_hash([_cfg_row(c) for c in exec_cfgs])
     save_run(out_dir, "GATE3", payload, strategy_config_hash=cfg.hash,
-             execution_config_hash=GATE3_REALISTIC.hash, dataset_hash=prep.dataset_hash)
+             execution_config_hash=GATE3_REALISTIC.hash, dataset_hash=prep.dataset_hash,
+             manifest_hash=mh, data_source=prep.data_source, official=payload["official"])
     return payload
 
 
@@ -267,14 +292,17 @@ def run_controls(prep: Prepared, out_dir, monthly_deployments: dict, v2_eth: flo
                "random_anchor": {k: v for k, v in g.items() if k != "eth_distribution"},
                "v2_eth": v2_eth,
                "v2_beats_p95_timing": v2_eth > f["p95"],
-               "v2_beats_p95_anchor": v2_eth > g["p95"]}
+               "v2_beats_p95_anchor": v2_eth > g["p95"],
+               "official": prep.official_eligible,
+               "official_reason": prep.official_reason}
     save_run(out_dir, "RANDOM_CONTROL", payload, strategy_config_hash=BASELINE_STRATEGY.hash,
-             execution_config_hash=GATE1_LOW_FRICTION.hash, dataset_hash=prep.dataset_hash)
+             execution_config_hash=GATE1_LOW_FRICTION.hash, dataset_hash=prep.dataset_hash,
+             data_source=prep.data_source, official=payload["official"])
     return payload
 
 
 def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
-                dataset_hash: str) -> dict:
+                dataset_hash: str, data_source: str = SOURCE_UNKNOWN) -> dict:
     diag = g1["diagnostics"]
     fs = evaluate_failure_signals(
         gate1_windows=g1["window_metrics"]["ae_by_window"],
@@ -294,13 +322,16 @@ def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
         oos_ae=g1["oos"]["ae"],
     )
     v = decide_verdict(g1["gate1"], g1["oos"], g2["gate2"], g3["gate3"], fs)
+    # WP-A1/A1.2: verdict chỉ official khi CẢ Gate 2 và Gate 3 official — mà mỗi cờ đó đã
+    # gồm điều kiện lineage đủ tư cách. Không tính lại eligibility ở đây (một nguồn sự thật).
     official = g2.get("official", False) and g3.get("official", False)
-    payload = {"verdict": v, "failure_signals": fs, "official": official}
+    payload = {"verdict": v, "failure_signals": fs, "official": official,
+               "official_reason": g2.get("official_reason")}
     if not official:
-        payload["warning"] = ("DEV RUN — Gate 2/Gate 3 chạy với dev_limit, "
-                              "KHÔNG phải official verdict. Chạy full manifest trên dữ liệu "
-                              "Binance thật để có official verdict.")
+        payload["warning"] = ("DEV RUN — Gate 2/Gate 3 chạy với dev_limit hoặc dữ liệu không "
+                              "đủ tư cách official. KHÔNG phải official verdict. Chạy full "
+                              "manifest trên dữ liệu Binance thật để có official verdict.")
     save_run(out_dir, "BASELINE", payload, strategy_config_hash=BASELINE_STRATEGY.hash,
              execution_config_hash=GATE3_REALISTIC.hash, dataset_hash=dataset_hash,
-             verdict=v["verdict"])
+             verdict=v["verdict"], data_source=data_source, official=official)
     return payload

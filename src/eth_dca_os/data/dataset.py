@@ -3,11 +3,22 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Mapping
 from pathlib import Path
 
 import pandas as pd
 
 EXPECTED_FREQ = {"1d": pd.Timedelta(days=1), "15m": pd.Timedelta(minutes=15)}
+
+# WP-A1/A1.1 — phân loại nguồn dữ liệu canonical (docs/CONVENTIONS.md).
+SOURCE_BULK_ARCHIVE = "binance_bulk_archive"
+SOURCE_REST = "binance_rest"
+SOURCE_SYNTHETIC = "synthetic"
+SOURCE_UNKNOWN = "unknown"
+
+VALID_SOURCES = frozenset({SOURCE_BULK_ARCHIVE, SOURCE_REST, SOURCE_SYNTHETIC, SOURCE_UNKNOWN})
+#: Chỉ dữ liệu Binance thật mới đủ điều kiện official (DEC-003, WP-A1/F-005).
+REAL_SOURCES = frozenset({SOURCE_BULK_ARCHIVE, SOURCE_REST})
 
 
 def file_sha256(path: str | Path) -> str:
@@ -45,31 +56,94 @@ def gap_report(df: pd.DataFrame, interval: str) -> dict:
             "longest_gap": longest, "gaps": gaps}
 
 
-def build_lineage(raw_dir: str | Path, source: str = "unknown") -> dict:
+def _dataset_hash(entries: list[dict]) -> str:
+    """Hash tập dữ liệu từ danh sách file_hash — dùng chung khi ghi và khi verify."""
+    return hashlib.sha256(
+        json.dumps([e["file_hash"] for e in entries]).encode()).hexdigest()
+
+
+def build_lineage(raw_dir: str | Path, source: str | Mapping[str, str],
+                  source_detail: Mapping[str, list[str]] | None = None) -> dict:
     """Ghi lineage.json: symbol, interval, source, khoảng thời gian, row/missing count, hash.
 
-    WP-A1/F-005: source phải là một trong 'binance_bulk_archive', 'binance_rest', 'synthetic',
-    không phải chuỗi cố định 'see fetch/synth'.
+    WP-A1/F-005: `source` phải là một trong `VALID_SOURCES`, không phải chuỗi cố định
+    `'see fetch/synth'`. Truyền một chuỗi để áp cho mọi series, hoặc mapping
+    `"<symbol>_<interval>" -> source` khi mỗi series có nguồn riêng (CHECK-A1-05 yêu cầu
+    phân loại theo TỪNG series). `source` là tham số bắt buộc: nơi tạo dataset là nơi duy
+    nhất biết dữ liệu đến từ đâu, nên không có giá trị mặc định để quên.
+
+    `source_detail` ghi các cơ chế thực sự đã đóng góp cho một series khi nó được lắp từ
+    nhiều cơ chế (bulk archive cho tháng đủ + REST cho phần đuôi) — xem docs/CONVENTIONS.md.
     """
     raw = Path(raw_dir)
     entries = []
     for p in sorted(raw.glob("*.parquet")):
+        key = p.stem
+        src = source[key] if isinstance(source, Mapping) else source
+        if src not in VALID_SOURCES:
+            raise ValueError(f"source không hợp lệ cho {key}: {src!r}; "
+                             f"phải thuộc {sorted(VALID_SOURCES)}")
         df = pd.read_parquet(p)
-        symbol, interval = p.stem.rsplit("_", 1)
+        symbol, interval = key.rsplit("_", 1)
         rep = gap_report(df, interval)
-        entries.append({
-            "symbol": symbol, "interval": interval, "source": source,
+        entry = {
+            "symbol": symbol, "interval": interval, "source": src,
             "first_timestamp": str(df["open_time"].min()),
             "last_timestamp": str(df["open_time"].max()),
             "row_count": int(len(df)),
             "missing_count": int(rep["missing"]),
             "file_hash": file_sha256(p),
-        })
-    dataset_hash = hashlib.sha256(
-        json.dumps([e["file_hash"] for e in entries]).encode()).hexdigest()
-    lineage = {"files": entries, "dataset_hash": dataset_hash, "source": source}
+        }
+        if source_detail and key in source_detail:
+            entry["source_detail"] = list(source_detail[key])
+        entries.append(entry)
+    distinct = {e["source"] for e in entries}
+    lineage = {"files": entries, "dataset_hash": _dataset_hash(entries),
+               "source": distinct.pop() if len(distinct) == 1 else "mixed"}
     (raw / "lineage.json").write_text(json.dumps(lineage, indent=1))
     return lineage
+
+
+def verify_lineage(raw_dir: str | Path, lineage: dict) -> tuple[bool, str]:
+    """Đối chiếu lineage với file thật trên đĩa (WP-A1/A1.2).
+
+    Fail-closed: thiếu file, sai `file_hash`, hoặc `dataset_hash` không tái lập được từ
+    chính danh sách file_hash đều là FAIL. Đây là phần "đã verify checksum" mà CHECK-A1-07
+    đòi hỏi trước khi một run được phép mang `official: true`.
+    """
+    raw = Path(raw_dir)
+    entries = lineage.get("files") or []
+    if not entries:
+        return False, "lineage_no_files"
+    for e in entries:
+        p = raw / f"{e.get('symbol')}_{e.get('interval')}.parquet"
+        if not p.exists():
+            return False, f"missing_file:{p.name}"
+        if file_sha256(p) != e.get("file_hash"):
+            return False, f"file_hash_mismatch:{p.name}"
+    if _dataset_hash(entries) != lineage.get("dataset_hash"):
+        return False, "dataset_hash_mismatch"
+    return True, "verified"
+
+
+def official_eligibility(raw_dir: str | Path, lineage: dict | None) -> tuple[bool, str]:
+    """Nguồn sự thật DUY NHẤT cho cờ `official` (WP-A1/A1.2, DEC-003, đóng F-005).
+
+    `official` là HÀM DẪN XUẤT từ lineage đã verify checksum, không phải một trường ghi
+    được: không có tham số, flag CLI hay biến môi trường nào đi vào đây. Fail-closed —
+    mọi trạng thái không tự chứng minh được (thiếu lineage, `unknown`, `synthetic`,
+    checksum lệch) đều trả về False kèm lý do để ghi vào record.
+    """
+    if not isinstance(lineage, dict):
+        return False, "lineage_missing"
+    entries = lineage.get("files") or []
+    if not entries:
+        return False, "lineage_no_files"
+    for e in entries:
+        src = e.get("source")
+        if src not in REAL_SOURCES:
+            return False, f"source_not_real:{e.get('symbol')}_{e.get('interval')}={src!r}"
+    return verify_lineage(raw_dir, lineage)
 
 
 def load_dataset(raw_dir: str | Path) -> dict:
@@ -84,5 +158,8 @@ def load_dataset(raw_dir: str | Path) -> dict:
         df["open_time"] = pd.to_datetime(df["open_time"], utc=True)
         out[key] = df.sort_values("open_time").reset_index(drop=True)
     lineage_path = raw / "lineage.json"
-    out["lineage"] = json.loads(lineage_path.read_text()) if lineage_path.exists() else build_lineage(raw)
+    # Không có lineage.json => không biết dữ liệu từ đâu; dựng lại với SOURCE_UNKNOWN để
+    # `official_eligibility` fail-closed thay vì đoán nguồn (WP-A1/A1.2).
+    out["lineage"] = (json.loads(lineage_path.read_text()) if lineage_path.exists()
+                      else build_lineage(raw, SOURCE_UNKNOWN))
     return out
