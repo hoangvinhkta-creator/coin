@@ -23,7 +23,7 @@ cáo.
     LINEAGE ROOT   = WP-A1 (docs/tasks/WP-A1-provenance-va-tai-lap.md)
     BASELINE SHA   = 666de143a3159b5d2a9f6237eb7160a8e590edfe   (2026-08-24, commit cuối
                      trước khi WP-A1 bắt đầu — WP-A2 DONE)
-    CURRENT HEAD   = 6c11a7eb2bb7c36c70343c591c402f4bf3f1c23f   (2026-09-01)
+    CURRENT HEAD   = d63c222532e87643d09b71f435a7dd276b361a88   (2026-09-01)
     BRANCH         = claude/wp-a1-provenance-v67k9h
 
 ### Chu kỳ đã tiêu (đo bằng git, production paths theo `PROJECT/PRODUCTION_PATHS.md`)
@@ -50,35 +50,40 @@ Con số có thẩm quyền là con số ĐO TÍCH LUỸ ở trên, không phả
 
 ### Trạng thái budget
 
-    CURRENT BUDGET USED       = 2 repair cycle + 3 vòng E2;
-                                340 insertion / 45 deletion trên production path
-    CURRENT BUDGET REMAINING  = KHÔNG XÁC ĐỊNH ĐƯỢC
-    ALLOWED BUDGET            = CHƯA TỪNG ĐƯỢC ĐẶT
+    ALLOWED BUDGET            = 2 repair cycle        <- DEC-012 (chủ dự án, 2026-09-01)
+    CURRENT BUDGET USED       = 2 repair cycle
+    CURRENT BUDGET REMAINING  = 0
+    OWNER_EXTENSION           = NOT GRANTED
 
-    MIGRATION_UNCERTAINTY
+    Ngoài ra đã tiêu: 3 vòng E2 (E2-WP-A1-001, -002, -003 — cả ba FAIL);
+    340 insertion / 45 deletion trên production path, tính tích luỹ từ baseline 666de14.
 
-Lý do: bộ governance V3.2 của repo này **chưa bao giờ định nghĩa một mô hình
-review/repair budget**. `ESCALATION_PROTOCOL.md` chỉ có trigger định tính
-("hai lần thử khác nhau về bản chất đều fail") chứ không có hạn mức đếm được. Vì vậy
-"remaining" không thể tính ra từ dữ liệu lịch sử — nó chưa từng tồn tại để mà tiêu.
+`MIGRATION_UNCERTAINTY` trước đây ở mục này **ĐÃ ĐƯỢC GIẢI QUYẾT** bởi `DEC-012`. Lý do
+ghi lại để không ai đọc nhầm rằng hạn mức từng tồn tại: bộ governance V3.2 của repo chưa
+bao giờ định nghĩa mô hình review/repair budget, nên "remaining" không thể tính ra từ dữ
+liệu lịch sử — nó chưa từng tồn tại để mà tiêu. Chủ dự án nay đặt hạn mức, tính TỪ baseline
+`666de14`, KHÔNG tính lại từ 0.
 
-Đây là ghi nhận MIGRATION_UNCERTAINTY theo §19 của chỉ thị adoption. Không bịa hạn mức.
+Hệ quả bắt buộc:
 
-    OWNER_DECISION_REQUIRED — chủ dự án cần đặt hạn mức cho CAP-PROV:
-    số repair cycle tối đa, số vòng E2 tối đa, và/hoặc trần diff production path,
-    tính TỪ BASELINE 666de14, KHÔNG tính lại từ 0.
+    WP-A1 KHÔNG được mở repair cycle thứ tư nếu không có OWNER_EXTENSION mới, tường minh.
 
-Dữ liệu đầu vào cho quyết định đó, đã đo được:
+Budget KHÔNG reset qua bất kỳ ranh giới nào. Đã kiểm bằng git tại phiên Owner Disposition
+(2026-09-01): hai commit governance `62f8bac` (adoption V4.3) và `d63c222` (source
+reconciliation) có **diff production path = 0**, nên KHÔNG được tính là repair cycle của
+WP-A1. Phiên Owner Disposition cũng có diff production path = 0 và không tiêu chu kỳ nào.
 
-- `ESCALATION_PROTOCOL.md` đã kích hoạt: đây là lần thứ BA gói đi qua E2, và điều khoản
-  "không vá đi vá lại một implementation đang hỏng" đang áp dụng — vòng sửa tiếp theo cần
-  chủ dự án phê duyệt tường minh.
-- Reviewer E2 vòng ba KHÔNG khuyến nghị `CAPABILITY_CEILING` (không nâng Tier lên D).
-  Phân loại đề xuất là `VERIFICATION_DEPTH`: giữ Tier C, nâng Effort `xhigh` → `max`.
-  Quyết định thuộc về chủ dự án; reviewer không tự chọn thay.
-- Khối lượng còn lại phần lớn đã được liệt kê sẵn (5 mục bắt buộc + 7 mục nên làm trong
-  `docs/reviews/E2-WP-A1-provenance-round3.md` § Required Follow-up), không phải khối
-  lượng phải khám phá lại.
+Tiền lệ đã ghi trong bảng trên và được `DEC-012` khẳng định lại: một hạng mục đóng được
+**hoàn toàn bằng tài liệu** có diff production path = 0, nên **không tiêu repair cycle** —
+xem dòng "Decision pack PRE-S008" (`2f20e6c..bd7c5ff`).
+
+Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
+
+- `ESCALATION_PROTOCOL.md` đã kích hoạt (lần thứ BA qua E2); reviewer E2 vòng ba đề xuất
+  `VERIFICATION_DEPTH` (giữ Tier C, nâng Effort `xhigh` → `max`), KHÔNG đề xuất
+  `CAPABILITY_CEILING`. Chủ dự án chưa chọn.
+- Disposition cho 3 hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED` của WP-A1 — xem
+  `docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md` §4.
 
 ---
 

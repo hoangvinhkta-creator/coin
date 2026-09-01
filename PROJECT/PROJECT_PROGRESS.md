@@ -954,6 +954,34 @@ Cần chủ dự án quyết định:
    `validate_evidence.py` / `validate_task_completion.py` quét `TASK-*.md` không khớp
    quy ước `WP-*.md` → hiện PASS trên tập rỗng; cần một gói governance-tooling mở rộng
    glob để Exit Criteria "validators PASS" có nghĩa thực chất.
+6. **`F-E2A1R3-05` — phê duyệt COMPLETION GATE CHANGE PROPOSAL cho WP-A4** (bổ sung MỘT
+   REQUIRED check: coverage phải đối chiếu với khoảng thời gian ĐƯỢC YÊU CẦU, không chỉ với
+   khoảng quan sát được). Đây là **blocker V1 DUY NHẤT** sau phiên Owner Disposition và nó
+   chặn T-06. **Ưu tiên cao nhất.** Xem `DEC-011`, và bản disposition §5.
+7. **WP-A1 — disposition cho 3 hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED`**
+   (`F-E2A1-03`, `F-E2A1R3-03`, `F-E2A1R3-06`+`F-E2A1-08`): mỗi hạng mục chọn
+   `ACCEPT_AS_IS` / `DESCOPE` / `OWNER_EXTENSION`. Budget CAP-PROV đã hết
+   (`DEC-012`: allowed 2 / used 2 / remaining 0). Lưu ý: 2 trong 3 hạng mục đóng được ở
+   chi phí budget = 0 vì chỉ cần tài liệu. Xem bản disposition §4.
+8. **Integration decision** (`DEC-013`, PENDING) — chọn A/B/C cho branch
+   `claude/wp-a1-provenance-v67k9h` (ahead 29 / behind 1 / 9 ngày / 88 files). Xung đột đo
+   được = **0**. Khuyến nghị = **A (INTEGRATE NOW)**. Kèm quyết định phụ: remote KHÔNG có
+   branch `main`; `origin/HEAD` trỏ tới một branch `claude/*`. Xem bản disposition §7.
+9. **Trình tự V1** — T-06/GATE-A có thật sự là điều kiện tiên quyết của V1 daily-use không,
+   hay đường web app (`CAP-WEBAPP`, WP-C1 đang READY và độc lập với lớp A) chạy song song
+   được? `DEC-011` định nghĩa V1 theo web app dùng hàng ngày, trong khi
+   `CAPABILITY_REGISTRY` xếp `CAP-WEBAPP` ngoài Vertical Slice. Câu này đổi đường găng một
+   cách vật chất. Xem bản disposition §8.1.
+
+Owner Decision đã ghi tại phiên Owner Disposition (2026-09-01):
+`DEC-011` (Product Intent + V1 Daily-Use Acceptance), `DEC-012` (hạn mức budget CAP-PROV),
+`DEC-013` (integration, PENDING). Phân loại lại toàn bộ finding đang mở, đề xuất capability
+owner cho `F-E2A1R3-05`, và Integration Decision Check đầy đủ nằm ở
+`docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md`.
+
+Trạng thái WP-A1 KHÔNG đổi sau phiên đó: `IN_PROGRESS`, CHECK-A1-01…10 `PASS`,
+CHECK-A1-11 `FAIL`, GATE-A KHÔNG ĐÓNG, T-06 KHÔNG MỞ. Không task ID mới, không WP mới,
+production/test diff = 0.
 
 Purpose:
 Tiếp tục chương trình remediation lớp A trên đường găng tới official run, với Completion Gate đã

@@ -447,3 +447,196 @@ Không task nào khác trong repo đổi Tier hoặc Effort.
 Can Revisit After:
 Không cần revisit — đã thực thi PA-1 và xác nhận đủ evidence E1. Nếu về sau `routing_engine.py`
 đổi công thức trọng số, chạy lại toàn bộ `test_routing_engine.py` trước khi merge.
+
+---
+
+## DEC-011 — Owner Product Intent và V1 Daily-Use Acceptance
+
+Date:
+2026-09-01 (phiên Owner Disposition)
+
+Task:
+Không thuộc task nào. Đây là quyết định cấp sản phẩm của chủ dự án, ghi theo §0 và §12 của
+chỉ thị phiên.
+
+Decision:
+
+**OD-1 — PRODUCT INTENT.** ETH DCA OS là ứng dụng web **CÁ NHÂN, MỘT NGƯỜI DÙNG, DÙNG HÀNG
+NGÀY**. Chủ dự án là người duy nhất sử dụng. KHÔNG xây để: public multi-user; phục vụ khách
+hàng bên ngoài; chống hostile user; chống attacker; scale lớn; enterprise
+security/compliance.
+
+**V1 PRIORITY RULE.** Đường găng V1 ưu tiên theo thứ tự: CORRECT DECISION · CORRECT
+MONEY/ACCOUNTING · DATA PERSISTENCE · REAL MARKET DATA · END-TO-END REACHABILITY · DAILY WEB
+USABILITY.
+
+Một finding chỉ được giữ `BLOCKING V1` khi failure có thể:
+
+    A. làm recommendation/Buy Score sai;
+    B. làm sai số tiền / ngân sách / giá vốn / ETH holding;
+    C. mất hoặc làm hỏng lịch sử giao dịch thực tế;
+    D. khiến dữ liệu thị trường thật không đi qua pipeline đúng;
+    E. khiến web app không chạy được end-to-end;
+    F. khiến hệ thống tuyên bố một official/daily result HỢP LỆ trong khi dữ liệu thực tế
+       không đủ để tính đúng kết quả.
+
+Finding chủ yếu về hostile tampering, người dùng cố tình sửa lineage, security hardening,
+multi-user, permission, scale, theoretical future input, metadata perfection, hay
+enterprise-grade provenance **KHÔNG mặc định BLOCKING V1**; định tuyến theo
+`governance/v4/CORE/PRODUCTION_PATH_RULE.md`.
+
+**Ràng buộc đối xứng, không được bỏ qua:** KHÔNG được hạ một finding chỉ vì "dự án cá
+nhân". Phải chứng minh nó không ảnh hưởng A–F.
+
+**V1 DAILY-USE ACCEPTANCE — 10 điểm canonical:**
+
+    1.  Web app mở được ổn định.
+    2.  Lấy được dữ liệu ETH thật cần thiết.
+    3.  Pipeline chạy end-to-end.
+    4.  Buy Score / regime / budget / recommendation được hiển thị.
+    5.  Người dùng ghi nhận giao dịch thực tế.
+    6.  Holdings / average cost / monthly budget / purchase history cập nhật đúng.
+    7.  Dữ liệu tồn tại sau reload/restart.
+    8.  Ngày tiếp theo tiếp tục sử dụng được mà không cần terminal hay AI coding agent.
+    9.  Lỗi có thể làm sai quyết định hoặc sai tiền phải fail visibly / fail closed.
+    10. Security / multi-user / scale / hostile tampering KHÔNG phải yêu cầu chấp nhận V1.
+
+Reason:
+Chủ dự án phát biểu tường minh mục đích sản phẩm trong chỉ thị phiên. Trước quyết định này,
+tiêu chí "nghiêm trọng" của repo được suy ra từ profile PRODUCT và từ phán quyết reviewer
+E2, chứ chưa từng có một định nghĩa V1 do chủ dự án đặt. Thiếu định nghĩa đó, mọi finding
+`CONFIRMED` đều có xu hướng trôi về BLOCKING, và không có cách nào phân biệt "sai tiền" với
+"metadata chưa hoàn hảo".
+
+Impact:
+- Bổ sung trục phân loại thứ hai `BLOCKING V1`, độc lập với trục Completion Gate đã FROZEN.
+  Hai trục KHÔNG được gộp. Xem
+  `docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md` §1.
+- KHÔNG hồi tố viết lại bất kỳ gate nào đã FROZEN ngày 2026-08-23, không đổi contract 20
+  case của PRE-S008, không hạ REQUIRED check nào. Nơi Product Intent và một gate đã FROZEN
+  lệch nhau, ghi `LEGACY_GATE_DISPOSITION_REQUIRED` và để chủ dự án định đoạt.
+- KHÔNG đổi `DEC-001` (profile PRODUCT). Dữ liệu tài chính thật của chủ dự án vẫn là dữ
+  liệu production; điểm 9 của Acceptance giữ nguyên yêu cầu fail-closed cho sai tiền / sai
+  quyết định.
+- KHÔNG đổi `DEC-003` (dữ liệu tổng hợp không bao giờ dùng để ra verdict). Điểm 2 và điểm 9
+  của Acceptance củng cố DEC-003 chứ không nới nó.
+- KHÔNG mở task nào để ghi Acceptance này. Nó được map vào authority sản phẩm hiện có
+  (`PROJECT/PROJECT_PROFILE.md` mục tiêu cuối + `CAP-WEBAPP` cho phần dùng hàng ngày).
+
+Can Revisit After:
+Khi có người thứ hai dùng công cụ, hoặc khi công cụ được phát hành cho người khác — khi đó
+OD-1 hết hiệu lực và các nhóm finding bị loại ở trên phải được định tuyến lại toàn bộ.
+
+---
+
+## DEC-012 — Hạn mức repair budget cho CAP-PROV: allowed = 2, đã dùng hết
+
+Date:
+2026-09-01 (phiên Owner Disposition)
+
+Task:
+`WP-A1` / capability `CAP-PROV`
+
+Decision:
+
+    CAP-PROV Effective Risk = HIGH
+    ALLOWED   = 2 repair cycle
+    USED      = 2
+    REMAINING = 0
+    OWNER_EXTENSION = NOT GRANTED
+
+WP-A1 **KHÔNG được mở repair cycle thứ tư** nếu không có một `OWNER_EXTENSION` mới, tường
+minh.
+
+Budget KHÔNG reset — không qua session, branch, repair cycle, subtask, work package, task
+con hay sibling task. Phiên adoption V4.3 (`62f8bac`) và phiên source reconciliation
+(`d63c222`) **KHÔNG** được tính là repair cycle của WP-A1: cả hai có diff production path
+= 0, đã kiểm bằng git chứ không chép từ báo cáo.
+
+Reason:
+`PROJECT/REVIEW_BUDGET_LEDGER.md` §1 ghi `MIGRATION_UNCERTAINTY`: bộ governance V3.2 chưa
+bao giờ định nghĩa mô hình review/repair budget, nên "remaining" không tính ra được từ lịch
+sử — nó chưa từng tồn tại để mà tiêu. Ledger nêu `OWNER_DECISION_REQUIRED` đúng cho tình
+huống này. Chủ dự án nay đặt hạn mức, tính TỪ baseline `666de14`, không tính lại từ 0.
+
+Hai chu kỳ đã tiêu, tái dựng từ git:
+
+    repair cycle 1: d72fbc4..2f20e6c   8 files, +246 / -76   -> E2 vòng HAI FAIL
+    repair cycle 2: bd7c5ff..a0c278a   2 files, +56 / -10    -> E2 vòng BA FAIL
+
+Impact:
+- `MIGRATION_UNCERTAINTY` của ledger §1 được GIẢI QUYẾT. `ALLOWED BUDGET` không còn là
+  "CHƯA TỪNG ĐƯỢC ĐẶT".
+- `ESCALATION_PROTOCOL.md` đã kích hoạt (lần thứ ba qua E2) nay có hệ quả đếm được, không
+  chỉ định tính.
+- Mọi hạng mục còn mở của WP-A1 cần production code đều phải đi qua §4.2 của bản disposition:
+  `ACCEPT_AS_IS` / `DESCOPE` / `OWNER_EXTENSION`.
+- Ghi nhận đã kiểm chứng: hạng mục đóng được **hoàn toàn bằng tài liệu** có diff production
+  path = 0, nên **không tiêu repair cycle** — tiền lệ là decision pack PRE-S008
+  (`2f20e6c..bd7c5ff`) đã được ledger ghi là không tính chu kỳ.
+- Reviewer E2 vòng ba KHÔNG khuyến nghị `CAPABILITY_CEILING`; đề xuất là
+  `VERIFICATION_DEPTH` (giữ Tier C, nâng Effort `xhigh` → `max`). Quyết định đó vẫn ĐANG MỞ,
+  không được quyết trong DEC-012 này.
+
+Can Revisit After:
+Khi chủ dự án cấp `OWNER_EXTENSION` tường minh, hoặc khi WP-A1 được `DESCOPE` một phần theo
+§4.2 của bản disposition.
+
+---
+
+## DEC-013 — PENDING: Integration decision cho branch WP-A1
+
+Date:
+2026-09-01 (phiên Owner Disposition)
+
+Task:
+Không thuộc task nào. Hard-stop `INTEGRATION_DECISION_REQUIRED` do
+`branch_authority_check.sh` phát ra.
+
+Status:
+**PENDING — chờ chủ dự án.** Phiên Owner Disposition KHÔNG merge, chỉ đo và khuyến nghị.
+
+Measured (đo bằng git tại `d63c222`, không chép từ báo cáo cũ):
+
+    branch          = claude/wp-a1-provenance-v67k9h @ d63c222
+    default branch  = claude/plan-tool-from-docs-qijx5m @ 4a46b3c  (giải từ origin/HEAD)
+    merge base      = e368425 (2026-08-23)
+    ahead / behind  = 29 / 1
+    age             = 9 ngày
+    diff            = 88 files, +24755 / -340
+                      production 14 files +662/-113 · docs+governance 66 files +21715/-227
+                      · test 8 files +2378
+    ngưỡng vượt     = AHEAD 2,9x · AGE 3,0x · LOC 5,0x
+
+    XUNG ĐỘT = 0, ĐO ĐƯỢC (không ước lượng):
+    git merge-tree --write-tree HEAD origin/<default>  -> 0 file xung đột,
+    tree kết quả = 1a9b7e8... = ĐÚNG tree của HEAD hiện tại.
+    Nguyên nhân: origin/claude/move-files-to-root-7zhv8l là TỔ TIÊN của HEAD, nên commit
+    `4a46b3c` mà branch đang "behind" không mang nội dung nào mà branch này thiếu.
+
+Recommended:
+**Phương án A — INTEGRATE NOW.** Chi phí rủi ro đo được bằng 0 (merge không đưa vào một
+dòng mã nào); không tốn gì ở phía WP-A1 (không đổi state/gate/budget/finding); và cửa sổ
+đang đóng lại vì WP-A4 sắp chạm `src/eth_dca_os/data/` — đúng thư mục WP-A1 vừa sửa.
+
+Phương án C (partial/staged) bị khuyến nghị LOẠI tường minh: 29 commit là tuyến tính và đan
+xen, tách tập con phải viết lại lịch sử và sẽ phá neo `BASELINE SHA` của
+`REVIEW_BUDGET_LEDGER.md` (`666de14` cho CAP-PROV), làm phép đo budget không còn tái dựng
+được từ git.
+
+Quyết định phụ kèm theo:
+`origin/HEAD` trỏ tới `claude/plan-tool-from-docs-qijx5m` — bản thân là một branch làm việc
+`claude/*`; remote KHÔNG có branch nào tên `main`. Chủ dự án cần chọn: tích hợp vào default
+branch hiện tại, hay lập một trunk quy ước trước đã.
+
+Required decision:
+Chủ dự án chọn A, B hoặc C, kèm đích tích hợp. Nếu chọn B thì **bắt buộc** nêu lý do và đặt
+ngày tái xét — "không làm gì" không phải phương án B hợp lệ.
+
+Lập luận đầy đủ cho từng phương án (benefit / risk / conflict probability / rollback /
+effect on WP-A1 / effect on next critical-path work / V4.3 compliance):
+`docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md` §7.
+
+Can Revisit After:
+Ngay khi chủ dự án ra quyết định. Phép đo xung đột = 0 chỉ đúng khi WP-A4 chưa bắt đầu; sau
+đó phải đo lại.

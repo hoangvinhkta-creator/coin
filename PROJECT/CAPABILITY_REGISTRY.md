@@ -90,3 +90,56 @@ và **không** được đặt ID mới.
 
 Không mục nào ở trên được phép tự sinh task. Đây là kết quả routing, không phải danh sách
 việc phải làm.
+
+---
+
+## 5. Cập nhật tại phiên Owner Disposition (2026-09-01)
+
+Nguồn: `DEC-011`, `DEC-012`, và
+`docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md`.
+Bảng §2 KHÔNG đổi: không capability nào được thêm, đổi tên hay đổi lineage root.
+
+### 5.1 `CAP-PROV` — budget đã có hạn mức
+
+    ALLOWED = 2 · USED = 2 · REMAINING = 0 · OWNER_EXTENSION = NOT GRANTED   (DEC-012)
+
+`ABSORPTION_LIMIT_REACHED` ở §4 vẫn đứng nguyên, và nay được củng cố bằng một hạn mức đếm
+được thay vì chỉ bằng hai ngưỡng định tính. Hệ quả: `CAP-PROV` **không thể** nhận thêm bất
+kỳ hạng mục nào cần production code cho tới khi có `OWNER_EXTENSION` mới.
+
+### 5.2 `F-E2A1R3-05` — đề xuất owner: `CAP-DATA`
+
+Trạng thái trước: `OWNER_ASSIGNMENT_REQUIRED` với hai ứng viên được nêu tên, không ứng
+viên nào được chọn (§3, §4).
+Trạng thái sau: **đề xuất `CAP-DATA` (`WP-A4`)**, chờ đúng MỘT quyết định của chủ dự án.
+
+`CAP-PROV` bị loại: budget `REMAINING = 0` và `OWNER_EXTENSION = NOT GRANTED` (`DEC-012`);
+gán vào đây là mở repair cycle thứ tư không có thẩm quyền.
+
+`CAP-DATA` được đề xuất theo **CHỦ ĐỀ**, không theo đường dẫn file. Điều đang chặn WP-A4 là
+một câu loại trừ `src/eth_dca_os/data/` trong Expected Touch Area, nhưng LÝ DO của câu đó là
+"gói này xử lý **ngữ nghĩa** dữ liệu xấu, không xử lý việc **lấy** dữ liệu". Defect của
+`F-E2A1R3-05` không nằm ở việc lấy dữ liệu — `fetch_all` trả về trung thực đúng những gì
+archive có. Defect là `gap_report` chỉ đo khoảng trống GIỮA first và last quan sát được,
+không đối chiếu với `start`/`end` ĐÃ YÊU CẦU, và `official_eligibility` không nhìn
+`first_timestamp`/`last_timestamp` ở đâu cả. Tức: hệ thống **mô tả sai cái gì đang thiếu** —
+đúng chủ đề `CAP-DATA`.
+
+Thứ loại WP-A4 hiện nay vì vậy là **hình thức đường dẫn file**, không phải chủ đề. Đây
+chính là khiếm khuyết mà `HARDENING_BACKLOG.md` H-12 đã ghi ở tầng governance
+(`PRODUCTION_PATHS.md` khai theo FILE chứ chưa theo CHUỖI dữ liệu), lặp lại ở tầng
+capability.
+
+Ba lý do độc lập ủng hộ `CAP-DATA`: (1) chủ đề khớp; (2) budget sạch — `REVIEW_BUDGET_LEDGER`
+§2 ghi WP-A4 "chưa bắt đầu", 0 repair cycle, 0 vòng E2, không ngưỡng absorption nào bị chạm;
+(3) đúng chỗ trên đường găng — WP-A4 đang `READY`, là prerequisite của GATE-A, và GATE-A
+đứng trước T-06, đúng mốc mà finding này bắt buộc phải đóng trước.
+
+    OWNER_DECISION_REQUIRED — đúng một quyết định:
+    phê duyệt COMPLETION GATE CHANGE PROPOSAL cho WP-A4, bổ sung MỘT REQUIRED check
+    (coverage đối chiếu với khoảng thời gian ĐƯỢC YÊU CẦU), kèm làm rõ Expected Touch Area:
+    loại trừ là về CƠ CHẾ LẤY dữ liệu, KHÔNG phải về NGỮ NGHĨA COVERAGE.
+
+Nếu chủ dự án từ chối: `F-E2A1R3-05` quay lại `OWNER_ASSIGNMENT_REQUIRED` và **T-06 vẫn bị
+chặn** — không có đường thứ ba. **KHÔNG đặt task ID mới trong cả hai nhánh**: `WP-A4` đã tồn
+tại, đây là định tuyến vào capability sẵn có.

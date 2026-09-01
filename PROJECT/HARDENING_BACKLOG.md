@@ -285,3 +285,78 @@ loại của WP-A1.
       HOẶC
     - bất kỳ artifact nào tuyên bố Effective Risk ở mức path chứ không phải mức file; HOẶC
     - Golden Baseline đầu tiên được dựng (H-10) — khi đó chuỗi là đầu vào bắt buộc.
+
+## H-13 — `F-E2A1R3-01` — `row_count` nằm ngoài mọi checksum và không bao giờ đối chiếu với file
+
+Capability: `CAP-PROV` · Owner: `WP-A1` · Phân loại: **CONFIRMED HARDENING**
+Mức theo E2: TRUNG BÌNH · Ngày định tuyến lại: 2026-09-01 (phiên Owner Disposition)
+
+Trạng thái trước: `CONFIRMED BLOCKING` (adoption V4.3 §5.1).
+Trạng thái sau: `HARDENING`. Căn cứ: `governance/v4/CORE/PRODUCTION_PATH_RULE.md` +
+`DEC-011`. Lập luận đầy đủ ở
+`docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md` §3.4.
+
+Bằng chứng KHÔNG bị nghi ngờ: reviewer E2 vòng ba làm rỗng thật `ETHUSDT_15m.parquet`, dựng
+lineage trung thực, rồi sửa `row_count: 0 -> 140156`; mọi `file_hash` và `dataset_hash` vẫn
+khớp và `official_eligibility` cho `(True,'verified')`. Kiểu chuỗi `"999"` hoặc `True` cũng
+qua được.
+
+Vì sao KHÔNG (còn) là BLOCKING: cái thiếu là **đường sinh**, không phải bằng chứng.
+Counterexample đòi sửa tay đúng một số nguyên trong `lineage.json`. Không đường sinh nào của
+mã hiện tại tạo ra tổ hợp đó — nếu fetch trả rỗng thì writer ghi `row_count=0` trung thực và
+`empty_series` bắn đúng. Theo `PRODUCTION_PATH_RULE.md`, counterexample chỉ dựng được bằng
+sửa tay artifact mặc định là HARDENING. `DEC-011` (OD-1) loại hostile tampering khỏi phạm vi
+V1: người duy nhất sửa được file đó là chủ dự án, tự phá dữ liệu của chính mình.
+
+Cùng LỚP với H-05 (`F-E2A1R3-04`) và H-06 (`F-PRE008-01`), cả hai đã là HARDENING từ trước —
+giữ mục này ở BLOCKING là bất nhất nội bộ.
+
+**Nghĩa vụ KHÔNG được đánh rơi khi hạ cấp.** Adoption §5.1 giữ mục này BLOCKING vì một lý do
+KHÁC production path: giới hạn `row_count` **chưa được công bố**, trong khi giới hạn nhãn
+`source` (H-06) đã công bố ở ba nơi. Lý do đó vẫn đúng và không bị bác. Nó được chuyển
+thành nghĩa vụ công bố trong re-trigger dưới đây, không bị xoá. Adoption §5.1 cũng đã xác
+định hai disposition ĐỀU hợp lệ: (a) đối chiếu `row_count` với `len(pd.read_parquet(p))`
+trong `verify_lineage`; HOẶC (b) công bố giới hạn trong `docs/CONVENTIONS.md` cạnh giới hạn
+về `source`. Disposition (b) có diff production path = 0 nên **không tiêu repair cycle**
+(`DEC-012`).
+
+    RE_TRIGGER_CONDITION:
+    - T-06 sắp chạy mà giới hạn `row_count` VẪN CHƯA được công bố ở `docs/CONVENTIONS.md`
+      (nghĩa vụ công bố kế thừa từ phân loại BLOCKING trước đây — re-trigger BẮT BUỘC); HOẶC
+    - `lineage.json` được sinh hoặc sửa bởi bất kỳ tiến trình nào ngoài `fetch_all` /
+      `synth.generate`; HOẶC
+    - quy trình vận hành T-06 cho phép thao tác tay trên `lineage.json`; HOẶC
+    - `row_count` được một hạng mục hạ nguồn tiêu thụ để ra quyết định (không chỉ để hiển
+      thị); HOẶC
+    - H-05 hoặc H-06 được đóng bằng một cơ chế hash mở rộng — khi đó `row_count` phải được
+      đưa vào cùng phạm vi bảo vệ.
+
+---
+
+## Soát lại toàn bộ backlog dưới Owner Product Intent (2026-09-01)
+
+`DEC-011` bổ sung trục `BLOCKING V1` (tiêu chí A–F). Đã soát lại **từng mục** H-01…H-13 theo
+A–F. Kết quả: **không mục nào chạm A–F**, nên toàn bộ giữ nguyên `HARDENING` /
+`OUT_OF_SCOPE` và giữ nguyên `RE_TRIGGER_CONDITION`. Không mục nào bị xoá, không mục nào
+được coi là đã đóng.
+
+Product Intent chỉ có thể làm YẾU lập luận blocking, không bao giờ làm mạnh thêm — trừ khi
+A–F bị chạm. Hai mục có sắc thái, ghi lại để không phải soát lại từ đầu ở phiên sau:
+
+- **H-02 (`F-E2A1-06`, tzdata)** — mục HARDENING DUY NHẤT chạm được tiêu chí **B** về lý
+  thuyết: tzdata quyết định biên accounting month, mà WP-A7 đã khoá ngữ nghĩa vốn Smart vào
+  đó, nên lệch biên tháng = lệch ngân sách. Vẫn giữ HARDENING vì hai lẽ ĐỘC LẬP: (1) chưa
+  có divergence ĐO ĐƯỢC — bằng chứng hiện là suy luận từ mã và lockfile; (2) `DEC-011` xác
+  định V1 chạy trên MỘT máy của chủ dự án, nên "tái lập trên máy có tzdata khác" không phải
+  luồng dùng hàng ngày. Product Intent làm mục này NHẸ đi, không nặng lên.
+- **H-04 (`F-E2A1R3-02`, `TypeError`)** — Product Intent làm nhẹ đi rõ rệt: điểm 9 của V1
+  Acceptance yêu cầu lỗi có thể làm sai quyết định/sai tiền phải **fail visibly**. Một
+  traceback là fail visibly ở dạng thuần tuý nhất.
+
+**Ba mục cùng lớp, nên xử lý như MỘT gói:** H-05, H-06, H-13 đều là "sửa tay artifact
+`lineage.json`" và đều có cùng biện pháp đối trọng (`DEC-003` — đối chiếu `ethdca freeze`
+trên hai máy). Nếu chủ dự án quyết định đóng, đóng cùng nhau; ba lần sửa rời rạc là lãng
+phí và dễ để lọt một trường.
+
+**Không mục nào trong backlog này nằm trên đường găng V1.** Ghi tường minh theo §19 chỉ thị
+phiên Owner Disposition.
