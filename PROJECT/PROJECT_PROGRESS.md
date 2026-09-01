@@ -704,10 +704,24 @@ Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
   WP state KHÔNG đổi.
   (5) Ghi nhận (KHÔNG thi hành) hai quyết định của chủ dự án cho phiên sau: `DEC-016`
   (`OD-DATA-01`) và `DEC-017` (`OD-DATA-02`).
-  (6) Validators trên `main` đều PASS: `validate_governance` · `validate_project_state` ·
-  `validate_structure` · `validate_routing` · `validate_easy_roadmap` ·
-  `branch_authority_check.sh`. Không tạo report mới: bằng chứng và số đo đầy đủ nằm trong
-  `PROJECT/PROJECT_DECISIONS.md` § `DEC-013` (khối quyết định cuối mục).
+  (6) Validators trên `main`: `validate_governance` **PASS** · `validate_project_state`
+  **PASS** · `validate_structure` **PASS** (27 path) · `validate_routing` **PASS** (17 MAJOR
+  task file) · `validate_easy_roadmap` **PASS** · `sync_easy_roadmap` PASS, file sinh ra
+  KHÔNG đổi (không có status/Tier/Effort nào thay đổi).
+  `branch_authority_check.sh --expect-branch main` báo **FAIL** — ghi đúng như nó là, và
+  **hai nguyên nhân đều KHÔNG phải khiếm khuyết tích hợp**:
+  (a) script hard-code `case main|master` = "feature work must not commit to the default
+  branch" (dòng 66–70). Đây là quy tắc bảo vệ trunk, đúng theo thiết kế, và chính là hành vi
+  mong muốn từ đây trở đi: phiên sau phải branch từ `origin/main` chứ không commit thẳng lên
+  `main`. Phiên Integration buộc phải commit lên trunk vì việc của nó LÀ lập trunk.
+  (b) `INTEGRATION_DECISION_REQUIRED: ahead of default 35` — script giải default branch từ
+  remote và remote vẫn đang trỏ vào `claude/plan-tool-from-docs-qijx5m`. Con số này về 0 ngay
+  khi chủ dự án đổi GitHub default branch sang `main`
+  (`REMOTE_DEFAULT_SWITCH_REQUIRED = YES`). Không có cách nào đóng nó từ phía git.
+  `production diff = EMPTY` và `tracked worktree = CLEAN` trong cùng lần chạy đó.
+  KHÔNG chạy lại chiến dịch verification lớn: tree kết quả TRÙNG KHÍT tree source, nên phép
+  tích hợp không đổi working tree và không có gì để regression lại. Không tạo report mới:
+  bằng chứng và số đo đầy đủ nằm trong `PROJECT/PROJECT_DECISIONS.md` § `DEC-013`.
   (7) `WP-C1` giữ nguyên `PARALLEL_READY = YES`, KHÔNG mở trong phiên này.
 - Integration Recheck / Owner Disposition — 2026-09-01 — **governance-only**, HEAD
   `07bb241`. KHÔNG sửa production code, KHÔNG sửa test code, KHÔNG mở WP, KHÔNG mở repair
