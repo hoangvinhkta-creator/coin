@@ -87,7 +87,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | IN_PROGRESS | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S008: CHECK-A1-01..A1-10 PASS (E2 xác nhận), CHECK-A1-11 E2 **FAIL** vòng ba — hai finding chặn F-E2A1-01/02 đã đóng nhưng F-E2A1-03 còn mở và nay ở mức CAO, cộng sai lệch contract F-E2A1R3-03. KHÔNG mở vòng patch thứ tư (ESCALATION_PROTOCOL) |
 | DONE | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | **DONE tại S006** (10/10 REQUIRED PASS; đấu nối thuần tuý — 4 module chỉ-đọc 0 dòng đổi; chiến lược + Benchmark A không đổi 159/159 trường) (đóng F-003, F-004, F-012, F-013, F-014). Tier C route tự nhiên sau MICRO-GOVDEF-001, xác nhận lại tại S006 |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
-| DONE | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | **DONE tại S009** (9/9 REQUIRED PASS: CHECK-A4-01…08 + CHECK-A4-10 do `DEC-014` bổ sung). Đóng F-023, F-025, F-032, **F-E2A1R3-05**. Hết chặn WP-A6/WP-C4 về phía A4. Phát hiện mới ngoài gate: `F-S009-01` (BLOCKING, `OWNER_ASSIGNMENT_REQUIRED`) |
+| DONE | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | **DONE tại S009** (9/9 REQUIRED PASS: CHECK-A4-01…08 + CHECK-A4-10 do `DEC-014` bổ sung). Đóng F-023, F-025, F-032, **F-E2A1R3-05**. Hết chặn WP-A6/WP-C4 về phía A4. Phát hiện mới ngoài gate: `F-S009-01` (BLOCKING V1; owner = `CAP-DATA` theo `DEC-015`; chờ `OWNER_DECISION_REQUIRED` về phương tiện thi hành — KHÔNG làm đổi trạng thái DONE của gói này) |
 | READY | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | **Đủ dependency từ S006**: WP-A2 ✅, WP-A3 ✅, WP-A7 ✅ (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical). Tuần tự hoá với WP-A2 trên `pipeline.py` — đóng phần đo lường của F-002, và F-016 |
 | READY | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | **READY từ S009** — WP-A3 ✅, WP-A4 ✅, WP-A7 ✅ đều DONE. Đóng F-018, F-019. Phải trả lời `HARDENING_BACKLOG.md` H-15 (số phận zone TRIGGERED trong chu kỳ INVALID) |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
@@ -667,10 +667,37 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 - DEC-013 — PENDING: Integration decision cho branch WP-A1
 - DEC-014 — `OD-A4-01`: bổ sung MỘT REQUIRED check cho WP-A4 (`CHECK-A4-10`) và làm rõ
   Expected Touch Area; `F-E2A1R3-05` → `CAP-DATA`, hấp thụ vào WP-A4, 0 task ID mới
+- DEC-015 — `F-S009-01` → capability owner `CAP-DATA`; spec verdict `IMPLEMENTATION_DEFECT`;
+  CONFIRMED BLOCKING V1 giữ nguyên; 0 task ID mới. `OWNER_ASSIGNMENT_REQUIRED` ĐÓNG, còn
+  `OWNER_DECISION_REQUIRED` cho phương tiện thi hành
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- Integration Recheck / Owner Disposition — 2026-09-01 — **governance-only**, HEAD
+  `07bb241`. KHÔNG sửa production code, KHÔNG sửa test code, KHÔNG mở WP, KHÔNG mở repair
+  cycle, KHÔNG tạo task ID, KHÔNG merge. Kết quả:
+  (1) `DEC-015` — `F-S009-01` → owner `CAP-DATA`, verdict `IMPLEMENTATION_DEFECT`,
+  `OWNER_ASSIGNMENT_REQUIRED` ĐÓNG; bốn ngưỡng Absorption Limit đều KHÔNG chạm; còn lại đúng
+  MỘT `OWNER_DECISION_REQUIRED` về phương tiện thi hành (`WP-A4` đang DONE + gate FROZEN +
+  `indicators.py` ngoài touch area — ba rào đều thuộc thẩm quyền chủ dự án).
+  (2) Bằng chứng E1 tái lập độc lập trên chính hàm production `compute_daily_indicators`,
+  môi trường trùng khớp `pyproject.lock` (Python 3.11.15 / numpy 2.4.6 / pandas 3.0.5):
+  một ngày lịch thiếu làm `return7` **đổi dấu** (+0,0187 → −0,0365; lệch 295%) và làm sai
+  thêm `ethbtc_return30`, `adr30`, `rsi14` — **không cái nào NaN**. Cơ chế: `score.py::
+  invalid_mask` chỉ bắt giá trị KHÔNG HỮU HẠN, mà cửa sổ theo vị trí luôn sinh số hữu hạn
+  nhưng sai, nên nhánh DEGRADED/INVALID mà BT §18 bắt buộc không bao giờ chạy.
+  (3) `DEC-013` đo lại toàn bộ bằng git (số cũ tại `d63c222` đã hết giá trị): default branch
+  giải được là `claude/plan-tool-from-docs-qijx5m` (remote KHÔNG có `main`); ahead 32 /
+  behind 1 / age 9 ngày; total 95 files +27857/−372; production 15 files +940/−145; test 11
+  files +3150; governance/doc 69 files +23767/−227. `merge-tree` → **0 xung đột**, tree kết
+  quả `605b621` **trùng khít** tree của HEAD; nội dung thiếu ở branch hiện tại = **0**; ở
+  default = 95 file. Mọi baseline SHA (`666de14`, `06b381c`, `85fa30f`, `d63c222`, `e368425`)
+  đều còn là tổ tiên của HEAD. Khuyến nghị giữ **phương án A**; C bị loại vì phá neo baseline
+  của ledger mà lợi ích đúng bằng 0.
+  (4) Ledger đối chiếu khớp git; `CAP-DATA` used = 0 (lượt đầu là implementation, không phải
+  repair cycle), `ALLOWED` vẫn CHƯA LƯỢNG HOÁ (gốc: `H-10`). `CAP-PROV` 2/2/0 không đổi.
+  (5) `WP-C1` xác nhận lại read-only: `PARALLEL_READY = YES`.
 - S009 — WP-A4 — 2026-09-01 — **DONE.** Ngữ nghĩa dữ liệu thiếu/hỏng + độ phủ theo khoảng
   ĐƯỢC YÊU CẦU. 9/9 REQUIRED check PASS (232/232 test suite PASS): chín check FROZEN
   2026-08-23 giữ nguyên câu chữ,
@@ -968,6 +995,10 @@ S010 — chủ dự án quyết định:
   `.gitignore`) **không giao** với vùng WP-A4 vừa sửa (`src/eth_dca_os/**`). WP-A4 không
   chạm một dòng nào trong `webapp/`. → **WP-C1 vẫn READY và độc lập.**
 - `WP-A4`, `WP-D1` đã **DONE** — không còn trong danh sách READY.
+- **Trước khi mở bất kỳ gói nào ở trên**, hai hard-stop governance đang chờ đúng hai quyết
+  định của chủ dự án, không tốn production code: `DEC-013` (integration — số đo đã làm mới
+  tại phiên Integration Recheck 2026-09-01: 0 xung đột, tree kết quả TRÙNG KHÍT tree HEAD,
+  khuyến nghị **phương án A**) và `DEC-015` §II.7 (phương tiện thi hành cho `F-S009-01`).
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
 `WP-A5`, `WP-A6` (mới đủ dependency từ S009), `WP-C1`, `WP-D2`.
@@ -996,15 +1027,26 @@ Cần chủ dự án quyết định:
 6. ~~**`F-E2A1R3-05` — phê duyệt COMPLETION GATE CHANGE PROPOSAL cho WP-A4**~~ —
    **ĐÃ QUYẾT** (`DEC-014` / `OD-A4-01`, 2026-09-01) và **ĐÃ ĐÓNG** tại S009:
    `CHECK-A4-10` PASS. Không còn là mục chờ quyết định.
-6b. **`F-S009-01` — ownership cho "indicator daily tính theo VỊ TRÍ, không theo LỊCH"**
-   (`OWNER_ASSIGNMENT_REQUIRED`). CONFIRMED BLOCKING, phát hiện tại S009, **nằm ngoài**
-   Completion Gate của WP-A4 nên KHÔNG làm FAIL gói đó, nhưng **phải đóng trước T-06**.
-   Một ngày daily thiếu làm `return7` sai 14,29% mà không NaN, không DEGRADED, không
-   INVALID — và dataset vẫn qua `official_eligibility` vì 0,27% < ngưỡng 1%. Hai nhánh
-   ownership hợp lý: `CAP-DATA` (kèm gate change proposal mới + mở rộng touch area sang
-   `indicators.py`) hoặc `CAP-SPEC`/WP-D2 (nếu coi là điểm để ngỏ của V2.1.5).
-   **Không đặt task ID mới trong cả hai nhánh.** Xem
-   `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md`. **Ưu tiên cao nhất.**
+6b. ~~**`F-S009-01` — ownership**~~ — **ĐÃ QUYẾT phần ownership** (`DEC-015`, 2026-09-01,
+   phiên Integration Recheck): capability owner = **`CAP-DATA`**; spec verdict =
+   **`IMPLEMENTATION_DEFECT`** (BT §18 buộc DEGRADED/INVALID khi indicator daily bắt buộc
+   thiếu, và ST §1.1/§1.3/§17 + BT §2 phát biểu cửa sổ theo NGÀY LỊCH — trong khi ST §17.2
+   cho thấy spec nói "96 nến" khi muốn đếm theo nến). `OWNER_ASSIGNMENT_REQUIRED` ĐÓNG.
+   Số task ID mới = 0.
+
+   **CÒN MỞ — `OWNER_DECISION_REQUIRED`, đúng MỘT quyết định, ưu tiên cao nhất.** Đây không
+   còn là khe ownership mà là khe **thẩm quyền thi hành**: `CAP-DATA` chỉ có một thành viên
+   là `WP-A4`, đang `DONE` với Completion Gate FROZEN, và `indicators.py` nằm ngoài Expected
+   Touch Area. Bốn ngưỡng Absorption Limit đều **KHÔNG chạm** (A: Effective Risk `MAX(3,2)=3`
+   không đổi; B: 2/3 mục; C: +11,1%; D: nằm trên vertical slice), nên đây **không** phải
+   `ABSORPTION_LIMIT_REACHED`. Ba lựa chọn của chủ dự án — (A) mở lại `WP-A4` + gate change
+   proposal + mở touch area sang `indicators.py` *(khuyến nghị)*; (B) DESCOPE *(mâu thuẫn
+   `DEC-011` điểm 9)*; (C) task ngoại lệ *(chủ dự án tự đặt ID)*. Chi tiết + bằng chứng E1
+   tái lập tại phiên: `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` PHẦN II.
+
+   Dữ kiện budget cho quyết định: `git log 666de14..HEAD -- src/eth_dca_os/indicators.py`
+   = **0 commit**, nên finding nằm NGOÀI mọi cumulative repair diff và bản sửa **sẽ tiêu một
+   repair cycle mới** của owner nhận nó.
 7. **WP-A1 — disposition cho 3 hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED`**
    (`F-E2A1-03`, `F-E2A1R3-03`, `F-E2A1R3-06`+`F-E2A1-08`): mỗi hạng mục chọn
    `ACCEPT_AS_IS` / `DESCOPE` / `OWNER_EXTENSION`. Budget CAP-PROV đã hết

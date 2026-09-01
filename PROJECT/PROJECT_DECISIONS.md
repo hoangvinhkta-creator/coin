@@ -641,6 +641,85 @@ Can Revisit After:
 Ngay khi chủ dự án ra quyết định. Phép đo xung đột = 0 chỉ đúng khi WP-A4 chưa bắt đầu; sau
 đó phải đo lại.
 
+### Cập nhật số đo — phiên Integration Recheck (2026-09-01)
+
+Số đo ở khối `Measured` phía trên được chụp tại `d63c222` và **đã hết giá trị** sau khi WP-A4
+chạy (`DEC-014` đã báo trước điều này). Giữ nguyên để đọc được lịch sử. Số đo có thẩm quyền
+từ đây là bảng dưới, đo lại toàn bộ bằng git tại `07bb241`, không chép từ báo cáo cũ:
+
+    CURRENT BRANCH        = claude/wp-a1-provenance-v67k9h
+    CURRENT HEAD          = 07bb2412e31e957dcfc211ec9c8e5e601f20d2b1
+    DEFAULT BRANCH        = claude/plan-tool-from-docs-qijx5m
+                            (giải bằng `git ls-remote --symref origin HEAD`, KHÔNG giả định;
+                             remote KHÔNG có branch nào tên main/master)
+    DEFAULT BRANCH HEAD   = 4a46b3c2012d786f457316e3452c971bab12464a
+    MERGE BASE            = e36842583372a2eae8335c5c7048d92d5ff2c987  (2026-08-23)
+    AHEAD                 = 32
+    BEHIND                = 1
+    DIVERGENCE AGE        = 9 ngày
+    TOTAL DIFF            = 95 files, +27857 / -372
+    PRODUCTION DIFF       = 15 files, +940 / -145
+    TEST DIFF             = 11 files, +3150 / -0
+    GOVERNANCE/DOC DIFF   = 69 files, +23767 / -227
+
+    (PRODUCTION DIFF đo đúng tập khai ở `PRODUCTION_PATHS.md` §1: `src/eth_dca_os`,
+     `webapp/app_logic.js`, `webapp/engine.js`, `webapp/app_shell.html`, `webapp/build_app.js`,
+     `pyproject.toml`, `pyproject.lock` — KHÔNG gộp `webapp/test_*.js`.)
+
+Bằng chứng xung đột, git-native, KHÔNG dùng kết quả cũ của `DEC-013`:
+
+    git merge-tree --write-tree HEAD origin/claude/plan-tool-from-docs-qijx5m
+      -> exit 0, tree = 605b6210989e664a61e747c91156ec3d36c4c44c
+    git rev-parse HEAD^{tree}
+      -> 605b6210989e664a61e747c91156ec3d36c4c44c        (TRÙNG KHÍT)
+
+    MERGE CONFLICT COUNT             = 0
+    CONTENT MISSING FROM CURRENT BR. = 0 file, 0 dòng
+    CONTENT MISSING FROM DEFAULT BR. = 95 file, +27857 / -372
+    RESULT TREE DETERMINISTIC        = YES
+
+Lý do `BEHIND = 1` vẫn cho 0 nội dung thiếu: commit `4a46b3c` là merge commit của
+`claude/move-files-to-root-7zhv8l`, và branch đó **là tổ tiên của HEAD** (kiểm bằng
+`git merge-base --is-ancestor`). Nó không mang nội dung nào mà branch này chưa có.
+
+**Kết luận đo được: hợp nhất KHÔNG đưa vào một dòng nội dung nào.** Tree kết quả bằng đúng
+tree của HEAD hiện tại. Đây là số đo mạnh hơn "0 xung đột": nội dung sau merge trùng khít
+HEAD.
+
+Bảo toàn baseline/provenance — kiểm bằng `git merge-base --is-ancestor`, toàn bộ đều là tổ
+tiên của HEAD và vẫn reachable sau một merge commit thường:
+
+    666de14 (CAP-PROV baseline)   YES      06b381c (WP-A4/CAP-DATA baseline)  YES
+    d72fbc4 · 2f20e6c · bd7c5ff · a0c278a (các chu kỳ WP-A1)                  YES
+    85fa30f (WP-A4 DONE)          YES      d63c222 · e368425                  YES
+
+`4a46b3c` KHÔNG phải tổ tiên của HEAD, nên default **không** fast-forward được tới HEAD:
+tích hợp cần một **merge commit thường**, và merge commit giữ cả hai parent nên KHÔNG có
+history rewrite, KHÔNG mất neo baseline nào.
+
+Đánh giá lại ba phương án tại số đo mới:
+
+| | A — INTEGRATE NOW | B — CONTINUE WITH LIMIT | C — STAGED |
+|---|---|---|---|
+| Risk | 0 xung đột đo được; tree kết quả = tree HEAD | Divergence tiếp tục lớn (đã 3,2× ngưỡng ahead, 3,0× age, 5,6× LOC); cửa sổ 0-xung-đột KHÔNG bảo đảm còn khi CAP-DATA sửa `indicators.py` và WP-A5/A6 sửa `pipeline.py`/`engine.py` | CAO |
+| Benefit | Đóng hard-stop `INTEGRATION_DECISION_REQUIRED`; 95 file thành reachable từ default; WP-C1 khởi động từ base đã tích hợp | Không phải làm gì bây giờ | **0** — staged tồn tại để giảm rủi ro merge, mà rủi ro merge đo được đã bằng 0 |
+| History rewrite? | KHÔNG (merge commit thường) | KHÔNG | **CÓ** — 32 commit tuyến tính đan xen, tách tập con phải viết lại lịch sử |
+| Baseline SHA impact | KHÔNG | KHÔNG | **PHÁ** neo `666de14` / `06b381c` của ledger → budget không còn tái dựng được từ git, trái `DELIVERY_LOOP.md` ("MEASURED, not summed by hand") |
+| WP-A1 ledger impact | KHÔNG (state/gate/budget/finding không đổi) | KHÔNG | Hỏng |
+| WP-A4 evidence impact | KHÔNG (mọi SHA bằng chứng vẫn reachable) | KHÔNG | Hỏng |
+| Next CAP-DATA work | Thuận lợi — bản sửa `F-S009-01` bắt đầu từ base đã tích hợp | Bất lợi — đào sâu thêm divergence | Bất lợi |
+| WP-C1 parallel | Thuận lợi — tránh sinh divergence dài thứ hai | Trung tính | Bất lợi |
+
+**Khuyến nghị giữ nguyên: phương án A.** Phương án C bị loại theo đúng quy tắc phiên này —
+không chọn staged/cherry-pick khi nó phá provenance/baseline mà không có lợi ích thật; ở đây
+lợi ích đúng bằng 0. Phương án B chỉ hợp lệ nếu chủ dự án nêu lý do VÀ đặt ngày tái xét.
+
+**Quyết định phụ vẫn còn nguyên, chưa được quyết:** `origin/HEAD` trỏ tới
+`claude/plan-tool-from-docs-qijx5m` — bản thân là một branch làm việc `claude/*`. Chủ dự án
+chọn: tích hợp vào default branch hiện tại, hay lập một trunk quy ước trước đã.
+
+Phiên Integration Recheck **KHÔNG merge**. `DEC-013` vẫn `PENDING`.
+
 ---
 
 ## DEC-014 — `OD-A4-01`: bổ sung một REQUIRED check cho WP-A4 và làm rõ Expected Touch Area
@@ -691,3 +770,76 @@ Impact:
 
 Can Revisit After:
 Không. Check đã được thực thi và PASS tại S009; nó là điều kiện của GATE-A từ đây.
+
+---
+
+## DEC-015 — `F-S009-01`: capability owner = `CAP-DATA`, phân loại `IMPLEMENTATION_DEFECT`
+
+Date:
+2026-09-01 (phiên Integration Recheck / Owner Disposition)
+
+Task:
+Không thuộc task nào. Đây là quyết định định tuyến finding ở cấp capability.
+
+Decision:
+
+    F-S009-01  ->  capability owner = CAP-DATA
+    F-S009-01  =   CONFIRMED BLOCKING V1
+    Spec verdict = IMPLEMENTATION_DEFECT
+    Task ID mới được tạo = 0
+
+Reason:
+
+Đường sản xuất bình thường: yêu cầu dữ liệu daily → dataset thiếu một ngày lịch → indicator
+tính theo **vị trí hàng** → `return7` và các cửa sổ trượt sai → **không NaN, không DEGRADED,
+không INVALID** → dataset vẫn đủ tư cách official → Buy Score có thể sai.
+
+Tác động trực tiếp tới ba tiêu chí của `DEC-011`: **A — CORRECT DECISION**, **D — REAL MARKET
+DATA**, **F — OFFICIAL RESULT VALIDITY**. Không phải hostile tampering, không phải theoretical
+hardening, không phải security issue. Ràng buộc đối xứng của `DEC-011` được giữ: finding
+KHÔNG bị hạ mức.
+
+Ownership thuộc `CAP-DATA` theo ranh giới ĐÃ CHỐT ở `CAPABILITY_REGISTRY.md` §3 — *"Ngữ nghĩa
+DEGRADED / INVALID, nhãn gap trên bản ghi"* thuộc `CAP-DATA`. Bằng chứng cơ chế thu tại phiên
+này: `score.py::invalid_mask` chỉ kích hoạt trên giá trị **không hữu hạn**, mà cửa sổ theo vị
+trí luôn sinh số **hữu hạn nhưng sai** — nên đúng là ngữ nghĩa DEGRADED/INVALID của `CAP-DATA`
+không kích hoạt được. Quyết định này KHÔNG mở ranh giới capability mới.
+
+Verdict `IMPLEMENTATION_DEFECT` (không phải `SPEC_AMBIGUITY`) dựa trên spec canonical, KHÔNG
+sửa spec:
+- BT §18 buộc *"indicator daily bắt buộc thiếu → … đánh dấu DEGRADED hoặc INVALID theo
+  Strategy §3"*; implementation trả về số hữu hạn sai nên nhánh spec bắt buộc không bao giờ
+  chạy;
+- ST §1.1 "365 ngày gần nhất", ST §1.3 `ETHBTC_30d_ago`, ST §17 `Return7D`, BT §2 "365 ngày
+  hợp lệ" — đều là đơn vị NGÀY LỊCH;
+- đối chứng quyết định: ST §17.2 nói "**96 nến 15m** liền trước" khi muốn đếm theo nến. Spec
+  phân biệt hai cách đếm và đã chọn ngày cho chỉ báo daily.
+
+Phần dư `SPEC_AMBIGUITY` được ghi nhận riêng và KHÔNG đổi owner của phần BLOCKING: `ma200`,
+`adr30`, `rsi14`, `VR`, `ethbtc_percentile180` được spec nêu bằng một con số không kèm đơn vị.
+Phần dư đó thuộc chủ đề `CAP-SPEC` (`WP-D2`).
+
+Impact:
+- `OWNER_ASSIGNMENT_REQUIRED` của `F-S009-01` **ĐÓNG**.
+- `WP-A4` giữ nguyên **DONE**, 9/9 REQUIRED PASS. Không check nào bị thêm, hạ, gộp hay nới.
+  Gói KHÔNG bị mở lại ở phiên này.
+- `WP-A1` / `CAP-PROV` không đổi: allowed=2, used=2, remaining=0, `OWNER_EXTENSION` NOT
+  GRANTED.
+- Absorption test bốn ngưỡng: **không ngưỡng nào chạm** —
+  A: Effective Risk `MAX(3,2)=3` → `MAX(3,3)=3`, không đổi (chạm chỉ khi chủ dự án chấm
+  Blast Radius = 4; phiên này KHÔNG tự chọn con số đó);
+  B: 2 mục hấp thụ ≤ 3; C: REQUIRED 9→10 = +11,1% ≤ 50%; D: `indicators.py` nằm TRÊN vertical
+  slice. Vậy **KHÔNG** phải `ABSORPTION_LIMIT_REACHED`.
+- Vẫn còn `OWNER_DECISION_REQUIRED` — **không phải** khe ownership mà là khe **thẩm quyền thi
+  hành**: `WP-A4` đang `DONE` với Completion Gate FROZEN, và `indicators.py` ngoài Expected
+  Touch Area. Ba rào đều là hành vi của chủ dự án theo `STATE_AUTHORITY.md`. Xem
+  `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` §II.7 cho ba lựa chọn (A) mở rộng
+  `WP-A4` / (B) DESCOPE / (C) task ngoại lệ, kèm khuyến nghị (A).
+- Dữ kiện budget đo tại phiên này: `git log 666de14..HEAD -- src/eth_dca_os/indicators.py`
+  = **0 commit**. F-S009-01 nằm NGOÀI cumulative repair diff của cả `CAP-PROV` lẫn
+  `CAP-DATA`, nên bản sửa **sẽ tiêu một repair cycle mới** của owner nhận nó. Không miễn phí.
+- Số task ID mới = **0**. Finding ≠ task.
+
+Can Revisit After:
+Khi chủ dự án chọn một trong ba phương tiện thi hành ở §II.7. Nếu chọn (B) DESCOPE thì phải
+đối chiếu tường minh với `DEC-011` điểm 9 (fail visibly / fail closed).

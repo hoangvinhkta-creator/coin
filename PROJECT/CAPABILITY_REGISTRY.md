@@ -157,3 +157,72 @@ Ba lý do độc lập ủng hộ `CAP-DATA`: (1) chủ đề khớp; (2) budget
 Nếu chủ dự án từ chối: `F-E2A1R3-05` quay lại `OWNER_ASSIGNMENT_REQUIRED` và **T-06 vẫn bị
 chặn** — không có đường thứ ba. **KHÔNG đặt task ID mới trong cả hai nhánh**: `WP-A4` đã tồn
 tại, đây là định tuyến vào capability sẵn có.
+
+---
+
+## 6. Cập nhật tại phiên Integration Recheck (2026-09-01) — `F-S009-01`
+
+Nguồn thẩm quyền: `DEC-015`, và
+`docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` PHẦN II.
+
+Bảng §2 **KHÔNG đổi**: không capability nào được thêm, đổi tên hay đổi lineage root. Số task
+ID mới = **0**.
+
+### 6.1 Owner của `F-S009-01`
+
+    F-S009-01 ("indicator daily tính theo VỊ TRÍ, không theo LỊCH")
+      -> capability owner = CAP-DATA        (DEC-015, chủ dự án)
+      -> OWNER_ASSIGNMENT_REQUIRED = ĐÓNG
+
+Quyết định này KHÔNG mở ranh giới capability mới — nó rơi đúng vào một dòng ĐÃ có ở §3:
+
+| Chủ đề | Capability sở hữu |
+|---|---|
+| Ngữ nghĩa DEGRADED / INVALID, nhãn gap trên bản ghi | `CAP-DATA` (WP-A4) |
+
+Bằng chứng cơ chế thu tại phiên này: `score.py::invalid_mask` chỉ đặt INVALID trên giá trị
+**không hữu hạn**; cửa sổ theo vị trí luôn sinh số **hữu hạn nhưng sai**, nên nhánh
+DEGRADED/INVALID của `CAP-DATA` không bao giờ kích hoạt. Đó là lý do finding thuộc `CAP-DATA`
+chứ không phải một capability khác.
+
+`CAP-SPEC` (`WP-D2`) giữ **phần dư** `SPEC_AMBIGUITY`: `ma200`, `adr30`, `rsi14`, `VR`,
+`ethbtc_percentile180` được spec nêu bằng một con số không kèm đơn vị. Phần dư này KHÔNG mang
+theo phần BLOCKING và KHÔNG đổi owner ở §6.1.
+
+### 6.2 Absorption Limit — đo lại cho `F-S009-01` vào `WP-A4`
+
+| Ngưỡng | Đo | Kết luận |
+|---|---|---|
+| **A** — Effective Risk +≥1 | `MAX(Local Risk 3, Blast Radius 2) = 3` → `MAX(3, 3) = 3`. Blast Radius riêng của finding = HIGH theo `RISK_MODEL.md`, nhưng Local Risk 3 đã trội nên Effective Risk **không đổi**. Golden Reduction không dùng được (chưa có Golden — `H-10`). | KHÔNG chạm ở B=3. Chạm nếu chủ dự án chấm B=4 — phiên này KHÔNG tự chọn con số |
+| **B** — >3 mục hấp thụ | `F-E2A1R3-05` + `F-S009-01` = **2** | KHÔNG chạm |
+| **C** — REQUIRED check +>50% | 9 → 10 = **+11,1%** | KHÔNG chạm |
+| **D** — việc ngoài slice lên đường găng | `indicators.py` **nằm trên** vertical slice §1 | KHÔNG chạm |
+
+    ABSORPTION_LIMIT_REACHED = KHÔNG
+
+Khác với bảng §4 (nơi `F-E2A1R3-05` vào `WP-A1` chạm ngưỡng A và C), mục này **không** bị chặn
+bởi Absorption Limit.
+
+### 6.3 Điều thực sự đang chặn — khe thẩm quyền thi hành, không phải khe ownership
+
+`CAP-DATA` ở **tầng capability** vẫn còn authority: `CAPABILITY_MODEL.md` định nghĩa capability
+gồm *"a set of tasks that have implemented it over time"*, nên capability sống lâu hơn từng
+task thành viên. `WP-A4` DONE không xoá `CAP-DATA`.
+
+Ở **tầng task/thi hành** thì không, nếu không có một hành vi của chủ dự án. `CAP-DATA` chỉ có
+đúng một thành viên là `WP-A4`, và ba rào sau đều do `STATE_AUTHORITY.md` dành riêng cho chủ
+dự án:
+
+1. Completion Gate của `WP-A4` đang FROZEN — *"FROZEN gates are immutable"*, *"Changing a gate
+   … is an Owner action"*; mà `F-S009-01` không được phủ bởi check nào đang tồn tại nên đóng
+   nó cần một REQUIRED check mới.
+2. `WP-A4` = `DONE` — `DONE` do *"Owner, or a designated completion authority"* viết.
+3. `indicators.py` ngoài Expected Touch Area của `WP-A4` → `SCOPE EXPANSION REQUIRED`.
+
+```
+OWNER_DECISION_REQUIRED
+absorption_status = DEFERRED_UNTIL_WP-A4_REOPENED_BY_OWNER
+```
+
+Ba lựa chọn và khuyến nghị: `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` §II.7.
+Phiên này KHÔNG tự mở lại `WP-A4`, KHÔNG tự sửa gate, KHÔNG tạo task ID.

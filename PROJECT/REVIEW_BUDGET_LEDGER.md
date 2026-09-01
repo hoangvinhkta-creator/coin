@@ -96,7 +96,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-PIPELINE` | `WP-A2` | `0f2a2ab` | 0 | 1 (PASS) | DONE tại S006 |
 | `CAP-ENGINE` | `WP-A3` | `5645a74` | 0 | 1 (PASS) | DONE tại S003; `WP-A7` DONE tại S004 (E2 PASS WITH FOLLOW-UPS) |
 | `CAP-DEBT` | `WP-D1` | `1f4c2b7` | 0 | 0 | DONE tại S005, E1 |
-| `CAP-DATA` | `WP-A4` | `06b381c` | 0 | 0 | VERIFYING — xem §2.1 |
+| `CAP-DATA` | `WP-A4` | `06b381c` | 0 | 0 | DONE tại S009 (9/9 REQUIRED PASS) — xem §2.1 và §4.2. Sửa lại 2026-09-01: ô này còn ghi `VERIFYING` sau khi WP-A4 đã DONE, lệch với `CAPABILITY_REGISTRY.md` §2 |
 | `CAP-MEASURE` | `WP-A5` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-ORDER` | `WP-A6` | chưa bắt đầu | 0 | 0 | PLANNED |
 | `CAP-WEBAPP` | `WP-C1` | chưa bắt đầu | 0 | 0 | READY |
@@ -167,3 +167,66 @@ tiên có đủ thẩm quyền, `GOLDEN_BASELINE_SHA` phải được đặt t�
 tích luỹ sau đó tính từ nó.
 
 Không được chọn một SHA tiện lợi rồi gọi là Golden baseline.
+
+---
+
+## 4. Kiểm lại bằng git tại phiên Integration Recheck (2026-09-01, HEAD `07bb241`)
+
+Toàn bộ số dưới đây được **đo lại bằng lệnh**, không chép từ mục trên và không cộng tay.
+Production paths theo `PRODUCTION_PATHS.md` §1.
+
+### 4.1 Các con số đã ghi — ĐỐI CHIẾU KHỚP
+
+    git diff --shortstat 666de14..d63c222 -- <production paths>
+      -> 8 files, +340 / -45          KHỚP §1
+    git diff --shortstat 06b381c..HEAD  -- <production paths>
+      -> 5 files, +282 / -36          KHỚP §2.1
+
+Các commit governance-only, kiểm lại diff production path = 0 (nên KHÔNG tiêu chu kỳ nào):
+
+    6c11a7e..62f8bac  = 0      (adoption V4.3)
+    62f8bac..d63c222  = 0      (source reconciliation)
+    d63c222..06b381c  = 0      (phiên Owner Disposition)
+    85fa30f..07bb241  = 0      (commit sửa số đo ledger)
+
+### 4.2 `CAP-DATA` — trạng thái budget sau khi `WP-A4` DONE
+
+    Effective Risk            = 3   = MAX(Local Risk 3, Blast Radius 2)
+                                      từ routing metadata ĐÃ FROZEN của WP-A4 (R:3, B:2)
+    ALLOWED repair cycles     = CHƯA LƯỢNG HOÁ (V4.3 default theo Effective Risk)
+    USED repair cycles        = 0
+    REMAINING repair cycles   = default nguyên vẹn — KHÔNG biểu diễn được bằng một con số
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+`USED = 0` **không** phải vì WP-A4 DONE thì được reset. Lượt `06b381c..85fa30f` là
+**implementation ban đầu**, và ledger này đã dùng đúng quy ước đó cho `CAP-PROV` ở §1
+("REPAIR CYCLES ĐÃ TIÊU = 2, **ngoài lượt implementation ban đầu**"). Canonical V4.3 không
+định nghĩa lượt implementation đầu tiên là repair cycle, nên KHÔNG tự tính thành một.
+
+`ALLOWED` vẫn chưa có con số: `DELIVERY_LOOP.md` §II.4 nói rõ `<N>` là **PROJECT value**, và
+tầng dự án chưa khai. Nguyên nhân gốc đã có số hiệu — `HARDENING_BACKLOG.md` **H-10** (chưa
+có Golden Baseline). Ghi đúng uncertainty; **không** chọn một con số tiện tay rồi gọi là hạn
+mức.
+
+### 4.3 `F-S009-01` nằm NGOÀI mọi cumulative repair diff — hệ quả budget
+
+    git log --oneline 666de14..HEAD -- src/eth_dca_os/indicators.py   ->  0 commit
+
+`indicators.py` chưa từng bị chạm kể từ baseline `666de14`. Vậy `F-S009-01` **không** nằm
+trong cumulative repair diff của `CAP-PROV`, cũng **không** nằm trong của `CAP-DATA`.
+
+`REVIEW_PROTOCOL.md` quy định: *"A finding inside the current cycle's cumulative repair diff
+is a defect of that same repair. It does not open a new repair cycle and does not consume new
+budget."* Ở đây điều ngược lại đúng: đây KHÔNG phải khiếm khuyết của một lượt sửa đã tiêu,
+nên sửa nó **SẼ tiêu một repair cycle mới** của capability nhận nó. Bản sửa không miễn phí —
+dữ kiện này phải nằm trước mặt chủ dự án khi chọn phương án ở
+`docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` §II.7.
+
+### 4.4 Không đổi
+
+- `CAP-PROV`: `ALLOWED = 2 · USED = 2 · REMAINING = 0 · OWNER_EXTENSION = NOT GRANTED`
+  (`DEC-012`). Phiên này KHÔNG cấp `OWNER_EXTENSION`, KHÔNG đụng ba con số đó.
+- `LEGACY_GATE_DISPOSITION` của WP-A1: KHÔNG giải quyết ở phiên này.
+- Hai quyết định đang mở nêu ở §1 (`VERIFICATION_DEPTH`; disposition 3 hạng mục legacy của
+  WP-A1) vẫn ĐANG MỞ.
+- `GOLDEN_BASELINE_SHA` = `PENDING_OWNER_DATA / MIGRATION_REQUIRED`, không đổi.
