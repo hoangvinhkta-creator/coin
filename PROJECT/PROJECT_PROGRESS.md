@@ -18,6 +18,12 @@ LEGACY
 Profile:
 PRODUCT
 
+Governance Version:
+V3.2 (compact) + **AI Engineering V4.3 overlay** (adopted 2026-09-01).
+Canonical AI entry point: `AGENTS.md`. CORE V4.3: `governance/v4/CORE/`.
+Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
+Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
+
 Last Updated:
 2026-08-24 — S006 hoàn tất: **WP-A2 DONE** (10/10 REQUIRED check PASS; F-003/F-004/F-012/
 F-013/F-014 đóng; RSK-007 giảm thiểu một phần — phần FS còn lại thuộc WP-A5)
