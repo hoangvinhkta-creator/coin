@@ -403,6 +403,73 @@ huỷ khi dữ liệu INVALID.
 
 ---
 
+## H-16 — Sai số mức ULP còn lại trên dataset CÓ GAP sau khi cửa sổ đã trượt qua
+
+Nguồn:
+Batch review CAP-DATA REPAIR CYCLE #1 — `docs/reviews/S010-batch-review-calendar-indicator.md`
+§3 / F-S010-01. Ghi 2026-09-01.
+
+Phân loại:
+`HARDENING`
+
+Nội dung:
+Sau bản sửa `F-S009-01`, trên dataset **có ngày daily thiếu**, bốn cột không trở lại bằng
+nhau từng bit so với chuỗi đầy đủ ngay cả khi cửa sổ đã trượt qua hẳn ngày thiếu:
+
+| Cột | max lệch tương đối | Nguyên nhân |
+|---|---|---|
+| `ma200` | 2,11e-16 | pandas cộng dồn rolling kiểu online; một `NaN` đi qua cửa sổ đổi thứ tự kết hợp phép cộng (~1 ULP của `double`) |
+| `ma_ratio` | 3,04e-16 | dẫn xuất từ `ma200` |
+| `ma200_slope` | 5,83e-10 (tuyệt đối 7,11e-15) | hiệu hai `ma200`; mẫu số gần 0 làm tỷ lệ lớn |
+| `rsi14` | 7,44e-13 | Wilder có bộ nhớ vô hạn; dải sau gap warm-up lại, đuôi suy giảm `(13/14)^k` |
+
+Trên dữ liệu **sạch** lệch bằng 0 tuyệt đối (khoá bởi CASE G, bit-identical).
+
+Vì sao KHÔNG phải BLOCKING: thiếu tiêu chí thứ hai của `REVIEW_PROTOCOL.md`. Để 2e-16 lật
+một quyết định thì `ma_ratio` phải nằm cách ngưỡng dưới 1 ULP; counterexample đó không dựng
+được từ bốn nguồn canonical của `PRODUCTION_PATHS.md` §3. `PRODUCTION_PATH_RULE.md` xếp
+đúng loại này là HARDENING theo định nghĩa, không phải theo nhân nhượng. Chênh 13–16 bậc độ
+lớn so với chính `F-S009-01` (14,29% và 295% đổi dấu).
+
+    RE_TRIGGER_CONDITION:
+    Khi `T-06` chạy trên dữ liệu Binance THẬT và dataset official chứa ít nhất một ngày
+    daily thiếu: đối chiếu `ma200` / `ma_ratio` / `rsi14` quanh mọi ngưỡng quyết định. Nếu
+    tồn tại một ngày mà lệch ULP đủ để lật một so sánh ngưỡng, mục này thành BLOCKING và
+    quay lại `CAP-DATA`.
+
+---
+
+## H-17 — Ngày daily TRÙNG LẶP nay ném `ValueError` thay vì đi qua im lặng
+
+Nguồn:
+Batch review CAP-DATA REPAIR CYCLE #1 — `docs/reviews/S010-batch-review-calendar-indicator.md`
+§3 / F-S010-02. Ghi 2026-09-01.
+
+Phân loại:
+`HARDENING`
+
+Nội dung:
+`compute_daily_indicators` nay reindex chuỗi daily về lịch ngày liên tục. Nếu series có hai
+hàng cùng một ngày, `reindex` ném
+`ValueError: cannot reindex on an axis with duplicate labels`. TRƯỚC bản sửa, trùng lặp đi
+qua im lặng và một trong hai hàng được dùng tuỳ thứ tự.
+
+Không dựng được từ nguồn canonical: `data/fetch.py::fetch_series` đã
+`drop_duplicates("open_time")`, và `data/synth.py` dựng daily bằng `groupby(freq="1D")`.
+Chiều thay đổi là **fail-closed** — ném lỗi thay vì chọn thầm một hàng — nên đúng hướng của
+`DEC-011` điểm 9. Điều còn thiếu là chất lượng chẩn đoán, không phải tính đúng đắn.
+
+Không sửa trong chu kỳ #1: sửa nó là thêm ngữ nghĩa khử trùng lặp cho dữ liệu, tức mở rộng
+phạm vi ngoài `DEC-016`.
+
+    RE_TRIGGER_CONDITION:
+    Khi một nguồn dữ liệu mới có thể sinh hai hàng cùng ngày (REST tail chồng lấn archive,
+    nguồn thứ ba, import thủ công), HOẶC khi `ValueError` này thực sự xuất hiện một lần.
+    Khi đó thay bằng một lỗi có chẩn đoán rõ ràng, hoặc một quy tắc khử trùng lặp được ghi
+    ở `docs/CONVENTIONS.md`.
+
+---
+
 ## Soát lại toàn bộ backlog dưới Owner Product Intent (2026-09-01)
 
 `DEC-011` bổ sung trục `BLOCKING V1` (tiêu chí A–F). Đã soát lại **từng mục** H-01…H-13 theo
@@ -432,3 +499,13 @@ phí và dễ để lọt một trường.
 phiên Owner Disposition. Vẫn đúng sau khi thêm H-14 và H-15 tại S009: H-14 cùng lớp
 "sửa tay artifact" với H-05/H-06/H-13, H-15 là câu hỏi thứ tự xử lý mà `WP-A6` sẽ phải
 trả lời dù có mục này hay không.
+
+Vẫn đúng sau khi thêm **H-16** và **H-17** tại S010 (CAP-DATA REPAIR CYCLE #1): cả hai đều
+chỉ biểu hiện trên dataset có ngày daily thiếu, cả hai đều đã được soát theo A–F của
+`DEC-011` ngay khi ghi, và không mục nào chạm A–F. H-16 thiếu đường sinh cho hệ quả (lệch
+ULP không lật được ngưỡng nào dựng được từ nguồn canonical); H-17 đã là fail-closed. Không
+mục nào bị xoá và không mục nào được coi là đã đóng.
+
+Một finding thứ ba của cùng batch review — **F-S010-03**, lệch parity JS/Python — KHÔNG nằm
+trong backlog này vì nó có owner: `OUT_OF_SCOPE` → `CAP-WEBAPP` / `WP-C4`, dưới rủi ro đã
+đăng ký `RSK-002`. Ghi ở đây một dòng để người đọc backlog không tưởng rằng nó bị bỏ quên.

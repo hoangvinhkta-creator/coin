@@ -25,10 +25,16 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-01 — S009 hoàn tất: **WP-A4 DONE** (9/9 REQUIRED check PASS gồm `CHECK-A4-10` do
-chủ dự án bổ sung qua `DEC-014`/`OD-A4-01`; đóng F-023, F-025, F-032 và **F-E2A1R3-05**).
-Phát hiện mới ngoài phạm vi: `F-S009-01` — CONFIRMED BLOCKING, `OWNER_ASSIGNMENT_REQUIRED`
-(xem `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md`). Task ID mới được tạo = 0.
+2026-09-01 — S010 hoàn tất: **CAP-DATA REPAIR CYCLE #1** thi hành `DEC-016`. `F-S009-01`
+ĐÃ ĐÓNG bằng `CHECK-A4-11` (REQUIRED, E1) — indicator daily nay neo cửa sổ vào NGÀY LỊCH,
+ngày thiếu ra NaN → DEGRADED/INVALID thay vì một số hữu hạn sai. **WP-A4 trở lại DONE**
+với 10/10 REQUIRED check PASS. Batch review bắt buộc (Effective Risk HIGH) → PASS, 0
+BLOCKING; 2 HARDENING mới (H-16, H-17) và 1 `OUT_OF_SCOPE` định tuyến sang `WP-C4`.
+`CAP-DATA` budget: allowed 2 / **used 1** / remaining 1. Task ID mới được tạo = 0.
+
+Trước đó, 2026-09-01 — S009: **WP-A4 DONE** lần đầu (9/9 REQUIRED check PASS gồm
+`CHECK-A4-10` do chủ dự án bổ sung qua `DEC-014`/`OD-A4-01`; đóng F-023, F-025, F-032 và
+**F-E2A1R3-05**), kèm phát hiện `F-S009-01` mà S010 vừa đóng.
 
 Overall Status:
 IN_PROGRESS
@@ -38,7 +44,8 @@ Phase 2 — Lớp A (bắt buộc sửa trước official run). Năm gói lớp 
 WP-A4, WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A5, WP-A6**.
 
 Current Task:
-Không có (S009 vừa đóng WP-A4; chờ chỉ thị của chủ dự án)
+Không có (S010 vừa đóng CAP-DATA REPAIR CYCLE #1 và đưa WP-A4 về DONE; chờ chỉ thị của
+chủ dự án)
 
 Current Task Mode:
 —
@@ -53,7 +60,8 @@ bằng agent), **WP-C1** (song song, độc lập — xem "Song song" bên dư�
 Hai quyết định từng chặn ở đây nay đã ĐÓNG cả hai (2026-09-01, phiên Integration):
 `DEC-013` (integration → phương án A, trunk = `main`, integration SHA `febc2ec`) và
 `DEC-016`/`DEC-017` (`F-S009-01` → REOPEN WP-A4 một repair cycle; budget CAP-DATA
-allowed 2 / used 0 / remaining 2). `DEC-016` mới chỉ được GHI NHẬN, chưa thi hành.
+allowed 2 / used 0 / remaining 2). `DEC-016` **đã được THI HÀNH tại S010**: chu kỳ 1 tiêu
+xong, `used` = 1, `remaining` = 1 (`REVIEW_BUDGET_LEDGER.md` §2.1). Không mở chu kỳ #2.
 Branch authority từ đây: mọi phiên mới branch từ `origin/main` sau khi fetch.
 
 ## Overall Roadmap
@@ -89,7 +97,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | IN_PROGRESS | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S008: CHECK-A1-01..A1-10 PASS (E2 xác nhận), CHECK-A1-11 E2 **FAIL** vòng ba — hai finding chặn F-E2A1-01/02 đã đóng nhưng F-E2A1-03 còn mở và nay ở mức CAO, cộng sai lệch contract F-E2A1R3-03. KHÔNG mở vòng patch thứ tư (ESCALATION_PROTOCOL) |
 | DONE | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | **DONE tại S006** (10/10 REQUIRED PASS; đấu nối thuần tuý — 4 module chỉ-đọc 0 dòng đổi; chiến lược + Benchmark A không đổi 159/159 trường) (đóng F-003, F-004, F-012, F-013, F-014). Tier C route tự nhiên sau MICRO-GOVDEF-001, xác nhận lại tại S006 |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
-| DONE | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | **DONE tại S009** (9/9 REQUIRED PASS: CHECK-A4-01…08 + CHECK-A4-10 do `DEC-014` bổ sung). Đóng F-023, F-025, F-032, **F-E2A1R3-05**. Hết chặn WP-A6/WP-C4 về phía A4. Phát hiện mới ngoài gate: `F-S009-01` (BLOCKING V1; owner = `CAP-DATA` theo `DEC-015`; chờ `OWNER_DECISION_REQUIRED` về phương tiện thi hành — KHÔNG làm đổi trạng thái DONE của gói này) |
+| DONE | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | **DONE lại tại S010** sau CAP-DATA REPAIR CYCLE #1 (`DEC-016`): 10/10 REQUIRED PASS (CHECK-A4-01…08 FROZEN + CHECK-A4-10 do `DEC-014` + **CHECK-A4-11** do `DEC-016`). Đóng F-023, F-025, F-032, **F-E2A1R3-05**, **F-S009-01**. Hết chặn WP-A6/WP-C4 về phía A4. Budget CAP-DATA: allowed 2 / used 1 / remaining 1. Batch review S010 PASS, 0 BLOCKING; sinh H-16, H-17 (hardening) và F-S010-03 (`OUT_OF_SCOPE` → WP-C4) |
 | READY | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | **Đủ dependency từ S006**: WP-A2 ✅, WP-A3 ✅, WP-A7 ✅ (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical). Tuần tự hoá với WP-A2 trên `pipeline.py` — đóng phần đo lường của F-002, và F-016 |
 | READY | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | **READY từ S009** — WP-A3 ✅, WP-A4 ✅, WP-A7 ✅ đều DONE. Đóng F-018, F-019. Phải trả lời `HARDENING_BACKLOG.md` H-15 (số phận zone TRIGGERED trong chu kỳ INVALID) |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
@@ -1108,6 +1116,15 @@ Cần chủ dự án quyết định:
    bản sửa tiêu repair cycle **#1** của `CAP-DATA` (`DEC-017`: allowed 2 / used 0 /
    remaining 2). Phiên Integration **KHÔNG thi hành** quyết định này. Đoạn dưới giữ nguyên
    để đọc được bối cảnh lúc quyết định.
+
+   **ĐÃ THI HÀNH và ĐÃ ĐÓNG tại S010** (2026-09-01, CAP-DATA REPAIR CYCLE #1):
+   `CHECK-A4-11` PASS ở E1, `WP-A4` trở lại `DONE` với 10/10 REQUIRED. Diff production của
+   chu kỳ đo bằng lệnh — `git diff --shortstat cb75f9d..ef8cdbb -- <production paths>` →
+   `1 file, +74 / −5`, đúng một file `src/eth_dca_os/indicators.py`. `CAP-DATA` budget nay
+   allowed 2 / **used 1** / remaining 1 (`REVIEW_BUDGET_LEDGER.md` §2.1 và §4.2). Batch
+   review bắt buộc: PASS, 0 BLOCKING —
+   `docs/reviews/S010-batch-review-calendar-indicator.md`. `MAX_MISSING_RATIO` KHÔNG đổi.
+   Số task ID mới = 0. `F-S009-01` không còn là mục chờ quyết định.
 
    Bối cảnh lúc còn mở — đúng MỘT quyết định, ưu tiên cao nhất. Đây không
    còn là khe ownership mà là khe **thẩm quyền thi hành**: `CAP-DATA` chỉ có một thành viên
