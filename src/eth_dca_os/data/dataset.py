@@ -20,6 +20,11 @@ VALID_SOURCES = frozenset({SOURCE_BULK_ARCHIVE, SOURCE_REST, SOURCE_SYNTHETIC, S
 #: Chỉ dữ liệu Binance thật mới đủ điều kiện official (DEC-003, WP-A1/F-005).
 REAL_SOURCES = frozenset({SOURCE_BULK_ARCHIVE, SOURCE_REST})
 
+#: Ba series canonical tạo nên dataset — Backtest §2: indicator là ETHUSDT + BTCUSDT khung
+#: 1D, execution là ETHUSDT khung 15m. Đây là NƠI DUY NHẤT khai tập này: `load_dataset` nạp
+#: đúng nó và `official_eligibility` đòi lineage phủ đúng nó, nên hai bên không thể lệch nhau.
+REQUIRED_SERIES = ("ETHUSDT_1d", "BTCUSDT_1d", "ETHUSDT_15m")
+
 
 def file_sha256(path: str | Path) -> str:
     h = hashlib.sha256()
@@ -131,18 +136,56 @@ def official_eligibility(raw_dir: str | Path, lineage: dict | None) -> tuple[boo
 
     `official` là HÀM DẪN XUẤT từ lineage đã verify checksum, không phải một trường ghi
     được: không có tham số, flag CLI hay biến môi trường nào đi vào đây. Fail-closed —
-    mọi trạng thái không tự chứng minh được (thiếu lineage, `unknown`, `synthetic`,
-    checksum lệch) đều trả về False kèm lý do để ghi vào record.
+    mọi trạng thái không tự chứng minh được đều trả về False kèm lý do, và lý do đó được
+    ghi vào run record.
+
+    Đủ tư cách official đòi hỏi lineage PHỦ ĐÚNG tập canonical `REQUIRED_SERIES`, không
+    thiếu và không thừa. Kiểm checksum thôi thì chưa đủ: một lineage chỉ khai một series,
+    hoặc khai thêm series lạ, vẫn có thể tự nhất quán về hash. Trước WP-A1/S008 cả hai
+    trường hợp đó đều cho `(True, "verified")` (F-E2A1-02), cũng như một series canonical
+    rỗng hoàn toàn (F-E2A1-01) — thiếu dữ liệu không được đọc thành không có tin xấu.
+
+    Thứ tự kiểm cố định để reason code tất định: dạng lineage → trùng lặp → thừa → thiếu
+    → (theo thứ tự canonical) checksum → rỗng → nguồn → đối chiếu checksum với đĩa.
     """
-    if not isinstance(lineage, dict):
+    if lineage is None:
         return False, "lineage_missing"
-    entries = lineage.get("files") or []
-    if not entries:
-        return False, "lineage_no_files"
+    if not isinstance(lineage, dict):
+        return False, "lineage_malformed"
+    entries = lineage.get("files")
+    if not isinstance(entries, list):
+        return False, "lineage_malformed"
+
+    by_key: dict[str, dict] = {}
     for e in entries:
+        if not isinstance(e, dict):
+            return False, "lineage_malformed"
+        key = f"{e.get('symbol')}_{e.get('interval')}"
+        if key in by_key:
+            return False, f"duplicate_series:{key}"
+        by_key[key] = e
+
+    for key in sorted(by_key):
+        if key not in REQUIRED_SERIES:
+            return False, f"unexpected_series:{key}"
+    for key in REQUIRED_SERIES:
+        if key not in by_key:
+            return False, f"missing_required_series:{key}"
+
+    for key in REQUIRED_SERIES:
+        e = by_key[key]
+        if not e.get("file_hash"):
+            return False, f"checksum_missing:{key}"
+        try:
+            row_count = int(e.get("row_count"))
+        except (TypeError, ValueError):
+            return False, "lineage_malformed"
+        if row_count <= 0:
+            return False, f"empty_series:{key}"
         src = e.get("source")
         if src not in REAL_SOURCES:
-            return False, f"source_not_real:{e.get('symbol')}_{e.get('interval')}={src!r}"
+            return False, f"source_not_real:{key}={src!r}"
+
     return verify_lineage(raw_dir, lineage)
 
 
@@ -150,7 +193,7 @@ def load_dataset(raw_dir: str | Path) -> dict:
     """Đọc raw parquet thành dict các DataFrame chuẩn hóa (UTC, sorted)."""
     raw = Path(raw_dir)
     out = {}
-    for key in ("ETHUSDT_1d", "BTCUSDT_1d", "ETHUSDT_15m"):
+    for key in REQUIRED_SERIES:
         p = raw / f"{key}.parquet"
         if not p.exists():
             raise FileNotFoundError(f"missing {p}; run `ethdca fetch` or `ethdca synth`")

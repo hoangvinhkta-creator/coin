@@ -64,7 +64,10 @@ PROVENANCE_FIELDS = (
 @pytest.fixture(scope="module")
 def synth_raw(tmp_path_factory) -> Path:
     raw = tmp_path_factory.mktemp("wp_a1_raw")
-    generate(raw, start="2020-01-01", end="2023-12-31", seed=MASTER_SEED)
+    # end sau OOS_START (2025-01-01) để cửa sổ OOS có số THẬT: trên dataset kết thúc
+    # 2023-12-31, `oos.ae` là NaN và mọi so sánh bằng nó chỉ đúng nhờ `np.nan` là
+    # singleton, không nhờ số liệu trùng (F-E2A1-07).
+    generate(raw, start="2020-01-01", end="2025-06-30", seed=MASTER_SEED)
     return raw
 
 
@@ -246,10 +249,19 @@ def test_a1_06_synthetic_cannot_be_official(gate1_official):
 
 
 def test_a1_06_synthetic_not_official_in_gate2_gate3(synth_raw, tmp_path):
-    """Cùng bất biến ở Gate 2/Gate 3 — không gate nào có đường dẫn xuất riêng."""
+    """Cùng bất biến ở Gate 2/Gate 3 — không gate nào có đường dẫn xuất riêng.
+
+    `limit=1` tự nó đã đủ làm `official` False, nên nếu chỉ khẳng định điều đó thì test
+    không thể FAIL vì lý do nó tuyên bố (F-E2A1-05). Phải neo vào NGUYÊN NHÂN: eligibility
+    của dataset synthetic phải False, và lý do phải là nguồn không thật.
+    """
     prep = Prepared(synth_raw)
-    assert run_gate2(prep, tmp_path, limit=1)["official"] is False
-    assert run_gate3(prep, tmp_path, limit=1)["official"] is False
+    assert prep.official_eligible is False
+    assert prep.official_reason.startswith("source_not_real:")
+
+    for payload in (run_gate2(prep, tmp_path, limit=1), run_gate3(prep, tmp_path, limit=1)):
+        assert payload["official"] is False
+        assert payload["official_reason"] == prep.official_reason
 
 
 # ============ CHECK-A1-07 — official không giả mạo được
@@ -393,6 +405,9 @@ def test_a1_09_reproducibility_same_seed_same_metrics(synth_raw, tmp_path):
     assert a["window_metrics"]["ae_by_window"] == b["window_metrics"]["ae_by_window"]
     assert a["window_metrics"]["primary_median"] == b["window_metrics"]["primary_median"]
     assert a["bootstrap_descriptive"] == b["bootstrap_descriptive"], "bootstrap không tái lập"
+    # Precondition: OOS phải có số thật, nếu không phép so sánh dưới đây vô nghĩa
+    assert a["oos"]["ae"] == a["oos"]["ae"], "oos.ae là NaN — dataset không có OOS thật"
+    assert a["oos"]["oos_months"] > 0
     assert a["oos"] == b["oos"]
 
     ra, rb = a["run_record"], b["run_record"]

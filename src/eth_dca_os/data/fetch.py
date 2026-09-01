@@ -21,7 +21,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from .dataset import SOURCE_BULK_ARCHIVE, SOURCE_REST
+from .dataset import SOURCE_BULK_ARCHIVE, SOURCE_REST, SOURCE_UNKNOWN
 
 BASE_URL = "https://api.binance.com/api/v3/klines"
 ARCHIVE_URL = "https://data.binance.vision/data/spot/monthly/klines"
@@ -169,7 +169,10 @@ def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = 
         df, used = fetch_series(symbol, interval, s0, end_dt, session)
         # WP-A1/A1.1: nhãn canonical là cơ chế CHÍNH của series; khi series được lắp từ cả
         # archive lẫn REST, thành phần đầy đủ nằm ở `source_detail` (docs/CONVENTIONS.md).
-        sources[key] = used[0] if used else SOURCE_REST
+        # Fail-closed: không cơ chế nào đóng góp thì KHÔNG có nguồn nào để khai. Gán
+        # `binance_rest` ở đây (như trước S008) biến một lần fetch trắng thành dữ liệu
+        # Binance "thật" và đủ tư cách official — F-E2A1-01.
+        sources[key] = used[0] if used else SOURCE_UNKNOWN
         details[key] = used
         files[key] = write_raw(df, raw, symbol, interval, source=sources[key])
     lineage = build_lineage(raw, sources, source_detail=details)
