@@ -40,3 +40,58 @@ The risk register is a PROJECT artifact. CORE does not enumerate project risks. 
 that maps to a registered risk inherits that risk's standing for blocking purposes; a
 finding that maps to no registered risk and no Completion Gate does not become blocking by
 assertion.
+
+---
+
+## Local Risk And Blast Radius
+
+Reconciled against the source pack on 2026-09-01. Two independent inputs, never merged:
+
+**Local Risk** — the complexity of the change and the likelihood of getting it wrong at the
+point of change.
+
+**Blast Radius** — the business consequence if the error passes every control layer that
+exists today.
+
+    Effective Risk = MAX(Local Risk, Blast Radius)
+
+A small change on a high-consequence path is HIGH. Size is not the input; the data path is.
+
+### Blast Radius — HIGH
+
+- wrong identity, ownership or permission;
+- wrong money, KPI, payroll, tax or settlement;
+- corrupted source data that cannot be recovered;
+- a wrong aggregation feeding an important decision;
+- a security/privacy boundary with a real consequence.
+
+### Blast Radius — MEDIUM
+
+- a wrong business output that still passes a reconciliation or human gate before use;
+- a workflow fault that interrupts work without silently producing a wrong decision.
+
+### Blast Radius — LOW
+
+- presentation, diagnostics or helpers that do not change business value;
+- auxiliary enforcement with no current production consequence.
+
+## Golden Reduction — One Level, Four Conditions
+
+Blast Radius may be reduced by exactly one level, and only when **all four** hold:
+
+1. a specific Golden test exists;
+2. it covers that exact path;
+3. a failure of that path turns the Golden red;
+4. the test name and its evidence are recorded in the risk register.
+
+No specific test → no reduction. The existence of "a Golden" proves nothing about a path it
+does not execute.
+
+## HIGH Does Not Mean STOP
+
+HIGH sets the **depth of review**, not the right to continue. Implementation may continue
+inside the delivery loop when authority is clear and the change is MEDIUM or below; a
+change on a HIGH Blast Radius path requires a mandatory batch review at end of session,
+however small the change. Only `source data mutation`, `contract/interface semantics` and
+`integrity-sensitive persistence` escalate to a genuine hard-stop — `DATA_INTEGRITY_RISK`
+or `ARCHITECTURE_CHANGE_REQUIRED`.

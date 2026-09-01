@@ -132,6 +132,56 @@ if loop.exists():
         errors.append("DELIVERY_LOOP.md missing UNAUTHORIZED_STOP rule")
 counts["hard_stops_checked"] = len(HARD_STOPS)
 
+# --- 5b. invariants reconciled from the V4.3 source pack (2026-09-01) --------
+# The overlay was first authored without the source pack present, and lost normative
+# content. These markers keep the restored invariants from being silently dropped again.
+SOURCE_INVARIANTS = {
+    "GOVERNANCE_V4.md": [
+        "MAX(Local Risk, Blast Radius",
+        "INTEGRATION_DECISION_REQUIRED",
+        "ACCEPT_AS_IS | DESCOPE | OWNER_EXTENSION",
+        "task creation approval != repair-budget allocation approval",
+        "ENVIRONMENT_REVERIFY_REQUIRED",
+        "POLICY_ADOPTED",
+        "FULLY_ENFORCED",
+    ],
+    "CAPABILITY_MODEL.md": [
+        "PENDING_OWNER_DATA",
+        "INDEPENDENT LIFECYCLE",
+        "OWNER_ASSIGNMENT_REQUIRED",
+        "base_sha",
+        "migration_status",
+    ],
+    "DELIVERY_LOOP.md": [
+        "PROVISIONAL",
+        "SILENT_ERROR_RATE",
+        "ORDER_ACCOUNTING_RATE",
+        "MANUAL_WORK_REDUCTION",
+        "EXCEPTION_FIRST",
+        "GOLDEN_BASELINE_SHA",
+    ],
+    "RISK_MODEL.md": ["Blast Radius", "MAX(Local Risk"],
+    "REVIEW_PROTOCOL.md": ["cumulative repair diff", "NOT_ELIGIBLE_FOR_FREEZE"],
+    "PRODUCTION_PATH_RULE.md": ["BUSINESS STATE"],
+    "STATE_AUTHORITY.md": ["READY_FOR_REVIEW", "ELIGIBLE_FOR_FREEZE", "FROZEN"],
+}
+invariants_checked = 0
+for fname, markers in SOURCE_INVARIANTS.items():
+    p_inv = CORE / fname
+    if not p_inv.exists():
+        continue
+    body_inv = read(p_inv)
+    for marker in markers:
+        invariants_checked += 1
+        if marker not in body_inv:
+            errors.append(
+                f"source-pack invariant lost from {fname}: missing '{marker}'"
+            )
+counts["source_invariants_checked"] = invariants_checked
+
+if agents_text and "branch_authority_check.sh" not in agents_text:
+    errors.append("AGENTS.md does not require the branch authority check before reading state")
+
 # --- 6. budget ledger must not silently reset --------------------------------
 ledger = PROJECT / "REVIEW_BUDGET_LEDGER.md"
 if ledger.exists():

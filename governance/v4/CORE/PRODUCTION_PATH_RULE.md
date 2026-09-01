@@ -48,3 +48,15 @@ The set of production paths is a PROJECT value and must be declared in the proje
 An agent must not infer at execution time which files are "production"; it reads the
 declaration. Tests, documentation, governance and tooling are not production paths unless
 the project declares otherwise.
+
+## A Production Path Is Written As A Chain
+
+Reconciled against the source pack on 2026-09-01. Declaring a path is not naming a file. It
+is writing the chain, each link named:
+
+    INPUT -> PARSER/VALIDATOR -> TRANSFORM -> BUSINESS STATE -> OUTPUT/CONSUMER
+
+A declaration missing INPUT, BUSINESS STATE, OUTPUT or the failure consequence is
+incomplete, and a risk entry pointing at an incomplete path is a validator failure, not a
+stylistic gap. This is what makes "risk follows the data path, not the module name"
+measurable.

@@ -76,3 +76,38 @@ Reclassifying findings never produces tasks as a side effect:
 An independent review verdict is authoritative over the implementer's narrative. The
 implementer may not dismiss a reviewer finding unilaterally. Completion is proven by
 artifacts and evidence, never by narrative confidence.
+
+---
+
+## Before The Review Starts
+
+Reconciled against the source pack on 2026-09-01. Six steps, in order, before reading
+anything else:
+
+1. lock the exact full SHA and the remote SHA;
+2. run the branch authority check;
+3. record the interpreter / tool versions the evidence will pin;
+4. record the tracked worktree status;
+5. read the Task Spec, Completion Gate, production paths, risk register and budget ledger;
+6. determine the **cumulative repair diff** from the ledger.
+
+Step 6 is what makes the same-cycle rule enforceable rather than a matter of opinion.
+
+## The BLOCKING Test, Stated Negatively
+
+    insufficient production path   -> not BLOCKING
+    insufficient consequence       -> not BLOCKING
+    only makes the evidence nicer  -> not BLOCKING
+    inside the cumulative repair diff -> same cycle, not a new one
+
+A finding inside the current cycle's cumulative repair diff is a defect of that same
+repair. It does not open a new repair cycle and does not consume new budget.
+
+## Verdict
+
+    PASS  -> ELIGIBLE_FOR_FREEZE
+    FAIL  -> NOT_ELIGIBLE_FOR_FREEZE
+
+The verdict is advisory on state: the reviewer records it, and does not write `FROZEN`. A
+reviewer does not modify the repository during an independent review without separate
+delegation.

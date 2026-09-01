@@ -53,3 +53,49 @@ A validator that reports success while having examined nothing is not a passing 
 
 Validators must report the size of the set they examined, and a zero-sized set on a
 non-empty repository is a validator defect to be routed, not a green light.
+
+---
+
+## The State Machine And Who May Write It
+
+Reconciled against the source pack on 2026-09-01. The sections above say *which file* holds
+a class of state. This section says *which role* may write a task's state, and what the
+states are. Both are binding.
+
+    DRAFT -> READY -> IN_PROGRESS -> READY_FOR_REVIEW
+          -> ELIGIBLE_FOR_FREEZE -> FROZEN -> DONE
+
+Alternatives: `BLOCKED`, `DESCOPE`, `ACCEPT_AS_IS`.
+
+| State | Who may write it |
+|---|---|
+| DRAFT | Implementer |
+| READY | Implementer / Owner |
+| IN_PROGRESS | Implementer |
+| READY_FOR_REVIEW | Implementer |
+| BLOCKED | Implementer / Reviewer |
+| ELIGIBLE_FOR_FREEZE | Independent Reviewer (verdict, advisory) |
+| NOT_ELIGIBLE_FOR_FREEZE | Independent Reviewer (verdict, advisory) |
+| FROZEN | a freeze session holding explicit delegation |
+| ACCEPT_AS_IS | Owner |
+| DESCOPE | Owner |
+| OWNER_EXTENSION | Owner |
+| DONE | Owner, or a designated completion authority |
+
+A reviewer never writes `FROZEN` on their own authority. Changing a gate or a budget is an
+Owner action.
+
+Every state transition whose truth depends on code must carry a SHA and its evidence. A
+transition asserted without one is narrative, and narrative does not move state.
+
+Where a project's existing lifecycle differs (for example
+`NOT_PLANNED → PLANNED → READY → IN_PROGRESS → IMPLEMENTED → VERIFYING → DONE`), the project
+lifecycle stays in force and is **mapped** onto this table rather than replaced; the
+authority column is what V4.3 adds. A `BLOCKED` recorded for a reason outside the five
+canonical hard-stops is `UNAUTHORIZED_STOP`, not a valid state.
+
+## No Undefined States
+
+Do not invent an implicit enum to describe an intermediate situation. Describe it in prose
+in the report instead. A new state enters the system only when it appears in this file, has
+a clear gate, and has someone authorised to write it.

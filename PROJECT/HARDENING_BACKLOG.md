@@ -190,3 +190,98 @@ V4.3 chỉ ghi lại phép đo và giữ nguyên định tuyến — KHÔNG tạ
       HOẶC
     - GATE-A hoặc PHASE_RELEASE_GATE được đánh giá; HOẶC
     - chủ dự án phê duyệt một gói governance-tooling cho `CAP-GOVTOOL`.
+
+## H-09 — Danh sách production path bị nhân bản trong `branch_authority_check.sh`
+
+Capability: `CAP-GOVTOOL` · Owner: **CHƯA CÓ** · Phân loại: **HARDENING** · `CONFIRMED`
+
+`governance/scripts/governance/branch_authority_check.sh` khai báo cứng:
+
+    PRODUCTION_PATHS=(src/eth_dca_os webapp pyproject.toml pyproject.lock)
+
+trong khi nguồn sự thật duy nhất là `PROJECT/PRODUCTION_PATHS.md`. Theo
+`governance/v4/CORE/STATE_AUTHORITY.md` § Single Source Of Truth, "nhân bản một nguồn sự
+thật là khiếm khuyết governance, không phải dự phòng". Hiện hai nơi đang trùng khớp, nên
+chưa có hậu quả nghiệp vụ — đó là lý do đây là HARDENING chứ không phải BLOCKING.
+
+KHÔNG sửa trong phiên reconciliation này: đọc danh sách từ file sẽ làm check có nguy cơ trở
+thành vacuous ("checked 0 paths") nếu parse hỏng, và rủi ro đó lớn hơn lợi ích ngay lúc này.
+
+    RE_TRIGGER_CONDITION:
+    - `PROJECT/PRODUCTION_PATHS.md` thêm/bớt/đổi tên bất kỳ path nào; HOẶC
+    - script được dùng trong CI như một gate chặn merge; HOẶC
+    - chủ dự án phê duyệt gói governance-tooling cho `CAP-GOVTOOL`.
+
+## H-10 — Golden Baseline chưa tồn tại, nên delivery change budget chưa có mốc đo
+
+Capability: `CAP-GOVTOOL` · Owner: **CHƯA CÓ** · Phân loại: **HARDENING** · `CONFIRMED`
+
+Source pack cung cấp `GOLDEN_BASELINE/README.md`, `BASELINE_SPEC_TEMPLATE.md` và
+`golden_baseline_template.py.txt` (đuôi `.txt` để pytest không collect). Repo hiện **chưa**
+có Golden Baseline, và `PROJECT/PRODUCTION_PATHS.md` ghi nhận `GOLDEN_BASELINE_SHA` chưa
+được đặt.
+
+Hệ quả đã ghi vào CORE tại phiên này: `governance/v4/CORE/DELIVERY_LOOP.md` § II.4 định
+nghĩa `GOLDEN_CUMULATIVE_DIFF_MAX` đo từ `GOLDEN_BASELINE_SHA`; chưa có Golden thì tầng
+budget thứ hai chưa đo được, và theo `RISK_MODEL.md` **không path nào được giảm Blast
+Radius**.
+
+KHÔNG copy template vào repo ở phiên này: đó là tiện ích, không phải bất biến bị thiếu, và
+việc chọn Golden case đầu tiên là quyết định nghiệp vụ của chủ dự án
+(`END_TO_END_ACCEPTANCE` cần toạ độ thật + con số kỳ vọng thật, xem `CAPABILITY_MODEL.md`
+§ II.1–II.2).
+
+    RE_TRIGGER_CONDITION:
+    - chủ dự án cung cấp một ca nghiệp vụ thật kèm con số kỳ vọng (thoát
+      `PENDING_OWNER_DATA`); HOẶC
+    - bất kỳ artifact nào tuyên bố giảm Blast Radius nhờ Golden; HOẶC
+    - `FULLY_ENFORCED` được đặt làm mục tiêu (hiện trạng là `POLICY_ADOPTED`).
+
+## H-11 — `LESSONS_LEARNED.md` của source pack không được chép vào repo
+
+Capability: `CAP-GOVTOOL` · Owner: **CHƯA CÓ** · Phân loại: **OUT_OF_SCOPE → reference**
+
+Source pack có `LESSONS_LEARNED.md` (26 KB, 5 nhóm A–F, 30 mục) giải thích **vì sao** mỗi
+bất biến tồn tại. Phiên reconciliation này đã khôi phục **các bất biến** vào
+`governance/v4/CORE/*` nhưng KHÔNG chép văn bản bài học vào repo.
+
+Lý do: đó là tài liệu tham chiếu/lý do, không phải runtime governance. Chép 26 KB vào repo
+chỉ để đạt file parity đi ngược `§ Artifact Budget`. Bất biến mới là thứ ràng buộc hành vi,
+và chúng đã được ghi và được validator kiểm (`source_invariants_checked`).
+
+    RE_TRIGGER_CONDITION:
+    - một phiên tranh luận về *lý do* một bất biến tồn tại và không giải quyết được bằng
+      chính văn bản CORE; HOẶC
+    - chủ dự án yêu cầu bản đối chiếu đầy đủ với văn bản gốc.
+
+## H-12 — `PRODUCTION_PATHS.md` khai báo theo FILE, chưa theo CHUỖI dữ liệu
+
+Capability: `CAP-GOVTOOL` · Owner: **CHƯA CÓ** · Phân loại: **HARDENING** · `CONFIRMED`
+
+Source pack yêu cầu mỗi production path được viết thành chuỗi, từng mắt xích có tên
+(`governance/v4/CORE/PRODUCTION_PATH_RULE.md` § "A Production Path Is Written As A Chain"):
+
+    INPUT -> PARSER/VALIDATOR -> TRANSFORM -> BUSINESS STATE -> OUTPUT/CONSUMER
+
+kèm `FAILURE CONSEQUENCE` và `REALISTIC SOURCE` cho từng path. Validator gốc của pack
+kiểm đúng các trường này.
+
+`PROJECT/PRODUCTION_PATHS.md` hiện khai báo theo **file → vai trò** (13 dòng). Nó đã thoả
+bất biến CORE quan trọng nhất — "production path được KHAI BÁO, không được suy luận" — và
+đủ dùng cho ba mục đích đang dùng (phân loại finding, đo budget, xác nhận diff = 0). Vì vậy
+giữ nguyên làm SoT.
+
+Phần còn thiếu là **ngữ nghĩa**, không phải file: chấm risk theo file thay vì theo đường dữ
+liệu chính là điều `GOVERNANCE_V4.md` § II.1 cấm. Một file (`src/eth_dca_os/**`, 26 module)
+có thể chứa nhiều đường dữ liệu với Blast Radius khác nhau, và bảng hiện tại không phân biệt
+được.
+
+KHÔNG viết lại ở phiên này: phân rã 13 path thành chuỗi kèm hậu quả nghiệp vụ là công việc
+khai báo của dự án, không phải delta của source reconciliation, và nó sẽ chạm vào vùng phân
+loại của WP-A1.
+
+    RE_TRIGGER_CONDITION:
+    - một finding cần phân biệt Blast Radius giữa hai đường dữ liệu trong cùng một file;
+      HOẶC
+    - bất kỳ artifact nào tuyên bố Effective Risk ở mức path chứ không phải mức file; HOẶC
+    - Golden Baseline đầu tiên được dựng (H-10) — khi đó chuỗi là đầu vào bắt buộc.

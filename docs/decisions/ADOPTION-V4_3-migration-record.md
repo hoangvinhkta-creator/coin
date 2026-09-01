@@ -28,6 +28,12 @@ cycle, KHÔNG phải S009, KHÔNG phải roadmap expansion, KHÔNG phải task c
 
 ## 1. MIGRATION_UNCERTAINTY — nguồn pack không có mặt trong môi trường
 
+> **ĐÃ ĐƯỢC GIẢI QUYẾT MỘT PHẦN — xem §14 SOURCE RECONCILIATION (2026-09-01).**
+> Mục này giữ nguyên làm lịch sử; nó mô tả đúng tình trạng tại commit `62f8bac`.
+> Source pack sau đó đã được chủ dự án cung cấp và đã được đọc thật. Kết luận
+> "nội dung CORE là bản dựng lại theo chỉ thị" là **đúng**, và §14 chỉ ra chính xác
+> những bất biến đã bị mất trong bản dựng lại đó, cùng những gì đã được khôi phục.
+
 Chỉ thị adoption yêu cầu dùng nguyên bộ `AI_ENGINEERING_V4_3_PORTABLE` làm nguồn migration
 và đọc tối thiểu `README.md`, `AGENTS.md`, `CORE/*`, `LESSONS_LEARNED.md`, `BOOTSTRAP/*`,
 `PROJECT/*`, `templates/*`, `scripts/*`, `adapters/*`.
@@ -486,3 +492,285 @@ việc đó cần Owner Decision #2 trước.
 
 **DỪNG SAU BÁO CÁO NÀY.** Không mở repair, không mở S009, không tạo WP mới, không sửa
 WP-A1, không chạy T-06, không chạy Gate-A, không merge main.
+
+---
+
+# 14. SOURCE RECONCILIATION (2026-09-01)
+
+Phiên này **không phải** một adoption mới. Nó đối chiếu overlay V4.3 đã dựng tại `62f8bac`
+với **source pack gốc**, và chỉ bổ sung delta cần thiết.
+
+Không rewrite adoption. Không sửa product code. Không sửa WP-A1. Không mở WP-A4. Không tạo
+task. Không reset budget. Không merge default branch.
+
+## 14.1 Source authority
+
+    Tệp:        AI_ENGINEERING_V4_3_PORTABLE.zip  (chủ dự án cung cấp)
+    Đọc thật:   CÓ — giải nén và đọc, không suy diễn từ governance/v4 hiện có
+    SOURCE_FILE_COUNT = 38
+    Thư mục gốc: AI_ENGINEERING_V4_3_PORTABLE/
+
+    SOURCE_STRUCTURE:
+      AGENTS.md, README.md, PACK_MANIFEST.md, INSTALL_NEW_PROJECT.md, LESSONS_LEARNED.md
+      CORE/            7 file
+      BOOTSTRAP/       7 file
+      PROJECT/         5 template
+      GOLDEN_BASELINE/ 3 file
+      templates/       4 file
+      scripts/         4 file
+      adapters/        2 file
+      examples/        1 file
+
+Ghi chú danh xưng: pack tự đặt tên `V4.3` ở `README.md` / `PACK_MANIFEST.md`, nhưng phần
+lớn tiêu đề file CORE vẫn ghi `V4.1` / `V4.2`. V4.3 là **phần thêm** (`DELIVERY_LOOP.md`,
+Exception-First, bốn metric, CONFIRMED/PROVISIONAL, Production Reachability) chồng lên thân
+V4.1/V4.2, chứ không phải bản viết lại. Overlay của repo đặt tên `V4.3` cho cả bộ — đây là
+khác biệt nhãn, không phải khác biệt ngữ nghĩa.
+
+## 14.2 Sai lệch trạng thái đã phát hiện và xử lý TRƯỚC khi đối chiếu
+
+Bản clone local của phiên này đứng ở `6c11a7e` và **không** chứa `62f8bac`. `62f8bac` chỉ
+tồn tại như một object rời cho tới khi `git fetch origin --prune` cho thấy nó **đã ở đầu**
+`origin/claude/wp-a1-provenance-v67k9h`.
+
+Tức là: local branch đang **BEHIND upstream 1 commit** — đúng điều kiện mà
+`branch_authority_check.sh` của source pack bắt (exit 4: "không được đọc PROJECT_STATE ở
+trạng thái này"). Overlay lúc đó **không** có check này. Đây là bằng chứng chạy thật cho
+delta `R-08`/`R-09` bên dưới, không phải giả thuyết.
+
+Xử lý: `git merge --ff-only origin/...` — fast-forward thuần, không rewrite, không reset.
+
+## 14.3 Semantic delta — theo THÀNH PHẦN, không theo file
+
+| # | Thành phần V4.3 | Kết quả | Ghi chú |
+|---|---|---|---|
+| 1 | 5 hard-stop | **EXACT** | đủ 5, đúng tên |
+| 2 | `UNAUTHORIZED_STOP = PROCESS_FAILURE` | EQUIVALENT | |
+| 3 | Finding Routing (BLOCKING/HARDENING/OUT_OF_SCOPE) | EQUIVALENT | overlay đủ 3 điều kiện BLOCKING |
+| 4 | `OWNER_ASSIGNMENT_REQUIRED` | EQUIVALENT | |
+| 5 | `RE_TRIGGER_CONDITION` | EQUIVALENT | có validator kiểm |
+| 6 | Review rộng / Repair hẹp | EQUIVALENT | |
+| 7 | Production Path Rule — 4 nguồn + nguồn thứ 5 | EQUIVALENT | |
+| 8 | Absorption Limit — 4 ngưỡng A–D | EQUIVALENT | ngưỡng đúng số |
+| 9 | `DEFERRED_BY_MINIMAL_FIX` | EQUIVALENT | đủ trường |
+| 10 | Production Reachability | EQUIVALENT | |
+| 11 | Budget không reset (dọc + ngang) | EQUIVALENT | |
+| 12 | Hardening Backlog | PROJECT_ADAPTED | `PROJECT/HARDENING_BACKLOG.md` |
+| 13 | State Authority — nguồn sự thật đơn | PROJECT_ADAPTED | overlay **thêm** Vacuous Validation, source không có |
+| 14 | `CONFIRMED` vs `PROVISIONAL` | **MISSING** (cơ chế) → đã khôi phục | overlay có tên gọi, thiếu bảng quyền + luật promote |
+| 15 | Vertical Acceptance Slice — toạ độ bắt buộc | **MISSING** → đã khôi phục | §2.1–2.3 nguồn |
+| 16 | `PENDING_OWNER_DATA` | **MISSING** → đã khôi phục | |
+| 17 | Ba điều kiện tạo sibling task | **MISSING** → đã khôi phục | overlay chỉ có mặt phủ định |
+| 18 | Định nghĩa "registration" | **MISSING** → đã khôi phục | |
+| 19 | Module != Task | **MISSING** → đã khôi phục | |
+| 20 | Absorption: tiền đề baseline + 9 bước + lựa chọn Owner | **MISSING** → đã khôi phục | |
+| 21 | Ledger schema `base_sha`/`head_sha`, §7.1 trần, §7.3 chuyển tiếp | **MISSING** → đã khôi phục | |
+| 22 | Bằng chứng chống proliferation (SET A / SET B) | **MISSING** → đã khôi phục | tool đã có sẵn |
+| 23 | `Effective Risk = MAX(Local Risk, Blast Radius)` | **MISSING** → đã khôi phục | overlay định nghĩa Effective Risk theo nghĩa KHÁC |
+| 24 | Local Risk / Blast Radius + ví dụ HIGH/MED/LOW | **MISSING** → đã khôi phục | |
+| 25 | Golden giảm Blast Radius 1 bậc — 4 điều kiện | **MISSING** → đã khôi phục | |
+| 26 | Số budget mặc định LOW 1 / MEDIUM 2 / HIGH 2 | **MISSING** → đã khôi phục | xem §14.6 |
+| 27 | Định nghĩa "một repair cycle" + luật cumulative repair diff | **MISSING** → đã khôi phục | |
+| 28 | `ACCEPT_AS_IS \| DESCOPE \| OWNER_EXTENSION` khi hết budget | **MISSING** → đã khôi phục | |
+| 29 | Branch Authority machine-first + 3 ngưỡng Integration | **MISSING** → đã khôi phục | doc + script |
+| 30 | Merge gate BLOCKED > 30 ngày | **MISSING** → đã khôi phục | |
+| 31 | Artifact Budget (mặc định 4, thứ 5 cần Owner) | **MISSING** → đã khôi phục | |
+| 32 | Artifact Internal Precedence | **MISSING** → đã khôi phục | |
+| 33 | Clean worktree semantics | **MISSING** → đã khôi phục | |
+| 34 | `ENVIRONMENT_REVERIFY_REQUIRED` | **MISSING** → đã khôi phục | |
+| 35 | `POLICY_ADOPTED` vs `FULLY_ENFORCED` | **MISSING** → đã khôi phục | |
+| 36 | Điều kiện hội tụ (10 mục) | **MISSING** → đã khôi phục | |
+| 37 | "Những chuẩn không được mất" | **MISSING** → đã khôi phục | cầu nối sang governance V3.2 |
+| 38 | Bảng state machine + AI được ghi state nào | **MISSING** → đã khôi phục | overlay `STATE_AUTHORITY.md` không hề có |
+| 39 | Không dùng state chưa định nghĩa | **MISSING** → đã khôi phục | |
+| 40 | Tiền kiểm 6 bước trước review | **MISSING** → đã khôi phục | |
+| 41 | Verdict `ELIGIBLE_FOR_FREEZE` / `NOT_ELIGIBLE_FOR_FREEZE` | **MISSING** → đã khôi phục | |
+| 42 | Chuỗi `INPUT → … → OUTPUT/CONSUMER` | **MISSING** → xem §14.7 (H-12) | ngữ nghĩa CORE đã ghi; bảng dự án giữ nguyên |
+| 43 | Runtime thật cấp quyền sửa ("không trace → không fix") | **MISSING** → đã khôi phục | |
+| 44 | Outcome là đơn vị delivery | **MISSING** → đã khôi phục | |
+| 45 | Budget 2 tầng (session + cumulative) + giới hạn MEDIUM | **MISSING** → đã khôi phục | `<N>` là giá trị PROJECT |
+| 46 | Golden PASS chứng minh MỘT đường + Golden sau phải khác biệt chủ đích | **MISSING** → đã khôi phục | |
+| 47 | Progress chỉ tính CONFIRMED (BEFORE/AFTER, N có thể tăng) | **MISSING** → đã khôi phục | |
+| 48 | Exception-First (tắt ở pha Golden, 3 điều kiện, báo theo lô, `AUTO+QUEUE=100%`, state phải persist) | **MISSING** → đã khôi phục | một trong hai bổ sung đầu bảng của V4.3 |
+| 49 | Bốn metric đúng thứ tự (`SILENT_ERROR_RATE` → … → `MANUAL_WORK_REDUCTION`) | **MISSING** → đã khôi phục | bổ sung đầu bảng thứ hai của V4.3 |
+| 50 | Bảy luật dễ nhớ | **MISSING** → đã khôi phục | |
+| 51 | Bootstrap Gate + `bootstrap_scaffold.sh` + `BOOTSTRAP/*` + `INSTALL_NEW_PROJECT.md` | **NOT_APPLICABLE** | dành cho repo mới; repo này đang chạy |
+| 52 | `PROJECT/*_TEMPLATE.md` | **NOT_APPLICABLE** | repo đã có file thật làm SoT |
+| 53 | `templates/*` (TASK_SPEC, REVIEW_REPORT, …) | **NOT_APPLICABLE** | `docs/tasks/`, `docs/reviews/` đã có bản thật |
+| 54 | `templates/OWNER_TASK_CREATION_PROPOSAL.md` | PROJECT_ADAPTED | trỏ sang `PROJECT/ROADMAP_CHANGE_PROPOSAL_*.md` đã có |
+| 55 | `GOLDEN_BASELINE/*` | OPTIONAL → HARDENING **H-10** | repo chưa có Golden |
+| 56 | `LESSONS_LEARNED.md` | OPTIONAL → HARDENING **H-11** | bất biến đã khôi phục; văn bản lý do không chép |
+| 57 | `examples/README.md` | NOT_APPLICABLE | |
+| 58 | CORE đặt ở root | **CONFLICT** (đã xử lý tại §2) | giữ `governance/v4/CORE/`; `AGENTS.md` vẫn là entry point |
+
+    EXACT               = 1
+    EQUIVALENT          = 10
+    PROJECT_ADAPTED     = 4
+    MISSING             = 36   (35 đã khôi phục trong phiên này, 1 định tuyến H-12)
+    CONFLICT            = 1    (đã xử lý từ trước, không mở lại)
+    NOT_APPLICABLE      = 6
+
+Kết luận thẳng: overlay tại `62f8bac` **giữ đúng bộ khung định tuyến** của V4.3 (finding
+routing, budget lineage, absorption, 5 hard-stop, reachability) nhưng **mất gần như toàn bộ
+tầng chứng minh** của V4.1/V4.2 mà V4.3 chồng lên, cùng hai bổ sung đầu bảng của chính V4.3
+(Exception-First và bốn metric). Đó là hệ quả trực tiếp của việc dựng lại từ chỉ thị thay vì
+từ văn bản gốc — đúng như §1 đã cảnh báo.
+
+## 14.4 REQUIRED DELTA — đã sửa
+
+| ID | File | Nội dung |
+|---|---|---|
+| R-01 | `governance/v4/CORE/GOVERNANCE_V4.md` | thêm **Part II — The Proof Layer** (II.0–II.10) |
+| R-02 | `governance/v4/CORE/CAPABILITY_MODEL.md` | thêm **Part II** (II.1–II.9) |
+| R-03 | `governance/v4/CORE/DELIVERY_LOOP.md` | thêm **Part II** (II.1–II.10) |
+| R-04 | `governance/v4/CORE/RISK_MODEL.md` | Local Risk / Blast Radius / `MAX()` / giảm Golden 4 điều kiện / HIGH ≠ STOP |
+| R-05 | `governance/v4/CORE/PRODUCTION_PATH_RULE.md` | chuỗi `INPUT → … → OUTPUT/CONSUMER` |
+| R-06 | `governance/v4/CORE/REVIEW_PROTOCOL.md` | tiền kiểm 6 bước, test BLOCKING dạng phủ định, verdict |
+| R-07 | `governance/v4/CORE/STATE_AUTHORITY.md` | state machine + bảng quyền ghi + map sang lifecycle V3.2 |
+| R-08 | `AGENTS.md` | **Bước 0** — chạy branch authority check TRƯỚC khi đọc state |
+| R-09 | `governance/scripts/governance/branch_authority_check.sh` | fetch, default branch động, behind-upstream, detached `TARGET_SHA`, tracked worktree, 3 ngưỡng Integration, `STRICT_DIVERGENCE` |
+| R-10 | `governance/scripts/governance/validate_governance.py` | kiểm **26 marker** bất biến để không mất lần nữa |
+
+Nguyên tắc áp dụng: **bổ sung, không thay thế.** Không câu nào của overlay bị xoá; phần
+khôi phục nằm trong các mục "Part II" / phần thêm cuối file, có ghi ngày đối chiếu. Không
+file nào bị đổi tên hay di chuyển. Không tạo `CORE/` thứ hai ở root.
+
+## 14.5 OPTIONAL DELTA — KHÔNG sửa, đã định tuyến
+
+    H-09  danh sách production path bị nhân bản trong branch_authority_check.sh
+    H-10  chưa có Golden Baseline → tầng budget thứ hai chưa đo được
+    H-11  LESSONS_LEARNED.md không chép vào repo (bất biến đã khôi phục)
+    H-12  PRODUCTION_PATHS.md khai báo theo file, chưa theo chuỗi dữ liệu
+
+Cả bốn đều có `RE_TRIGGER_CONDITION`. Không mục nào sinh task ID.
+
+## 14.6 Hệ quả cho budget — OWNER_DECISION_REQUIRED (KHÔNG tự áp dụng)
+
+`PROJECT/REVIEW_BUDGET_LEDGER.md` ghi `ALLOWED BUDGET = CHƯA TỪNG ĐƯỢC ĐẶT` +
+`MIGRATION_UNCERTAINTY`, với lý do "governance V3.2 chưa bao giờ định nghĩa mô hình budget".
+
+Source pack **có** định nghĩa mặc định (`GOVERNANCE_V4.md` §4, nay là II.2):
+LOW = 1, MEDIUM = 2, HIGH = 2 blocking repair cycle, gắn với lineage root.
+
+`CAP-PROV` có `REPAIR CYCLES ĐÃ TIÊU = 2`. Nếu áp mặc định HIGH = 2 thì
+`remaining = 0`, và WP-A1 chỉ còn ba nước: `ACCEPT_AS_IS`, `DESCOPE`, `OWNER_EXTENSION`.
+
+**Ledger KHÔNG bị sửa trong phiên này.** Áp một trần budget hồi tố lên một capability đã
+tiêu 2 cycle là quyết định của chủ dự án, không phải hệ quả tự động của việc đọc được source
+pack. Ghi nhận:
+
+    OWNER_DECISION_REQUIRED — Owner Decision #4
+    Đặt `capability_repair_cycles_allowed` cho CAP-PROV.
+    Mặc định theo source pack = 2 (Effective Risk HIGH). Đã tiêu = 2.
+    Chọn: (a) chấp nhận mặc định → remaining = 0; hoặc
+          (b) OWNER_EXTENSION kèm lý do; hoặc
+          (c) đặt một trần khác kèm lý do.
+
+Điều này KHÔNG reset gì cả: 2 cycle đã tiêu, 3 vòng E2 đã tiêu, và toàn bộ lineage
+`CAP-PROV` giữ nguyên. Nó chỉ nêu con số trần mà trước đây chưa có nguồn.
+
+## 14.7 WP-A1 — phân loại KHÔNG đổi
+
+Đã kiểm từng bất biến khôi phục xem có bất biến nào làm đổi phân loại đã ghi tại `62f8bac`:
+
+- `MAX(Local Risk, Blast Radius)` + giảm Golden — repo chưa có Golden nên chưa từng có
+  path nào được giảm bậc; **không đổi**.
+- Ba điều kiện BLOCKING — đã có đủ trong overlay từ trước; **không đổi**.
+- `CONFIRMED` / `PROVISIONAL` — record ghi PROVISIONAL = 0; luật promote không tạo ra
+  finding mới; **không đổi**.
+- Luật cumulative repair diff — ledger đã ghi base/head SHA cho từng cycle; cách đếm 2 cycle
+  vẫn đúng; **không đổi**.
+- Chuỗi production path (H-12) — là khiếm khuyết chất lượng khai báo, không phân loại lại
+  finding nào; **không đổi**.
+
+    CLASSIFICATION_RECONCILIATION_REQUIRED = KHÔNG
+
+Không finding nào bị sửa. Không code nào bị sửa. Không repair cycle nào được mở.
+
+## 14.8 INTEGRATION_DECISION_REQUIRED — phát hiện mới, đo được
+
+`branch_authority_check.sh` sau khi khôi phục đo được, trên chính branch này:
+
+    ahead of default  = 28 commit(s)      (ngưỡng 10)
+    divergence age    = 9 day(s)          (ngưỡng 3)
+    divergence LOC    = 23870             (ngưỡng 5000)
+    INTEGRATION_DECISION_REQUIRED: ahead>10 age>3d loc>5000
+
+**Cả ba ngưỡng đều vượt.** Đây là Owner Decision theo `GOVERNANCE_V4.md` § II.3, KHÔNG phải
+cảnh báo được đi qua trong im lặng. Phiên này KHÔNG merge default branch (bị cấm tường minh
+trong chỉ thị) và KHÔNG tự chọn thay chủ dự án.
+
+    OWNER_DECISION_REQUIRED — Owner Decision #5
+    Chọn: integrate/merge sớm | cắt scope | chấp nhận divergence kèm lý do + hạn đánh giá lại.
+
+Trước khi khôi phục delta R-09, ngưỡng này **không thể được phát hiện**: script cũ không đo
+divergence. Đây là giá trị cụ thể của reconciliation, không phải parity hình thức.
+
+## 14.9 MIGRATION_UNCERTAINTY sau đối chiếu
+
+    MIGRATION_UNCERTAINTY = PARTIAL
+
+**Đã RESOLVED:** nghi vấn "CORE V4.3 trong repo là bản dựng lại, chưa đối chiếu với văn bản
+gốc". Source pack đã có mặt, đã đọc thật 38/38 file, đã đối chiếu theo thành phần, và 35
+bất biến bị mất đã được khôi phục vào đúng bảy file CORE hiện có. Validator kiểm 26 marker
+để không mất lần nữa (đã kiểm chứng bằng negative test: xoá một marker → FAIL).
+
+**Còn PARTIAL, đúng hai mục — không dùng câu chung chung:**
+
+1. `capability_repair_cycles_allowed` của `CAP-PROV` vẫn chưa có giá trị. Nguyên nhân đã
+   ĐỔI: không còn là "chưa có mô hình" (source pack đã cung cấp mặc định 2 cho HIGH) mà là
+   "việc áp trần hồi tố cần Owner Decision #4" — xem §14.6.
+2. Chuỗi production path (H-12) chưa được khai báo, nên Effective Risk hiện chấm ở mức file
+   chứ chưa ở mức đường dữ liệu.
+
+Ngoài hai mục trên, không còn delta ngữ nghĩa nào giữa source pack và repo mà phiên này
+biết mà không ghi.
+
+## 14.10 Bằng chứng — đã chạy thật
+
+    python3 governance/scripts/governance/validate_governance.py
+      -> GOVERNANCE V4.3: PASS
+         core_files_checked = 7        project_files_checked = 7
+         adapters_checked = 2          hard_stops_checked = 5
+         source_invariants_checked = 26
+         budget_lineage_roots = 1      hardening_items = 12
+         production_path_rows = 13     task_files_present = 20
+      negative test: xoá 'MAX(Local Risk, Blast Radius)' khỏi RISK_MODEL.md -> FAIL
+                     (validator KHÔNG vacuous)
+
+    bash governance/scripts/governance/branch_authority_check.sh --expect-branch <branch>
+      -> BRANCH AUTHORITY: PASS
+         default branch resolved (KHÔNG đoán 'main'), behind upstream = 0,
+         tracked worktree khai báo, production diff = EMPTY,
+         INTEGRATION_DECISION_REQUIRED: ahead>10 age>3d loc>5000   (§14.8)
+      STRICT_DIVERGENCE=1 -> rc=1  (ngưỡng thi hành được, không chỉ là văn bản)
+
+    bash governance/scripts/governance/task_registry_snapshot.sh
+      -> count_roadmap_task_ids = 29   (before = after)
+
+    Validator legacy: KHÔNG xoá, KHÔNG sửa. H-08 (vacuous "Checked 0 records") giữ nguyên
+    định tuyến.
+
+    PRODUCTION CODE DIFF   = 0    (git diff -- src/eth_dca_os webapp pyproject.*)
+    WP-A1 PRODUCT CODE DIFF = 0
+    TASK REGISTRY DIFF     = 0    (29 → 29, không task ID mới)
+    docs/tasks/            = 0 file thay đổi
+    Ledger CAP-PROV        = 0 thay đổi
+
+## 14.11 Owner Decision còn thiếu
+
+Bổ sung vào danh sách ở §12 (không thay thế):
+
+    #4  Trần repair budget của CAP-PROV (§14.6) — mặc định source pack = 2, đã tiêu = 2.
+    #5  INTEGRATION_DECISION_REQUIRED (§14.8) — cả ba ngưỡng divergence đều vượt.
+
+## 14.12 Hành động NHỎ NHẤT tiếp theo
+
+§13 vẫn đúng về **công việc sản phẩm**: `WP-A4`.
+
+Nhưng reconciliation này làm lộ hai Owner Decision chặn trước nó, và cả hai đều rẻ hơn bất
+kỳ dòng code nào: **Owner Decision #5** (divergence — 28 commit / 9 ngày / 23.870 LOC chưa
+tích hợp; càng để lâu càng đắt) rồi **#4** (trần budget CAP-PROV — quyết định WP-A1 còn
+đường đi tiếp hay chỉ còn `ACCEPT_AS_IS`/`DESCOPE`).
+
+Không mở WP-A4, không mở repair, không tạo task trong phiên này.

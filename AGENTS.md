@@ -129,6 +129,17 @@ principle, no existing file was renamed or moved.
 
 ## 7. Reading Order For A New Session
 
+**Step 0 — before reading ANY state file.** Run the branch authority check:
+
+```bash
+bash governance/scripts/governance/branch_authority_check.sh --expect-branch <authorised branch>
+```
+
+Reading `PROJECT_PROGRESS.md` or any roadmap/current-state artifact from a stale or
+un-authoritative branch is a defect that has already recurred in this repository. If the
+check does not pass, STOP and confirm before reading state. If it reports
+`INTEGRATION_DECISION_REQUIRED`, that is an Owner Decision, not a warning to walk past.
+
 1. This file.
 2. `governance/v4/CORE/` in authority order (§1 rows 1–6), plus `STATE_AUTHORITY.md`.
 3. `PROJECT/PROJECT_PROFILE.md`, `PROJECT/CAPABILITY_REGISTRY.md`.
