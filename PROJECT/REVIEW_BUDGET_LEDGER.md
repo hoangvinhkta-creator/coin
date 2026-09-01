@@ -114,7 +114,7 @@ Các capability chưa bắt đầu có budget used = 0 vì **chưa tiêu**, khô
 
 | # | Loại | BASE SHA | HEAD SHA | Diff production path | Kết quả |
 |---|---|---|---|---|---|
-| 0 | Implementation ban đầu (S009) | `06b381c` | (commit S009) | 5 files, +272 / −32 | 9/9 REQUIRED check PASS |
+| 0 | Implementation ban đầu (S009) | `06b381c` | `85fa30f` | 5 files, +282 / −36 | 9/9 REQUIRED check PASS |
 
     REPAIR CYCLES ĐÃ TIÊU  = 0
     VÒNG E2 ĐÃ TIÊU        = 0   (CHECK-A4-09 là RECOMMENDED, không phải điều kiện DONE)
@@ -124,7 +124,7 @@ Delivery change budget tích luỹ, đo trực tiếp (không cộng tay):
     git diff --shortstat 06b381cb8dd2fc41806104b2cfbb1a539d2ceaaf..HEAD \
         -- src/eth_dca_os webapp pyproject.toml pyproject.lock
 
-    -> 5 files changed, 272 insertions(+), 32 deletions(-)
+    -> 5 files changed, 282 insertions(+), 36 deletions(-)
 
 Trạng thái budget:
 
