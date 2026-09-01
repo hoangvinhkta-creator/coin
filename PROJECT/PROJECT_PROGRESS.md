@@ -50,9 +50,11 @@ Các gói READY khác: **WP-A5** (đủ dependency từ S004; cùng sửa `pipel
 push xong), **WP-A1** (chờ quyết định của chủ dự án về budget/legacy gate — KHÔNG mở được
 bằng agent), **WP-C1** (song song, độc lập — xem "Song song" bên dưới), **WP-D2**.
 
-Trước khi chọn, chủ dự án còn hai quyết định đang mở: `DEC-013` (integration) và ownership
-cho `F-S009-01`.
-KHÔNG tự mở — agent dừng sau WP-A4 theo chỉ thị của chủ dự án (S009).
+Hai quyết định từng chặn ở đây nay đã ĐÓNG cả hai (2026-09-01, phiên Integration):
+`DEC-013` (integration → phương án A, trunk = `main`, integration SHA `febc2ec`) và
+`DEC-016`/`DEC-017` (`F-S009-01` → REOPEN WP-A4 một repair cycle; budget CAP-DATA
+allowed 2 / used 0 / remaining 2). `DEC-016` mới chỉ được GHI NHẬN, chưa thi hành.
+Branch authority từ đây: mọi phiên mới branch từ `origin/main` sau khi fetch.
 
 ## Overall Roadmap
 
@@ -664,16 +666,49 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 - DEC-010 — RESOLVED: PA-1 phê duyệt cho BLK-003; `routing_engine.py`/`validate_routing.py` đã sửa
 - DEC-011 — Owner Product Intent và V1 Daily-Use Acceptance (tiêu chí A–F)
 - DEC-012 — Hạn mức repair budget cho CAP-PROV: allowed 2 / used 2 / remaining 0
-- DEC-013 — PENDING: Integration decision cho branch WP-A1
+- DEC-013 — **RESOLVED / INTEGRATED**: phương án A (INTEGRATE NOW); canonical trunk = `main`;
+  integration SHA `febc2ec` (merge commit thường, 0 xung đột, tree kết quả TRÙNG KHÍT tree source)
 - DEC-014 — `OD-A4-01`: bổ sung MỘT REQUIRED check cho WP-A4 (`CHECK-A4-10`) và làm rõ
   Expected Touch Area; `F-E2A1R3-05` → `CAP-DATA`, hấp thụ vào WP-A4, 0 task ID mới
 - DEC-015 — `F-S009-01` → capability owner `CAP-DATA`; spec verdict `IMPLEMENTATION_DEFECT`;
   CONFIRMED BLOCKING V1 giữ nguyên; 0 task ID mới. `OWNER_ASSIGNMENT_REQUIRED` ĐÓNG, còn
   `OWNER_DECISION_REQUIRED` cho phương tiện thi hành
+- DEC-016 — `OD-DATA-01`: `F-S009-01` = CONFIRMED BLOCKING V1; phương tiện thi hành được
+  duyệt = **REOPEN WP-A4 cho ĐÚNG MỘT repair cycle**, mở touch area tối thiểu sang
+  `indicators.py` + wiring/test trực tiếp; 0 task ID mới, 0 WP mới. **GHI NHẬN, CHƯA THI
+  HÀNH** — `OWNER_DECISION_REQUIRED` của `DEC-015` nhờ đó ĐÓNG
+- DEC-017 — `OD-DATA-02`: `CAP-DATA` Effective Risk = **HIGH**; hạn mức repair budget
+  allowed 2 / used 0 / remaining 2 (khai hạn mức, KHÔNG reset). Bản sửa `F-S009-01` sẽ là
+  repair cycle **#1**
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- Integration (DEC-013) — 2026-09-01 — **governance-only**, integration SHA `febc2ec`.
+  KHÔNG sửa production code, KHÔNG sửa test code, KHÔNG mở WP, KHÔNG mở repair cycle,
+  KHÔNG tạo task ID, KHÔNG chạy T-06. Kết quả:
+  (1) `DEC-013` **RESOLVED / INTEGRATED** theo phương án **A — INTEGRATE NOW**; canonical
+  trunk từ đây = **`main`**.
+  (2) Đo lại toàn bộ bằng git ngay trước merge: source `claude/wp-a1-provenance-v67k9h` @
+  `6372783`; default cũ `claude/plan-tool-from-docs-qijx5m` @ `4a46b3c` (giải bằng GitHub
+  API `default_branch`, KHÔNG giả định); merge base `e368425`; ahead 33 / behind 1.
+  Chứng minh commit "behind" duy nhất không mang nội dung: `4a46b3c` là merge commit có
+  **cả hai parent** (`aef0220`, `e368425`) là ancestor của source, và
+  `tree(4a46b3c) = tree(e368425) = 57e0876`, `git diff e368425 4a46b3c` **RỖNG**.
+  (3) Tích hợp bằng **merge commit thường** (`--no-ff`), KHÔNG rebase / squash /
+  cherry-pick / rewrite history. `MERGE CONFLICTS = 0`;
+  source tree `633b4c3` == main result tree `633b4c3` → **TREE IDENTICAL = YES**;
+  `git diff febc2ec 6372783` RỖNG → **CONTENT LOST = 0**.
+  (4) Cả 11 SHA baseline/evidence quy chiếu vẫn là ancestor của `main`, gồm hai neo ledger
+  `666de14` (CAP-PROV) và `06b381c` (CAP-DATA). Baseline SHA KHÔNG đổi, budget KHÔNG reset,
+  WP state KHÔNG đổi.
+  (5) Ghi nhận (KHÔNG thi hành) hai quyết định của chủ dự án cho phiên sau: `DEC-016`
+  (`OD-DATA-01`) và `DEC-017` (`OD-DATA-02`).
+  (6) Validators trên `main` đều PASS: `validate_governance` · `validate_project_state` ·
+  `validate_structure` · `validate_routing` · `validate_easy_roadmap` ·
+  `branch_authority_check.sh`. Không tạo report mới: bằng chứng và số đo đầy đủ nằm trong
+  `PROJECT/PROJECT_DECISIONS.md` § `DEC-013` (khối quyết định cuối mục).
+  (7) `WP-C1` giữ nguyên `PARALLEL_READY = YES`, KHÔNG mở trong phiên này.
 - Integration Recheck / Owner Disposition — 2026-09-01 — **governance-only**, HEAD
   `07bb241`. KHÔNG sửa production code, KHÔNG sửa test code, KHÔNG mở WP, KHÔNG mở repair
   cycle, KHÔNG tạo task ID, KHÔNG merge. Kết quả:
@@ -981,6 +1016,24 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
+Branch authority (bắt buộc, từ `DEC-013` 2026-09-01):
+
+    Canonical trunk = main.
+    Mọi phiên product mới: git fetch origin && git checkout -b <branch> origin/main
+    KHÔNG dùng claude/wp-a1-provenance-v67k9h làm long-running integration branch nữa.
+    Branch đó được GIỮ cho provenance/history, KHÔNG xoá.
+
+Sau tích hợp, **hai stream chạy độc lập, branch riêng từ `origin/main`**. Repo không có
+dependency thật giữa hai stream, nên KHÔNG tạo dependency giả:
+
+- **STREAM DATA** — thi hành `DEC-016`: mở lại `WP-A4` cho **đúng một** repair cycle để sửa
+  `F-S009-01`. Budget: `CAP-DATA` allowed 2 / used 0 / remaining 2 (`DEC-017`) — bản sửa này
+  là repair cycle **#1**, KHÔNG được reset. Effective Risk = HIGH ⇒ **mandatory batch review
+  cuối phiên** theo `RISK_MODEL.md`.
+- **STREAM WEB** — `WP-C1` (C/xhigh), `PARALLEL_READY = YES`. Expected Touch Area
+  (`webapp/`, `demo/`, `.gitignore`) KHÔNG giao với vùng của STREAM DATA
+  (`src/eth_dca_os/**`).
+
 Recommended Session:
 S010 — chủ dự án quyết định:
 
@@ -995,10 +1048,10 @@ S010 — chủ dự án quyết định:
   `.gitignore`) **không giao** với vùng WP-A4 vừa sửa (`src/eth_dca_os/**`). WP-A4 không
   chạm một dòng nào trong `webapp/`. → **WP-C1 vẫn READY và độc lập.**
 - `WP-A4`, `WP-D1` đã **DONE** — không còn trong danh sách READY.
-- **Trước khi mở bất kỳ gói nào ở trên**, hai hard-stop governance đang chờ đúng hai quyết
-  định của chủ dự án, không tốn production code: `DEC-013` (integration — số đo đã làm mới
-  tại phiên Integration Recheck 2026-09-01: 0 xung đột, tree kết quả TRÙNG KHÍT tree HEAD,
-  khuyến nghị **phương án A**) và `DEC-015` §II.7 (phương tiện thi hành cho `F-S009-01`).
+- ~~**Trước khi mở bất kỳ gói nào ở trên**, hai hard-stop governance đang chờ quyết định~~ —
+  **CẢ HAI ĐÃ ĐÓNG** (2026-09-01, phiên Integration): `DEC-013` đã thi hành (trunk = `main`,
+  integration SHA `febc2ec`), và khe thẩm hành của `F-S009-01` đã được `DEC-016` đóng. Không
+  còn hard-stop governance nào chặn việc mở gói.
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
 `WP-A5`, `WP-A6` (mới đủ dependency từ S009), `WP-C1`, `WP-D2`.
@@ -1034,7 +1087,15 @@ Cần chủ dự án quyết định:
    cho thấy spec nói "96 nến" khi muốn đếm theo nến). `OWNER_ASSIGNMENT_REQUIRED` ĐÓNG.
    Số task ID mới = 0.
 
-   **CÒN MỞ — `OWNER_DECISION_REQUIRED`, đúng MỘT quyết định, ưu tiên cao nhất.** Đây không
+   **ĐÃ QUYẾT — `OWNER_DECISION_REQUIRED` ĐÓNG** (`DEC-016` / `OD-DATA-01`, 2026-09-01,
+   phiên Integration): chủ dự án chọn **phương án (A)** — REOPEN `WP-A4` cho ĐÚNG MỘT repair
+   cycle, mở touch area tối thiểu sang `indicators.py` + wiring/test trực tiếp cần thiết;
+   KHÔNG tạo WP mới, 0 task ID mới. Chi phí đã được chủ dự án nhìn thấy trước khi quyết:
+   bản sửa tiêu repair cycle **#1** của `CAP-DATA` (`DEC-017`: allowed 2 / used 0 /
+   remaining 2). Phiên Integration **KHÔNG thi hành** quyết định này. Đoạn dưới giữ nguyên
+   để đọc được bối cảnh lúc quyết định.
+
+   Bối cảnh lúc còn mở — đúng MỘT quyết định, ưu tiên cao nhất. Đây không
    còn là khe ownership mà là khe **thẩm quyền thi hành**: `CAP-DATA` chỉ có một thành viên
    là `WP-A4`, đang `DONE` với Completion Gate FROZEN, và `indicators.py` nằm ngoài Expected
    Touch Area. Bốn ngưỡng Absorption Limit đều **KHÔNG chạm** (A: Effective Risk `MAX(3,2)=3`
@@ -1052,14 +1113,16 @@ Cần chủ dự án quyết định:
    `ACCEPT_AS_IS` / `DESCOPE` / `OWNER_EXTENSION`. Budget CAP-PROV đã hết
    (`DEC-012`: allowed 2 / used 2 / remaining 0). Lưu ý: 2 trong 3 hạng mục đóng được ở
    chi phí budget = 0 vì chỉ cần tài liệu. Xem bản disposition §4.
-8. **Integration decision** (`DEC-013`, PENDING) — chọn A/B/C cho branch
-   `claude/wp-a1-provenance-v67k9h`. Khuyến nghị vẫn = **A (INTEGRATE NOW)**. Kèm quyết
-   định phụ: remote KHÔNG có branch `main`; `origin/HEAD` trỏ tới một branch `claude/*`.
-   Xem bản disposition §7. **Cập nhật S009:** phép đo "xung đột = 0" của §7.2 dựa vào tiền
-   đề "WP-A4 chưa bắt đầu"; tiền đề đó **không còn đúng** — S009 đã sửa
-   `src/eth_dca_os/data/`. `branch_authority_check.sh` vẫn báo
-   `INTEGRATION_DECISION_REQUIRED` (ahead 30 / 9 ngày / 26114 LOC). Phải ĐO LẠI trước khi
-   dùng con số cũ.
+8. ~~**Integration decision** (`DEC-013`)~~ — **ĐÃ QUYẾT và ĐÃ THI HÀNH** (2026-09-01,
+   phiên Integration): phương án **A — INTEGRATE NOW**; canonical trunk = **`main`**; tích
+   hợp bằng merge commit thường `febc2ec`; 0 xung đột; tree kết quả TRÙNG KHÍT tree source;
+   content lost = 0; 11/11 baseline SHA vẫn reachable. Hard-stop
+   `INTEGRATION_DECISION_REQUIRED` **ĐÓNG**. Không còn là mục chờ quyết định.
+
+   Còn lại đúng **một thao tác của chủ dự án trên GitHub**, không phải quyết định kỹ thuật:
+   `REMOTE_DEFAULT_SWITCH_REQUIRED` — đổi default branch của repository sang `main` (GitHub
+   → Settings → General → Default branch → Switch to `main`). `origin/main` đã tồn tại và
+   đúng nội dung; việc chưa đổi `origin/HEAD` KHÔNG làm phép tích hợp thất bại.
 9. **Trình tự V1** — T-06/GATE-A có thật sự là điều kiện tiên quyết của V1 daily-use không,
    hay đường web app (`CAP-WEBAPP`, WP-C1 đang READY và độc lập với lớp A) chạy song song
    được? `DEC-011` định nghĩa V1 theo web app dùng hàng ngày, trong khi
@@ -1068,7 +1131,7 @@ Cần chủ dự án quyết định:
 
 Owner Decision đã ghi tại phiên Owner Disposition (2026-09-01):
 `DEC-011` (Product Intent + V1 Daily-Use Acceptance), `DEC-012` (hạn mức budget CAP-PROV),
-`DEC-013` (integration, PENDING). Phân loại lại toàn bộ finding đang mở, đề xuất capability
+`DEC-013` (integration — nay **RESOLVED / INTEGRATED** tại phiên Integration cùng ngày). Phân loại lại toàn bộ finding đang mở, đề xuất capability
 owner cho `F-E2A1R3-05`, và Integration Decision Check đầy đủ nằm ở
 `docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md`.
 

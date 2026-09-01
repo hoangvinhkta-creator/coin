@@ -584,7 +584,7 @@ Khi chủ dự án cấp `OWNER_EXTENSION` tường minh, hoặc khi WP-A1 đư�
 
 ---
 
-## DEC-013 — PENDING: Integration decision cho branch WP-A1
+## DEC-013 — RESOLVED / INTEGRATED: Integration decision cho branch WP-A1
 
 Date:
 2026-09-01 (phiên Owner Disposition)
@@ -594,7 +594,12 @@ Không thuộc task nào. Hard-stop `INTEGRATION_DECISION_REQUIRED` do
 `branch_authority_check.sh` phát ra.
 
 Status:
-**PENDING — chờ chủ dự án.** Phiên Owner Disposition KHÔNG merge, chỉ đo và khuyến nghị.
+**RESOLVED / INTEGRATED — 2026-09-01 (phiên Integration).** Chủ dự án chọn **phương án A —
+INTEGRATE NOW**. Đã thực hiện. Xem khối "Quyết định của chủ dự án" ở cuối mục này.
+
+Ghi chú đọc hiểu: hai khối `Measured` và bảng so sánh phương án phía dưới là số đo của các
+phiên TRƯỚC quyết định. Giữ nguyên để đọc được lịch sử; số đo có thẩm quyền cuối cùng nằm ở
+khối quyết định cuối mục.
 
 Measured (đo bằng git tại `d63c222`, không chép từ báo cáo cũ):
 
@@ -722,6 +727,83 @@ Phiên Integration Recheck **KHÔNG merge**. `DEC-013` vẫn `PENDING`.
 
 ---
 
+### Quyết định của chủ dự án — DEC-013 RESOLVED / INTEGRATED (2026-09-01, phiên Integration)
+
+Decision:
+
+    INTEGRATION OPTION            = A — INTEGRATE NOW
+    CANONICAL TRUNK TỪ ĐÂY        = main
+    PHƯƠNG PHÁP                   = merge commit thường (--no-ff)
+                                    KHÔNG rebase · KHÔNG squash · KHÔNG cherry-pick
+                                    KHÔNG rewrite history
+
+Lý do chọn `main` làm trunk quy ước (đóng luôn "quyết định phụ" còn treo ở khối trên):
+remote KHÔNG có `main`/`master`; `origin/HEAD` đang trỏ vào một branch làm việc `claude/*`;
+dự án cá nhân cần mô hình đơn giản — `main` = integrated stable trunk, work branch =
+`claude/*` hoặc feature branch. Phương án staged/cherry-pick bị loại đúng như khuyến nghị
+sẵn có: lợi ích bằng 0 và nó phá provenance/baseline reconstruction.
+
+Số đo thực hiện (đo lại toàn bộ bằng git ngay trước khi merge, không chép từ khối cũ):
+
+    SOURCE_BRANCH                 = claude/wp-a1-provenance-v67k9h
+    SOURCE_HEAD                   = 637278341f66f49aad77ba27dce8865fad298b95
+    CURRENT_REMOTE_DEFAULT        = claude/plan-tool-from-docs-qijx5m
+                                    (giải bằng GitHub API `default_branch`, KHÔNG giả định)
+    CURRENT_REMOTE_DEFAULT_HEAD   = 4a46b3c2012d786f457316e3452c971bab12464a
+    MERGE_BASE                    = e36842583372a2eae8335c5c7048d92d5ff2c987
+    AHEAD  (source ngoài default) = 33
+    BEHIND (default ngoài source) = 1
+
+Vì sao commit "behind" duy nhất không mang nội dung nào — chứng minh, không suy đoán:
+
+    git rev-list --parents -n1 4a46b3c
+      -> 4a46b3c  aef0220  e368425
+    cả hai parent đều là ancestor của SOURCE_HEAD;
+    git rev-parse 4a46b3c^{tree} = 57e087686f8f23d4978ef6e4049cb3ddeb42a2b4
+    git rev-parse e368425^{tree} = 57e087686f8f23d4978ef6e4049cb3ddeb42a2b4   (BẰNG NHAU)
+    git diff e368425 4a46b3c     -> RỖNG
+
+Vậy phía "ours" của phép merge ba chiều bằng đúng merge base, nên tree kết quả buộc phải
+bằng tree của "theirs" (= source).
+
+Bằng chứng tree equivalence sau merge (E1, chạy trực tiếp):
+
+    INTEGRATION SHA (merge)  = febc2ecf345cbaaa12837beb3b2ae3c658a08b0b
+    merge parents            = 4a46b3c (default lineage) · 6372783 (source)
+    MERGE CONFLICTS          = 0        (git ls-files -u -> 0 dòng)
+    SOURCE TREE              = 633b4c3206e4aedb624055dd1b99ef29edf0061f
+    MAIN RESULT TREE         = 633b4c3206e4aedb624055dd1b99ef29edf0061f
+    TREE IDENTICAL           = YES
+    git diff febc2ec 6372783  -> RỖNG
+    CONTENT LOST             = 0
+
+Baseline/evidence preservation — cả 11 SHA quy chiếu đều còn là ancestor của `main`:
+
+    666de14 · 06b381c · 85fa30f · 07bb241 · 6372783 · d63c222
+    d72fbc4 · 2f20e6c · bd7c5ff · a0c278a · e368425
+
+Riêng hai neo ledger: `CAP-PROV` baseline `666de14` và `CAP-DATA` baseline `06b381c` KHÔNG
+đổi và vẫn tái dựng được bằng git từ `main`.
+
+Impact:
+- Hard-stop `INTEGRATION_DECISION_REQUIRED` **ĐÓNG**.
+- Production implementation do phép tích hợp gây ra: **0 dòng**. Test: **0 dòng**. Diff mà
+  phiên này tự viết là **governance-only**.
+- WP state: **không đổi**. Repair budget đã tiêu: **không đổi**. Completion Gate FROZEN:
+  **không đụng**. Finding: không mở, không đóng, không phân loại lại.
+- Branch `claude/wp-a1-provenance-v67k9h` được **giữ lại** cho provenance/history, KHÔNG
+  xoá, và KHÔNG còn được dùng làm long-running integration branch.
+
+Branch authority từ đây:
+
+    Mọi phiên product mới BẮT BUỘC fetch rồi branch từ origin/main.
+
+Can Revisit After:
+Không. Quyết định đã thi hành và có bằng chứng git. Việc còn lại duy nhất là thao tác của
+chủ dự án trên GitHub — xem `REMOTE_DEFAULT_SWITCH_REQUIRED` trong biên bản phiên.
+
+---
+
 ## DEC-014 — `OD-A4-01`: bổ sung một REQUIRED check cho WP-A4 và làm rõ Expected Touch Area
 
 Date:
@@ -843,3 +925,113 @@ Impact:
 Can Revisit After:
 Khi chủ dự án chọn một trong ba phương tiện thi hành ở §II.7. Nếu chọn (B) DESCOPE thì phải
 đối chiếu tường minh với `DEC-011` điểm 9 (fail visibly / fail closed).
+
+---
+
+## DEC-016 — `OD-DATA-01`: `F-S009-01` = BLOCKING V1, thi hành bằng MỘT repair cycle của WP-A4
+
+Date:
+2026-09-01 (phiên Integration — GHI NHẬN, CHƯA THI HÀNH)
+
+Task:
+`WP-A4` / capability `CAP-DATA`. Đây là quyết định thi hành, đóng khe thẩm quyền mà `DEC-015`
+để mở.
+
+Decision:
+
+    F-S009-01  = CONFIRMED BLOCKING V1
+    Phân loại  = CAP-DATA IMPLEMENTATION_DEFECT
+    Phương tiện thi hành ĐƯỢC DUYỆT = phương án (A) của
+        docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md §II.7:
+        REOPEN WP-A4 cho ĐÚNG MỘT repair cycle.
+
+    Mở rộng Expected Touch Area, ở mức tối thiểu:
+        cho phép  src/eth_dca_os/indicators.py
+        cộng phần wiring/test trực tiếp cần thiết.
+
+    Số task ID mới được tạo = 0.  KHÔNG tạo WP mới.
+
+Reason:
+`DEC-015` đã chốt owner (`CAP-DATA`) và phân loại (`IMPLEMENTATION_DEFECT`) nhưng vẫn để lại
+`OWNER_DECISION_REQUIRED` ở khe **thẩm quyền thi hành**: `WP-A4` đang `DONE` với Completion
+Gate FROZEN, và `indicators.py` nằm ngoài Expected Touch Area. Theo `STATE_AUTHORITY.md`, mở
+lại một gói đã DONE và mở rộng touch area đều là hành vi của chủ dự án. Quyết định này thực
+hiện đúng ba hành vi đó và không hơn. Phương án (B) DESCOPE bị loại vì trái `DEC-011` điểm 9
+(fail visibly / fail closed); phương án (C) task ngoại lệ bị loại vì finding ≠ task.
+
+Impact:
+- Trạng thái `WP-A4` sẽ chuyển `DONE` → `IN_PROGRESS` **khi phiên repair thực sự mở**, không
+  phải bây giờ.
+- Chín REQUIRED check FROZEN của `WP-A4` giữ nguyên câu chữ và ngữ nghĩa. Không check nào bị
+  hạ, gộp hay nới. Không phát sinh `LEGACY_GATE_COMPATIBILITY_REQUIRED`.
+- Bản sửa sẽ tiêu **repair cycle #1** của `CAP-DATA` — xem `DEC-017` và
+  `REVIEW_BUDGET_LEDGER.md` §4.3 (`F-S009-01` nằm NGOÀI mọi cumulative repair diff, nên
+  không miễn phí).
+- `WP-A1` / `CAP-PROV` không đụng tới: allowed=2, used=2, remaining=0, `OWNER_EXTENSION` NOT
+  GRANTED.
+
+Trạng thái thi hành tại phiên Integration:
+
+    KHÔNG THỰC HIỆN. Phiên Integration chỉ GHI NHẬN quyết định này.
+    Không mở repair cycle, không sửa production code, không sửa test,
+    không đổi state của WP-A4 tại commit này.
+
+Can Revisit After:
+Không cần. Phiên DATA kế tiếp thi hành trực tiếp theo quyết định này, branch từ `origin/main`.
+
+---
+
+## DEC-017 — `OD-DATA-02`: `CAP-DATA` Effective Risk = HIGH; hạn mức repair = 2, đã dùng 0
+
+Date:
+2026-09-01 (phiên Integration — GHI NHẬN, CHƯA TIÊU)
+
+Task:
+Không thuộc task nào. Quyết định ở cấp capability lineage root `CAP-DATA` (`WP-A4`).
+
+Decision:
+
+    CAP-DATA Effective Risk = HIGH
+
+    Chủ dự án phê chuẩn V4.3 default repair budget cho CAP-DATA:
+
+        ALLOWED    = 2 repair cycle
+        USED       = 0
+        REMAINING  = 2
+
+    Ba con số trên đúng tại thời điểm TRƯỚC bản sửa F-S009-01.
+    Bản sửa F-S009-01, nếu thực hiện, là repair cycle #1.
+
+Reason:
+`REVIEW_BUDGET_LEDGER.md` §2.1 và §4.2 trước đây ghi `ALLOWED = CHƯA LƯỢNG HOÁ (V4.3 default
+theo Effective Risk)`, vì `DELIVERY_LOOP.md` §II.4 nói rõ con số `<N>` là **PROJECT value** và
+tầng dự án chưa khai. Quyết định này khai con số đó. Theo `STATE_AUTHORITY.md`, đặt một hạn
+mức là hành vi của chủ dự án; ledger ghi lại, không tự chọn.
+
+Nâng Effective Risk từ **3** lên **HIGH** là chấm lại **Blast Radius**, không phải trực giác:
+`RISK_MODEL.md` § Blast Radius — HIGH liệt kê "a wrong aggregation feeding an important
+decision", đúng đường đi của `F-S009-01` (indicator tính theo vị trí hàng → `return7` sai →
+Buy Score sai, không NaN, không DEGRADED, dataset vẫn official). Local Risk giữ nguyên; công
+thức `Effective Risk = MAX(Local Risk, Blast Radius)` không đổi. Điều kiện Golden Reduction
+KHÔNG thoả (dự án chưa có Golden baseline canonical — `HARDENING_BACKLOG.md` H-10), nên không
+được hạ một mức.
+
+Hệ quả bắt buộc theo `RISK_MODEL.md` § HIGH Does Not Mean STOP: mọi thay đổi trên đường
+Blast Radius HIGH phải có **mandatory batch review cuối phiên**, dù nhỏ đến đâu.
+
+Impact:
+- `REVIEW_BUDGET_LEDGER.md` §2.1 và §4.2 được cập nhật đúng ba con số trên. `USED` vẫn là
+  **0** — đây là **khai hạn mức**, KHÔNG phải reset: `USED` chưa từng khác 0 cho `CAP-DATA`.
+- `CAP-PROV` không đổi: allowed=2, used=2, remaining=0.
+- Budget KHÔNG được reset ở phiên sau, theo `DELIVERY_LOOP.md` § Change Budget và quy tắc bất
+  di dịch ở đầu ledger. Phiên DATA kế tiếp phải ĐỌC ledger, không tự đặt lại số.
+- `GOLDEN_BASELINE_SHA` vẫn `PENDING_OWNER_DATA / MIGRATION_REQUIRED`; H-10 vẫn mở. Quyết định
+  này khai budget tầng A (review/repair), KHÔNG khai budget tầng B (delivery change budget).
+
+Trạng thái thi hành tại phiên Integration:
+
+    KHÔNG TIÊU chu kỳ nào. Diff production path của phiên này = 0.
+
+Can Revisit After:
+Khi `REMAINING` về 0 và cần `OWNER_EXTENSION`, hoặc khi có Golden baseline canonical làm đổi
+điều kiện Golden Reduction.

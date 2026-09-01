@@ -26,7 +26,10 @@ cáo.
     CURRENT HEAD   = d63c222532e87643d09b71f435a7dd276b361a88   (2026-09-01)
                      KHÔNG đổi tại S009: WP-A4 sửa `src/eth_dca_os/data/` nhưng đó là công
                      việc của CAP-DATA, không phải repair cycle của CAP-PROV. Xem §2.1.
-    BRANCH         = claude/wp-a1-provenance-v67k9h
+    BRANCH         = main   (canonical trunk từ `DEC-013`, 2026-09-01)
+                     Lịch sử trước tích hợp nằm trên `claude/wp-a1-provenance-v67k9h`; sau
+                     merge `febc2ec` toàn bộ SHA trên vẫn reachable từ `main`, nên phép đo
+                     budget vẫn tái dựng được bằng git.
 
 ### Chu kỳ đã tiêu (đo bằng git, production paths theo `PROJECT/PRODUCTION_PATHS.md`)
 
@@ -110,7 +113,8 @@ Các capability chưa bắt đầu có budget used = 0 vì **chưa tiêu**, khô
     LINEAGE ROOT   = WP-A4 (docs/tasks/WP-A4-ngu-nghia-du-lieu-xau.md)
     BASELINE SHA   = 06b381cb8dd2fc41806104b2cfbb1a539d2ceaaf   (2026-09-01, commit cuối
                      trước khi WP-A4 bắt đầu — phiên Owner Disposition)
-    BRANCH         = claude/wp-a1-provenance-v67k9h
+    BRANCH         = main   (canonical trunk từ `DEC-013`, 2026-09-01)
+                     Baseline SHA KHÔNG đổi và vẫn là ancestor của `main` sau merge `febc2ec`.
 
 | # | Loại | BASE SHA | HEAD SHA | Diff production path | Kết quả |
 |---|---|---|---|---|---|
@@ -128,14 +132,23 @@ Delivery change budget tích luỹ, đo trực tiếp (không cộng tay):
 
 Trạng thái budget:
 
-    ALLOWED BUDGET            = V4.3 default theo Effective Risk hiện tại
+    ALLOWED BUDGET            = 2 repair cycle        <- DEC-017 (chủ dự án, 2026-09-01)
     CURRENT BUDGET USED       = 0 repair cycle
-    CURRENT BUDGET REMAINING  = default nguyên vẹn
+    CURRENT BUDGET REMAINING  = 2 repair cycle
     OWNER_EXTENSION           = KHÔNG CẦN
 
-Effective Risk của `CAP-DATA` = `MAX(Local Risk 3, Blast Radius 2)` = **3**, tính từ chính
-routing metadata đã FROZEN của WP-A4 (`R: 3`, `B: 2`), không nâng bằng trực giác. Không có
-evidence nào tại S009 làm đổi routing input, nên KHÔNG `SCOPE_CHANGED` và KHÔNG recompute.
+Effective Risk của `CAP-DATA` = **HIGH** — `DEC-017` (chủ dự án, 2026-09-01). Trước đó mục này
+ghi `MAX(Local Risk 3, Blast Radius 2)` = **3**, tính từ routing metadata đã FROZEN của WP-A4
+(`R: 3`, `B: 2`). Chủ dự án chấm lại **Blast Radius**, không nâng bằng trực giác:
+`RISK_MODEL.md` § Blast Radius — HIGH liệt kê "a wrong aggregation feeding an important
+decision", đúng đường đi của `F-S009-01`. Local Risk giữ nguyên; công thức
+`Effective Risk = MAX(Local Risk, Blast Radius)` không đổi. Golden Reduction KHÔNG thoả (chưa
+có Golden baseline canonical — `HARDENING_BACKLOG.md` H-10), nên không được hạ một mức.
+Routing metadata FROZEN của WP-A4 KHÔNG bị sửa; đây là chấm risk ở cấp capability.
+
+`ALLOWED` trước đây ghi "CHƯA LƯỢNG HOÁ" vì `DELIVERY_LOOP.md` §II.4 nói `<N>` là **PROJECT
+value** mà tầng dự án chưa khai. `DEC-017` khai con số đó. `USED = 0` giữ nguyên: đây là
+**khai hạn mức**, KHÔNG phải reset — `USED` của `CAP-DATA` chưa từng khác 0.
 
 Ghi rõ giới hạn: chỉ thị phiên S009 yêu cầu "nếu budget chưa được canonical xác định thì áp
 dụng V4.3 default theo Effective Risk hiện tại". Dự án chưa có một con số `<N>` cho
@@ -191,22 +204,28 @@ Các commit governance-only, kiểm lại diff production path = 0 (nên KHÔNG 
 
 ### 4.2 `CAP-DATA` — trạng thái budget sau khi `WP-A4` DONE
 
-    Effective Risk            = 3   = MAX(Local Risk 3, Blast Radius 2)
-                                      từ routing metadata ĐÃ FROZEN của WP-A4 (R:3, B:2)
-    ALLOWED repair cycles     = CHƯA LƯỢNG HOÁ (V4.3 default theo Effective Risk)
+    Effective Risk            = HIGH                <- DEC-017 (chủ dự án, 2026-09-01)
+                                      Blast Radius chấm lại theo RISK_MODEL.md;
+                                      Local Risk và routing metadata FROZEN không đổi
+    ALLOWED repair cycles     = 2                   <- DEC-017
     USED repair cycles        = 0
-    REMAINING repair cycles   = default nguyên vẹn — KHÔNG biểu diễn được bằng một con số
+    REMAINING repair cycles   = 2
     OWNER_EXTENSION           = KHÔNG CẦN
+
+    Ba con số trên đúng TRƯỚC bản sửa `F-S009-01`. Bản sửa đó, nếu thực hiện theo `DEC-016`,
+    là **repair cycle #1** của `CAP-DATA` và phải được ghi vào bảng §2.1. Budget KHÔNG được
+    reset ở phiên sau.
 
 `USED = 0` **không** phải vì WP-A4 DONE thì được reset. Lượt `06b381c..85fa30f` là
 **implementation ban đầu**, và ledger này đã dùng đúng quy ước đó cho `CAP-PROV` ở §1
 ("REPAIR CYCLES ĐÃ TIÊU = 2, **ngoài lượt implementation ban đầu**"). Canonical V4.3 không
 định nghĩa lượt implementation đầu tiên là repair cycle, nên KHÔNG tự tính thành một.
 
-`ALLOWED` vẫn chưa có con số: `DELIVERY_LOOP.md` §II.4 nói rõ `<N>` là **PROJECT value**, và
-tầng dự án chưa khai. Nguyên nhân gốc đã có số hiệu — `HARDENING_BACKLOG.md` **H-10** (chưa
-có Golden Baseline). Ghi đúng uncertainty; **không** chọn một con số tiện tay rồi gọi là hạn
-mức.
+`ALLOWED` nay đã có con số nhờ `DEC-017` — con số do **chủ dự án** đặt, không phải do phiên
+làm việc chọn tiện tay. Lưu ý phạm vi: `DEC-017` khai budget **tầng A** (review/repair cycle).
+Budget **tầng B** (`SESSION_PRODUCTION_DIFF_MAX` / `GOLDEN_CUMULATIVE_DIFF_MAX`) VẪN chưa
+khai được vì chưa có Golden baseline canonical — `HARDENING_BACKLOG.md` **H-10** vẫn mở, và
+`GOLDEN_BASELINE_SHA` vẫn `PENDING_OWNER_DATA / MIGRATION_REQUIRED`.
 
 ### 4.3 `F-S009-01` nằm NGOÀI mọi cumulative repair diff — hệ quả budget
 
