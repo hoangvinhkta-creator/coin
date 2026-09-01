@@ -337,7 +337,7 @@ Priority:
 REQUIRED
 
 Status:
-FAIL — E2 (F-E2A1-01: nhãn nguồn mặc định fail-open trong `fetch_all`)
+PASS — E1 + E2 vòng ba (F-E2A1-01 ĐÓNG: reviewer tự chạy stub fetch 5 kịch bản)
 
 Evidence Level:
 E1
@@ -417,7 +417,7 @@ Priority:
 REQUIRED
 
 Status:
-FAIL — E2 (F-E2A1-01 + F-E2A1-02: hai đường biến dữ liệu chưa chứng minh được thành official)
+PASS — E1 + E2 vòng ba (F-E2A1-01 và F-E2A1-02 ĐÓNG: reviewer thử phá, không phá được trong phạm vi gate)
 
 Evidence Level:
 E1
@@ -522,7 +522,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED — vế "cài môi trường sạch từ lockfile" chưa chạy được (proxy chặn cài gói)
+PASS — E2 vòng ba (reviewer tự dựng venv sạch, 15/15 pin khớp, 3 process độc lập)
 
 Evidence Level:
 E1
@@ -608,7 +608,7 @@ Priority:
 REQUIRED
 
 Status:
-FAIL
+FAIL — vòng ba (xem `docs/reviews/E2-WP-A1-provenance-round3.md`)
 
 Evidence Level:
 E2
@@ -656,6 +656,57 @@ Timestamp:
 - [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-006 và RSK-008 được cập nhật trạng thái
 - [ ] Session handoff được viết
 - [ ] Không hạ REQUIRED check nào để đạt DONE
+
+## Trạng thái gate sau E2 lần BA (2026-09-01)
+
+WP-A1 **KHÔNG DONE**. Nhưng bản chất đã đổi so với hai vòng trước: bất biến đã ĐỨNG VỮNG.
+
+| Check | Trạng thái |
+|---|---|
+| A1-01 … A1-10 | **PASS** — cả 10, bằng chứng E2 vòng ba tự thu |
+| A1-11 | **FAIL** |
+
+Hai finding CHẶN của vòng hai đã ĐÓNG, reviewer tự tái hiện trên mã `bd7c5ff` rồi đối chiếu HEAD:
+
+- F-E2A1-01: `bd7c5ff` cho series rỗng `(True,'verified')`; HEAD cho `empty_series`. Stub fetch
+  năm kịch bản: "không cơ chế nào đóng góp" nay ra `unknown` + `empty_series`.
+- F-E2A1-02: `bd7c5ff` cho coverage 1/3 và series thừa (lineage tự nhất quán hash) đều
+  `(True,'verified')`; HEAD cho `missing_required_series` / `unexpected_series`.
+
+MUTATION-6 được reviewer chứng minh bằng `ast` (tránh bẫy regex docstring): 24/27 test ĐỎ, gồm
+cả hai positive control. Oracle VALID.
+
+CHECK-A1-09 chuyển NOT_TESTED → PASS: reviewer tự dựng venv sạch, cài từ lockfile thành công
+(tiền đề "proxy chặn cài gói" của S007 là SAI), 15/15 pin đúng, ba process độc lập với
+`PYTHONHASHSEED` khác nhau, metric trùng khớp trên dataset có OOS số thật. Đây là xác nhận E2
+mà PRE-S008 §15 / U-4 yêu cầu.
+
+### Vì sao A1-11 vẫn FAIL
+
+1. **F-E2A1-03 còn mở và reviewer NÂNG lên mức CAO.** `reporting.py` không đổi một dòng ở S008.
+   Cài project vào venv sạch từ lockfile — đúng môi trường mà CHECK-A1-09 bắt buộc — thì record
+   ghi `code_commit='unknown'` và `dependency_lock_hash='no-lockfile'`, im lặng, không cảnh báo.
+   Máy chạy official run là máy lạ, và Master Index §6 CẤM chạy lại official run để sửa.
+2. **F-E2A1R3-03 — sai lệch với contract đã FROZEN.** Case 13 đòi reason `dev_limit_set`; mã ghi
+   `official_reason: "verified"`. Mã `dev_limit_set` không tồn tại trong `src/`. `test_ec_13`
+   không assert reason nên oracle không bắt được — cùng lớp lỗ hổng đã hạ gục E2 vòng một.
+3. **F-E2A1R3-01 (TB)** — phòng thủ `empty_series` đặt trên `row_count`, trường KHÔNG được hash
+   nào phủ và không bao giờ đối chiếu với file. Làm rỗng parquet thật rồi sửa đúng một số nguyên
+   trong `lineage.json` cho lại `(True,'verified')`. Đây chính là lớp vừa dùng để đóng một finding
+   CHẶN.
+4. **Exit Criteria còn hở**: `docs/CONVENTIONS.md` chưa ghi coverage invariant và `empty_series`
+   (F-E2A1R3-06); RSK-006/RSK-008 chưa cập nhật; chưa viết session handoff.
+
+Bảy finding mới: F-E2A1R3-01…07. Bốn finding cũ còn mở: F-E2A1-03 (CAO), F-E2A1-04, F-E2A1-06,
+F-E2A1-08, F-E2A1-09 — hai cái sau có bằng chứng mới (`data_source='mixed'` xuất hiện trên run
+ĐỦ TƯ CÁCH official; `RANDOM_CONTROL` ghi `official=true` ở `n_sims=200`, tức đường dev).
+
+**GATE-A không đóng được → T-06 chưa mở.**
+
+Theo `ESCALATION_PROTOCOL.md` và chỉ thị S008 §23: E2 vòng ba FAIL thì **KHÔNG mở vòng patch thứ
+tư**. Dừng và escalate. Reviewer khuyến nghị `VERIFICATION_DEPTH` chứ không phải
+`CAPABILITY_CEILING`, và ghi nhận mọi follow-up bắt buộc đều nằm trong Expected Touch Area nên
+không cần Scope Expansion — chủ dự án quyết.
 
 ## Trạng thái gate sau E2 lần hai (2026-08-24)
 
