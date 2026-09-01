@@ -27,6 +27,44 @@ def sub_factors(ind: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+#: Indicator daily **BẮT BUỘC** — Strategy §3 nói INVALID khi "giá/lịch sử ETH hoặc
+#: indicator bắt buộc không hợp lệ" nhưng KHÔNG liệt kê tập đó. Spec để ngỏ, nên quy ước
+#: được chốt ở đây và ghi ở `docs/CONVENTIONS.md` (WP-A4/A4.1).
+#:
+#: Tiêu chí chọn: một indicator là BẮT BUỘC khi engine không thể hình thành một quyết định
+#: Smart/Opportunity có căn cứ nếu thiếu nó — tức nó được đọc trên ĐƯỜNG HÀNH ĐỘNG, chứ
+#: không chỉ là một sub-component của score (sub-component thiếu là DEGRADED, §3 nói rõ).
+#:
+#:   close    — giá/lịch sử ETH; thiếu giá thì không có gì hợp lệ để làm
+#:   adr30    — engine đòi nó để dựng bất kỳ ladder nào (spacing); thiếu thì không có ladder
+#:   return7  — vừa là sub-component S7, vừa là input phát hiện regime CRASH/STRESSED;
+#:              thiếu nó engine không phân biệt được CRASH với NORMAL, mà chính sách hành
+#:              động lại phụ thuộc vào phân biệt đó
+#:
+#: `btc_close` KHÔNG bắt buộc: thiếu BTC chỉ làm hai sub-component W/RP thiếu -> DEGRADED,
+#: đúng như §3 mô tả ("giá/lịch sử **ETH**").
+REQUIRED_DAILY_INDICATORS = ("close", "return7", "adr30")
+
+
+def invalid_mask(ind: pd.DataFrame) -> np.ndarray:
+    """Ngày nào INVALID theo Strategy §3 vì giá/lịch sử ETH hoặc indicator bắt buộc hỏng.
+
+    Fail-closed: cột bắt buộc không tồn tại trong `ind` thì MỌI ngày là INVALID — một
+    khung dữ liệu không mang nổi indicator bắt buộc thì không chứng minh được ngày nào
+    hợp lệ, và "không chứng minh được" phải đọc thành không hợp lệ, không phải thành GOOD.
+    """
+    bad = np.zeros(len(ind), dtype=bool)
+    for col in REQUIRED_DAILY_INDICATORS:
+        if col not in ind.columns:
+            return np.ones(len(ind), dtype=bool)
+        vals = ind[col].to_numpy(float)
+        bad |= ~np.isfinite(vals)
+        if col == "close":
+            # Giá <= 0 không phải "thiếu" mà là "không hợp lệ" — §3 gộp cả hai vào INVALID.
+            bad |= np.nan_to_num(vals, nan=-1.0) <= 0
+    return bad
+
+
 FACTOR_WEIGHTS = {
     "PRICE_LOCATION": (("D", 0.50), ("M", 0.30), ("P", 0.20)),
     "MARKET_STRESS": (("R", 0.50), ("S7", 0.30), ("V", 0.20)),
@@ -41,11 +79,21 @@ ABLATION_WEIGHTS = {
 
 
 def factor_scores(sf: pd.DataFrame, score_weights=(50, 30, 20),
-                  weights_map: dict | None = None) -> pd.DataFrame:
+                  weights_map: dict | None = None,
+                  ind: pd.DataFrame | None = None) -> pd.DataFrame:
     """Ba factor score + OSCORE, áp rule DEGRADED (Strategy §3):
 
     Sub-component thiếu (NaN) nhận contribution = 0, KHÔNG rescale phần còn lại.
     Nếu MỌI sub-component của cả ba factor đều thiếu -> OSCORE = NaN (INVALID).
+
+    WP-A4/A4.2 (đóng F-023): khi `ind` được truyền, INVALID còn được đặt theo đúng §3 —
+    "giá/lịch sử ETH **hoặc** indicator bắt buộc không hợp lệ" — chứ không chỉ khi mất
+    CẢ TÁM sub-factor. Định nghĩa cũ hẹp hơn spec: trên dữ liệu thật có gap, engine vẫn
+    hành động ở những thời điểm §3 yêu cầu dừng. Ngày INVALID có `oscore = NaN` theo
+    Data Model §4 ("opportunity_score_raw nullable chỉ khi INVALID").
+
+    `ind=None` giữ nguyên hành vi cũ — dùng cho ablation/diagnostic vốn chỉ so sánh trọng
+    số trên cùng một tập sub-factor, không phán xét chất lượng dữ liệu.
     """
     wm = dict(FACTOR_WEIGHTS)
     if weights_map:
@@ -65,16 +113,23 @@ def factor_scores(sf: pd.DataFrame, score_weights=(50, 30, 20),
     out["oscore"] = (out["price_location_score"] + out["market_stress_score"]
                      + out["relative_value_score"])
     out.loc[all_nan, "oscore"] = np.nan
-    # data quality: GOOD nếu đủ 8 sub-factor, DEGRADED nếu thiếu một phần, INVALID nếu mất hết
+    # Ranh giới §3: GOOD = đủ 8 sub-factor; DEGRADED = thiếu một phần sub-component;
+    # INVALID = giá/lịch sử ETH hoặc indicator bắt buộc hỏng (khi có `ind`), hoặc mất hết
+    # sub-factor (luật cũ, vẫn giữ để `ind=None` không đổi hành vi).
     n_missing = sf.isna().sum(axis=1)
-    out["data_quality"] = np.select(
+    quality = np.select(
         [n_missing == 0, n_missing < len(sf.columns)], ["GOOD", "DEGRADED"], default="INVALID")
+    if ind is not None:
+        inv = invalid_mask(ind)
+        quality = np.where(inv, "INVALID", quality)
+        out.loc[inv, "oscore"] = np.nan
+    out["data_quality"] = quality
     return out
 
 
 def compute_scores(ind: pd.DataFrame, score_weights=(50, 30, 20)) -> pd.DataFrame:
     sf = sub_factors(ind)
-    fs = factor_scores(sf, score_weights)
+    fs = factor_scores(sf, score_weights, ind=ind)
     return pd.concat([sf, fs], axis=1)
 
 

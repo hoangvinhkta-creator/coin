@@ -101,13 +101,56 @@ def volume_zscore_variant(ind: pd.DataFrame, sf: pd.DataFrame) -> pd.DataFrame:
     return sf2
 
 
+def _oscore_delta_summary(base_fs: pd.DataFrame, alt_fs: pd.DataFrame) -> dict:
+    """Chênh lệch OSCORE giữa một biến thể và bản gốc (Strategy §2.3, §2.4).
+
+    Không đổi công thức nào — chỉ tổng hợp lại kết quả của hai lần chấm điểm để trả lời
+    "biến thể này có đóng góp gì khác bản gốc không".
+    """
+    a = base_fs["oscore"]
+    b = alt_fs["oscore"]
+    both = pd.concat([a, b], axis=1, keys=["base", "alt"]).dropna()
+    diff = both["alt"] - both["base"]
+    corr = float(both["base"].corr(both["alt"])) if len(both) > 1 else float("nan")
+    return {
+        "mean_oscore_delta": float(diff.mean()) if len(diff) else float("nan"),
+        "mean_abs_oscore_delta": float(diff.abs().mean()) if len(diff) else float("nan"),
+        "max_abs_oscore_delta": float(diff.abs().max()) if len(diff) else float("nan"),
+        "corr_with_baseline_oscore": corr,
+        "n_common_days": int(len(both)),
+    }
+
+
 def run_all(ind: pd.DataFrame, score_weights=(50, 30, 20)) -> dict:
+    """Toàn bộ diagnostic §2 bắt buộc cho official run — gồm §2.1–§2.2 (correlation, VIF),
+    §2.3 (ablation ba model đăng ký trước) và §2.4 (biến thể volume z-score kèm chênh lệch).
+    """
     sf = sub_factors(ind)
     fs = factor_scores(sf, score_weights)
     corr = correlation_matrices(sf, fs)
+
+    # §2.3 — ba model ablation đăng ký trước; báo cáo phân bố + chênh lệch so với bản gốc
+    ablation = {}
+    for name, alt_fs in ablation_scores(ind, score_weights).items():
+        ablation[name] = {
+            "score_distribution": score_distribution(alt_fs),
+            **_oscore_delta_summary(fs, alt_fs),
+        }
+
+    # §2.4 — biến thể volume z-score, BẮT BUỘC báo cáo chênh lệch kết quả
+    sf_vz = volume_zscore_variant(ind, sf)
+    fs_vz = factor_scores(sf_vz, score_weights)
+    volume_vz = {
+        "variant": {"score_distribution": score_distribution(fs_vz)},
+        "delta_vs_baseline": _oscore_delta_summary(fs, fs_vz),
+        "note": "DIAGNOSTIC — không thay factor production của V2.1.5 (Strategy §2.4)",
+    }
+
     return {
         "correlation": {k: v.to_dict() for k, v in corr.items()},
         "redundancy_flags": high_redundancy_flags(corr),
         "vif": vif(sf),
         "score_distribution": score_distribution(fs),
+        "ablation": ablation,
+        "volume_zscore_variant": volume_vz,
     }

@@ -37,6 +37,26 @@ from .score import opportunity_unlock, smart_unlock
 TZ_OFFSET = 7 * 3600  # Asia/Ho_Chi_Minh, không DST
 NOON = 12 * 3600
 DAY = 86400.0
+CANDLE = 900.0                  # một nến execution 15m, tính bằng giây
+
+# Thứ tự pool §15.1 [F2]: Base -> Smart -> Opportunity
+_POOL_RANK = {"BASE": 0, "SMART": 1, "OPPORTUNITY": 2}
+
+
+def zone_order_key(zone, ladder) -> tuple:
+    """Khoá sắp thứ tự thực thi khi nhiều zone cùng trigger — Strategy §15.1 [F2].
+
+    1. Giữa các pool: Base -> Smart -> Opportunity; Crash ladder xếp theo pool
+       NGUỒN VỐN của nó (zone.pool phản ánh nguồn vốn thật — xem CONVENTIONS #16),
+       và SAU các ladder Smart/Opportunity thường cùng pool.
+    2. Trong cùng pool: ladder có created_at sớm hơn xử lý trước.
+    3. Trong cùng ladder: zone_index tăng dần.
+    max_zones_per_cycle áp SAU khi đã sắp thứ tự này.
+    """
+    return (_POOL_RANK.get(zone.pool, 3),
+            1 if ladder.type == "CRASH" else 0,
+            ladder.created_at,
+            zone.zone_index)
 
 
 @dataclass
@@ -69,6 +89,17 @@ def _prep_candles(eth15: pd.DataFrame, start_ts: float, end_ts: float) -> dict:
     idx0 = int(np.argmax(mask)) if mask.any() else 0
     arr = {k: eth15[k].to_numpy(float)[mask] for k in ("open", "high", "low", "close")}
     arr["ts"] = ts[mask]
+    # WP-A4/A4.4 (đóng F-025) — Backtest §18: nến 15m thiếu thì KHÔNG interpolate OHLC để
+    # trigger zone. Engine vốn đã không interpolate (nó chỉ duyệt các nến CÓ THẬT), nhưng
+    # trước gói này không bản ghi nào cho biết mình nằm ngay sau một lỗ hổng. Đếm được
+    # bao nhiêu gap mà không truy được bản ghi nào bị ảnh hưởng là đúng khiếm khuyết mà
+    # §18 cấm. Tính trên chuỗi ĐẦY ĐỦ trước khi cắt cửa sổ để nến đầu cửa sổ không bị
+    # gán nhãn oan.
+    missing_before = np.zeros(len(ts), dtype=np.int64)
+    if len(ts) > 1:
+        missing_before[1:] = np.maximum(
+            np.rint(np.diff(ts) / CANDLE).astype(np.int64) - 1, 0)
+    arr["missing_before"] = missing_before[mask]
     # Return24H nội ngày: 96 nến 15m liền trước — cần lịch sử trước start
     full_close = eth15["close"].to_numpy(float)
     sel = np.nonzero(mask)[0]
@@ -139,13 +170,15 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     opp_used_today = 0.0
     cooldown_until = -np.inf
     last_exec_price = np.nan
-    prev_regime = "NORMAL"
+    prev_state = "NORMAL"           # trạng thái NỀN trước đó ([F1]: execution không đọc nhãn)
     eth_total = 0.0
     counters = {
         "cooldown_override": {"NORMAL": 0, "STRESSED": 0, "CRASH": 0, "RECOVERY": 0},
         "triggered_actions": 0, "missed_actions": 0, "executed_actions": 0,
-        "base_early": 0, "delayed_data_fill": 0,
+        "base_early": 0, "delayed_data_fill": 0, "execution_data_gap": 0,
     }
+    # Nến đang xét có nằm ngay sau một lỗ hổng execution không (WP-A4/A4.4).
+    gap_before_now = 0
 
     day_end = d["day_end_ts"]
 
@@ -153,17 +186,40 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         if log_decisions:
             res.decision_log.append({"ts": ts, "reason_code": reason, **kw})
 
-    def record_purchase(ts, source, nominal, open_price, reason, recommended=None):
+    def record_purchase(ts, source, nominal, open_price, reason, recommended=None,
+                        tags=()):
+        """Ghi một purchase record. `tags` là nhãn chất lượng dữ liệu theo Backtest §18.
+
+        WP-A4/A4.4 + A4.5 (đóng F-025, F-032): nhãn được gắn LÊN BẢN GHI, không chỉ cộng
+        vào một bộ đếm tổng. Bộ đếm cho biết CÓ BAO NHIÊU bản ghi bị ảnh hưởng bởi lỗ
+        hổng dữ liệu; chỉ nhãn trên bản ghi mới cho biết BẢN GHI NÀO — và sau official run
+        thì câu hỏi cần trả lời là câu thứ hai.
+        """
         nonlocal eth_total, cooldown_until, last_exec_price
         eth, eff = apply_fill(nominal, open_price, exec_cfg)
         eth_total += eth
         month_key = pd.Timestamp(ts + TZ_OFFSET, unit="s").strftime("%Y-%m")
         res.monthly_deployments[month_key] = res.monthly_deployments.get(month_key, 0.0) + nominal
+        tag_list = list(tags)
+        if gap_before_now > 0 and "EXECUTION_DATA_GAP" not in tag_list:
+            # Nến này là nến hợp lệ ĐẦU TIÊN sau một lỗ hổng: mọi thứ xảy ra ở đây được
+            # quyết trên dữ liệu không liên tục, nên bản ghi phải tự khai điều đó.
+            tag_list.append("EXECUTION_DATA_GAP")
+        # Bộ đếm được cộng TẠI ĐÂY, nơi bản ghi thật sự được ghi — không cộng ở chỗ gọi.
+        # Cộng ở chỗ gọi thì một tranche bị bỏ qua vì `amt <= 0` vẫn làm bộ đếm tăng, và
+        # bộ đếm lại nói về những bản ghi không tồn tại. Đó đúng là kiểu sai lệch mà F-032
+        # phàn nàn, chỉ đổi chiều. Bất biến: bộ đếm == số bản ghi mang tag tương ứng.
+        for tag, key in (("EXECUTION_DATA_GAP", "execution_data_gap"),
+                         ("DELAYED_DATA_FILL", "delayed_data_fill")):
+            if tag in tag_list:
+                counters[key] += 1
         res.purchases.append({
             "ts": ts, "source": source, "nominal": nominal, "price": eff, "eth": eth,
             "reason": reason, "regime": regime.regime,
             "recommended_price": recommended,
             "shortfall_bps": ((eff / recommended - 1) * 1e4) if recommended else None,
+            "tags": tag_list,
+            "missing_candles_before": int(gap_before_now),
         })
         if source in ("SMART", "OPPORTUNITY", "CRASH"):
             cooldown_until = ts + cfg.cooldown_hours * 3600.0
@@ -221,14 +277,14 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             if buy > 0 and smart_pool.deploy_from_available(buy, "MONTH_END_SMART", ts):
                 record_purchase(ts, "SMART", buy, open_price, "MONTH_END_SMART")
 
-    def execute_base_tranche(idx, ts, open_price, reason):
+    def execute_base_tranche(idx, ts, open_price, reason, tags=()):
         amt = min(base_state.tranche_amount(idx), base_pool.available)
         if amt <= 1e-9:
             base_state.executed.add(idx)
             return
         base_pool.deploy_from_available(amt, reason, ts)
         base_state.executed.add(idx)
-        record_purchase(ts, "BASE", amt, open_price, reason)
+        record_purchase(ts, "BASE", amt, open_price, reason, tags=tags)
 
     def create_action(z, lad, ts_close, close_price, local_hour):
         """TRIGGERED -> ACTION_PENDING với delay model (Backtest §5–§6)."""
@@ -237,7 +293,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         z.action_expires_at = ts_close + exec_cfg.action_ttl_seconds
         zone_meta[z.zone_id] = {"recommended": close_price}
         counters["triggered_actions"] += 1
-        if exec_cfg.p2p_unavailable_in_crash and regime.regime == "CRASH" \
+        if exec_cfg.p2p_unavailable_in_crash and regime.state == "CRASH" \
                 and exec_cfg.funding_policy == "ON_DEMAND":
             z.execute_at = None  # funding không khả dụng suốt TTL -> MISSED
             return
@@ -257,6 +313,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     for i in range(n):
         ts = c["ts"][i]                              # 1. tiến đồng hồ (open time của nến)
         o, hi, lo, cl = c["open"][i], c["high"][i], c["low"][i], c["close"][i]
+        gap_before_now = int(c["missing_before"][i])
         local = ts + TZ_OFFSET
         day_ord = int(local // DAY)
         lts = pd.Timestamp(local, unit="s")
@@ -270,10 +327,16 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 expire_smart_ladders(ts)             # 3. Smart ladder hết hạn cuối tháng
                 # đóng sổ: Base còn sót (gap) giải ngân ngay, Smart leftover theo policy
                 for idx in base_state.pending():
-                    execute_base_tranche(idx, ts, o, "MONTH_END_BASE")
-                    counters["delayed_data_fill"] += 1
+                    # ST §9 [F3]: tranche Base chưa chạy được ở nến 12:00 của ngày trigger
+                    # (nến đó nằm trong gap) được giải ngân tại nến hợp lệ đầu tiên sau đó.
+                    # Tranche Base KHÔNG BAO GIỜ bị bỏ vì gap dữ liệu.
+                    execute_base_tranche(idx, ts, o, "MONTH_END_BASE",
+                                         tags=("DELAYED_DATA_FILL",))
                 settle_month_end_smart(ts, o)
             cur_month = month_key
+            # 3->4. đóng sổ tháng cũ / mở sổ tháng mới cho phạm vi unlock Smart theo
+            # tháng (DM §5; WP-A7/F-035) — SAU settle Month-End, TRƯỚC contribution.
+            smart_pool.open_accounting_month(ts)
             su.month_reset(ts)                       # 4. reset HWM theo mode
             br = apply_monthly_contribution(mc, contribution, cfg, ts)  # 5–6. contribution + cap
             res.contributions.append((ts, contribution))
@@ -341,9 +404,8 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             delayed = tod > NOON + 900
             for k, (day_no, _) in enumerate(BASE_SCHEDULE):
                 if acct_day == day_no and k in base_state.pending():
-                    execute_base_tranche(k, ts, o, "BASE_SCHEDULE")
-                    if delayed:
-                        counters["delayed_data_fill"] += 1
+                    execute_base_tranche(k, ts, o, "BASE_SCHEDULE",
+                                         tags=("DELAYED_DATA_FILL",) if delayed else ())
             if acct_day == 25 and base_pool.available > 1e-9:
                 # Day 25–27: settle 50% phần Base còn lại (CONVENTIONS #7)
                 amt = base_pool.available * 0.5
@@ -365,19 +427,27 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 counters["base_early"] += 1
             flags["score_advanced"] = True  # tối đa một tranche mỗi lần score mới active
 
-        # 10. Market Regime + STRESSED
-        prev_regime = regime.regime
+        # 10. Market Regime + nhãn STRESSED. Mọi nhánh execution dưới đây so trên
+        # regime.state (trạng thái nền); nhãn STRESSED chỉ dùng reporting ([F1] §17.3).
+        prev_state = regime.state
         regime.update(ts, r7 if not np.isnan(r7) else None,
                       c["r24"][i] if not np.isnan(c["r24"][i]) else None,
                       None if np.isnan(oscore) else oscore)
-        if regime.regime == "CRASH" and prev_regime != "CRASH":
+        if regime.state == "CRASH" and prev_state != "CRASH":
             # cancel Opportunity zone xung đột -> release -> snapshot -> crash ladder [F5]
             for lad in ladders:
                 if lad.type == "OPPORTUNITY" and lad.status == "ACTIVE":
                     cancel_open_zones(lad, ts, "CRASH_ENTRY")
                     lad.status = "CANCELLED"
-            opp_avail = opportunity_reservable(opp_fund, o_unl, opp_active,
-                                               opp_used_today, cfg.opportunity_daily_limit_pct)
+            # [F5] ST §14: snapshot = Smart AVAILABLE + Opportunity AVAILABLE (đã unlock,
+            # chưa nằm trong reservation nào) đo NGAY SAU cancel/release. KHÔNG áp daily
+            # limit vào snapshot (F-021); daily limit cưỡng chế ở khâu triển khai — bước 14.
+            if opp_active and o_unl > 0:
+                opp_avail = min(opp_fund.available,
+                                max(0.0, opp_fund.total * o_unl
+                                    - opp_fund.reserved - opp_fund.deployed))
+            else:
+                opp_avail = 0.0
             smart_avail = smart_reservable(smart_pool, month_smart_budget, eff_smart_unlock)
             snapshot = opp_avail + smart_avail
             if snapshot > 1e-9 and not np.isnan(adr30):
@@ -392,7 +462,6 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     if take_opp > 0 and opp_fund.reserve(take_opp, "CRASH_ZONE", ts):
                         parts.append(("OPPORTUNITY", take_opp))
                         opp_avail -= take_opp
-                        opp_used_today += take_opp
                         want -= take_opp
                     take_smart = min(want, smart_avail)
                     if take_smart > 0 and smart_pool.reserve(take_smart, "CRASH_ZONE", ts):
@@ -402,9 +471,22 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     z.reserved_vnd = sum(a for _, a in parts)
                     z.target_vnd = z.reserved_vnd
                     reserve_map[z.zone_id] = parts
+                # F-030: pool label của Crash ladder = pool cấp ĐA SỐ tổng reserve
+                # (tie-break §15.1 [F2] xếp theo pool nguồn vốn; hoà -> OPPORTUNITY,
+                # xem CONVENTIONS #16). Label thống nhất cả ladder để zone_index giữ
+                # đúng thứ tự trong cùng ladder.
+                smart_funded = sum(a for z in lad.zones
+                                   for p, a in reserve_map.get(z.zone_id, [])
+                                   if p == "SMART")
+                opp_funded = sum(a for z in lad.zones
+                                 for p, a in reserve_map.get(z.zone_id, [])
+                                 if p == "OPPORTUNITY")
+                src_pool = "SMART" if smart_funded > opp_funded else "OPPORTUNITY"
+                for z in lad.zones:
+                    z.pool = src_pool
                 ladders.append(lad)
                 log(ts, regime.last_entry_reason, ladder=lad.ladder_id)
-        if regime.regime == "RECOVERY" and prev_regime == "CRASH":
+        if regime.state == "RECOVERY" and prev_state == "CRASH":
             for lad in ladders:
                 if lad.type == "CRASH" and lad.status == "ACTIVE":
                     lad.status = "SUSPENDED"
@@ -412,9 +494,13 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                         if z.status == "ACTIVE":
                             z.status = "SUSPENDED"
                             z.suspended_at = ts
-        if regime.regime == "NORMAL" and prev_regime == "RECOVERY":
+        if regime.state == "NORMAL" and prev_state == "RECOVERY":
+            # ST §18.3: hết 72h Recovery -> CANCEL crash zone chưa hit + release reserve.
+            # So trên TRẠNG THÁI NỀN nên chạy cho MỌI kết cục recovery-end, kể cả khi
+            # nhãn báo cáo là STRESSED (F-001). Quét mọi crash ladder còn mở để các
+            # ladder tồn đọng từ episode trước (re-entry) cũng được đóng.
             for lad in ladders:
-                if lad.type == "CRASH" and lad.status == "SUSPENDED":
+                if lad.type == "CRASH" and lad.status in ("ACTIVE", "SUSPENDED"):
                     cancel_open_zones(lad, ts, "RECOVERY_END")
                     lad.status = "CANCELLED"
 
@@ -455,7 +541,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     and eff_smart_unlock > 0):
                 unlocked = smart_reservable(smart_pool, month_smart_budget, eff_smart_unlock)
                 if unlocked > 1e-9:
-                    month_end_ts = ts + 31 * DAY
+                    # cuối accounting month (giờ local) — F-028: trước đây dùng ts + 31 ngày
+                    # cố định, sai nghĩa; expiry THẬT của Smart ladder không đọc field này
+                    # (xem expire_smart_ladders, dựa trên phát hiện month rollover), nên đây
+                    # chỉ là sửa dữ liệu cho đúng nghĩa, không đổi hành vi (WP-D1/F-028).
+                    next_month_local = lts.replace(day=1) + pd.DateOffset(months=1)
+                    month_end_ts = next_month_local.value / 1e9 - TZ_OFFSET
                     lad = create_smart_ladder(o, ssp, unlocked, oscore, ts, month_end_ts)
                     for z in lad.zones:
                         if smart_pool.reserve(z.target_vnd, f"SMART_ZONE_S{z.zone_index}", ts):
@@ -501,14 +592,13 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     z.status = "TRIGGERED"
             candidates.extend([z for z in lad.zones if z.status == "TRIGGERED"])
 
-        # 14. chuyển TRIGGERED -> ACTION_PENDING: thứ tự pool -> created_at -> zone_index,
+        # 14. chuyển TRIGGERED -> ACTION_PENDING: thứ tự §15.1 [F2] (zone_order_key),
         # max_zones_per_cycle áp SAU khi sắp thứ tự; cooldown/override; INVALID chặn
         if candidates and dq != "INVALID":
-            pool_rank = {"BASE": 0, "SMART": 1, "OPPORTUNITY": 2}
             lad_by_id = {l.ladder_id: l for l in ladders}
-            candidates.sort(key=lambda z: (pool_rank.get(z.pool, 3),
-                                           lad_by_id[z.ladder_id].created_at, z.zone_index))
+            candidates.sort(key=lambda z: zone_order_key(z, lad_by_id[z.ladder_id]))
             created = 0
+            override_counted_this_cycle = False
             ts_close = ts + 900.0
             local_hour = int(((ts_close + TZ_OFFSET) % DAY) // 3600)
             for z in candidates:
@@ -516,8 +606,26 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     break
                 if in_cooldown and not override_ok:
                     continue  # zone giữ TRIGGERED, xét lại cycle sau (CONVENTIONS #6)
+                if lad_by_id[z.ladder_id].type == "CRASH":
+                    # ST §14: "Toàn bộ daily limit ... vẫn áp dụng trong Crash" — cưỡng chế
+                    # ở khâu triển khai trên PHẦN VỐN OPPORTUNITY của zone (CONVENTIONS #4).
+                    # Zone bị chặn giữ TRIGGERED, xét lại cycle sau như max_zones (§15.1).
+                    opp_part = sum(a for p, a in reserve_map.get(z.zone_id, [])
+                                   if p == "OPPORTUNITY")
+                    if opp_part > 1e-12:
+                        headroom = max(0.0, opp_fund.total * cfg.opportunity_daily_limit_pct
+                                       - opp_used_today)
+                        if opp_part > headroom + 1e-9:
+                            log(ts, "DAILY_LIMIT_BLOCK", zone=z.zone_id)
+                            continue
+                        opp_used_today += opp_part
                 if in_cooldown and override_ok:
-                    counters["cooldown_override"][regime.regime] += 1
+                    # đếm theo SỰ KIỆN override (một cycle), không theo zone được tạo action
+                    # (WP-D1/F-031; BT §16/§21 dòng 301 — "tần suất cooldown override theo
+                    # regime" là số liệu chẩn đoán, không phải input cho quyết định engine)
+                    if not override_counted_this_cycle:
+                        counters["cooldown_override"][regime.regime] += 1
+                        override_counted_this_cycle = True
                     log(ts, "COOLDOWN_OVERRIDE", zone=z.zone_id)
                 create_action(z, lad_by_id[z.ladder_id], ts_close, cl, local_hour)
                 created += 1

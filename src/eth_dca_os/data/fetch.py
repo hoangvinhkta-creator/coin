@@ -21,6 +21,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from .dataset import SOURCE_BULK_ARCHIVE, SOURCE_REST, SOURCE_UNKNOWN
+
 BASE_URL = "https://api.binance.com/api/v3/klines"
 ARCHIVE_URL = "https://data.binance.vision/data/spot/monthly/klines"
 COLUMNS = ["open_time", "open", "high", "low", "close", "volume"]
@@ -112,15 +114,23 @@ def fetch_month_archive(symbol: str, interval: str, year: int, month: int,
 
 
 def fetch_series(symbol: str, interval: str, start: datetime, end: datetime,
-                 session: requests.Session | None = None) -> pd.DataFrame:
-    """Bulk archive cho các tháng đã hoàn tất, REST cho phần đuôi còn thiếu."""
+                 session: requests.Session | None = None) -> tuple[pd.DataFrame, list[str]]:
+    """Bulk archive cho các tháng đã hoàn tất, REST cho phần đuôi còn thiếu.
+
+    WP-A1/A1.1: trả kèm danh sách cơ chế THỰC SỰ đã đóng góp cho series này, để lineage
+    ghi được nguồn thật thay vì một chuỗi cố định. Thứ tự phản ánh mức đóng góp: archive
+    trước (các tháng đủ), REST sau (phần đuôi chưa lên archive).
+    """
     s = session or requests.Session()
     frames = []
+    used: list[str] = []
     for year, month in months_between(start, end):
         df = fetch_month_archive(symbol, interval, year, month, s)
         if df is None:
             break  # tháng chưa có trong archive -> phần còn lại lấy qua REST
         frames.append(df)
+    if frames:
+        used.append(SOURCE_BULK_ARCHIVE)
     have_until = frames[-1]["open_time"].max() if frames else None
     rest_from = (have_until.to_pydatetime().replace(tzinfo=None)
                  + pd.Timedelta(INTERVAL_MS[interval], unit="ms").to_pytimedelta()
@@ -129,17 +139,19 @@ def fetch_series(symbol: str, interval: str, start: datetime, end: datetime,
         tail = fetch_klines(symbol, interval, rest_from, end, s)
         if len(tail):
             frames.append(tail)
+            used.append(SOURCE_REST)
     if not frames:
-        return pd.DataFrame(columns=COLUMNS)
+        return pd.DataFrame(columns=COLUMNS), used
     out = pd.concat(frames, ignore_index=True)
     out = out[(out["open_time"] >= pd.Timestamp(start, tz="UTC"))
               & (out["open_time"] < pd.Timestamp(end, tz="UTC"))]
-    return out.drop_duplicates("open_time").sort_values("open_time").reset_index(drop=True)
+    return (out.drop_duplicates("open_time").sort_values("open_time").reset_index(drop=True),
+            used)
 
 
 def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = None) -> dict:
     """Tải ETHUSDT 1D + BTCUSDT 1D (từ 2018 để đủ warm-up 365d) và ETHUSDT 15m (từ 2019)."""
-    from .dataset import write_raw, build_lineage
+    from .dataset import build_lineage, write_raw
 
     raw = Path(raw_dir)
     raw.mkdir(parents=True, exist_ok=True)
@@ -147,14 +159,28 @@ def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = 
     end_dt = datetime.fromisoformat(end) if end else datetime.now(timezone.utc).replace(tzinfo=None)
 
     session = requests.Session()
-    files = {}
+    files, sources, details, requested = {}, {}, {}, {}
     for symbol, interval, s0 in (
         ("ETHUSDT", "1d", start_dt),
         ("BTCUSDT", "1d", start_dt),
         ("ETHUSDT", "15m", datetime(2019, 1, 1)),
     ):
-        df = fetch_series(symbol, interval, s0, end_dt, session)
-        files[f"{symbol}_{interval}"] = write_raw(df, raw, symbol, interval,
-                                                  source="binance-archive+api")
-    lineage = build_lineage(raw)
-    return {"files": files, "dataset_hash": lineage["dataset_hash"]}
+        key = f"{symbol}_{interval}"
+        # WP-A4: khoảng ĐƯỢC YÊU CẦU được ghi lại tại nơi duy nhất biết nó. Sau lệnh này
+        # `df` chỉ còn nói được nó CÓ gì, không nói được nó ĐÃ ĐƯỢC XIN gì — mà cắt cụt
+        # thì chỉ nhìn ra khi so hai thứ đó với nhau (F-E2A1R3-05).
+        requested[key] = (s0.isoformat(), end_dt.isoformat())
+        df, used = fetch_series(symbol, interval, s0, end_dt, session)
+        # WP-A1/A1.1: nhãn canonical là cơ chế CHÍNH của series; khi series được lắp từ cả
+        # archive lẫn REST, thành phần đầy đủ nằm ở `source_detail` (docs/CONVENTIONS.md).
+        # Fail-closed: không cơ chế nào đóng góp thì KHÔNG có nguồn nào để khai. Gán
+        # `binance_rest` ở đây (như trước S008) biến một lần fetch trắng thành dữ liệu
+        # Binance "thật" và đủ tư cách official — F-E2A1-01.
+        sources[key] = used[0] if used else SOURCE_UNKNOWN
+        details[key] = used
+        files[key] = write_raw(df, raw, symbol, interval, source=sources[key])
+    lineage = build_lineage(raw, sources, source_detail=details,
+                            requested_range=requested)
+    return {"files": files, "dataset_hash": lineage["dataset_hash"],
+            "sources": sources, "source_detail": details,
+            "requested_range": requested}

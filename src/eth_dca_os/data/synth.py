@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .dataset import build_lineage
+from .dataset import SOURCE_SYNTHETIC, build_lineage
 
 SYNTH_SEED = 20260822
 
@@ -95,6 +95,17 @@ def generate(raw_dir: str | Path, start: str = "2018-01-01", end: str = "2026-06
     eth1d.to_parquet(raw / "ETHUSDT_1d.parquet", index=False)
     btc1d.to_parquet(raw / "BTCUSDT_1d.parquet", index=False)
     eth15.to_parquet(raw / "ETHUSDT_15m.parquet", index=False)
-    lineage = build_lineage(raw)
+    # WP-A1/A1.1: nguồn được khai báo tại nơi dataset được tạo. Dữ liệu tổng hợp KHÔNG BAO
+    # GIỜ đủ điều kiện official (DEC-003) — `official_eligibility` chặn nhờ nhãn này.
+    # WP-A4: nơi sản xuất khai khoảng ĐƯỢC YÊU CẦU, y như `fetch_all`. 15m bị cắt về từ
+    # 2019 theo Backtest §2 nên khoảng yêu cầu của nó khác hai series 1D — khai đúng phần
+    # thực sự được yêu cầu, không khai cả khoảng rồi tự báo thiếu.
+    req_start, req_end = pd.Timestamp(start).isoformat(), pd.Timestamp(end).isoformat()
+    req_15m = max(pd.Timestamp(start), pd.Timestamp("2019-01-01")).isoformat()
+    lineage = build_lineage(raw, SOURCE_SYNTHETIC, requested_range={
+        "ETHUSDT_1d": (req_start, req_end),
+        "BTCUSDT_1d": (req_start, req_end),
+        "ETHUSDT_15m": (req_15m, req_end),
+    })
     return {"rows_15m": len(eth15), "rows_1d": len(eth1d),
             "dataset_hash": lineage["dataset_hash"]}

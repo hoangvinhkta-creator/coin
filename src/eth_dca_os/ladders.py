@@ -135,5 +135,8 @@ def open_zones(ladder: Ladder) -> list[Zone]:
 
 
 def ladder_completed(ladder: Ladder) -> bool:
-    return all(z.status in ("EXECUTED", "PARTIALLY_FILLED", "CANCELLED", "EXPIRED", "MISSED")
+    """Strategy §8: phần chưa fill của một PARTIALLY_FILLED zone còn ở RESERVED cho tới hết
+    ACTION_TTL — zone đó chưa kết thúc, nên KHÔNG được tính vào điều kiện hoàn tất ladder
+    (WP-D1/F-029; trước đây PARTIALLY_FILLED bị coi sai là trạng thái kết thúc)."""
+    return all(z.status in ("EXECUTED", "CANCELLED", "EXPIRED", "MISSED")
                for z in ladder.zones) and any(z.status == "EXECUTED" for z in ladder.zones)

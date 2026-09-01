@@ -74,7 +74,7 @@ def main(argv=None):
         state_file = out_dir / "pipeline_state.json"
         if args.what in ("gate1", "all"):
             print("Gate 1 + OOS ...")
-            g1 = run_gate1(prep, out_dir)
+            g1 = run_gate1(prep, out_dir, dev_limit=args.dev_limit)
             results["gate1"] = g1
             from .reporting import print_gate1_report
             print(print_gate1_report(g1))
@@ -105,7 +105,8 @@ def main(argv=None):
                   f"G p95={ctl['random_anchor']['p95']:.3f} v2={ctl['v2_eth']:.3f}")
         if args.what == "all":
             verdict_payload = run_verdict(results["gate1"], results["gate2"], results["gate3"],
-                                          results.get("controls"), out_dir, prep.dataset_hash)
+                                          results.get("controls"), out_dir, prep.dataset_hash,
+                                          data_source=prep.data_source)
             results["verdict"] = verdict_payload
             print("=== VERDICT ===")
             print(json.dumps(verdict_payload["verdict"], indent=1, ensure_ascii=False))
