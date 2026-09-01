@@ -47,7 +47,7 @@ Golden. Đây là giới hạn thật, phải được nói rõ, không được
 | Capability | Tên | Lineage root | Owner task hiện hành | Trạng thái | Nằm trên Vertical Slice? |
 |---|---|---|---|---|---|
 | `CAP-PROV` | Nguồn gốc & khả năng tái lập của official run | `WP-A1` | `WP-A1` | IN_PROGRESS — E2 vòng ba FAIL | CÓ (bắt buộc cho GATE-A) |
-| `CAP-DATA` | Ngữ nghĩa dữ liệu thiếu/hỏng | `WP-A4` | `WP-A4` | READY | CÓ (đường găng) |
+| `CAP-DATA` | Ngữ nghĩa dữ liệu thiếu/hỏng (gồm độ phủ theo khoảng được yêu cầu) | `WP-A4` | `WP-A4` | DONE — 9/9 REQUIRED check PASS tại S009 | CÓ (đường găng) |
 | `CAP-ENGINE` | Vòng đời regime & ladder, kế toán vốn | `WP-A3` | `WP-A3` (DONE), `WP-A7` (DONE) | DONE | CÓ |
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | READY | CÓ |
@@ -60,17 +60,31 @@ Golden. Đây là giới hạn thật, phải được nói rõ, không được
 
 ---
 
-## 3. Ranh giới capability đang gây ra ownership gap
+## 3. Ranh giới capability — ownership gap ĐÃ ĐÓNG (2026-09-01)
 
-`CAP-PROV` (`WP-A1`) sở hữu `src/eth_dca_os/data/` theo Expected Touch Area của WP-A1.
-`CAP-DATA` (`WP-A4`) **loại trừ tường minh** `src/eth_dca_os/data/` khỏi phạm vi:
-Expected Touch Area của WP-A4 ghi "gói này xử lý **ngữ nghĩa** dữ liệu xấu, không xử lý
-việc **lấy** dữ liệu".
+Khe giữa `CAP-PROV` và `CAP-DATA` đã được chủ dự án đóng bằng `DEC-014` / `OD-A4-01`.
 
-Hệ quả: một finding về "dữ liệu bị cắt cụt lúc fetch vẫn đủ tư cách official" rơi đúng vào
-khe giữa hai capability. Xem `docs/decisions/ADOPTION-V4_3-migration-record.md` §5 —
-`F-E2A1R3-05` được phân loại `OWNER_ASSIGNMENT_REQUIRED`, **không** được gán bừa vào WP-A4
-và **không** được đặt ID mới.
+Trạng thái CŨ (giữ lại để đọc được lịch sử): `CAP-PROV` (`WP-A1`) sở hữu
+`src/eth_dca_os/data/` theo Expected Touch Area của WP-A1, còn `CAP-DATA` (`WP-A4`) loại
+trừ tường minh thư mục đó. Một finding về "dữ liệu bị cắt cụt lúc fetch vẫn đủ tư cách
+official" (`F-E2A1R3-05`) vì thế rơi đúng vào khe giữa hai capability và được phân loại
+`OWNER_ASSIGNMENT_REQUIRED` — xem `docs/decisions/ADOPTION-V4_3-migration-record.md` §5.
+
+Trạng thái HIỆN TẠI: chủ dự án đọc câu loại trừ đúng như nó viết — loại trừ là về **cơ chế
+LẤY** dữ liệu (HTTP, retry, rate-limit, nguồn archive/REST), KHÔNG phải về **ngữ nghĩa
+coverage**. `F-E2A1R3-05` được gán cho `CAP-DATA` và hấp thụ vào `WP-A4`. Đóng tại S009,
+`CHECK-A4-10` PASS.
+
+Ranh giới từ đây, để không phải quyết lại:
+
+| Chủ đề | Capability sở hữu |
+|---|---|
+| Nguồn dữ liệu, nhãn lineage, checksum, tái lập run | `CAP-PROV` (WP-A1) |
+| Cơ chế LẤY dữ liệu: HTTP, retry, rate-limit, archive/REST | `CAP-PROV` (WP-A1) |
+| Ngữ nghĩa coverage / gap / đối chiếu khoảng được yêu cầu | `CAP-DATA` (WP-A4) |
+| Ngữ nghĩa DEGRADED / INVALID, nhãn gap trên bản ghi | `CAP-DATA` (WP-A4) |
+
+Không task ID mới được tạo trong cả quá trình này.
 
 `CAP-GOVTOOL` chưa có owner cho khiếm khuyết glob của `validate_evidence.py` /
 `validate_task_completion.py`. Đây là mục đã nằm sẵn trong danh sách "Cần chủ dự án quyết

@@ -159,13 +159,17 @@ def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = 
     end_dt = datetime.fromisoformat(end) if end else datetime.now(timezone.utc).replace(tzinfo=None)
 
     session = requests.Session()
-    files, sources, details = {}, {}, {}
+    files, sources, details, requested = {}, {}, {}, {}
     for symbol, interval, s0 in (
         ("ETHUSDT", "1d", start_dt),
         ("BTCUSDT", "1d", start_dt),
         ("ETHUSDT", "15m", datetime(2019, 1, 1)),
     ):
         key = f"{symbol}_{interval}"
+        # WP-A4: khoảng ĐƯỢC YÊU CẦU được ghi lại tại nơi duy nhất biết nó. Sau lệnh này
+        # `df` chỉ còn nói được nó CÓ gì, không nói được nó ĐÃ ĐƯỢC XIN gì — mà cắt cụt
+        # thì chỉ nhìn ra khi so hai thứ đó với nhau (F-E2A1R3-05).
+        requested[key] = (s0.isoformat(), end_dt.isoformat())
         df, used = fetch_series(symbol, interval, s0, end_dt, session)
         # WP-A1/A1.1: nhãn canonical là cơ chế CHÍNH của series; khi series được lắp từ cả
         # archive lẫn REST, thành phần đầy đủ nằm ở `source_detail` (docs/CONVENTIONS.md).
@@ -175,6 +179,8 @@ def fetch_all(raw_dir: str | Path, start: str = "2018-01-01", end: str | None = 
         sources[key] = used[0] if used else SOURCE_UNKNOWN
         details[key] = used
         files[key] = write_raw(df, raw, symbol, interval, source=sources[key])
-    lineage = build_lineage(raw, sources, source_detail=details)
+    lineage = build_lineage(raw, sources, source_detail=details,
+                            requested_range=requested)
     return {"files": files, "dataset_hash": lineage["dataset_hash"],
-            "sources": sources, "source_detail": details}
+            "sources": sources, "source_detail": details,
+            "requested_range": requested}

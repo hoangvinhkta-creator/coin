@@ -122,13 +122,124 @@ tư cách official.
 
 **Cờ `official` là hàm dẫn xuất, không phải trường ghi được.** Nguồn sự thật duy nhất là
 `data.dataset.official_eligibility(raw_dir, lineage)`; `Prepared` gọi nó một lần và mọi gate
-dùng chung kết quả. Điều kiện: mọi series phải mang nguồn thuộc `REAL_SOURCES`, **và** lineage
-phải verify được checksum — từng `file_hash` khớp file trên đĩa và `dataset_hash` tái lập được
-từ danh sách đó. Thiếu lineage, thiếu file, hash lệch, hay nguồn không thật đều trả `False`
-kèm lý do, và lý do đó được ghi vào run record (`official_reason`). Không tham số, flag CLI
-hay biến môi trường nào đi vào phép dẫn xuất này (CHECK-A1-07).
+dùng chung kết quả. Điều kiện, theo đúng thứ tự kiểm (thứ tự cố định để reason code tất định):
 
-Giới hạn cần biết: quy ước này chứng minh dữ liệu **khớp với nguồn đã khai và không bị sửa
-sau khi khai**. Nó không thể phát hiện người vận hành cố ý dán nhãn `binance_*` lên dữ liệu
-không phải của Binance — chống điều đó cần đối chiếu với sàn (`ethdca freeze` hai máy theo
-DEC-003), nằm ngoài phạm vi WP-A1.
+1. lineage tồn tại và đúng dạng;
+2. không series trùng lặp, không series lạ ngoài `REQUIRED_SERIES`, không thiếu series nào;
+3. mỗi series có `file_hash`;
+4. mỗi series có `row_count > 0` — một series canonical rỗng KHÔNG được đọc thành "không có
+   tin xấu";
+5. mỗi series mang nguồn thuộc `REAL_SOURCES`;
+6. mỗi series **phủ đủ khoảng thời gian ĐƯỢC YÊU CẦU** (mục dưới đây, WP-A4);
+7. lineage verify được checksum — từng `file_hash` khớp file trên đĩa và `dataset_hash` tái
+   lập được từ chính danh sách đó.
+
+Bất kỳ điều kiện nào không thoả đều trả `False` kèm lý do, và lý do đó được ghi vào run
+record (`official_reason`). Không tham số, flag CLI hay biến môi trường nào đi vào phép dẫn
+xuất này (CHECK-A1-07) — chữ ký `official_eligibility(raw_dir, lineage)` được khoá bằng test.
+
+## Indicator daily bắt buộc và ranh giới DEGRADED / INVALID (WP-A4/A4.1)
+
+Strategy §3 định nghĩa INVALID là "giá/lịch sử ETH **hoặc** indicator bắt buộc không hợp
+lệ" nhưng **không liệt kê** tập "indicator bắt buộc". Đây là điểm spec để ngỏ, nên quy ước
+được chốt ở đây (`src/eth_dca_os/score.py::REQUIRED_DAILY_INDICATORS`).
+
+**Tiêu chí.** Một indicator là BẮT BUỘC khi engine không thể hình thành một quyết định
+Smart/Opportunity có căn cứ nếu thiếu nó — tức nó được đọc trên **đường hành động**, chứ
+không chỉ là một sub-component của score. §3 đã nói rõ sub-component thiếu là DEGRADED, nên
+gộp sub-component vào tập bắt buộc sẽ xoá mất chính ranh giới mà §3 dựng lên.
+
+| Indicator | Vì sao bắt buộc |
+|---|---|
+| `close` | Giá/lịch sử ETH. Thiếu giá thì không có gì hợp lệ để quyết. Giá `<= 0` cũng là INVALID, không phải "thiếu". |
+| `adr30` | Engine đòi nó để dựng bất kỳ ladder nào (spacing Smart/Opportunity). Thiếu thì không có ladder nào hợp lệ. |
+| `return7` | Vừa là sub-component S7, vừa là input phát hiện regime CRASH/STRESSED. Thiếu nó engine không phân biệt được CRASH với NORMAL, mà chính sách hành động phụ thuộc vào phân biệt đó. |
+
+`btc_close` **không** bắt buộc: thiếu BTC chỉ làm hai sub-component W/RP thiếu → DEGRADED,
+đúng như §3 mô tả ("giá/lịch sử **ETH**"). Các input sub-factor còn lại (`dd365`,
+`ma_ratio`, `percentile365`, `rsi14`, `volume_ratio`, `ethbtc_return30`,
+`ethbtc_percentile180`) cũng không bắt buộc — thiếu chúng là DEGRADED.
+
+**Ranh giới.**
+
+| Trạng thái | Điều kiện |
+|---|---|
+| `GOOD` | Đủ tám sub-factor và đủ indicator bắt buộc. |
+| `DEGRADED` | Thiếu một phần sub-component, nhưng indicator bắt buộc còn hợp lệ. Sub-component thiếu đóng góp đúng 0, KHÔNG rescale. |
+| `INVALID` | Giá/lịch sử ETH hoặc **một** indicator bắt buộc không hợp lệ. `oscore = NaN` (Data Model §4). Chặn mọi action Smart/Opportunity mới; Base schedule vẫn chạy. |
+
+Định nghĩa TRƯỚC WP-A4 chỉ đặt INVALID khi mất **cả tám** sub-factor (`F-023`). Nó hẹp hơn
+§3: thiếu `return7` chỉ làm 2/8 sub-factor NaN, nên luật cũ đọc là DEGRADED và engine tiếp
+tục hành động ở đúng những thời điểm §3 yêu cầu dừng.
+
+Fail-closed: khung dữ liệu không mang nổi một cột bắt buộc thì MỌI ngày là INVALID — không
+chứng minh được hợp lệ phải đọc thành không hợp lệ.
+
+## Nhãn chất lượng dữ liệu trên purchase record (WP-A4/A4.4, A4.5)
+
+Backtest §18 đòi **tag trên bản ghi**, không phải bộ đếm tổng. Bộ đếm nói CÓ BAO NHIÊU bản
+ghi bị ảnh hưởng bởi lỗ hổng dữ liệu; chỉ nhãn mới nói BẢN GHI NÀO — và sau official run
+thì câu hỏi cần trả lời là câu thứ hai (`F-025`, `F-032`).
+
+Mỗi purchase record mang `tags` (danh sách) và `missing_candles_before` (số nến 15m thiếu
+ngay trước nến thực thi):
+
+| Tag | Khi nào gắn |
+|---|---|
+| `EXECUTION_DATA_GAP` | Bản ghi được tạo tại nến 15m hợp lệ ĐẦU TIÊN sau một lỗ hổng — mọi quyết định ở đó dựa trên dữ liệu không liên tục. Engine KHÔNG interpolate OHLC để trigger zone (§18); nó chỉ duyệt các nến có thật. |
+| `DELAYED_DATA_FILL` | Tranche Base không chạy được ở nến 12:00 local của ngày trigger vì nến đó nằm trong gap, nên được execute ở nến hợp lệ đầu tiên sau đó (ST §9 [F3]). Tranche Base **không bao giờ** bị bỏ vì gap dữ liệu. |
+
+Bộ đếm `counters["execution_data_gap"]` / `counters["delayed_data_fill"]` vẫn còn để đối
+chiếu, nhưng chúng phải luôn bằng số bản ghi mang tag tương ứng — test khoá cả hai chiều.
+
+## Độ phủ so với khoảng thời gian được yêu cầu (WP-A4, `OD-A4-01`)
+
+**Vấn đề.** `gap_report` trước WP-A4 chỉ đo lỗ hổng **giữa nến đầu và nến cuối quan sát
+được**. Phần thiếu ở HAI ĐẦU vì thế vô hình: một lần `ethdca fetch --start 2020-01-01
+--end 2021-01-01` mà archive chỉ có tới tháng 2020-01 và REST bị chặn cho ra 31/366 ngày —
+tức thiếu ~92% khoảng được yêu cầu — nhưng tự khai `missing_count = 0` và đi qua
+`official_eligibility` với `(True, 'verified')`. Dataset cắt cụt vẫn đủ tư cách official
+(`F-E2A1R3-05`).
+
+**Quy ước.** Khoảng thời gian được yêu cầu là **dữ kiện chỉ nơi sản xuất dataset biết** —
+file parquet kết quả không mang nó. Vì vậy nó được khai tại nơi tạo dataset và đi vào
+`lineage.json` cho từng series:
+
+| Trường | Nghĩa |
+|---|---|
+| `requested_start` / `requested_end` | Khoảng nửa mở `[start, end)` đã được yêu cầu cho series đó |
+| `expected_count` | Số nến kỳ vọng trong khoảng ĐƯỢC YÊU CẦU |
+| `missing_count` | `expected_count - row_count`, neo vào khoảng được yêu cầu |
+| `missing_head` / `missing_internal` / `missing_tail` | Thiếu ở đầu / giữa / đuôi — để một lần từ chối nói được thiếu **ở đâu** |
+
+`fetch_all` khai theo đúng tham số đã xin (`--start`/`--end`; riêng ETHUSDT 15m bắt đầu từ
+2019 theo Backtest §2). `synth.generate` khai tương tự. `build_lineage` khi dựng lại từ file
+trên đĩa sẽ **mang theo khai báo cũ** trong `lineage.json` nếu không được truyền khai báo
+mới — dựng lại mà đánh rơi khai báo là làm mất provenance, và mất nó là mất luôn khả năng
+phát hiện cắt cụt.
+
+**Ngưỡng.** Một series đủ tư cách official khi `missing_count <= expected_count *
+MAX_MISSING_RATIO`, hiện `MAX_MISSING_RATIO = 0.01`. Ngưỡng KHÔNG thể đặt bằng 0: dữ liệu
+Binance thật có gap do bảo trì sàn, nên ngưỡng 0 sẽ từ chối mọi dataset thật và làm official
+run bất khả thi. Ngưỡng đặt thấp và cố định; mọi lần từ chối đều mang theo số đo
+(`incomplete_coverage:ETHUSDT_1d=31/366 head=0 internal=0 tail=335`), nên khi T-06 chạy trên
+dữ liệu thật, một lần từ chối là **dữ kiện để chủ dự án quyết định**, không phải một hằng số
+để nới cho qua.
+
+**Fail-closed khi thiếu khai báo.** Lineage không khai được `requested_start`/`requested_end`
+cho một series thì series đó trả `coverage_undeclared:<series>` — "không chứng minh được là
+đủ" phải đọc thành KHÔNG ĐỦ, cùng nguyên tắc đã dùng cho dữ liệu rỗng và cho lineage thiếu
+series.
+
+**Giới hạn cần biết.** `missing_count` và
+`expected_count` là do `build_lineage` tính từ chính file trên đĩa, và `file_hash` khoá bản
+ghi vào đúng nội dung file đó. Nhưng người vận hành sửa TAY `lineage.json` để khai một khoảng
+yêu cầu hẹp khớp với dữ liệu cắt cụt thì cơ chế này không phát hiện được — cùng một giới hạn
+đã công bố ở `F-PRE008-01`, và cùng một biện pháp đối trọng (`ethdca freeze` hai máy theo
+DEC-003).
+
+**Giới hạn của quy ước NHÃN NGUỒN (WP-A1/A1.9, mục đầu trang này).** Quy ước đó chứng minh
+dữ liệu **khớp với nguồn đã khai và không bị sửa sau khi khai**. Nó không thể phát hiện
+người vận hành cố ý dán nhãn `binance_*` lên dữ liệu không phải của Binance — chống điều đó
+cần đối chiếu với sàn (`ethdca freeze` hai máy theo DEC-003), nằm ngoài phạm vi WP-A1
+(`F-PRE008-01`). Giới hạn về độ phủ nêu ngay trên là **cùng một lớp** với nó.

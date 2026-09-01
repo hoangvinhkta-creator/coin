@@ -37,6 +37,7 @@ from .score import opportunity_unlock, smart_unlock
 TZ_OFFSET = 7 * 3600  # Asia/Ho_Chi_Minh, không DST
 NOON = 12 * 3600
 DAY = 86400.0
+CANDLE = 900.0                  # một nến execution 15m, tính bằng giây
 
 # Thứ tự pool §15.1 [F2]: Base -> Smart -> Opportunity
 _POOL_RANK = {"BASE": 0, "SMART": 1, "OPPORTUNITY": 2}
@@ -88,6 +89,17 @@ def _prep_candles(eth15: pd.DataFrame, start_ts: float, end_ts: float) -> dict:
     idx0 = int(np.argmax(mask)) if mask.any() else 0
     arr = {k: eth15[k].to_numpy(float)[mask] for k in ("open", "high", "low", "close")}
     arr["ts"] = ts[mask]
+    # WP-A4/A4.4 (đóng F-025) — Backtest §18: nến 15m thiếu thì KHÔNG interpolate OHLC để
+    # trigger zone. Engine vốn đã không interpolate (nó chỉ duyệt các nến CÓ THẬT), nhưng
+    # trước gói này không bản ghi nào cho biết mình nằm ngay sau một lỗ hổng. Đếm được
+    # bao nhiêu gap mà không truy được bản ghi nào bị ảnh hưởng là đúng khiếm khuyết mà
+    # §18 cấm. Tính trên chuỗi ĐẦY ĐỦ trước khi cắt cửa sổ để nến đầu cửa sổ không bị
+    # gán nhãn oan.
+    missing_before = np.zeros(len(ts), dtype=np.int64)
+    if len(ts) > 1:
+        missing_before[1:] = np.maximum(
+            np.rint(np.diff(ts) / CANDLE).astype(np.int64) - 1, 0)
+    arr["missing_before"] = missing_before[mask]
     # Return24H nội ngày: 96 nến 15m liền trước — cần lịch sử trước start
     full_close = eth15["close"].to_numpy(float)
     sel = np.nonzero(mask)[0]
@@ -163,8 +175,10 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     counters = {
         "cooldown_override": {"NORMAL": 0, "STRESSED": 0, "CRASH": 0, "RECOVERY": 0},
         "triggered_actions": 0, "missed_actions": 0, "executed_actions": 0,
-        "base_early": 0, "delayed_data_fill": 0,
+        "base_early": 0, "delayed_data_fill": 0, "execution_data_gap": 0,
     }
+    # Nến đang xét có nằm ngay sau một lỗ hổng execution không (WP-A4/A4.4).
+    gap_before_now = 0
 
     day_end = d["day_end_ts"]
 
@@ -172,17 +186,40 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         if log_decisions:
             res.decision_log.append({"ts": ts, "reason_code": reason, **kw})
 
-    def record_purchase(ts, source, nominal, open_price, reason, recommended=None):
+    def record_purchase(ts, source, nominal, open_price, reason, recommended=None,
+                        tags=()):
+        """Ghi một purchase record. `tags` là nhãn chất lượng dữ liệu theo Backtest §18.
+
+        WP-A4/A4.4 + A4.5 (đóng F-025, F-032): nhãn được gắn LÊN BẢN GHI, không chỉ cộng
+        vào một bộ đếm tổng. Bộ đếm cho biết CÓ BAO NHIÊU bản ghi bị ảnh hưởng bởi lỗ
+        hổng dữ liệu; chỉ nhãn trên bản ghi mới cho biết BẢN GHI NÀO — và sau official run
+        thì câu hỏi cần trả lời là câu thứ hai.
+        """
         nonlocal eth_total, cooldown_until, last_exec_price
         eth, eff = apply_fill(nominal, open_price, exec_cfg)
         eth_total += eth
         month_key = pd.Timestamp(ts + TZ_OFFSET, unit="s").strftime("%Y-%m")
         res.monthly_deployments[month_key] = res.monthly_deployments.get(month_key, 0.0) + nominal
+        tag_list = list(tags)
+        if gap_before_now > 0 and "EXECUTION_DATA_GAP" not in tag_list:
+            # Nến này là nến hợp lệ ĐẦU TIÊN sau một lỗ hổng: mọi thứ xảy ra ở đây được
+            # quyết trên dữ liệu không liên tục, nên bản ghi phải tự khai điều đó.
+            tag_list.append("EXECUTION_DATA_GAP")
+        # Bộ đếm được cộng TẠI ĐÂY, nơi bản ghi thật sự được ghi — không cộng ở chỗ gọi.
+        # Cộng ở chỗ gọi thì một tranche bị bỏ qua vì `amt <= 0` vẫn làm bộ đếm tăng, và
+        # bộ đếm lại nói về những bản ghi không tồn tại. Đó đúng là kiểu sai lệch mà F-032
+        # phàn nàn, chỉ đổi chiều. Bất biến: bộ đếm == số bản ghi mang tag tương ứng.
+        for tag, key in (("EXECUTION_DATA_GAP", "execution_data_gap"),
+                         ("DELAYED_DATA_FILL", "delayed_data_fill")):
+            if tag in tag_list:
+                counters[key] += 1
         res.purchases.append({
             "ts": ts, "source": source, "nominal": nominal, "price": eff, "eth": eth,
             "reason": reason, "regime": regime.regime,
             "recommended_price": recommended,
             "shortfall_bps": ((eff / recommended - 1) * 1e4) if recommended else None,
+            "tags": tag_list,
+            "missing_candles_before": int(gap_before_now),
         })
         if source in ("SMART", "OPPORTUNITY", "CRASH"):
             cooldown_until = ts + cfg.cooldown_hours * 3600.0
@@ -240,14 +277,14 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             if buy > 0 and smart_pool.deploy_from_available(buy, "MONTH_END_SMART", ts):
                 record_purchase(ts, "SMART", buy, open_price, "MONTH_END_SMART")
 
-    def execute_base_tranche(idx, ts, open_price, reason):
+    def execute_base_tranche(idx, ts, open_price, reason, tags=()):
         amt = min(base_state.tranche_amount(idx), base_pool.available)
         if amt <= 1e-9:
             base_state.executed.add(idx)
             return
         base_pool.deploy_from_available(amt, reason, ts)
         base_state.executed.add(idx)
-        record_purchase(ts, "BASE", amt, open_price, reason)
+        record_purchase(ts, "BASE", amt, open_price, reason, tags=tags)
 
     def create_action(z, lad, ts_close, close_price, local_hour):
         """TRIGGERED -> ACTION_PENDING với delay model (Backtest §5–§6)."""
@@ -276,6 +313,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     for i in range(n):
         ts = c["ts"][i]                              # 1. tiến đồng hồ (open time của nến)
         o, hi, lo, cl = c["open"][i], c["high"][i], c["low"][i], c["close"][i]
+        gap_before_now = int(c["missing_before"][i])
         local = ts + TZ_OFFSET
         day_ord = int(local // DAY)
         lts = pd.Timestamp(local, unit="s")
@@ -289,8 +327,11 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 expire_smart_ladders(ts)             # 3. Smart ladder hết hạn cuối tháng
                 # đóng sổ: Base còn sót (gap) giải ngân ngay, Smart leftover theo policy
                 for idx in base_state.pending():
-                    execute_base_tranche(idx, ts, o, "MONTH_END_BASE")
-                    counters["delayed_data_fill"] += 1
+                    # ST §9 [F3]: tranche Base chưa chạy được ở nến 12:00 của ngày trigger
+                    # (nến đó nằm trong gap) được giải ngân tại nến hợp lệ đầu tiên sau đó.
+                    # Tranche Base KHÔNG BAO GIỜ bị bỏ vì gap dữ liệu.
+                    execute_base_tranche(idx, ts, o, "MONTH_END_BASE",
+                                         tags=("DELAYED_DATA_FILL",))
                 settle_month_end_smart(ts, o)
             cur_month = month_key
             # 3->4. đóng sổ tháng cũ / mở sổ tháng mới cho phạm vi unlock Smart theo
@@ -363,9 +404,8 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             delayed = tod > NOON + 900
             for k, (day_no, _) in enumerate(BASE_SCHEDULE):
                 if acct_day == day_no and k in base_state.pending():
-                    execute_base_tranche(k, ts, o, "BASE_SCHEDULE")
-                    if delayed:
-                        counters["delayed_data_fill"] += 1
+                    execute_base_tranche(k, ts, o, "BASE_SCHEDULE",
+                                         tags=("DELAYED_DATA_FILL",) if delayed else ())
             if acct_day == 25 and base_pool.available > 1e-9:
                 # Day 25–27: settle 50% phần Base còn lại (CONVENTIONS #7)
                 amt = base_pool.available * 0.5

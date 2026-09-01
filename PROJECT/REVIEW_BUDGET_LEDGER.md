@@ -24,6 +24,8 @@ cáo.
     BASELINE SHA   = 666de143a3159b5d2a9f6237eb7160a8e590edfe   (2026-08-24, commit cuối
                      trước khi WP-A1 bắt đầu — WP-A2 DONE)
     CURRENT HEAD   = d63c222532e87643d09b71f435a7dd276b361a88   (2026-09-01)
+                     KHÔNG đổi tại S009: WP-A4 sửa `src/eth_dca_os/data/` nhưng đó là công
+                     việc của CAP-DATA, không phải repair cycle của CAP-PROV. Xem §2.1.
     BRANCH         = claude/wp-a1-provenance-v67k9h
 
 ### Chu kỳ đã tiêu (đo bằng git, production paths theo `PROJECT/PRODUCTION_PATHS.md`)
@@ -94,7 +96,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-PIPELINE` | `WP-A2` | `0f2a2ab` | 0 | 1 (PASS) | DONE tại S006 |
 | `CAP-ENGINE` | `WP-A3` | `5645a74` | 0 | 1 (PASS) | DONE tại S003; `WP-A7` DONE tại S004 (E2 PASS WITH FOLLOW-UPS) |
 | `CAP-DEBT` | `WP-D1` | `1f4c2b7` | 0 | 0 | DONE tại S005, E1 |
-| `CAP-DATA` | `WP-A4` | chưa bắt đầu | 0 | 0 | READY |
+| `CAP-DATA` | `WP-A4` | `06b381c` | 0 | 0 | VERIFYING — xem §2.1 |
 | `CAP-MEASURE` | `WP-A5` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-ORDER` | `WP-A6` | chưa bắt đầu | 0 | 0 | PLANNED |
 | `CAP-WEBAPP` | `WP-C1` | chưa bắt đầu | 0 | 0 | READY |
@@ -102,6 +104,52 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-GOVTOOL` | `MICRO-GOVDEF-001` | `4fab2e9` | 0 | 0 | Phần glob validator chưa có owner |
 
 Các capability chưa bắt đầu có budget used = 0 vì **chưa tiêu**, không phải vì được reset.
+
+### 2.1 `CAP-DATA` — Ngữ nghĩa dữ liệu thiếu/hỏng
+
+    LINEAGE ROOT   = WP-A4 (docs/tasks/WP-A4-ngu-nghia-du-lieu-xau.md)
+    BASELINE SHA   = 06b381cb8dd2fc41806104b2cfbb1a539d2ceaaf   (2026-09-01, commit cuối
+                     trước khi WP-A4 bắt đầu — phiên Owner Disposition)
+    BRANCH         = claude/wp-a1-provenance-v67k9h
+
+| # | Loại | BASE SHA | HEAD SHA | Diff production path | Kết quả |
+|---|---|---|---|---|---|
+| 0 | Implementation ban đầu (S009) | `06b381c` | (commit S009) | 5 files, +272 / −32 | 9/9 REQUIRED check PASS |
+
+    REPAIR CYCLES ĐÃ TIÊU  = 0
+    VÒNG E2 ĐÃ TIÊU        = 0   (CHECK-A4-09 là RECOMMENDED, không phải điều kiện DONE)
+
+Delivery change budget tích luỹ, đo trực tiếp (không cộng tay):
+
+    git diff --shortstat 06b381cb8dd2fc41806104b2cfbb1a539d2ceaaf..HEAD \
+        -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+
+    -> 5 files changed, 272 insertions(+), 32 deletions(-)
+
+Trạng thái budget:
+
+    ALLOWED BUDGET            = V4.3 default theo Effective Risk hiện tại
+    CURRENT BUDGET USED       = 0 repair cycle
+    CURRENT BUDGET REMAINING  = default nguyên vẹn
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+Effective Risk của `CAP-DATA` = `MAX(Local Risk 3, Blast Radius 2)` = **3**, tính từ chính
+routing metadata đã FROZEN của WP-A4 (`R: 3`, `B: 2`), không nâng bằng trực giác. Không có
+evidence nào tại S009 làm đổi routing input, nên KHÔNG `SCOPE_CHANGED` và KHÔNG recompute.
+
+Ghi rõ giới hạn: chỉ thị phiên S009 yêu cầu "nếu budget chưa được canonical xác định thì áp
+dụng V4.3 default theo Effective Risk hiện tại". Dự án chưa có một con số `<N>` cho
+`SESSION_PRODUCTION_DIFF_MAX` / `GOLDEN_CUMULATIVE_DIFF_MAX` — `DELIVERY_LOOP.md` §II.4 nói
+rõ đó là **PROJECT value**, phải khai ở tầng dự án, và tầng dự án chưa khai. Nguyên nhân
+gốc đã có số hiệu: `HARDENING_BACKLOG.md` **H-10** — chưa có Golden Baseline nên tầng budget
+thứ hai chưa đo được. Vì vậy `ALLOWED BUDGET` ở đây ghi đúng như nó là: default V4.3 chưa
+được lượng hoá. **Không** chọn một con số tiện tay rồi gọi đó là hạn mức.
+
+`CAP-DATA` KHÔNG kế thừa và KHÔNG bị tính vào budget của `CAP-PROV`. Hai lineage root khác
+nhau (`WP-A4` vs `WP-A1`); đây không phải một task split để giải phóng budget — WP-A4 đã tồn
+tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budget (`DEC-012`,
+2026-09-01). Việc hấp thụ `F-E2A1R3-05` vào WP-A4 (`DEC-014`) là định tuyến finding theo
+`REVIEW_PROTOCOL.md`, không phải tạo unit công việc mới: số task ID mới = **0**.
 
 ---
 

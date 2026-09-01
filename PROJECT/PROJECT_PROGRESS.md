@@ -25,31 +25,34 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-08-24 — S006 hoàn tất: **WP-A2 DONE** (10/10 REQUIRED check PASS; F-003/F-004/F-012/
-F-013/F-014 đóng; RSK-007 giảm thiểu một phần — phần FS còn lại thuộc WP-A5)
+2026-09-01 — S009 hoàn tất: **WP-A4 DONE** (9/9 REQUIRED check PASS gồm `CHECK-A4-10` do
+chủ dự án bổ sung qua `DEC-014`/`OD-A4-01`; đóng F-023, F-025, F-032 và **F-E2A1R3-05**).
+Phát hiện mới ngoài phạm vi: `F-S009-01` — CONFIRMED BLOCKING, `OWNER_ASSIGNMENT_REQUIRED`
+(xem `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md`). Task ID mới được tạo = 0.
 
 Overall Status:
 IN_PROGRESS
 
 Current Phase:
-Phase 2 — Lớp A (bắt buộc sửa trước official run). Bốn gói lớp A đã DONE: WP-A2, WP-A3,
-WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A4, WP-A5, WP-A6**.
+Phase 2 — Lớp A (bắt buộc sửa trước official run). Năm gói lớp A đã DONE: WP-A2, WP-A3,
+WP-A4, WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A5, WP-A6**.
 
 Current Task:
-Không có (S006 vừa đóng WP-A2; chờ chỉ thị của chủ dự án)
+Không có (S009 vừa đóng WP-A4; chờ chỉ thị của chủ dự án)
 
 Current Task Mode:
 —
 
 Next Recommended Task:
-Chủ dự án chọn một trong các task đang READY: **WP-A4** (khuyến nghị — mắt xích còn lại
-của cặp song song trên đường găng T-04 → WP-A3 ✅ → {WP-A4 ∥ WP-A7 ✅} → WP-A6 → GATE-A →
-T-06; nhánh làm việc đã push xong mọi thay đổi `engine.py` nên WP-A4 rebase/merge tuần tự
-sau các hook nhỏ của WP-A3/WP-A7/WP-D1), **WP-A1** (prerequisite GATE-A, độc lập),
-WP-C1, WP-D2.
-**WP-A5 nay đã đủ dependency** (WP-A2 ✅ + WP-A3 ✅ + WP-A7 ✅) — xem mục Next Session;
-lưu ý WP-A5 cùng sửa `pipeline.py` với WP-A2 nên phải tuần tự hoá (WP-A2 đã push xong).
-KHÔNG tự mở — agent dừng sau WP-A2 theo chỉ thị của chủ dự án (S006).
+**WP-A6** nay đã đủ dependency (WP-A3 ✅ + WP-A4 ✅ + WP-A7 ✅) và là mắt xích tiếp theo
+trên đường găng; nó cũng phải trả lời H-15 (zone TRIGGERED trong chu kỳ INVALID).
+Các gói READY khác: **WP-A5** (đủ dependency từ S004; cùng sửa `pipeline.py` với WP-A2 đã
+push xong), **WP-A1** (chờ quyết định của chủ dự án về budget/legacy gate — KHÔNG mở được
+bằng agent), **WP-C1** (song song, độc lập — xem "Song song" bên dưới), **WP-D2**.
+
+Trước khi chọn, chủ dự án còn hai quyết định đang mở: `DEC-013` (integration) và ownership
+cho `F-S009-01`.
+KHÔNG tự mở — agent dừng sau WP-A4 theo chỉ thị của chủ dự án (S009).
 
 ## Overall Roadmap
 
@@ -84,9 +87,9 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | IN_PROGRESS | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S008: CHECK-A1-01..A1-10 PASS (E2 xác nhận), CHECK-A1-11 E2 **FAIL** vòng ba — hai finding chặn F-E2A1-01/02 đã đóng nhưng F-E2A1-03 còn mở và nay ở mức CAO, cộng sai lệch contract F-E2A1R3-03. KHÔNG mở vòng patch thứ tư (ESCALATION_PROTOCOL) |
 | DONE | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | **DONE tại S006** (10/10 REQUIRED PASS; đấu nối thuần tuý — 4 module chỉ-đọc 0 dòng đổi; chiến lược + Benchmark A không đổi 159/159 trường) (đóng F-003, F-004, F-012, F-013, F-014). Tier C route tự nhiên sau MICRO-GOVDEF-001, xác nhận lại tại S006 |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
-| READY | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | Sau WP-A3 (DONE tại S003) — READY. Song song roadmap với WP-A7, KHÔNG bị chặn bởi F-035; ba điều kiện bắt buộc ghi ở RCP-002 §Điều kiện phê duyệt (đóng F-023, F-025, F-032) |
+| DONE | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | **DONE tại S009** (9/9 REQUIRED PASS: CHECK-A4-01…08 + CHECK-A4-10 do `DEC-014` bổ sung). Đóng F-023, F-025, F-032, **F-E2A1R3-05**. Hết chặn WP-A6/WP-C4 về phía A4. Phát hiện mới ngoài gate: `F-S009-01` (BLOCKING, `OWNER_ASSIGNMENT_REQUIRED`) |
 | READY | WP-A5 | Đo đủ dữ liệu cho ba tín hiệu cảnh báo hỏng chiến lược | Ba tín hiệu hiện không bao giờ được đo dù vẫn cho ra kết luận cuối cùng | C | xhigh | **Đủ dependency từ S006**: WP-A2 ✅, WP-A3 ✅, WP-A7 ✅ (vốn không bị khoá và phân phối vốn qua Smart ladder đúng thì số đo mới canonical). Tuần tự hoá với WP-A2 trên `pipeline.py` — đóng phần đo lường của F-002, và F-016 |
-| PLANNED | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | Sau WP-A3, WP-A4, **WP-A7**. Completion Gate cuối cùng KHÔNG được chạy trước khi WP-A7 DONE (đường xử lý Smart hiện suy biến) — đóng F-018, F-019 |
+| READY | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | **READY từ S009** — WP-A3 ✅, WP-A4 ✅, WP-A7 ✅ đều DONE. Đóng F-018, F-019. Phải trả lời `HARDENING_BACKLOG.md` H-15 (số phận zone TRIGGERED trong chu kỳ INVALID) |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
 | PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Hai nhóm điều kiện ĐỘC LẬP, phải thoả CẢ HAI: (A) nội tại — T-05 và **GATE-A** (WP-A1…**WP-A7** đều DONE); (B) hạ tầng — BLK-001 (mạng Binance). Gỡ BLK-001 KHÔNG cho phép chạy T-06 khi GATE-A chưa PASS |
 | PLANNED | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | Sau T-06. QUY TẮC BẮT BUỘC: nếu remediation của F-017 (Control F) ảnh hưởng Gate 1 → Gate 1 phải chạy lại trước khi coi kết quả hợp lệ (DEC-009) — đóng phần chính sách của F-002, F-015, F-017, F-026 |
@@ -189,9 +192,9 @@ Trạng thái hiện tại: **NO CURRENT OFFICIAL RESULT TO INVALIDATE** — ch�
 ```
 T-04 ✅
  └─> WP-A3 ✅
-      ├─> WP-A4  ─┐   (song song roadmap; tuần tự hoá merge trên engine.py)
-      └─> WP-A7  ─┤
-                  └─> WP-A6 ──> GATE-A ──> T-06 ──> WP-B1 ──> T-07 ──> T-11
+      ├─> WP-A4 ✅ ─┐   (DONE tại S009)
+      └─> WP-A7 ✅ ─┤
+                    └─> WP-A6 ──> GATE-A ──> T-06 ──> WP-B1 ──> T-07 ──> T-11
 WP-A5: sau WP-A2 ∧ WP-A3 ∧ WP-A7 — vẫn là prerequisite của GATE-A
 WP-A1, WP-A2: prerequisite của GATE-A, không nằm trên chuỗi dài nhất
 GATE-A = WP-A1 ∧ WP-A2 ∧ WP-A3 ∧ WP-A4 ∧ WP-A5 ∧ WP-A6 ∧ WP-A7 đều DONE
@@ -659,10 +662,46 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 - DEC-008 — Ghi đè thủ công routing của WP-A2 (Tier C, không dùng Tier B từ router)
 - DEC-009 — Quy tắc Gate 1 staleness: remediation ảnh hưởng Gate 1 bắt buộc chạy lại Gate 1
 - DEC-010 — RESOLVED: PA-1 phê duyệt cho BLK-003; `routing_engine.py`/`validate_routing.py` đã sửa
+- DEC-011 — Owner Product Intent và V1 Daily-Use Acceptance (tiêu chí A–F)
+- DEC-012 — Hạn mức repair budget cho CAP-PROV: allowed 2 / used 2 / remaining 0
+- DEC-013 — PENDING: Integration decision cho branch WP-A1
+- DEC-014 — `OD-A4-01`: bổ sung MỘT REQUIRED check cho WP-A4 (`CHECK-A4-10`) và làm rõ
+  Expected Touch Area; `F-E2A1R3-05` → `CAP-DATA`, hấp thụ vào WP-A4, 0 task ID mới
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S009 — WP-A4 — 2026-09-01 — **DONE.** Ngữ nghĩa dữ liệu thiếu/hỏng + độ phủ theo khoảng
+  ĐƯỢC YÊU CẦU. 9/9 REQUIRED check PASS (232/232 test suite PASS): chín check FROZEN
+  2026-08-23 giữ nguyên câu chữ,
+  cộng đúng MỘT check `CHECK-A4-10` do chủ dự án phê duyệt TRƯỚC khi implementation
+  (`DEC-014` / `OD-A4-01`). Đóng **F-023** (định nghĩa INVALID hẹp hơn ST §3 — nay INVALID
+  khi giá/lịch sử ETH **hoặc** một indicator bắt buộc `close`/`return7`/`adr30` hỏng, quy
+  ước ghi ở `docs/CONVENTIONS.md`), **F-025** (`EXECUTION_DATA_GAP` nay là tag TRÊN BẢN GHI
+  kèm `missing_candles_before`), **F-032** (`DELAYED_DATA_FILL` nay là tag, không chỉ bộ
+  đếm), và **F-E2A1R3-05** (fetch cắt cụt vẫn đủ tư cách official).
+  Root cause của F-E2A1R3-05: `gap_report` neo số nến kỳ vọng vào khoảng QUAN SÁT ĐƯỢC nên
+  phần thiếu ở hai đầu vô hình; `official_eligibility` không có khái niệm "khoảng đã được
+  yêu cầu". Sửa tối thiểu: khai `requested_range` tại nơi sản xuất dataset (`fetch_all`,
+  `synth.generate`) → ghi vào `lineage.json` → cổng đọc. KHÔNG redesign fetch, KHÔNG đổi
+  chữ ký `official_eligibility(raw_dir, lineage)`, KHÔNG đổi `dataset_hash`.
+  BEFORE: yêu cầu 2020-01-01…2021-01-01, archive chỉ có tới 2020-01, REST bị chặn →
+  31/366 ngày (8,5%), `missing_count = 0`, `official_eligibility -> (True,'verified')`.
+  AFTER: `missing_count = 335`, `(False, 'incomplete_coverage:ETHUSDT_1d=31/366 head=0
+  internal=0 tail=335')`, `Prepared.official_eligible = False`. CASE A–F đều đúng kỳ vọng.
+  Định lượng trên dataset có gap (cùng seed, BEFORE=`06b381c`): INVALID 0 → 37 ngày,
+  action 17 → 13, `eth_total` −0,19%, nominal BASE 600.0 → 600.0 (Base không bao giờ bị bỏ),
+  bản ghi mang tag 0 → 3. Trên dataset sạch: trùng khớp từng chữ số, không drift nền.
+  Phát hiện mới NGOÀI gate: **`F-S009-01`** — CONFIRMED BLOCKING,
+  `OWNER_ASSIGNMENT_REQUIRED` — indicator daily tính theo VỊ TRÍ, không theo LỊCH; một ngày
+  daily thiếu làm `return7` sai 14,29% mà không NaN/DEGRADED/INVALID, và dataset vẫn qua
+  cổng official (0,27% < ngưỡng 1%). KHÔNG làm FAIL check nào của WP-A4; phải đóng trước
+  T-06. Hardening mới: **H-14**, **H-15**.
+  Không tạo task ID mới. Không mở repair cycle WP-A1. Không đụng budget `CAP-PROV`. Không
+  chạm `regime.py`/`ladders.py`/`capital.py`/`verdict.py`/`failure_signals.py`/`webapp/`/
+  `docs/spec/`. Không merge default branch. Không mở WP-C1/WP-A5/WP-A6, không chạy T-06.
+  Tài liệu: `docs/sessions/S009-wp-a4-ngu-nghia-du-lieu-xau.md`,
+  `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md`.
 - S006 — WP-A2 — 2026-08-24 — **DONE.** Đấu nối các hạng mục đã viết nhưng pipeline chưa
   gọi (đóng **F-003, F-004, F-012, F-013, F-014**; RSK-007 giảm thiểu một phần). Routing
   xác nhận lại: router trả **Tier C tự nhiên**, không qua override — MICRO-GOVDEF-001 không
@@ -916,26 +955,26 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 ## Next Session
 
 Recommended Session:
-S007 — chủ dự án quyết định:
+S010 — chủ dự án quyết định:
 
-- **Theo đường găng — ưu tiên cao nhất:** `WP-A4` (C/Opus/xhigh) — mắt xích còn lại của
-  cặp song song {WP-A4 ∥ WP-A7 ✅} trước WP-A6. Nhánh làm việc đã push xong mọi thay đổi
-  `engine.py` của WP-A7 và WP-D1 (không còn phiên nào giữ file), nên điều kiện tuần tự
-  hoá merge của RCP-002 thoả tự nhiên; hai điều kiện còn lại vẫn áp dụng (assert tiền đề
-  không suy biến trên đường Smart — nay là hành vi ĐÚNG sau F-035 fix; không hard-code kỳ
-  vọng vốn/ETH nhiều tháng).
-- **Nay đã đủ dependency:** `WP-A5` (C/Opus/xhigh) — WP-A2 ✅ + WP-A3 ✅ + WP-A7 ✅.
-  Lưu ý tuần tự hoá: WP-A5 cùng sửa `pipeline.py` với WP-A2 (đã push xong, không còn phiên
-  nào giữ file).
-- **Theo an toàn dữ liệu thật:** `WP-C1` (C/Opus/xhigh) — độc lập hoàn toàn với lớp A.
-- `WP-D1` đã **DONE** — không còn trong danh sách READY.
+- **Theo đường găng — ưu tiên cao nhất:** `WP-A6` (D/max) — mắt xích cuối của chuỗi
+  T-04 → WP-A3 ✅ → {WP-A4 ✅ ∥ WP-A7 ✅} → **WP-A6** → GATE-A → T-06. Nay đủ dependency
+  sau khi WP-A4 DONE tại S009. Gói này phải trả lời `HARDENING_BACKLOG.md` **H-15** (số
+  phận zone TRIGGERED trong chu kỳ INVALID) — re-trigger BẮT BUỘC, không được bỏ qua.
+- **Song song, đủ dependency từ S004:** `WP-A5` (C/xhigh). Lưu ý tuần tự hoá: WP-A5 cùng
+  sửa `pipeline.py` với WP-A2 (đã push xong, không còn phiên nào giữ file).
+- **Độc lập hoàn toàn với lớp A:** `WP-C1` (C/xhigh). Xác nhận read-only tại S009: Status
+  `READY`, dependency T-01 ✅ + T-04 ✅, Expected Touch Area (`webapp/`, `demo/`,
+  `.gitignore`) **không giao** với vùng WP-A4 vừa sửa (`src/eth_dca_os/**`). WP-A4 không
+  chạm một dòng nào trong `webapp/`. → **WP-C1 vẫn READY và độc lập.**
+- `WP-A4`, `WP-D1` đã **DONE** — không còn trong danh sách READY.
 
 Task đang READY (đủ điều kiện bắt đầu, chưa bắt đầu):
-`WP-A1`, `WP-A4`, `WP-A5` (mới đủ dependency), `WP-C1`, `WP-D2`.
+`WP-A5`, `WP-A6` (mới đủ dependency từ S009), `WP-C1`, `WP-D2`.
+`WP-A1` đang `IN_PROGRESS` và bị chặn bởi quyết định của chủ dự án, không phải bởi kỹ thuật.
 
 Task đang PLANNED, chưa đủ điều kiện READY:
-- `WP-A6` — chờ WP-A4 (WP-A3 ✅, WP-A7 ✅)
-- `WP-C4` — chờ WP-A4, WP-A6 (WP-A3 ✅, WP-A7 ✅)
+- `WP-C4` — chờ WP-A6 (WP-A3 ✅, WP-A4 ✅, WP-A7 ✅)
 
 Task đang BLOCKED và lý do:
 - `WP-C2` — DEC-005 còn PENDING (thuộc T-05, thẩm quyền chủ dự án)
@@ -954,19 +993,31 @@ Cần chủ dự án quyết định:
    `validate_evidence.py` / `validate_task_completion.py` quét `TASK-*.md` không khớp
    quy ước `WP-*.md` → hiện PASS trên tập rỗng; cần một gói governance-tooling mở rộng
    glob để Exit Criteria "validators PASS" có nghĩa thực chất.
-6. **`F-E2A1R3-05` — phê duyệt COMPLETION GATE CHANGE PROPOSAL cho WP-A4** (bổ sung MỘT
-   REQUIRED check: coverage phải đối chiếu với khoảng thời gian ĐƯỢC YÊU CẦU, không chỉ với
-   khoảng quan sát được). Đây là **blocker V1 DUY NHẤT** sau phiên Owner Disposition và nó
-   chặn T-06. **Ưu tiên cao nhất.** Xem `DEC-011`, và bản disposition §5.
+6. ~~**`F-E2A1R3-05` — phê duyệt COMPLETION GATE CHANGE PROPOSAL cho WP-A4**~~ —
+   **ĐÃ QUYẾT** (`DEC-014` / `OD-A4-01`, 2026-09-01) và **ĐÃ ĐÓNG** tại S009:
+   `CHECK-A4-10` PASS. Không còn là mục chờ quyết định.
+6b. **`F-S009-01` — ownership cho "indicator daily tính theo VỊ TRÍ, không theo LỊCH"**
+   (`OWNER_ASSIGNMENT_REQUIRED`). CONFIRMED BLOCKING, phát hiện tại S009, **nằm ngoài**
+   Completion Gate của WP-A4 nên KHÔNG làm FAIL gói đó, nhưng **phải đóng trước T-06**.
+   Một ngày daily thiếu làm `return7` sai 14,29% mà không NaN, không DEGRADED, không
+   INVALID — và dataset vẫn qua `official_eligibility` vì 0,27% < ngưỡng 1%. Hai nhánh
+   ownership hợp lý: `CAP-DATA` (kèm gate change proposal mới + mở rộng touch area sang
+   `indicators.py`) hoặc `CAP-SPEC`/WP-D2 (nếu coi là điểm để ngỏ của V2.1.5).
+   **Không đặt task ID mới trong cả hai nhánh.** Xem
+   `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md`. **Ưu tiên cao nhất.**
 7. **WP-A1 — disposition cho 3 hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED`**
    (`F-E2A1-03`, `F-E2A1R3-03`, `F-E2A1R3-06`+`F-E2A1-08`): mỗi hạng mục chọn
    `ACCEPT_AS_IS` / `DESCOPE` / `OWNER_EXTENSION`. Budget CAP-PROV đã hết
    (`DEC-012`: allowed 2 / used 2 / remaining 0). Lưu ý: 2 trong 3 hạng mục đóng được ở
    chi phí budget = 0 vì chỉ cần tài liệu. Xem bản disposition §4.
 8. **Integration decision** (`DEC-013`, PENDING) — chọn A/B/C cho branch
-   `claude/wp-a1-provenance-v67k9h` (ahead 29 / behind 1 / 9 ngày / 88 files). Xung đột đo
-   được = **0**. Khuyến nghị = **A (INTEGRATE NOW)**. Kèm quyết định phụ: remote KHÔNG có
-   branch `main`; `origin/HEAD` trỏ tới một branch `claude/*`. Xem bản disposition §7.
+   `claude/wp-a1-provenance-v67k9h`. Khuyến nghị vẫn = **A (INTEGRATE NOW)**. Kèm quyết
+   định phụ: remote KHÔNG có branch `main`; `origin/HEAD` trỏ tới một branch `claude/*`.
+   Xem bản disposition §7. **Cập nhật S009:** phép đo "xung đột = 0" của §7.2 dựa vào tiền
+   đề "WP-A4 chưa bắt đầu"; tiền đề đó **không còn đúng** — S009 đã sửa
+   `src/eth_dca_os/data/`. `branch_authority_check.sh` vẫn báo
+   `INTEGRATION_DECISION_REQUIRED` (ahead 30 / 9 ngày / 26114 LOC). Phải ĐO LẠI trước khi
+   dùng con số cũ.
 9. **Trình tự V1** — T-06/GATE-A có thật sự là điều kiện tiên quyết của V1 daily-use không,
    hay đường web app (`CAP-WEBAPP`, WP-C1 đang READY và độc lập với lớp A) chạy song song
    được? `DEC-011` định nghĩa V1 theo web app dùng hàng ngày, trong khi
@@ -982,6 +1033,12 @@ owner cho `F-E2A1R3-05`, và Integration Decision Check đầy đủ nằm ở
 Trạng thái WP-A1 KHÔNG đổi sau phiên đó: `IN_PROGRESS`, CHECK-A1-01…10 `PASS`,
 CHECK-A1-11 `FAIL`, GATE-A KHÔNG ĐÓNG, T-06 KHÔNG MỞ. Không task ID mới, không WP mới,
 production/test diff = 0.
+
+**S009 cũng KHÔNG đổi trạng thái WP-A1.** WP-A4 đóng `F-E2A1R3-05` ở `CAP-DATA`, nên
+finding đó chuyển từ "đang mở, chưa có chủ" sang "đã đóng, chủ = CAP-DATA". WP-A1 vẫn
+`IN_PROGRESS`, CHECK-A1-11 vẫn `FAIL`, repair cycle của WP-A1 vẫn = 2 (KHÔNG tăng), budget
+`CAP-PROV` REMAINING vẫn = 0, và ba hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED` vẫn chờ chủ
+dự án — S009 KHÔNG tự đóng mục nào trong đó.
 
 Purpose:
 Tiếp tục chương trình remediation lớp A trên đường găng tới official run, với Completion Gate đã

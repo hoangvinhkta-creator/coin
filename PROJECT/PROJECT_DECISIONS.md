@@ -640,3 +640,54 @@ effect on WP-A1 / effect on next critical-path work / V4.3 compliance):
 Can Revisit After:
 Ngay khi chủ dự án ra quyết định. Phép đo xung đột = 0 chỉ đúng khi WP-A4 chưa bắt đầu; sau
 đó phải đo lại.
+
+---
+
+## DEC-014 — `OD-A4-01`: bổ sung một REQUIRED check cho WP-A4 và làm rõ Expected Touch Area
+
+Date:
+2026-09-01 (chỉ thị mở WP-A4 / phiên S009)
+
+Task:
+`WP-A4` / capability `CAP-DATA`
+
+Decision:
+
+    APPROVE COMPLETION GATE CHANGE PROPOSAL cho WP-A4.
+
+    Bổ sung ĐÚNG MỘT REQUIRED check (CHECK-A4-10):
+    "Coverage phải được đối chiếu với khoảng thời gian ĐƯỢC YÊU CẦU (start/end),
+     không chỉ với khoảng thời gian quan sát được trong dữ liệu đã fetch."
+
+    F-E2A1R3-05 -> CAP-DATA -> hấp thụ vào WP-A4. KHÔNG tạo task ID mới.
+
+    Expected Touch Area của WP-A4 được làm rõ: việc loại trừ `src/eth_dca_os/data/`
+    có nghĩa KHÔNG redesign cơ chế FETCH dữ liệu. Nó KHÔNG loại trừ coverage
+    semantics, gap semantics, hay requested-range validation.
+
+Reason:
+Normal production runtime có thể fetch dữ liệu bị cắt cụt, thiếu ~92% khoảng thời gian được
+yêu cầu, nhưng `gap_report` vẫn khai `missing_count = 0` và dataset tiếp tục được coi là
+official. Failure này tác động trực tiếp tới A (CORRECT DECISION), D (REAL MARKET DATA) và
+F (OFFICIAL RESULT VALIDITY) của `DEC-011`, nên là **V1 BLOCKING**.
+
+Ba điều kiện BLOCKING của `REVIEW_PROTOCOL.md` đều thoả: (1) production path — `fetch_all`
+và `official_eligibility` đều nằm trong `PROJECT/PRODUCTION_PATHS.md` §1; (2) hệ quả nghiệp
+vụ nằm trong Completion Gate của WP-A1 (CHECK-A1-07) và trong `DEC-011`; (3) bằng chứng tái
+lập được, dựng từ nguồn canonical 1 + 2.
+
+Đề xuất gốc: `docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md`
+§5.3 (`OWNER_DECISION_REQUIRED`). Đây là quyết định của chủ dự án đóng lại mục đó.
+
+Impact:
+- WP-A4 có **9 REQUIRED check** (CHECK-A4-01…08 FROZEN + CHECK-A4-10). Chín check FROZEN
+  2026-08-23 giữ nguyên câu chữ và ngữ nghĩa; không check nào bị hạ, gộp hay nới. Không
+  phát sinh `LEGACY_GATE_COMPATIBILITY_REQUIRED`: gate được BỔ SUNG, không bị viết lại.
+- `F-E2A1R3-05` chuyển chủ sở hữu từ `OWNER_ASSIGNMENT_REQUIRED` sang `CAP-DATA`. WP-A1
+  KHÔNG mở repair cycle thứ tư; budget `CAP-PROV` không bị đụng tới.
+- Số task ID mới được tạo = **0**. Finding ≠ task.
+- Hệ quả sang `DEC-013`: cửa sổ "xung đột merge = 0" mà §7.5 dựa vào đã đóng lại sau S009,
+  vì WP-A4 vừa sửa `src/eth_dca_os/data/`. `DEC-013` vẫn PENDING; phép đo phải chạy lại.
+
+Can Revisit After:
+Không. Check đã được thực thi và PASS tại S009; nó là điều kiện của GATE-A từ đây.

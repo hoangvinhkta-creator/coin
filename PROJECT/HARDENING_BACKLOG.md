@@ -333,10 +333,80 @@ về `source`. Disposition (b) có diff production path = 0 nên **không tiêu 
 
 ---
 
+## H-14 — Trường độ phủ trong `lineage.json` nằm ngoài mọi checksum
+
+Capability: `CAP-DATA` · Owner: `WP-A4` · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-01 (S009)
+
+`CHECK-A4-10` đọc `requested_start` / `requested_end` / `expected_count` / `missing_count`
+từ `lineage.json`. Bốn trường này do `build_lineage` TÍNH từ chính file trên đĩa, và
+`file_hash` khoá bản ghi vào đúng nội dung file đó — nhưng bản thân chúng KHÔNG nằm trong
+`dataset_hash` (hash chỉ dẫn xuất từ danh sách `file_hash`). Người vận hành sửa TAY
+`lineage.json` để khai một khoảng yêu cầu hẹp khớp với dữ liệu cắt cụt thì cổng độ phủ
+không phát hiện được.
+
+Vì sao KHÔNG phải BLOCKING: đây ĐÚNG cùng lớp với H-05, H-06 và H-13 — counterexample chỉ
+dựng được bằng **sửa tay artifact**, không có đường sinh nào của mã hiện tại tạo ra tổ hợp
+đó (`fetch_all` và `synth.generate` luôn khai trung thực). `PRODUCTION_PATH_RULE.md` xếp
+loại này là HARDENING, và `DEC-011` (OD-1) loại hostile tampering khỏi phạm vi V1. Chỉ thị
+mở WP-A4 cũng cấm dùng manual lineage tampering làm bằng chứng blocker.
+
+Giới hạn ĐÃ ĐƯỢC CÔNG BỐ tại `docs/CONVENTIONS.md` § "Độ phủ so với khoảng thời gian được
+yêu cầu", cạnh giới hạn nhãn `source` (H-06) — nghĩa vụ công bố mà H-13 nêu được thoả ngay
+tại nguồn cho các trường mới này.
+
+Kèm theo, cùng lớp: `official_eligibility` ép kiểu `missing_head`/`missing_internal`/
+`missing_tail` khi dựng chuỗi lý do `incomplete_coverage`. Một `lineage.json` bị sửa tay để
+ba trường đó mang giá trị không phải số sẽ cho traceback thay vì `lineage_malformed` —
+ĐÚNG cùng lớp với H-04 (`F-E2A1R3-02`), và cùng disposition: `DEC-011` điểm 9 coi traceback
+là "fail visibly" ở dạng thuần tuý nhất, và đường sinh duy nhất là sửa tay artifact. Nếu
+H-04 được đóng, ba trường này phải được đóng CÙNG LÚC.
+
+    RE_TRIGGER_CONDITION:
+    - H-05, H-06 hoặc H-13 được đóng bằng một cơ chế hash mở rộng — khi đó bốn trường độ
+      phủ PHẢI được đưa vào cùng phạm vi bảo vệ, cùng một lần; HOẶC
+    - H-04 được đóng bằng cách chuẩn hoá lỗi kiểu thành `lineage_malformed` — khi đó ba
+      trường `missing_head`/`missing_internal`/`missing_tail` phải đi cùng; HOẶC
+    - `lineage.json` được sinh hoặc sửa bởi bất kỳ tiến trình nào ngoài `fetch_all` /
+      `synth.generate`; HOẶC
+    - quy trình vận hành T-06 cho phép thao tác tay trên `lineage.json`.
+
+---
+
+## H-15 — Zone TRIGGERED trong lúc dữ liệu INVALID vẫn thành action sau khi dữ liệu phục hồi
+
+Capability: `CAP-ORDER` · Owner: `WP-A6` · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-01 (S009)
+
+Strategy §3 nói INVALID "chặn mọi action Smart và Opportunity **mới**". Engine thi hành
+đúng câu đó: trong chu kỳ INVALID không action nào được tạo. Nhưng bước phát hiện trigger
+(đánh dấu zone `TRIGGERED`) đọc giá 15m chứ không đọc chất lượng daily, nên zone vẫn được
+đánh dấu trong lúc INVALID và được chuyển thành action ở chu kỳ SAU, khi dữ liệu tốt trở
+lại.
+
+Bằng chứng: `tests/test_wp_a4_bad_data_semantics.py::test_a4_02_block_is_temporal_not_permanent`
+khẳng định chính hành vi này (và cố ý khẳng định nó, vì vế "cổng không đóng vĩnh viễn" là
+cần thiết).
+
+Vì sao KHÔNG phải BLOCKING: hành vi hiện tại **thoả** câu chữ §3 và thoả REQUIRED check
+`CHECK-A4-02` đã FROZEN. Câu hỏi "một trigger phát hiện trong lúc dữ liệu xấu có được phép
+sống sót không" là câu hỏi về **thứ tự xử lý 18 bước**, thuộc `WP-A6` (`CAP-ORDER`), không
+thuộc ngữ nghĩa dữ liệu xấu. Không có điều khoản spec nào hiện nói zone TRIGGERED phải bị
+huỷ khi dữ liệu INVALID.
+
+    RE_TRIGGER_CONDITION:
+    - `WP-A6` chốt thứ tự 18 bước và phải quyết định số phận của zone TRIGGERED trong chu kỳ
+      INVALID (re-trigger BẮT BUỘC — không được bỏ qua khi mở WP-A6); HOẶC
+    - `WP-D2` xác định đây là khiếm khuyết đặc tả của V2.1.5 cần V2.2 làm rõ; HOẶC
+    - official run cho thấy có action được thực thi trên zone trigger trong cửa sổ INVALID
+      và con số bị ảnh hưởng đáng kể.
+
+---
+
 ## Soát lại toàn bộ backlog dưới Owner Product Intent (2026-09-01)
 
 `DEC-011` bổ sung trục `BLOCKING V1` (tiêu chí A–F). Đã soát lại **từng mục** H-01…H-13 theo
-A–F. Kết quả: **không mục nào chạm A–F**, nên toàn bộ giữ nguyên `HARDENING` /
+A–F (H-14 và H-15 được thêm sau, tại S009, và đã được soát theo cùng tiêu chí ngay khi ghi). Kết quả: **không mục nào chạm A–F**, nên toàn bộ giữ nguyên `HARDENING` /
 `OUT_OF_SCOPE` và giữ nguyên `RE_TRIGGER_CONDITION`. Không mục nào bị xoá, không mục nào
 được coi là đã đóng.
 
@@ -359,4 +429,6 @@ trên hai máy). Nếu chủ dự án quyết định đóng, đóng cùng nhau;
 phí và dễ để lọt một trường.
 
 **Không mục nào trong backlog này nằm trên đường găng V1.** Ghi tường minh theo §19 chỉ thị
-phiên Owner Disposition.
+phiên Owner Disposition. Vẫn đúng sau khi thêm H-14 và H-15 tại S009: H-14 cùng lớp
+"sửa tay artifact" với H-05/H-06/H-13, H-15 là câu hỏi thứ tự xử lý mà `WP-A6` sẽ phải
+trả lời dù có mục này hay không.
