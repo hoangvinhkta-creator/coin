@@ -30,7 +30,20 @@ production diff   = EMPTY khi bắt đầu
 `branch_authority_check.sh` báo `FAIL — attached branch has no upstream` ở lần chạy đầu.
 Nguyên nhân là branch cục bộ chưa có upstream (remote branch chưa tồn tại), **không** phải
 branch sai hay state cũ: base SHA trùng khớp `origin/main` và đúng Expected HEAD của chỉ
-thị. Upstream được tạo bằng `git push -u` ở cuối phiên; kết quả chạy lại ghi ở §9.
+thị. Upstream được tạo bằng `git push -u`; chạy lại sau khi push:
+
+```
+branch            = claude/cap-data-calendar-indicators-51fvyx
+default branch    = main (resolved, not assumed)
+behind upstream   = 0
+ahead of default  = 2 commit(s)
+divergence age    = 0 day(s)
+divergence LOC    = 1474        (< 5000 -> không chạm ngưỡng Integration Decision)
+integration       = INTEGRATION_DECISION_REQUIRED = NO
+tracked worktree  = CLEAN
+production diff   = EMPTY
+BRANCH AUTHORITY: PASS
+```
 
 Môi trường bằng chứng — **trùng khớp `pyproject.lock` từng dòng**:
 Python 3.11.15 · numpy 2.4.6 · pandas 3.0.5 · pyarrow 25.0.1 · requests 2.33.1 ·
@@ -187,8 +200,9 @@ nominal BASE 600.0 và SMART 520.0 **không đổi** (ST §9 [F3]).
 
 ```
 python -m pytest -q
-  BEFORE chu kỳ: 232 PASS / 0 FAIL / 0 SKIP / 0 XFAIL
-  SAU   chu kỳ: 286 PASS / 0 FAIL / 0 SKIP / 0 XFAIL     (232 + 54 test mới)
+  BEFORE chu kỳ (tại cb75f9d): 232 PASS / 0 FAIL / 0 SKIP / 0 XFAIL
+  SAU   bản sửa (tại ef8cdbb): 286 PASS / 0 FAIL / 0 SKIP / 0 XFAIL   (232 + 54 test mới)
+  Trên HEAD CUỐI  (9f09696):   286 PASS / 0 FAIL / 0 SKIP / 0 XFAIL   (exit code 0)
 
 git diff --stat -- tests/     -> (rỗng)   không file test cũ nào bị sửa
 git status --short tests/     -> ?? một file mới duy nhất
@@ -277,3 +291,15 @@ quyết**, phiên này không tự mở:
 
 `GATE-A` còn chặn bởi: **WP-A1** (IN_PROGRESS, `CAP-PROV` remaining = 0 → cần quyết định
 của chủ dự án), **WP-A5** (READY), **WP-A6** (READY). `T-06` còn chặn thêm bởi `BLK-001`.
+
+
+---
+
+## 13. SHA của phiên
+
+    BASE  = cb75f9d1fb139f4c5daae063e754245998819f22   (== origin/main, Expected HEAD)
+    ef8cdbb00a7ff2d271c1233df4baf151ab46b62a   bản sửa production (1 file, +74 / −5)
+    HEAD  = 9f096966fa5b3d2b2ad31a4653e2c3353786bbf5   gate/evidence/ledger/state (production diff = 0)
+
+    branch = claude/cap-data-calendar-indicators-51fvyx   (đã push, upstream đã đặt)
+    KHÔNG merge vào main. KHÔNG mở PR. KHÔNG mở chu kỳ #2.
