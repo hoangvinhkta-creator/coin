@@ -25,7 +25,32 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **OWNER DECISION `DEC-021` (`OD-WEBAPP-04`) — Personal Tool Simplification
+2026-09-02 — **T-09B IMPLEMENTED (S014)**: persistence bền trên Firebase đã được **cài đặt và kiểm
+chứng** trên branch `claude/t09b-firebase-implementation-nz50is` (BASE `4502ea6`, production commit
+`a19d3ad`, test commit `0d4917a`). Kiến trúc đúng baseline FROZEN `DEC-020`/`DEC-021`: Browser →
+Firebase Hosting → Firebase Anonymous Auth (một owner UID trong `firestore.rules`) → Cloud
+Firestore `ethdca/state` + `ethdca/seed`; `localStorage` = mirror/cache. Trang không còn nhúng
+state, không còn quine/publish của host cũ. Save flow: mỗi thao tác → mirror → ghi Firestore qua
+transaction có điều kiện `rev`, UI chỉ báo "Đã lưu bền · rev N" khi máy chủ xác nhận; timeout →
+"CHƯA XÁC NHẬN"; từ chối/mất mạng → "CHƯA LƯU", giữ bản local, Lưu lại/tự ghi lại khi có mạng.
+Load flow: init → Anonymous Auth → đọc từ SERVER → `validateState` → ONLINE, hoặc một trong
+UNCONFIGURED / AUTH_FAILED / UNRECOGNIZED ("không nhận diện được thiết bị/trình duyệt này", H-23)
+/ OFFLINE (mirror chỉ để xem, đánh dấu chưa xác nhận) / CORRUPT (không nạp, không ghi đè, tải bản
+thô để cứu) — mọi phase lỗi **khoá ghi sổ**. Mirror mới hơn nguồn bền không âm thầm thắng (cất
+riêng + chọn tường minh). **16/16 REQUIRED check PASS (E1)** trên Firebase Emulator Suite (Auth +
+Firestore, đúng `firestore.rules` repo, SDK thật, trang build thật qua HTTP; bằng chứng phía Firebase
+đọc độc lập qua REST): `test_t09b_persistence.js` 285 assertion / 0 FAIL; ba test kế toán T-09A chạy
+trên state đã round-trip Firestore (68/68; V-01/V-02/V-03 BÁC BỎ như trước); `npm --prefix webapp
+test` 6/6. `engine.js`, `src/eth_dca_os/**`, `pyproject.*` = 0 dòng. Batch review bắt buộc → **PASS,
+0 CONFIRMED BLOCKING còn lại** (1 finding hai-tab-stale-overwrite phát hiện trong phiên, sửa cùng
+lượt), 4 HARDENING mới `H-24..H-27`. `CAP-WEBAPP` budget **2/0/2 không đổi** (implementation ban
+đầu). Task ID mới = 0. **Giới hạn bằng chứng, ghi trung thực:** project Firebase THẬT chưa tồn tại
+→ production reachability trên hạ tầng thật = NOT_TESTED; CODE IMPLEMENTATION COMPLETE, **REAL
+FIREBASE SETUP REQUIRED** (chủ dự án: `webapp/README.md` § Thiết lập Firebase). Chuyển `DONE` là hành
+vi của chủ dự án. `RSK-001`: giảm thiểu đã cài đặt, **chưa giảm trên thực tế** cho tới khi app
+Firebase thật được dùng thay bản artifact. Handoff: `docs/sessions/S014-t09b-firebase-implementation.md`.
+
+Trước đó, 2026-09-02 — **OWNER DECISION `DEC-021` (`OD-WEBAPP-04`) — Personal Tool Simplification
 Principle; `OD-C` = R2 (SIMPLIFIED PERSONAL-TOOL RECOVERY)**, phiên tiếp nối trên nhánh thẩm
 quyền `claude/t09b-firebase-decision-nnoony`. Chủ dự án phát biểu một nguyên tắc sản phẩm bao
 trùm: ETH DCA OS là công cụ cá nhân, ưu tiên Financial correctness > Algorithm correctness >
@@ -132,11 +157,12 @@ Phase 2 — Lớp A (bắt buộc sửa trước official run). Năm gói lớp 
 WP-A4, WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A5, WP-A6**.
 
 Current Task:
-Không có (`T-09A` vừa chuyển `DONE` theo `DEC-018`; DỪNG theo chỉ thị chủ dự án — không mở
-task tiếp theo)
+`T-09B` — **IMPLEMENTED** (S014, 2026-09-02). Chờ chủ dự án: thiết lập project Firebase thật, xác
+nhận CHECK-01/02/03/04/14 bằng tay trên app thật, rồi Owner Decision `IMPLEMENTED → DONE`. DỪNG
+theo chỉ thị — không mở task tiếp theo.
 
 Current Task Mode:
-—
+MAJOR
 
 Next Recommended Task:
 **WP-A6** nay đã đủ dependency (WP-A3 ✅ + WP-A4 ✅ + WP-A7 ✅) và là mắt xích tiếp theo
@@ -200,7 +226,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
 | DONE | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. **DONE 2026-09-02** theo Owner Decision `DEC-018` (`OD-WEBAPP-01`) — Completion Gate giữ nguyên 12/12 REQUIRED PASS (E1), không sửa câu chữ/ngữ nghĩa |
-| READY | T-09B | Dựng lưu trữ dữ liệu bền (Firebase) | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04, WP-C1 (DONE), T-09A (DONE). Nên làm trước T-10. **Nền tảng persistence = Firebase — FIXED OWNER CONSTRAINT (`DEC-019`)**. Kiến trúc baseline `DEC-020`/`DEC-021`: Firebase Hosting → Firebase Anonymous Auth → Cloud Firestore (document `ethdca/state` + `ethdca/seed`). Task Spec: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` (Task ID mới = 0). **`DEC-021` (Personal Tool Simplification Principle) đóng `OD-C` = R2 (SIMPLIFIED PERSONAL-TOOL RECOVERY)**: cross-device/cross-browser/lost-identity recovery KHÔNG phải V1 requirement (`H-23`, OUT OF SCOPE V1); `CHECK-T09B-04` tái phạm vi xuống same-browser-profile qua audit trail tường minh (OLD → OWNER PRODUCT INTENT CHANGE → NEW), KHÔNG phải bug fix. Ready Gate **15/15 ĐẠT**. Completion Gate 16/16 REQUIRED **FROZEN** 2026-09-02. **`T-09B: PLANNED → READY`.** Không còn Owner Decision nào chặn. `CAP-WEBAPP` budget KHÔNG đổi: 2/0/2 — chưa tiêu, chuyển READY không phải implementation |
+| IMPLEMENTED | T-09B | Dựng lưu trữ dữ liệu bền (Firebase) | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04, WP-C1 (DONE), T-09A (DONE). Nên làm trước T-10. **Nền tảng persistence = Firebase — FIXED OWNER CONSTRAINT (`DEC-019`)**. Kiến trúc baseline `DEC-020`/`DEC-021`: Firebase Hosting → Firebase Anonymous Auth → Cloud Firestore (document `ethdca/state` + `ethdca/seed`). Task Spec: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` (Task ID mới = 0). **`DEC-021` (Personal Tool Simplification Principle) đóng `OD-C` = R2 (SIMPLIFIED PERSONAL-TOOL RECOVERY)**: cross-device/cross-browser/lost-identity recovery KHÔNG phải V1 requirement (`H-23`, OUT OF SCOPE V1); `CHECK-T09B-04` tái phạm vi xuống same-browser-profile qua audit trail tường minh (OLD → OWNER PRODUCT INTENT CHANGE → NEW), KHÔNG phải bug fix. Ready Gate **15/15 ĐẠT**. Completion Gate 16/16 REQUIRED **FROZEN** 2026-09-02. **`T-09B: PLANNED → READY`.** Không còn Owner Decision nào chặn. `CAP-WEBAPP` budget KHÔNG đổi: 2/0/2 — chưa tiêu, chuyển READY không phải implementation. **S014 (2026-09-02): `READY → IN_PROGRESS → IMPLEMENTED`** — 16/16 REQUIRED PASS (E1, Firebase Emulator Suite), batch review PASS 0 BLOCKING, `H-24..H-27`; production commit `a19d3ad`, test `0d4917a`. **Chưa `DONE`**: project Firebase thật chưa tồn tại (REAL FIREBASE SETUP REQUIRED — `webapp/README.md`), chuyển `DONE` là hành vi chủ dự án. Budget 2/0/2 không đổi |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
 | READY | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
@@ -545,6 +571,15 @@ kịch bản "đổi máy" ở V1. Kịch bản "xoá dữ liệu site (chỉ lo
 bại" (nay là "Firebase write thất bại") vẫn được T-09B đóng qua đường Firestore một khi implementation
 hoàn tất — risk **VẪN CHƯA giảm** cho tới khi đó, vì chưa một dòng production nào đổi. `T-09B` nay
 `READY`, Completion Gate FROZEN 16/16 REQUIRED.
+**Cập nhật 2026-09-02 (S014 — T-09B IMPLEMENTED)**: giảm thiểu đã được **cài đặt** (`a19d3ad`) và
+**kiểm chứng E1 trên Firebase Emulator Suite**: xoá `localStorage`+`sessionStorage` vẫn phục hồi sổ
+từ Firestore (CHECK-03); đóng/mở lại trình duyệt cùng profile vẫn tiếp tục (CHECK-04); ghi thất bại
+/ mất mạng hiện rõ, không báo "đã lưu" giả, giữ bản local để cứu (CHECK-10); bản bền hỏng không bị
+nạp, không bị ghi đè (CHECK-12); hai tab không ghi đè lẫn nhau (CHECK-16). Risk **CHƯA giảm trên
+thực tế** vì project Firebase thật chưa tồn tại và chủ dự án vẫn đang ở bản artifact cũ — giảm khi
+(a) thiết lập xong theo `webapp/README.md`, (b) dữ liệu cũ được export/import sang app Firebase,
+(c) chuỗi CHECK-01/02/03/04/14 được lặp lại bằng tay trên app thật. Kịch bản "đổi máy" vẫn mở theo
+`H-23` (export/import JSON). Risk KHÔNG tự đóng — thẩm quyền chủ dự án.
 
 ### RSK-002 — Hai bản cài đặt chiến lược trôi khỏi nhau (mức: cao) — S001 XÁC NHẬN (E1)
 Implementation Plan §1 yêu cầu live và backtest dùng chung một core strategy function. Trang
@@ -850,6 +885,35 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- T-09B (IMPLEMENTATION — S014) — 2026-09-02 — branch `claude/t09b-firebase-implementation-nz50is`
+  từ `origin/main` @ `4502ea6`. **IMPLEMENTED** — 16/16 REQUIRED check PASS (E1), toàn bộ qua đường
+  sản phẩm (trang build thật → Firebase SDK compat 12.18.0 thật → Firebase Emulator Suite Auth +
+  Firestore với đúng `firestore.rules` của repo → nạp lại), bằng chứng phía Firebase đọc độc lập qua
+  REST của emulator.
+  (1) **Kiến trúc đúng baseline FROZEN**, không thêm thành phần: Hosting (`firebase.json`) · Anonymous
+  Auth · Firestore `ethdca/state` + `ethdca/seed` · rules khoá cứng một owner UID (placeholder
+  `OWNER_UID_REQUIRED` = mặc định deny), không delete. `localStorage` = mirror/cache.
+  (2) **Production diff theo khai báo**: 3 file, +560 / −162 (`app_logic.js` khối persistence/init/
+  banner/guard/export-import-wipe; `app_shell.html`; `build_app.js` bỏ nhúng state/quine) + 3 file
+  runtime mới chưa trong khai báo (`webapp/firebase_config.js`, `firestore.rules`, `firebase.json` —
+  `H-27`). `engine.js`, `src/eth_dca_os/**`, `pyproject.*` = **0 dòng**. Không hàm kế toán nào bị chạm.
+  (3) **Test**: `test_firebase_harness.js` (mới) + `test_t09b_persistence.js` (mới, 285 assertion /
+  0 FAIL, 14 check trực tiếp); `test_helpers.readState()` đọc bản durable + đối chiếu bit-exact →
+  ba test kế toán T-09A chạy nguyên văn trên state đã round-trip (CHECK-09: 68/68; V-01/V-02/V-03
+  BÁC BỎ). `npm --prefix webapp test` **6/6 exit 0**.
+  (4) **Batch review bắt buộc** → **PASS, 0 CONFIRMED BLOCKING còn lại**: `F-T09B-01` (hai tab cùng
+  profile, tab stale ghi đè bản mới hơn — mất dữ liệu âm thầm) phát hiện trong phiên và sửa TRƯỚC
+  commit bằng transaction có điều kiện `rev` (cùng lượt, không repair cycle); 4 HARDENING `H-24`
+  (trần 1 MiB/document), `H-25` (stale change chỉ trong bộ nhớ tab), `H-26` (`validateState` giả
+  định tổng tỷ lệ = 1), `H-27` (ba file runtime mới chưa khai production path). Biên bản:
+  `docs/reviews/T-09B-batch-review.md`.
+  (5) **Giới hạn bằng chứng (chỉ thị §14)**: project Firebase thật CHƯA tồn tại; emulator không suy
+  ra production reachability. CODE IMPLEMENTATION COMPLETE · REAL FIREBASE SETUP REQUIRED · real
+  deploy = KHÔNG. Chủ dự án làm 5 bước ở `webapp/README.md` rồi lặp lại CHECK-01/02/03/04/14 bằng
+  tay trên app thật trước khi `DONE`.
+  (6) Budget `CAP-WEBAPP` 2/0/2 **không đổi** (implementation ban đầu). Task ID mới = 0 (29 = 29 theo danh sách trạng thái đầy đủ; `task_registry_snapshot.sh` báo 28 → 27 vì bỏ sót `IMPLEMENTED` — `H-22`).
+  `H-19`, `H-20`, `H-23` không đổi. Không sửa Product Principle, không mở lại quyết định kiến trúc.
+  Handoff: `docs/sessions/S014-t09b-firebase-implementation.md`.
 - T-09A (REPAIR V-01/V-02) — 2026-09-02 — branch `claude/t09a-accounting-repair-v4ewhq` từ
   `origin/main` @ `814d185`. **IMPLEMENTED** — 12/12 REQUIRED check PASS (E1), toàn bộ bằng
   chứng chạy thật qua đường sản phẩm (UI → `app_logic` → `engine` → state), không gọi trực
@@ -1266,6 +1330,15 @@ lưu lại để đối chiếu lịch sử: D2 R2 B2 A1 X2 → 1.85 → B; U1 V
 D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
+
+**Cập nhật sau T-09B (2026-09-02, S014).** `T-09B` = `IMPLEMENTED`. **NEXT SMALLEST ACTION (chủ dự
+án, không cần agent):** tạo project Firebase và làm 5 bước ở `webapp/README.md` § Thiết lập Firebase
+(tạo project + bật Anonymous + tạo Firestore → điền `webapp/firebase_config.js` → `node
+webapp/build_app.js` → `firebase deploy` → mở app ở trình duyệt dùng hằng ngày → chép UID vào
+`firestore.rules` → deploy rules), export JSON từ bản artifact cũ và *Nạp lại từ JSON*, rồi lặp lại
+bằng tay CHECK-01/02/03/04/14 trên app thật. Sau đó Owner Decision `T-09B: IMPLEMENTED → DONE` kèm
+cập nhật `RSK-001`, và khai ba file runtime mới vào `PRODUCTION_PATHS.md` (`H-27`). Không mở task
+tiếp theo trong S014.
 
 **Cập nhật sau T-09A (2026-09-02).** Mục "Recommended Session" bên dưới được viết trước
 S010/T-09A và giữ nguyên làm dấu vết. Trạng thái hiện tại và hành động nhỏ nhất kế tiếp:

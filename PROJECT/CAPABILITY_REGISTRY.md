@@ -360,3 +360,33 @@ hay architecture ambiguity nào chặn `CAP-WEBAPP` ở nhánh `T-09B`.
 `CAP-WEBAPP` budget vẫn 2/0/2 — chuyển `READY` là chuẩn bị, không phải implementation, không
 tiêu repair cycle. `T-09B` implementation sau này vẫn là **INITIAL IMPLEMENTATION** khi bắt
 đầu (đúng quy ước `WP-A4`/`T-09A`).
+
+---
+
+## 10. Cập nhật tại phiên thực thi T-09B — S014 (2026-09-02): `READY → IN_PROGRESS → IMPLEMENTED`
+
+Bảng §2 **KHÔNG đổi** (owner task hiện hành, lineage root `WP-C1`). Số task ID mới = **0**.
+
+### 10.1 `T-09B` đã được thực thi đúng baseline FROZEN
+
+Ràng buộc kiến trúc của `CAP-WEBAPP` (§7.3, §8.1) nay là **mã đang chạy**: Firebase Hosting →
+Firebase Anonymous Auth (một owner UID trong `firestore.rules`) → Cloud Firestore
+(`ethdca/state` + `ethdca/seed`); `localStorage` = mirror/cache. Không thêm thành phần Firebase nào
+ngoài ba thành phần đã duyệt; không provider abstraction; không login UI; không cross-device
+recovery (`H-23` giữ nguyên).
+
+    T-09B: READY -> IN_PROGRESS -> IMPLEMENTED   (STATE_AUTHORITY.md: IN_PROGRESS/READY_FOR_REVIEW
+                                                  do Implementer viết; DONE thuộc chủ dự án)
+    Completion Gate: 16/16 REQUIRED PASS (E1, Firebase Emulator Suite) — câu chữ gate KHÔNG đổi
+    Batch review: PASS, CONFIRMED BLOCKING = 0, HARDENING mới = 4 (H-24..H-27)
+    Production reachability trên project Firebase THẬT: NOT_TESTED (chủ dự án chưa tạo project)
+
+### 10.2 Ranh giới capability không đổi
+
+`CAP-WEBAPP` budget vẫn **2/0/2**: lượt này là INITIAL IMPLEMENTATION (quy ước `WP-A4`/`T-09A`),
+không tiêu repair cycle. Finding hai-tab-stale-overwrite phát hiện trong chính phiên và sửa TRƯỚC
+commit implementation → cùng lượt, không mở chu kỳ (`REVIEW_PROTOCOL.md` § same cycle).
+
+`H-27` (ba file runtime mới `webapp/firebase_config.js`, `firestore.rules`, `firebase.json` chưa
+được khai trong `PROJECT/PRODUCTION_PATHS.md` §1) thuộc `CAP-GOVTOOL` — cùng khe owner với `H-08`,
+`H-09`, `H-21`, `H-22`; phiên này không tự khai production path (giá trị PROJECT do chủ dự án đặt).

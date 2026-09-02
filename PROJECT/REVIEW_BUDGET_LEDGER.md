@@ -191,7 +191,7 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
 ### 2.2 `CAP-WEBAPP` — App web: sổ sách, trạng thái thực thi, parity JS/Python
 
     LINEAGE ROOT   = WP-C1 (docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md)
-    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (PLANNED), WP-C2 (BLOCKED),
+    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (IMPLEMENTED — S014), WP-C2 (BLOCKED),
                      WP-C3, WP-C4 (PLANNED)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
@@ -205,6 +205,7 @@ DONE ngày 2026-09-02. `USED` vẫn = 0 vì **chưa tiêu**, không phải vì �
 |---|---|---|---|---|---|
 | — | `WP-C1` (kết luận, không vá) | `cb75f9d` | `814d185` | **0** — `CHECK-C1-07` chứng minh `app_logic.js`/`engine.js` không đổi một dòng | 8/8 REQUIRED PASS (E1) |
 | 0 | `T-09A` implementation ban đầu | `814d185` | `d125fe5` | 1 file, +88 / −16 (`webapp/app_logic.js`) | 12/12 REQUIRED PASS (E1); batch review PASS, 0 BLOCKING |
+| 0' | `T-09B` implementation ban đầu (S014) | `4502ea6` | `0d4917a` | 3 file, +560 / −162 (`app_logic.js`, `app_shell.html`, `build_app.js`) + 3 file runtime MỚI chưa trong khai báo (`webapp/firebase_config.js` 25, `firestore.rules` 32, `firebase.json` 21 dòng — `H-27`) | 16/16 REQUIRED PASS (E1, Firebase Emulator Suite); batch review PASS, 0 BLOCKING còn lại; project thật NOT_TESTED |
 
     REPAIR CYCLES ĐÃ TIÊU  = 0   (lượt trên là implementation ban đầu, không phải repair
                                   cycle — cùng quy ước đã dùng ở §1 cho CAP-PROV và §2.1
@@ -323,6 +324,40 @@ vẫn là **INITIAL IMPLEMENTATION** — cùng quy ước `WP-A4`/`T-09A` — v�
 cycle.
 
 ---
+
+#### 2.2.4 Phiên thực thi T-09B — S014 (2026-09-02): implementation ban đầu, budget KHÔNG đổi
+
+Lượt `4502ea6..0d4917a` (hàng `0'` ở bảng trên) là **INITIAL IMPLEMENTATION** của `T-09B` — cùng
+quy ước đã dùng cho `WP-A4` (`DEC-016`/`DEC-017`) và `T-09A` (`DEC-018`/`DEC-019` điểm 5). Batch
+review (`docs/reviews/T-09B-batch-review.md`) trả 0 BLOCKING còn lại: finding `F-T09B-01` (hai tab
+stale ghi đè) được phát hiện và sửa TRƯỚC commit implementation, tức nằm trong cumulative diff của
+chính lượt này → **cùng lượt**, không mở repair cycle (`REVIEW_PROTOCOL.md` § "inside the cumulative
+repair diff -> same cycle").
+
+Delivery change budget tích luỹ từ baseline `cb75f9d` của `CAP-WEBAPP`, đo trực tiếp:
+
+    # theo KHAI BÁO production path (§1 bảng + §2 loại trừ)
+    git diff --shortstat cb75f9d..0d4917a -- webapp/app_logic.js webapp/engine.js \
+        webapp/app_shell.html webapp/build_app.js src/eth_dca_os pyproject.toml pyproject.lock
+      -> 4 files changed, 736 insertions(+), 193 deletions(-)
+         (gồm src/eth_dca_os/indicators.py của CAP-DATA repair cycle #1 — S010 — đã vào main trong
+          khoảng này: 1 file changed, 74 insertions(+), 5 deletions(-); KHÔNG thuộc CAP-WEBAPP)
+    # phần thuộc CAP-WEBAPP (bốn file webapp trong khai báo) — con số có thẩm quyền cho lineage này
+    git diff --shortstat cb75f9d..0d4917a -- webapp/app_logic.js webapp/engine.js \
+        webapp/app_shell.html webapp/build_app.js
+      -> 3 files changed, 662 insertions(+), 188 deletions(-)
+    # + ba file runtime mới KHÔNG nằm trong khai báo (H-27): 78 dòng
+    # lệnh glob §1 (nuốt test/harness/package-lock — H-21): 16 files changed, 12315 insertions(+), 248 deletions(-) — không dùng để phân loại
+
+`webapp/engine.js` = 0 dòng đổi kể từ baseline — bề mặt trôi parity `RSK-002` không mở rộng.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI (Owner-ratified, `DEC-018`)
+    CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI (implementation ban đầu, không phải repair)
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+`T-09B` = `IMPLEMENTED`, chưa `DONE` (thẩm quyền chủ dự án; production reachability trên project
+Firebase thật chưa kiểm). Số task ID mới = **0**.
 
 ## 3. Golden cumulative change budget
 
