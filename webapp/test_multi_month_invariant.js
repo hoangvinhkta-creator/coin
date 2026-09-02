@@ -1,9 +1,17 @@
 /* WP-C1 — CHECK-C1-06 / Subtask C1.7: bất biến kế toán TOTAL = AVAILABLE + RESERVED + DEPLOYED
  * qua chuỗi fill toàn phần -> fill một phần -> invalidation -> release, trải trên nhiều tháng.
  * Không sửa app_logic.js/engine.js — chỉ đọc, không vá.
+ *
+ * BẢO TRÌ T-09A (2026-09-02): kịch bản gốc reserve 100% Smart available trong khi Smart
+ * unlock = 0% — đúng hành vi mà V-02 tố cáo là SAI (Strategy §12 "Không được reserve vốn
+ * chưa unlock"). Sau bản vá T-09A, thao tác đó bị TỪ CHỐI, nên kịch bản không dựng được nữa.
+ * Thêm MỘT bước tiền đề: nhập một chuỗi ngày giảm giá qua đúng UI "Nhập số liệu" để đẩy
+ * OSCORE lên và mở unlock. Chuỗi fill -> partial fill -> invalidation -> release phía sau
+ * GIỮ NGUYÊN từng bước; các assertion bất biến KHÔNG bị nới lỏng.
  */
 const { chromium } = require('playwright');
 const path = require('path');
+const H = require('./test_helpers.js');
 
 const DIR = __dirname;
 const APP_FINAL = path.join(DIR, 'app_final.html');
@@ -36,6 +44,13 @@ function noNegative(x, label) {
   await p.waitForTimeout(900);
 
   const readState = () => p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+
+  // --- Tiền đề T-09A: mở Smart unlock qua đường nhập giá thật (xem chú thích đầu file) ---
+  const unlock0 = await H.pushDeclineDays(p, 12);
+  console.log('Smart unlock sau chuỗi ngày giảm:', (unlock0.smartUnlock * 100).toFixed(2) + '%',
+    '(OSCORE ' + unlock0.oscore.toFixed(2) + ')');
+  assert(unlock0.smartUnlock >= 1 - 1e-9,
+    'Smart unlock đạt 100% — reserve toàn bộ Smart available của tháng là HỢP LỆ theo Strategy §12');
 
   // --- Tháng 1 (2026-06): nạp vốn, tạo ladder cap = toàn bộ Smart available ---
   await p.click('[data-tab="entry"]');

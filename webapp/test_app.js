@@ -1,6 +1,16 @@
+/* WP-C1 — smoke test đường sản phẩm: seed -> vốn -> P2P -> ladder -> mua -> dashboard ->
+ * lịch sử -> reload.
+ *
+ * BẢO TRÌ T-09A (2026-09-02): thêm MỘT bước tiền đề — nhập chuỗi ngày giảm giá qua đúng UI
+ * "Nhập số liệu" để mở Smart unlock. Trước T-09A, bước 4 reserve 100% Smart available khi
+ * Smart unlock = 0%, tức đúng hành vi mà V-02 tố cáo là SAI (Strategy §12). Sau bản vá,
+ * thao tác đó bị TỪ CHỐI, nên tiền đề là bắt buộc để bước 4 còn tạo được ladder. Các bước
+ * và phép kiểm phía sau GIỮ NGUYÊN.
+ */
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const H = require('./test_helpers.js');
 
 // __dirname thay vì cwd: test phải chạy đúng bất kể được gọi từ đâu — F-027.
 const DIR = __dirname;
@@ -27,6 +37,10 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   console.log('-- OSCORE:', (await p.textContent('#osVal')).trim());
   console.log('-- chips:', (await p.textContent('#stateChips')).replace(/\s+/g,' ').trim());
   console.log('-- parity:', (await p.textContent('#parityBox')).replace(/\s+/g,' ').slice(0,160));
+
+  // 1b. tiền đề T-09A: mở Smart unlock qua đường nhập giá thật
+  const unlock0 = await H.pushDeclineDays(p, 12);
+  console.log('-- Smart unlock sau tiền đề T-09A:', (unlock0.smartUnlock * 100).toFixed(2) + '%');
 
   // 2. nạp vốn tháng
   await p.click('[data-tab="entry"]');

@@ -1,5 +1,13 @@
+/* WP-C1 — kiểm tra vòng đời zone và bất biến TOTAL = A + R + D trong MỘT tháng.
+ * BẢO TRÌ T-09A (2026-09-02): thêm MỘT bước tiền đề — nhập chuỗi ngày giảm giá qua đúng UI
+ * "Nhập số liệu" để mở Smart unlock. Trước T-09A, kịch bản reserve 100% Smart available khi
+ * Smart unlock = 0%, tức đúng hành vi mà V-02 tố cáo là SAI (Strategy §12). Sau bản vá,
+ * thao tác đó bị TỪ CHỐI, nên tiền đề là bắt buộc để kịch bản còn dựng được. Các bước và
+ * assertion phía sau GIỮ NGUYÊN.
+ */
 const { chromium } = require('playwright');
 const path = require('path');
+const H = require('./test_helpers.js');
 
 // __dirname thay vì cwd: test phải chạy đúng bất kể được gọi từ đâu — F-027.
 const DIR = __dirname;
@@ -16,6 +24,9 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   await p.waitForTimeout(300);
   await p.setInputFiles('#seedFile', SEED_PATH);
   await p.waitForTimeout(800);
+
+  const unlock0 = await H.pushDeclineDays(p, 12);
+  console.log('-- Smart unlock sau tiền đề T-09A:', (unlock0.smartUnlock * 100).toFixed(2) + '%');
 
   await p.click('[data-tab="entry"]');
   await p.fill('#cbMonth','2026-06'); await p.fill('#cbAmt','10000000'); await p.click('#cbAdd');

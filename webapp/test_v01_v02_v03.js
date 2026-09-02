@@ -1,9 +1,16 @@
 /* WP-C1 — CHECK-C1-03/04/05: kết luận E1 cho V-01, V-02, V-03 bằng ca kiểm thử chạy thật
  * trên app_final.html đã build. Không sửa app_logic.js/engine.js — chỉ đọc, không vá.
  * Mỗi khối in ra XÁC NHẬN hoặc BÁC BỎ kèm số liệu — không để lửng.
+ *
+ * BẢO TRÌ T-09A (2026-09-02): kịch bản GIỮ NGUYÊN, chỉ thêm cho testV01 một bước tiền đề —
+ * mở Smart unlock qua đúng UI "Nhập số liệu" — vì sau bản vá V-02 thì reserve khi unlock = 0%
+ * bị từ chối, và nếu không có ladder thì không dựng được ca V-01. Logic kết luận
+ * XÁC NHẬN/BÁC BỎ không bị sửa: chạy trên cây đã vá, cả V-01 lẫn V-02 phải in BÁC BỎ — đó
+ * chính là bằng chứng AFTER của T-09A. testV02/testV03 không đổi một dòng nào.
  */
 const { chromium } = require('playwright');
 const path = require('path');
+const H = require('./test_helpers.js');
 
 const DIR = __dirname;
 const APP_FINAL = path.join(DIR, 'app_final.html');
@@ -170,6 +177,11 @@ async function testV01(b) {
 
   await p.setInputFiles('#seedFile', SEED_PATH);
   await p.waitForTimeout(900);
+
+  // Tiền đề T-09A: mở Smart unlock (xem chú thích đầu file). Không đổi bản chất ca kiểm thử —
+  // V-01 nói về THÁNG NHẬN vốn release, không về mức unlock.
+  const unlock0 = await H.pushDeclineDays(p, 12);
+  console.log('  Smart unlock sau chuỗi ngày giảm:', (unlock0.smartUnlock * 100).toFixed(2) + '%');
 
   // Tháng A = 2026-06: nạp vốn rồi tạo ladder LA — reserve đến từ pool của CHÍNH tháng A.
   await p.click('[data-tab="entry"]');

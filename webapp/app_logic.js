@@ -125,6 +125,27 @@
     var keys = Object.keys(state.months).sort();
     return keys.length ? keys[keys.length - 1] : monthKey();
   }
+
+  /** T-09A / V-01 — tháng kế toán SỞ HỮU vốn của một ladder.
+   *  Vốn được reserve từ pool của `currentMonth()` TẠI THỜI ĐIỂM TẠO, nên mọi dịch chuyển
+   *  sau đó (deploy khi fill zone, release khi cancel/invalidate/expire) phải quay về ĐÚNG
+   *  tháng đó — không phải tháng đang là `currentMonth()` lúc dịch chuyển xảy ra. */
+  function ladderMonth(L) {
+    if (L && typeof L.month === "string" && L.month) return L.month;
+    // Ladder tạo TRƯỚC T-09A không mang trường `month`. Suy ra từ dấu thời gian tạo nếu
+    // tháng đó thật sự có sổ; nếu không thì rơi về currentMonth(). Cả hai nhánh suy luận
+    // đều được BÁO HIỆN bằng banner (renderBanners) — Owner Acceptance điểm 9: sai tiền
+    // phải fail visibly.
+    var guess = L && L.created ? monthKey(new Date(L.created)) : null;
+    if (guess && state.months[guess]) return guess;
+    return currentMonth();
+  }
+  /** Ladder chưa có tháng sở hữu tường minh — tháng của chúng là SUY LUẬN, không phải sự kiện. */
+  function inferredMonthLadders() {
+    return (state.ladders || []).filter(function (L) {
+      return !(typeof L.month === "string" && L.month);
+    });
+  }
   function month(k) {
     if (!state.months[k]) {
       state.months[k] = {
@@ -198,8 +219,8 @@
     return { rate: rate };
   }
 
-  function poolFor(src) {
-    var m = month(currentMonth());
+  function poolFor(src, mk) {
+    var m = month(mk || currentMonth());
     if (src === "BASE") return m.base;
     if (src === "SMART") return m.smart;
     if (src === "OPPORTUNITY") return state.oppFund;
@@ -230,7 +251,10 @@
     state.costUsdt += usdt;
     state.costVnd += vndCost;
 
-    var pool = poolFor(ref ? ref.L.type : src);
+    // T-09A / V-01: fill một zone rút vốn từ pool của tháng SỞ HỮU ladder, không phải
+    // tháng đang là currentMonth() lúc ghi lệnh mua.
+    var pool = poolFor(ref ? ref.L.type : src,
+                       ref ? ladderMonth(ref.L) : currentMonth());
     var deducted = 0;
     var zoneNote = null;
 
@@ -286,14 +310,35 @@
     });
   }
 
+  /** T-09A / V-02 — Strategy §12 "Không được reserve vốn chưa unlock".
+   *  Cùng công thức với `capital.py::smart_reservable` (bản Python là chuẩn):
+   *      unlocked(tháng) − (đã reserve + đã deploy TRONG THÁNG), kẹp trên bởi available.
+   *  `view` chưa có (chưa nạp seed) hoặc unlock không hữu hạn => 0: fail closed. */
+  function smartReservable(m) {
+    if (!view || !Number.isFinite(view.smartUnlock)) return 0;
+    var unlocked = poolTotal(m.smart) * view.smartUnlock;
+    return Math.max(0, Math.min(m.smart.a, unlocked - m.smart.r - m.smart.d));
+  }
+  /** Đối ứng cho Opportunity Fund (xuyên tháng) — phần unlock của
+   *  `capital.py::opportunity_reservable`. Hysteresis §5 và daily limit §11 KHÔNG được cài
+   *  ở app; xem khối DEFERRED_BY_MINIMAL_FIX trong `docs/tasks/T-09A-*.md`. */
+  function oppReservable() {
+    if (!view || !Number.isFinite(view.oppUnlock)) return 0;
+    var f = state.oppFund;
+    var unlocked = poolTotal(f) * view.oppUnlock;
+    return Math.max(0, Math.min(f.a, unlocked - f.r - f.d));
+  }
+
+  /** Trả về {ok, mk, cap, reason}. `mk` là tháng bị trừ vốn — người gọi PHẢI ghi nó lên
+   *  ladder để release/deploy sau này quay về đúng chỗ (V-01). */
   function reserveFor(type, vnd) {
     var mk = currentMonth(), m = month(mk);
-    if (type === "SMART") {
-      if (vnd > m.smart.a + 1e-6) return false;
-      m.smart.a -= vnd; m.smart.r += vnd; return true;
-    }
-    if (vnd > state.oppFund.a + 1e-6) return false;
-    state.oppFund.a -= vnd; state.oppFund.r += vnd; return true;
+    var pool = type === "SMART" ? m.smart : state.oppFund;
+    var cap = type === "SMART" ? smartReservable(m) : oppReservable();
+    if (vnd > pool.a + 1e-6) return { ok: false, mk: mk, cap: cap, reason: "AVAILABLE" };
+    if (vnd > cap + 1e-6) return { ok: false, mk: mk, cap: cap, reason: "UNLOCK" };
+    pool.a -= vnd; pool.r += vnd;
+    return { ok: true, mk: mk, cap: cap };
   }
 
   /** Strategy §8: cancel / invalidation / expiry trả TOÀN BỘ phần còn lại về AVAILABLE —
@@ -310,27 +355,43 @@
       z.target_vnd = z.filled_vnd || 0;   // phần còn lại không còn là cam kết vốn
     });
     if (open <= 0) return;
-    var mk = currentMonth(), m = month(mk);
+    // T-09A / V-01: pool nhận lại vốn là pool của tháng SỞ HỮU ladder.
+    var mk = ladderMonth(L), m = month(mk);
+    var take;
     if (L.type === "SMART") {
-      var take = Math.min(open, m.smart.r);
+      take = Math.min(open, m.smart.r);
       m.smart.r -= take; m.smart.a += take;
     } else {
-      var t2 = Math.min(open, state.oppFund.r);
-      state.oppFund.r -= t2; state.oppFund.a += t2;
+      take = Math.min(open, state.oppFund.r);
+      state.oppFund.r -= take; state.oppFund.a += take;
     }
-    ledger({ pool: L.type, type: "RELEASE", vnd: open, reason: "LADDER_RELEASE" });
+    // Ghi đúng số THỰC SỰ dịch chuyển, không ghi `open`. Chênh lệch (nếu có) là dấu hiệu sổ
+    // không nhất quán và phải nhìn thấy được trong ledger.
+    var short = open - take > 1e-6 ? open - take : 0;
+    var ent = { pool: L.type, type: "RELEASE", vnd: take, month: mk, ladder: L.id,
+                reason: short ? "LADDER_RELEASE_SHORTFALL" : "LADDER_RELEASE" };
+    if (short) ent.shortfall = short;   // hiện trên cột Reason của bảng Sổ vốn
+    ledger(ent);
   }
 
   function createLadder(type, anchor, capVnd) {
     if (!view) return { err: "Chưa có dữ liệu giá — nạp seed ở tab Thiết lập." };
     var sp = type === "SMART" ? view.smartSpacing : view.oppSpacing;
     if (!Number.isFinite(sp)) return { err: "Chưa đủ lịch sử để tính ADR30." };
-    if (!reserveFor(type, capVnd)) return { err: "Không đủ vốn available trong pool." };
+    var rs = reserveFor(type, capVnd);
+    if (!rs.ok) {
+      if (rs.reason === "AVAILABLE") return { err: "Không đủ vốn available trong pool." };
+      var u = type === "SMART" ? view.smartUnlock : view.oppUnlock;
+      return { err: "Vượt phần đã unlock (" + pct(u, 1) + "): tối đa " + vnd(rs.cap) +
+                    " ₫ được reserve lúc này (Strategy §12)." };
+    }
     var L = E.buildLadder(type, anchor, sp, capVnd, view.score.oscore);
     L.id = "L" + (state.ladders.length + 1) + "-" + Date.now().toString(36);
     L.created = new Date().toISOString();
+    L.month = rs.mk;   // T-09A / V-01: khoá tháng sở hữu vốn ngay tại lúc reserve
     state.ladders.push(L);
-    ledger({ pool: type, type: "RESERVE", vnd: capVnd, reason: type + "_LADDER" });
+    ledger({ pool: type, type: "RESERVE", vnd: capVnd, reason: type + "_LADDER",
+             month: rs.mk, ladder: L.id });
     return { ladder: L };
   }
 
@@ -434,6 +495,17 @@
           "Giá mới nhất là ngày " + esc(view.last.d) + " (" + staleDays + " ngày trước). " +
           "Nhập giá đóng cửa mới ở tab <strong>Nhập số liệu</strong>.</p></div>";
       }
+    }
+    // Ngoài nhánh seed: huỷ ladder KHÔNG cần `view`, nên cảnh báo tháng sở hữu suy luận phải
+    // hiện kể cả khi chưa nạp seed.
+    var legacyL = inferredMonthLadders();
+    if (legacyL.length) {
+      out += '<div class="banner warn"><span class="mk">THÁNG SỞ HỮU SUY LUẬN</span><p>' +
+        legacyL.length + " ladder được tạo trước bản vá kế toán T-09A nên không ghi tháng " +
+        "sở hữu vốn. App đang <strong>suy luận</strong> tháng đó từ thời điểm tạo (" +
+        esc(legacyL.map(function (L) { return L.id + "→" + ladderMonth(L); }).join(", ")) +
+        "). Hãy đối chiếu với sổ trước khi hủy hoặc để chúng invalidate — nếu sai, vốn sẽ " +
+        "được trả về nhầm tháng.</p></div>";
     }
     $("banners").innerHTML = out;
   }
