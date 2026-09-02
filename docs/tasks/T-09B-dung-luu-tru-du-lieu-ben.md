@@ -125,6 +125,11 @@ Ràng buộc kiến trúc **Firebase** là FIXED OWNER CONSTRAINT — ghi tại
 Supabase / SQLite / PostgreSQL / Cloudflare D1 / JSON Server hay bất kỳ provider nào khác, và
 KHÔNG có thẩm quyền đổi quyết định đó.
 
+`OD-A` (runtime host), `OD-B` (thành phần Firebase), `OD-B2` (danh tính) đã được chủ dự án
+giải quyết tại `DEC-020` (`OD-WEBAPP-03`, 2026-09-02): Firebase Hosting · Cloud Firestore ·
+Firebase Anonymous Auth. `DEC-020` cũng mở một khe mới — `OD-C` (recovery semantics) — vẫn
+CHẶN `PLANNED → READY`. Xem mục OWNER_DECISION_REQUIRED bên dưới, nay đã cập nhật.
+
 ---
 
 ## Objective
@@ -152,13 +157,32 @@ yêu cầu."* Giảm thiểu được chỉ định là T-09B.
 
 ---
 
-## OWNER_DECISION_REQUIRED — hai quyết định, chặn `PLANNED → READY`
+## OD-A / OD-B / OD-B2 — RESOLVED (`DEC-020`, 2026-09-02)
 
-Phiên này **không** silently đổi architecture và **không** đề xuất bỏ Firebase. Firebase giữ
-nguyên. Hai điều dưới đây là thứ Firebase **không tự trả lời được**, và cả hai đều thuộc thẩm
-quyền chủ dự án theo `STATE_AUTHORITY.md`.
+    OD-A  = FIREBASE HOSTING
+    OD-B  = CLOUD FIRESTORE  (document `ethdca/state` + `ethdca/seed`)
+    OD-B2 = FIREBASE ANONYMOUS AUTH, rules khoá cứng một owner UID
 
-### OD-A (CHẶN) — Runtime host của app web
+Kiến trúc baseline sau khi cả ba được duyệt:
+
+    Browser
+       ↓
+    Firebase Hosting
+       ↓
+    Firebase Authentication (Anonymous)
+       ↓
+    Cloud Firestore
+       ↓
+    durable state
+
+`localStorage` / `sessionStorage` giữ nguyên vai trò mirror/cache — không đổi so với `DEC-019`.
+
+Bằng chứng và lý do chấm từng quyết định được giữ nguyên bên dưới (đọc trước khi đọc `OD-C`).
+Đây là **baseline đã APPROVED**, không phải hợp đồng bất biến: nếu implementation chứng minh
+document size hoặc schema thực tế không đáp ứng được ở `OD-B`, KHÔNG silently redesign — báo
+`ARCHITECTURE_CHANGE_REQUIRED` kèm evidence. KHÔNG đổi sang Realtime Database.
+
+### OD-A (RESOLVED = FIREBASE HOSTING) — Runtime host của app web
 
 **Đây không phải giới hạn của Firebase. Đây là giới hạn của nơi app đang chạy.**
 
@@ -183,19 +207,22 @@ không với tới được Firebase.
 tương lai"* để nâng một finding lên BLOCKING. Mục này **không** dựa vào lập luận đó: CSP là cấu
 hình đang có hiệu lực ngay bây giờ, và bốn gate A–D là REQUIRED của chính chủ dự án.
 
-Ba lựa chọn, xếp theo thứ tự ưu tiên §11 của chỉ thị (correctness · usability · low operational
-burden · implementation simplicity · cost · technical elegance · scalability):
+Ba lựa chọn đã được đưa ra, xếp theo thứ tự ưu tiên §11 của chỉ thị (correctness · usability ·
+low operational burden · implementation simplicity · cost · technical elegance · scalability),
+và chủ dự án đã **APPROVED phương án A1** tại `DEC-020`:
 
 | | Phương án | Đánh giá |
 |---|---|---|
-| **A1** | **Firebase Hosting** — deploy `app_final.html` lên Firebase Hosting, mở bằng một URL cố định | **KHUYẾN NGHỊ.** Cùng hệ sinh thái đã chọn nên không phải quyết định provider lần hai; CSP do chính dự án đặt nên Firebase gọi được; usability đúng ý *"mở web lên là dùng được"* — một URL, không terminal cho việc dùng hằng ngày; free tier thừa cho một người dùng; `firebase deploy` chỉ chạy lúc **setup và khi đổi code**, không phải mỗi ngày |
-| **A2** | Mở `app_final.html` từ ổ đĩa (`file://`) | Origin của `file://` là `null`; Firebase Auth từ chối origin đó và Firestore/RTDB có thể chặn theo. Người dùng phải tự mang file qua từng máy, không có bản dùng chung. Rủi ro cao hơn, usability thấp hơn |
-| **A3** | Giữ nguyên host artifact | **Bất khả thi với Firebase** — chính là điều bằng chứng 1–5 chứng minh. Nêu ra để danh sách đầy đủ, không phải để chọn |
+| **A1** | **Firebase Hosting** — deploy `app_final.html` lên Firebase Hosting, mở bằng một URL cố định | **APPROVED (`DEC-020`).** Cùng hệ sinh thái đã chọn nên không phải quyết định provider lần hai; CSP do chính dự án đặt nên Firebase gọi được; usability đúng ý *"mở web lên là dùng được"* — một URL, không terminal cho việc dùng hằng ngày; free tier thừa cho một người dùng; `firebase deploy` chỉ chạy lúc **setup và khi đổi code**, không phải mỗi ngày |
+| A2 | Mở `app_final.html` từ ổ đĩa (`file://`) | KHÔNG chọn. Origin của `file://` là `null`; Firebase Auth từ chối origin đó và Firestore/RTDB có thể chặn theo. Người dùng phải tự mang file qua từng máy, không có bản dùng chung |
+| A3 | Giữ nguyên host artifact | KHÔNG chọn — bất khả thi với Firebase, chính là điều bằng chứng 1–5 chứng minh |
 
-Chỉ thị §2 nói không tự thêm `hosting migration` **nếu Completion Gate không cần**. Ở đây gate
-A–D **cần**, và phiên này không tự thêm — nó trả về để chủ dự án quyết, đúng như §1 yêu cầu.
+Chỉ thị §2 (phiên trước) nói không tự thêm `hosting migration` **nếu Completion Gate không
+cần**. Ở đây gate A–D **cần**, nên đây không phải tự thêm mà là hệ quả trực tiếp của một
+Completion Gate REQUIRED đã FINALIZED — và chủ dự án đã duyệt tại `DEC-020`. Không biến quyết
+định này thành deployment-platform redesign; không thêm server riêng.
 
-Hệ quả kèm theo nếu chọn A1 hoặc A2, phải được biết trước khi duyệt:
+Hệ quả kèm theo, đã được biết trước khi duyệt:
 
 - `window.claude.use("artifact")` (đường tự publish) và `window.claude.use("downloads")` (đường
   export JSON) là capability của host artifact; rời host thì mất. Đường publish **bị thay thế**
@@ -204,10 +231,9 @@ Hệ quả kèm theo nếu chọn A1 hoặc A2, phải được biết trước 
 - Cơ chế quine (`build_app.js` nhúng base64 của chính trang) không còn cần thiết cho persistence.
   Phiên thực thi **không** được tự ý gỡ nó ngoài phạm vi cần thiết.
 
-### OD-B (PHỤ THUỘC OD-A) — Thành phần Firebase: Cloud Firestore hay Realtime Database
+### OD-B (RESOLVED = CLOUD FIRESTORE) — Thành phần Firebase
 
-Trong phạm vi Firebase, phiên này được phép đánh giá và **khuyến nghị**, chủ dự án duyệt
-(chỉ thị §12).
+Chủ dự án đã **APPROVED Cloud Firestore** tại `DEC-020`, theo khuyến nghị dưới đây.
 
 | Tiêu chí (thứ tự §11) | Cloud Firestore | Realtime Database |
 |---|---|---|
@@ -219,7 +245,7 @@ Trong phạm vi Firebase, phiên này được phép đánh giá và **khuyến 
 | Operational burden | Rules + một document; không cần index cho truy vấn nào của T-09B | Rules + một cây |
 | Cost | Tính theo thao tác đọc/ghi. Một người dùng, low-frequency → gần như chắc chắn nằm trong free tier | Tính theo GB lưu/tải. Cũng trong free tier |
 
-**Khuyến nghị: Cloud Firestore.** Hai lý do quyết định, cả hai thuộc trục *correctness* — trục
+**Cloud Firestore — APPROVED.** Hai lý do quyết định, cả hai thuộc trục *correctness* — trục
 số 1 của §11:
 
 1. Realtime Database **xoá âm thầm** khoá có giá trị `null`. State của app có những trường mà
@@ -239,7 +265,7 @@ Cấu trúc tối thiểu đề xuất (KHÔNG phải một provider layer, KHÔ
 
 Hai document, ghi thẳng bằng Firebase SDK, không lớp trừu tượng ở giữa.
 
-### OD-B2 (kèm OD-B) — Danh tính tối thiểu cho security rules
+### OD-B2 (RESOLVED = FIREBASE ANONYMOUS AUTH, một owner UID) — Danh tính tối thiểu cho security rules
 
 Firestore/RTDB security rules cần **một** danh tính, nếu không thì lựa chọn duy nhất còn lại là
 cho phép ghi công khai — nghĩa là bất kỳ ai biết project ID đều sửa được sổ tiền. `DEC-011` điểm
@@ -247,20 +273,68 @@ cho phép ghi công khai — nghĩa là bất kỳ ai biết project ID đều s
 tiền mở cho toàn Internet: đó rơi vào điểm C (*"mất hoặc làm hỏng lịch sử giao dịch thực tế"*)
 của chính `DEC-011`.
 
-Tối thiểu đủ dùng, không phải "authentication phức tạp" theo §2: **Firebase Anonymous Auth**,
-rules khoá cứng vào đúng một UID. Người dùng không phải đăng nhập; trình duyệt tự lấy UID và
-giữ lại. Nếu chủ dự án muốn phương án khác, đây là chỗ để nói.
+Chủ dự án đã **APPROVED Firebase Anonymous Auth** tại `DEC-020`, rules khoá cứng vào đúng một
+UID. Người dùng không phải đăng nhập; trình duyệt tự lấy UID và giữ lại. Mục đích duy nhất: cấp
+danh tính tối thiểu cho rules — KHÔNG xây account system, login UI phức tạp, multi-user, roles,
+permissions framework, social login, email/password login **cho việc dùng hằng ngày**. Security
+boundary nằm ở Firebase Authentication + Firestore Rules; KHÔNG public read/write; Firebase
+public client config KHÔNG tự động coi là secret; KHÔNG hard-code secret/private credential vào
+source repo.
 
-### Vì sao phiên này KHÔNG chuyển `PLANNED → READY`
+---
 
-Chỉ thị §17 quy định: chuyển READY chỉ khi Ready Gate hoàn chỉnh **và** Firebase component đã
-xác định **mà không còn Owner Decision cần thiết**. `OD-A` là một Owner Decision còn cần, và nó
-chặn: không biết app chạy ở đâu thì không biết Firebase có với tới được không, tức không biết
-gate A–D thi hành thế nào.
+## OD-C (MỚI, CHẶN) — Recovery semantics: durable STATE khác với khả năng AUTHENTICATE lại làm owner
+
+Phát hiện tại `DEC-020` khi đánh giá lại Ready Gate sau khi OD-A/OD-B/OD-B2 được duyệt. Đây
+**không phải** vấn đề của Firestore — Firestore lưu đúng những gì được ghi. Đây là giới hạn của
+**Anonymous Auth**, thành phần đã được duyệt ở `OD-B2` để giải quyết một câu hỏi khác (rules cần
+một danh tính).
+
+### Bằng chứng
+
+Firebase Anonymous Auth lưu session (refresh token) trong `IndexedDB` của **đúng một browser
+profile**. Ba trong bốn kịch bản mất dữ liệu mà chính `RSK-001` nêu tên nguyên văn — *"Xóa dữ
+liệu site, dùng cửa sổ riêng tư, đổi máy, hoặc publish thất bại"* — sinh ra một `IndexedDB`
+**trống**, tức một **anonymous UID hoàn toàn mới**:
+
+| Kịch bản (từ `RSK-001`) | `IndexedDB` của Anonymous Auth | UID sau đó |
+|---|---|---|
+| Xoá `localStorage` + `sessionStorage` (không đụng `IndexedDB`) | Còn nguyên | **Cùng UID cũ** |
+| Cửa sổ riêng tư (private window) | Trống (private mode không giữ `IndexedDB` qua phiên) | **UID mới** |
+| Đổi máy | Không tồn tại trên máy mới | **UID mới** |
+| Đổi trình duyệt | Không tồn tại ở trình duyệt khác | **UID mới** |
+
+Nếu Firestore Security Rules khoá cứng vào MỘT UID cố định (đúng thiết kế `OD-B2` đã duyệt), một
+UID mới bị rules **từ chối đọc/ghi** dữ liệu đã có — không phải vì Firestore mất dữ liệu, mà vì
+trình duyệt/máy mới **không chứng minh được nó là owner**.
+
+### Hệ quả lên hai REQUIRED check đã FINALIZED
+
+| Check | Nhánh | Ảnh hưởng bởi Anonymous Auth? |
+|---|---|---|
+| `CHECK-T09B-03` — xoá `localStorage` + `sessionStorage` | Không đụng `IndexedDB` | **KHÔNG** — PASS được trung thực với thiết kế đã duyệt |
+| `CHECK-T09B-04` — đóng/mở lại môi trường, **"một profile/cửa sổ khác"** | Sinh `IndexedDB` mới | **CÓ** — nhánh này KHÔNG PASS được trung thực với Anonymous Auth đơn thuần |
+
+Ranh giới đúng như chỉ thị đặt tên trước: **(A) durable STATE persistence** đã được kiến trúc
+Hosting + Firestore giải quyết; **(B) khả năng AUTHENTICATE làm owner sau khi mất local browser
+identity** thì CHƯA. Không được tuyên bố "Firestore durable" = "chắc chắn recover được từ máy
+mới" — và Task Spec này không tuyên bố như vậy.
+
+### Hai phương án — chờ chủ dự án chọn (`OWNER_DECISION_REQUIRED`)
+
+| | Phương án | Đánh giá |
+|---|---|---|
+| **R1** | **Link một recovery credential vào Anonymous UID** — `linkWithCredential` gắn một cặp email/password (hoặc phone) vào UID nặc danh, một lần, ngay sau khi tạo UID lần đầu | **KHUYẾN NGHỊ.** Sinh hoạt hằng ngày KHÔNG đổi — vẫn tự động đăng nhập nặc danh trên browser đã liên kết, không có màn hình đăng nhập. Credential CHỈ dùng trên máy/browser mới: `signInWithEmailAndPassword` để quay lại ĐÚNG UID cũ, mở lại quyền đọc/ghi Firestore đã có. Đây KHÔNG phải "login UI phức tạp" hay "account system" — là một bước one-time setup, đúng tinh thần "tối thiểu cần cho durable persistence" (`DEC-019` điểm 3) |
+| R2 | **Chấp nhận giới hạn, thu hẹp tuyên bố trung thực** — không thêm credential nào; viết lại phạm vi "recover" của `CHECK-T09B-04` chỉ còn same-browser-profile | Giữ đúng "không xây login system" tuyệt đối, nhưng để hở đúng kịch bản "đổi máy" — kịch bản `RSK-001` nêu tên đầu tiên. Lối thoát duy nhất còn lại cho "đổi máy" là export JSON thủ công |
+
+**KHÔNG làm yếu `CHECK-T09B-04` để né khe này.** Cho tới khi chủ dự án chọn R1 hay R2:
 
     T-09B = PLANNED
-    OWNER_DECISION_REQUIRED = OD-A (chặn) + OD-B / OD-B2 (phụ thuộc OD-A)
+    OWNER_DECISION_REQUIRED = OD-C (duy nhất còn chặn)
     Số task ID mới = 0 · Số production file bị sửa = 0
+
+`CHECK-T09B-03` và `CHECK-T09B-04` (bên dưới, mục Completion Gate) được chú thích tham chiếu
+`OD-C` — nội dung acceptance KHÔNG bị viết lại, vì nó phụ thuộc R1 hay R2 được chọn.
 
 ---
 
@@ -349,7 +423,15 @@ Mất `localStorage` **không được** đồng nghĩa mất state thật.
 ### Load flow
 
     MỞ APP
-      → khởi tạo Firebase bằng config trong webapp/
+      → khởi tạo Firebase bằng config trong webapp/ (Firebase Hosting phục vụ trang — OD-A)
+      → AUTHENTICATE: đã có Anonymous session (IndexedDB) → dùng lại UID cũ
+                       chưa có (lần đầu, hoặc IndexedDB trống — xem OD-C)
+                         → tạo Anonymous UID mới
+                         → NẾU UID mới KHÔNG khớp owner UID đã ghi trong rules:
+                           Firestore từ chối đọc — đây chính là khe OD-C, KHÔNG phải lỗi
+                           Firestore. Hành vi cụ thể (bắt buộc thử recovery credential theo
+                           R1, hay báo rõ "không phải máy đã đăng ký" theo R2) PHỤ THUỘC
+                           quyết định OD-C, CHƯA thi hành ở gate này.
       → ĐỌC durable state (document sổ + document seed)
       → VALIDATE: schema + bất biến kế toán T-09A
           ├─ hợp lệ            → state := bản durable
@@ -390,6 +472,7 @@ server. Nhầm hai thứ này chính là điều gate J cấm.
 | State **malformed** (sai schema/thiếu khoá) | Không trở thành accounting state. Không ghi đè bản durable |
 | State **corrupt** (đủ khoá nhưng sai bất biến kế toán) | Như trên |
 | **Thiếu accounting state bắt buộc** | Như trên |
+| Firebase **Auth** thất bại hoặc rules từ chối UID hiện tại (`OD-C`) | Hiện rõ — banner phân biệt rành mạch với "load thất bại": đây là **không chứng minh được danh tính**, không phải "Firestore không có dữ liệu". Không giả vờ đây là state rỗng của một owner mới |
 
 Mọi failure có khả năng làm sai tiền phải **visible** — `DEC-011` điểm 9, fail visibly /
 fail closed. KHÔNG xây enterprise fault-tolerance (retry policy nhiều tầng, circuit breaker,
@@ -500,17 +583,19 @@ Theo `TASK_READY_GATE_STANDARD.md` § MAJOR Ready Gate, cộng 14 điều kiện
 - [x] Expected touch area được xác định
 - [x] Requirement liên quan được hiểu — `DEC-011` điểm 5-9, Strategy §8, Data Model §6
 - [x] Data impact được biết — state inventory ở trên, phân loại đủ ba nhóm
-- [ ] **Security impact được biết** — phụ thuộc `OD-B2`: chưa chốt danh tính tối thiểu cho rules
+- [~] **Security impact được biết** — danh tính rules ✅ (`OD-B2` = Anonymous Auth một UID,
+      `DEC-020`); **giới hạn recovery của danh tính đó CHƯA chốt** — xem `OD-C`
 - [x] Routing/API impact được biết — không có API nội bộ; routing giữ Tier D / xhigh
-- [ ] **Migration prerequisite sẵn sàng** — phụ thuộc `OD-A`: chưa biết app chạy ở đâu nên chưa
-      biết đường đưa state hiện có lên Firebase
+- [x] Migration prerequisite sẵn sàng — `OD-A` resolved (Firebase Hosting, `DEC-020`): biết rõ
+      app chạy ở đâu, biết đường đưa state hiện có lên Firestore lần đầu
 - [x] Difficulty được chấm — 3/4
 - [x] Risk được chấm — 3/4
 - [x] Blast Radius được chấm — 3/4; Effective Risk = HIGH
 - [x] Primary agent tier được gán — D / xhigh, xác nhận bằng `routing_engine.py`
 - [x] Escalation trigger được định nghĩa
 - [x] Completion Gate được finalize
-- [ ] **Completion Gate được freeze trước implementation** — đóng băng tại `PLANNED → READY`
+- [ ] **Completion Gate được freeze trước implementation** — chỉ freeze khi Ready Gate đầy đủ;
+      còn `OD-C` mở nên CHƯA freeze
 
 ### 14 điều kiện riêng (§13 chỉ thị)
 
@@ -522,24 +607,27 @@ Theo `TASK_READY_GATE_STANDARD.md` § MAJOR Ready Gate, cộng 14 điều kiện
 | 4 | Firebase constraint recorded | ✅ — `DEC-019` |
 | 5 | State inventory rõ | ✅ |
 | 6 | MUST_PERSIST rõ | ✅ — hai tầng |
-| 7 | Load/save flow rõ | ✅ |
-| 8 | Failure semantics rõ | ✅ |
+| 7 | Load/save flow rõ | ✅ — cập nhật thêm bước Auth (`DEC-020`) |
+| 8 | Failure semantics rõ | ✅ — cập nhật thêm hàng Auth thất bại (`DEC-020`) |
 | 9 | T-09A invariants rõ | ✅ |
 | 10 | Historical boundary rõ | ✅ |
 | 11 | Expected Touch Area rõ | ✅ |
-| 12 | **Firebase component được xác định** | ❌ — khuyến nghị Cloud Firestore, **chờ `OD-B`** |
-| 13 | Completion Gate finalized | ✅ — 16 REQUIRED check dưới đây |
+| 12 | Firebase component được xác định | ✅ — Cloud Firestore, **`OD-B` RESOLVED (`DEC-020`)** |
+| 13 | Completion Gate finalized | ✅ — 16 REQUIRED check dưới đây, không sửa yếu |
 | 14 | Routing xác nhận | ✅ — `routing_engine.py` trả D / xhigh |
-| + | **Không còn architecture ambiguity ngăn implementation** | ❌ — `OD-A` chặn |
+| + | Không còn architecture ambiguity ngăn implementation | ❌ — **`OD-C` chặn** (recovery semantics của Anonymous Auth, xem mục riêng ở trên) |
 
 ### Kết quả Ready Gate
 
-    READY GATE = KHÔNG ĐẠT
-    Thiếu: OD-A (runtime host) · OD-B (Firebase component) · OD-B2 (danh tính cho rules)
-    Ba mục Ready Gate chuẩn còn hở đều là hệ quả của ba quyết định trên, không phải
-    của việc chuẩn bị chưa đủ.
+    READY GATE = KHÔNG ĐẠT — 14/15 dòng ✅ (đếm cả dòng "+"); CHỈ dòng "+" còn ❌
+    OD-A, OD-B, OD-B2 = RESOLVED tại DEC-020 (Firebase Hosting · Cloud Firestore ·
+    Anonymous Auth một UID).
+    Thiếu duy nhất: OD-C (recovery semantics — CHECK-T09B-04 nhánh "profile/cửa sổ khác"
+    không PASS được trung thực với Anonymous Auth đơn thuần; chọn R1 hay R2).
+    Dòng chuẩn "Completion Gate được freeze" vẫn ❌ vì nó chỉ đóng khi Ready Gate đủ 15/15.
 
-    T-09B = PLANNED  (giữ nguyên)
+    T-09B = PLANNED  (giữ nguyên — chỉ một Owner Decision còn thiếu, nhưng vẫn là một
+    Owner Decision đang chặn theo đúng nghĩa chỉ thị §17/§"STATE TRANSITION")
 
 ---
 
@@ -571,10 +659,19 @@ trường MUST_PERSIST tầng 1, không so ảnh chụp màn hình.
 Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
 Yêu cầu: xoá sạch `localStorage` + `sessionStorage`, mở lại app, state kế toán phục hồi đầy đủ
 từ Firebase. Đây là chứng minh trực tiếp rằng `RSK-001` đã được giảm thiểu.
+Ghi chú (`OD-C`, `DEC-020`): kịch bản này **không** đụng `IndexedDB` nên **không** bị ảnh hưởng
+bởi khe recovery của Anonymous Auth — acceptance criteria trên vẫn đứng nguyên, PASS được
+trung thực với thiết kế đã duyệt.
 
 #### CHECK-T09B-04 (§14.D) — Đóng/mở lại môi trường sử dụng vẫn recover được state
 Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
 Yêu cầu: đóng hẳn trình duyệt (hoặc dùng một profile/cửa sổ khác), mở lại, state phục hồi đầy đủ.
+**CHẶN bởi `OD-C` (`DEC-020`), CHƯA đóng băng nội dung acceptance của nhánh "profile/cửa sổ
+khác":** nhánh đó tạo `IndexedDB` trống → Anonymous UID mới → bị Firestore rules từ chối, nên
+PASS trung thực phụ thuộc chủ dự án chọn R1 (recovery credential — PASS được qua đường
+`signInWithEmailAndPassword`) hay R2 (thu hẹp phạm vi "recover" xuống same-browser-profile —
+nhánh "profile/cửa sổ khác" khi đó tách khỏi acceptance của check này). KHÔNG tự chọn thay chủ
+dự án; KHÔNG hạ acceptance criteria hiện tại chỉ để né kết luận NOT_TESTED.
 
 ### Data — bảo toàn sổ qua vòng lưu/nạp
 

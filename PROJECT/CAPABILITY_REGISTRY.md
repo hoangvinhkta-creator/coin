@@ -292,3 +292,42 @@ Chi tiết, bằng chứng và khuyến nghị: `docs/tasks/T-09B-dung-luu-tru-d
 Đây là khe thẩm quyền **thi hành**, giống hình thái §6.3: capability có authority, nhưng ba rào
 (host, component, danh tính) đều do `STATE_AUTHORITY.md` dành cho chủ dự án. Phiên này KHÔNG tự
 chọn host, KHÔNG tự chọn component, KHÔNG tạo task ID, KHÔNG sửa production code.
+
+---
+
+## 8. Cập nhật tại phiên Owner Decision `DEC-020` (2026-09-02) — OD-A/OD-B/OD-B2 resolved, khe mới OD-C
+
+Bảng §2 **KHÔNG đổi**. Số task ID mới = **0**. Không capability mới, không lineage mới.
+
+### 8.1 T-09B — ba quyết định trong §7.4 nay RESOLVED
+
+    OD-A  = Firebase Hosting     (RESOLVED, DEC-020)
+    OD-B  = Cloud Firestore      (RESOLVED, DEC-020)
+    OD-B2 = Firebase Anonymous Auth, một owner UID   (RESOLVED, DEC-020)
+
+Ràng buộc kiến trúc của `CAP-WEBAPP` (§7.3) nay cụ thể hơn:
+
+    Browser -> Firebase Hosting -> Firebase Authentication -> Cloud Firestore -> durable state
+
+### 8.2 Khe thẩm quyền mới — `OD-C` (recovery semantics)
+
+Đánh giá lại Ready Gate sau khi ba quyết định trên được duyệt phát hiện một câu hỏi độc lập mà
+`OD-B2` không tự trả lời: danh tính Anonymous Auth có sống sót qua "đổi máy" không.
+
+    OWNER_DECISION_REQUIRED
+    OD-C — Anonymous Auth session gắn với IndexedDB của MỘT browser profile. Kịch bản cửa sổ
+           riêng tư / đổi máy / đổi trình duyệt (đều được RSK-001 nêu tên) sinh UID mới, bị
+           Firestore rules (khoá một UID cố định) từ chối đọc/ghi dữ liệu đã có.
+
+Đây KHÔNG phải absorption — không có hành vi hấp thụ nào, không chạm ngưỡng nào của Absorption
+Limit. Đây là một Owner Decision còn thiếu ở tầng thi hành, cùng hình thái §6.3/§7.4: capability
+có authority, nhưng quyết định cụ thể dành cho chủ dự án theo `STATE_AUTHORITY.md`.
+
+Chi tiết, bằng chứng, hai phương án (R1/R2): `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`
+§ OD-C, và `DEC-020` mục (5).
+
+### 8.3 Trạng thái T-09B sau phiên này
+
+    T-09B = PLANNED (không đổi). Ready Gate 14/15 dòng ✅ (đếm cả dòng "+"); chỉ OD-C còn chặn.
+    Completion Gate 16/16 REQUIRED vẫn FINALIZED, KHÔNG sửa yếu, CHƯA frozen.
+    CAP-WEBAPP budget KHÔNG đổi: 2/0/2. Không mở repair cycle. Không chuyển IN_PROGRESS.

@@ -1230,3 +1230,144 @@ Khi có người thứ hai dùng công cụ hoặc công cụ được phát hà
 và điểm (3) phải được định tuyến lại toàn bộ. Hoặc khi Firebase thay đổi điều khoản/giới hạn
 làm Completion Gate T-09B không đạt được — khi đó là `ARCHITECTURE_CHANGE_REQUIRED`, không phải
 quyết định của agent.
+
+---
+
+## DEC-020 — `OD-WEBAPP-03`: giải quyết OD-A/OD-B/OD-B2 cho T-09B; phát hiện khe mới OD-C (recovery semantics)
+
+Date:
+2026-09-02 (phiên Owner Decision — RESOLVE T-09B OD-A/OD-B/OD-B2)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Tiếp tục trên nhánh thẩm quyền hiện có
+`claude/t09b-firebase-decision-nnoony`. Không implement Firebase, không sửa production code,
+không chuyển `T-09B` sang `IN_PROGRESS`, không tạo task mới, không mở repair cycle.
+
+Decision:
+
+    (1) OD-A — RUNTIME HOST: APPROVED = FIREBASE HOSTING.
+
+        Firebase Hosting trở thành runtime host cho ETH DCA OS webapp. Mục tiêu: URL web ổn
+        định; browser được phép kết nối Firebase; không phụ thuộc host cũ (CSP chặn Firebase);
+        chủ dự án mở web và dùng trực tiếp; daily/occasional use không cần terminal/coding
+        agent. KHÔNG biến quyết định này thành deployment-platform redesign, KHÔNG thêm server
+        riêng.
+
+    (2) OD-B — DATABASE: APPROVED = CLOUD FIRESTORE.
+
+        Firestore là durable source of truth cho T-09B. Baseline architecture:
+
+            ethdca/state    <- document sổ kế toán (MUST_PERSIST tầng 1)
+            ethdca/seed     <- document seed lịch sử giá (MUST_PERSIST tầng 2)
+
+        Đây là baseline, không phải hợp đồng bất biến: nếu implementation chứng minh document
+        size hoặc schema thực tế không đáp ứng được, KHÔNG silently redesign — báo
+        `ARCHITECTURE_CHANGE_REQUIRED` kèm evidence. KHÔNG đổi sang Realtime Database.
+
+    (3) OD-B2 — IDENTITY: APPROVED = FIREBASE AUTHENTICATION, ANONYMOUS AUTH.
+
+        Mục đích duy nhất: cấp danh tính tối thiểu để Firestore Security Rules giới hạn đọc/ghi
+        về đúng một owner UID. KHÔNG xây account system, login UI phức tạp, multi-user, roles,
+        permissions framework, social login, email/password login — trừ khi Completion Gate
+        yêu cầu (xem điểm (4) dưới đây, nơi email/password xuất hiện lại nhưng CHỈ cho mục đích
+        recovery, không phải cho login hằng ngày).
+
+        Security boundary nằm ở Firebase Authentication + Firestore Rules — KHÔNG public
+        read/write. Firebase public client config KHÔNG tự động coi là secret; KHÔNG hard-code
+        secret/private credential nào vào source repo. Phiên này chỉ ghi contract, KHÔNG cấu
+        hình Firebase thật.
+
+    (4) KIẾN TRÚC BASELINE (đã APPROVED, thay bản cũ chỉ có 2 tầng):
+
+            Browser
+               ↓
+            Firebase Hosting
+               ↓
+            Firebase Authentication
+               ↓
+            Cloud Firestore
+               ↓
+            durable state
+
+        `localStorage`/`sessionStorage`: mirror/cache only — không đổi so với `DEC-019`.
+
+    (5) PHÁT HIỆN MỚI TẠI PHIÊN NÀY — `OD-C` (CHẶN, chưa quyết): khe giữa DURABLE STATE và
+        KHẢ NĂNG AUTHENTICATE LẠI làm chủ sở hữu.
+
+        Anonymous Auth cấp một UID được lưu **trong `IndexedDB` của đúng một browser profile**.
+        Ba trong bốn kịch bản mất dữ liệu mà chính `RSK-001` nêu tên — "dùng cửa sổ riêng tư,
+        đổi máy, đổi trình duyệt" — đều tạo ra **một `IndexedDB` trống**, tức một **anonymous
+        UID MỚI**. Nếu Firestore Security Rules khoá cứng vào MỘT UID cố định (đúng như (3)
+        approved), UID mới đó bị rules từ chối đọc/ghi — **không phải vì Firestore mất dữ liệu,
+        mà vì trình duyệt mới không chứng minh được nó là owner**.
+
+        Hệ quả cụ thể lên hai REQUIRED check đã FINALIZED của `T-09B`:
+
+        - `CHECK-T09B-03` (xoá `localStorage` + `sessionStorage`) — **không bị ảnh hưởng**, vì
+          Anonymous Auth session nằm ở `IndexedDB`, một kho khác. Check này vẫn PASS được trung
+          thực với thiết kế đã approved.
+        - `CHECK-T09B-04` (đóng/mở lại môi trường sử dụng, **"một profile/cửa sổ khác"**) —
+          nhánh "profile/cửa sổ khác" **không PASS được trung thực** với Anonymous Auth đơn
+          thuần, vì đó chính xác là kịch bản sinh UID mới.
+
+        Đây đúng là ranh giới mà chỉ thị phiên này đặt tên trước: **(A) durable STATE
+        persistence** đã được kiến trúc (1)-(4) giải quyết; **(B) khả năng AUTHENTICATE làm
+        owner sau khi mất local browser identity** thì CHƯA. Không được tuyên bố "Firestore
+        durable" = "chắc chắn recover được từ máy mới".
+
+        KHÔNG làm yếu `CHECK-T09B-04` để né khe này. Ghi `OWNER_DECISION_REQUIRED` cho đúng một
+        quyết định còn thiếu — hai phương án:
+
+            R1 (KHUYẾN NGHỊ) — LINK MỘT RECOVERY CREDENTIAL VÀO ANONYMOUS UID.
+              Dùng `linkWithCredential` gắn một cặp email/password (hoặc phone) vào UID nặc
+              danh hiện có, một lần, ngay sau khi tạo UID lần đầu. Sinh hoạt hằng ngày KHÔNG
+              đổi — vẫn tự động đăng nhập nặc danh trên browser đã liên kết, không có màn hình
+              đăng nhập. Credential đó CHỈ dùng trên máy mới / browser mới: `signInWithEmailAnd
+              Password` để quay lại ĐÚNG UID cũ, mở lại quyền đọc/ghi Firestore đã có. Đây
+              KHÔNG phải "login UI phức tạp" hay "account system" — nó là một bước one-time
+              setup, đúng tinh thần "tối thiểu cần cho durable persistence" của `DEC-019` điểm
+              (3), vì không có nó thì "đổi máy" của `RSK-001` không có lối thoát nào khác
+              ngoài forensic thủ công qua Firebase Console.
+
+            R2 — CHẤP NHẬN GIỚI HẠN, THU HẸP TUYÊN BỐ TRUNG THỰC.
+              Không thêm credential nào. Viết lại phạm vi "recover" của `CHECK-T09B-04` chỉ còn
+              đúng SAME-BROWSER-PROFILE (đóng/mở lại trình duyệt, không đổi profile/máy). Kịch
+              bản "đổi máy" của `RSK-001` KHÔNG được T-09B đóng bằng đường Firebase Auth; lối
+              thoát duy nhất còn lại là export JSON thủ công (đã có, capability giữ nguyên qua
+              `DEC-019`/OD-A). Phương án này giữ đúng "không xây login system" tuyệt đối, nhưng
+              để hở đúng kịch bản rủi ro nặng nhất mà `RSK-001` nêu tên đầu tiên.
+
+        Cho tới khi có quyết định, `T-09B` GIỮ `PLANNED`. `CHECK-T09B-03`, `CHECK-T09B-04` được
+        chú thích tham chiếu `OD-C` — KHÔNG bị viết lại nội dung acceptance, vì nội dung cuối
+        cùng phụ thuộc R1 hay R2 được chọn.
+
+Reason:
+Chỉ thị phiên yêu cầu tường minh: nếu Anonymous Auth làm một REQUIRED gate không PASS được một
+cách trung thực, không được làm yếu gate — phải trả `OWNER_DECISION_REQUIRED` và giải thích
+quyết định tối thiểu cần thêm. Đây đúng là tình huống đó: (3) giải quyết đúng câu hỏi nó được
+hỏi ("cần một danh tính để rules không phải public"), nhưng không tự động giải quyết câu hỏi
+khác ("danh tính đó có sống sót qua đổi máy không") — hai câu hỏi độc lập, và `STATE_AUTHORITY.md`
+không cho phép agent tự chọn thay chủ dự án khi có đánh đổi thật (thêm một credential tối thiểu
+so với thu hẹp lời hứa "đóng/mở lại vẫn dùng được" ở đúng kịch bản nặng nhất).
+
+Impact:
+- `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`: OD-A/OD-B/OD-B2 chuyển từ mở sang RESOLVED;
+  thêm mục kiến trúc baseline 4 tầng; Load flow/Save flow được bổ sung bước Auth (làm rõ, không
+  đổi acceptance); Failure semantics thêm dòng "Firebase Auth thất bại" (IN SCOPE, cùng nguyên
+  tắc fail-visible); Ready Gate 14-mục: mục 12 (Firebase component) chuyển ✅; dòng "+" (không
+  còn architecture ambiguity) VẪN ❌ vì `OD-C`. `CHECK-T09B-03`/`-04` được chú thích tham chiếu
+  `OD-C`, KHÔNG đổi acceptance criteria.
+- 16 REQUIRED check của Completion Gate **KHÔNG bị sửa yếu**. Completion Gate KHÔNG được freeze
+  ở phiên này — freeze chỉ xảy ra khi Ready Gate đầy đủ (`STATE_AUTHORITY.md`,
+  `TASK_COMPLETION_GATE_STANDARD.md` § Gate Creation Timing).
+- `PROJECT/PROJECT_PROGRESS.md`, `PROJECT/CAPABILITY_REGISTRY.md`: cập nhật để phản ánh OD-A/
+  OD-B/OD-B2 resolved và `OD-C` mở. Không sửa gate, không đổi capability/lineage.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md`: `CAP-WEBAPP` budget KHÔNG đổi — allowed 2 / used 0 /
+  remaining 2. Không tiêu repair cycle (không có implementation nào chạy ở phiên này).
+- `T-09B`: KHÔNG chuyển `IN_PROGRESS`. Ready Gate CHƯA đạt 100% (khối "+`" còn chặn) →
+  **GIỮ `PLANNED`**, đúng chỉ thị §"STATE TRANSITION". Completion Gate CHƯA frozen.
+- Số task ID mới = **0**. Số production file bị sửa = **0**.
+
+Can Revisit After:
+Khi chủ dự án chọn R1 hay R2 cho `OD-C`. Sau đó: hoàn tất Ready Gate, freeze Completion Gate,
+`T-09B: PLANNED → READY`, rồi mở phiên thực thi riêng.

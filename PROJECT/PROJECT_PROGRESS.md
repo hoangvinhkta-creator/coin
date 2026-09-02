@@ -25,7 +25,29 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **OWNER DECISION `DEC-019` (`OD-WEBAPP-02`) — Firebase là ràng buộc kiến trúc cố định cho
+2026-09-02 — **OWNER DECISION `DEC-020` (`OD-WEBAPP-03`) — giải quyết `OD-A`/`OD-B`/`OD-B2` cho
+T-09B; phát hiện khe mới `OD-C`**, phiên tiếp nối trên nhánh thẩm quyền
+`claude/t09b-firebase-decision-nnoony`. Chủ dự án APPROVED: `OD-A` = **Firebase Hosting**
+(runtime host); `OD-B` = **Cloud Firestore** (document `ethdca/state` + `ethdca/seed`);
+`OD-B2` = **Firebase Anonymous Auth**, rules khoá cứng một owner UID. Kiến trúc baseline:
+Browser → Firebase Hosting → Firebase Authentication → Cloud Firestore → durable state;
+`localStorage`/`sessionStorage` vẫn là mirror/cache. Đánh giá lại Ready Gate phát hiện khe MỚI
+**`OD-C`**: Anonymous Auth session sống trong `IndexedDB` của một browser profile — ba trong
+bốn kịch bản mất dữ liệu mà `RSK-001` nêu tên (cửa sổ riêng tư, đổi máy, đổi trình duyệt) tạo
+`IndexedDB` trống → Anonymous UID mới → Firestore rules (khoá một UID cố định) từ chối. Đây là
+khe giữa *durable STATE persistence* (đã giải quyết bằng Hosting+Firestore) và *khả năng
+AUTHENTICATE lại làm owner sau khi mất local browser identity* (CHƯA). `CHECK-T09B-03` (xoá
+localStorage/sessionStorage) KHÔNG bị ảnh hưởng; `CHECK-T09B-04` nhánh "profile/cửa sổ khác"
+KHÔNG PASS được trung thực với Anonymous Auth đơn thuần. KHÔNG làm yếu check này. Hai phương
+án chờ chủ dự án: **R1** (khuyến nghị) link recovery credential (email/password) vào UID nặc
+danh, chỉ dùng khi đổi máy/browser, không đổi trải nghiệm hằng ngày; **R2** chấp nhận giới
+hạn, thu hẹp phạm vi "recover" của check xuống same-browser-profile, để hở kịch bản "đổi máy".
+**T-09B GIỮ `PLANNED`** — 14/15 dòng Ready Gate ✅ (đếm cả dòng "+"), chỉ dòng "+" (architecture
+ambiguity) còn ❌ vì `OD-C`. Completion Gate 16/16 REQUIRED vẫn FINALIZED, KHÔNG sửa yếu, CHƯA
+frozen (freeze chỉ xảy ra khi Ready Gate đủ). `CAP-WEBAPP` budget KHÔNG đổi: allowed 2 / used 0
+/ remaining 2. Không mở repair cycle. Không chuyển `IN_PROGRESS`. **Production file bị sửa = 0.**
+
+Trước đó, 2026-09-02 — **OWNER DECISION `DEC-019` (`OD-WEBAPP-02`) — Firebase là ràng buộc kiến trúc cố định cho
 T-09B**, phiên Owner Authority / Ready-Gate Preparation. Chủ dự án bổ sung Product Intent (công cụ cá nhân,
 single-user, dùng khi cần, tần suất thấp; ưu tiên correctness → usability → low operational burden →
 implementation simplicity → cost → technical elegance → scalability) và chốt **Firebase** làm nền tảng
@@ -147,7 +169,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
 | DONE | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. **DONE 2026-09-02** theo Owner Decision `DEC-018` (`OD-WEBAPP-01`) — Completion Gate giữ nguyên 12/12 REQUIRED PASS (E1), không sửa câu chữ/ngữ nghĩa |
-| PLANNED | T-09B | Dựng lưu trữ dữ liệu bền (Firebase) | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04, WP-C1 (DONE), T-09A (DONE). Nên làm trước T-10. **Nền tảng persistence = Firebase — FIXED OWNER CONSTRAINT (`DEC-019`/`OD-WEBAPP-02`)**; không so sánh lại provider. Task Spec: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` (Task ID mới = 0 — ID này có từ RCP-001 2026-08-23). Completion Gate **FINALIZED** 16/16 REQUIRED (ánh xạ 14 mục A–N của chủ dự án + ranh giới historical + vai trò mirror), tất cả `NOT_TESTED`; gate đóng băng tại `PLANNED → READY`. **GIỮ `PLANNED` — `OWNER_DECISION_REQUIRED`**: `OD-A` (runtime host — app đang chạy dưới CSP chặn mọi host ngoài trừ Google Fonts nên Firebase không với tới được; gate A/B/C/D không thể PASS ở host hiện tại; khuyến nghị Firebase Hosting), `OD-B` (thành phần Firebase — khuyến nghị Cloud Firestore), `OD-B2` (danh tính tối thiểu cho security rules — khuyến nghị Anonymous Auth khoá một UID). `CAP-WEBAPP` budget KHÔNG đổi: 2/0/2 |
+| PLANNED | T-09B | Dựng lưu trữ dữ liệu bền (Firebase) | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04, WP-C1 (DONE), T-09A (DONE). Nên làm trước T-10. **Nền tảng persistence = Firebase — FIXED OWNER CONSTRAINT (`DEC-019`)**. Kiến trúc baseline `DEC-020`: Firebase Hosting (`OD-A` RESOLVED) → Firebase Anonymous Auth (`OD-B2` RESOLVED) → Cloud Firestore (`OD-B` RESOLVED, document `ethdca/state` + `ethdca/seed`). Task Spec: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` (Task ID mới = 0). Completion Gate **FINALIZED** 16/16 REQUIRED, tất cả `NOT_TESTED`; CHƯA frozen. **GIỮ `PLANNED` — `OWNER_DECISION_REQUIRED` = `OD-C` (duy nhất còn mở)**: Anonymous Auth session sống trong `IndexedDB` của một browser profile; ba trong bốn kịch bản mất dữ liệu mà `RSK-001` nêu tên (cửa sổ riêng tư, đổi máy, đổi trình duyệt) sinh UID mới, bị Firestore rules (khoá một owner UID) từ chối — khe giữa *durable STATE* (đã giải quyết) và *khả năng AUTHENTICATE lại làm owner* (CHƯA). Hai phương án: **R1** (khuyến nghị) link một recovery credential (email/password) vào UID nặc danh, chỉ dùng khi đổi máy/browser; **R2** chấp nhận giới hạn, thu hẹp `CHECK-T09B-04` xuống same-browser-profile. `CAP-WEBAPP` budget KHÔNG đổi: 2/0/2 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
 | READY | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
@@ -479,6 +501,11 @@ Giảm thiểu: T-09B. Cho tới khi T-09B xong, chủ dự án nên xuất file
 và Completion Gate FINALIZED (`docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`). Risk **CHƯA giảm** — chưa
 một dòng production nào đổi. T-09B vẫn `PLANNED`, chờ `OD-A`/`OD-B`/`OD-B2`. Khuyến nghị xuất JSON định kỳ
 vẫn còn nguyên hiệu lực.
+**Cập nhật 2026-09-02 (`DEC-020`)**: `OD-A`/`OD-B`/`OD-B2` đã RESOLVED (Firebase Hosting · Cloud
+Firestore · Anonymous Auth). Phát hiện khe mới `OD-C`: kịch bản **"đổi máy"** nêu tên ngay trong risk này
+cần thêm một quyết định (recovery credential hay chấp nhận giới hạn) trước khi coi là được đóng bằng
+đường Firebase Auth thuần. Risk **VẪN CHƯA giảm** — chưa một dòng production nào đổi. Khuyến nghị xuất
+JSON định kỳ vẫn còn nguyên hiệu lực, đặc biệt trước khi đổi máy.
 
 ### RSK-002 — Hai bản cài đặt chiến lược trôi khỏi nhau (mức: cao) — S001 XÁC NHẬN (E1)
 Implementation Plan §1 yêu cầu live và backtest dùng chung một core strategy function. Trang

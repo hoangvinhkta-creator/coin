@@ -288,6 +288,23 @@ Phiên ghi `DEC-019` là phiên governance-only. Đo trực tiếp, không cộn
 Vì diff production = 0, phiên này **không tiêu** chu kỳ nào và không cần cặp BASE/HEAD SHA trong
 bảng §2.2. Cặp SHA sẽ được ghi tại lượt implementation thật của `T-09B`.
 
+#### 2.2.2 Phiên `DEC-020` (2026-09-02) — OD-A/OD-B/OD-B2 resolved, budget KHÔNG đổi
+
+`OD-A`, `OD-B`, `OD-B2` được chủ dự án giải quyết (Firebase Hosting · Cloud Firestore ·
+Anonymous Auth). Một khe mới `OD-C` (recovery semantics) được phát hiện và ghi lại — xem
+`CAPABILITY_REGISTRY.md` §8.2 và Task Spec `T-09B` § OD-C. Đây là governance/tài liệu, KHÔNG
+phải implementation.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+
+    git diff --shortstat origin/main..HEAD -- webapp/app_logic.js webapp/engine.js \
+        webapp/app_shell.html webapp/build_app.js src/eth_dca_os pyproject.toml pyproject.lock
+      -> 0   (production diff = 0)
+
+`T-09B` vẫn `PLANNED`, chưa `IN_PROGRESS`, nên không có implementation nào để tiêu budget.
+
 ---
 
 ## 3. Golden cumulative change budget
