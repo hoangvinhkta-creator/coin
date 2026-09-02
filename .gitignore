@@ -8,3 +8,9 @@ build/
 data/raw/*.parquet
 data/processed/
 results/
+
+# webapp — build artifact, deps, ảnh chụp màn hình do test sinh ra (F-027 / CHECK-C1-02)
+webapp/app_final.html
+webapp/node_modules/
+webapp/app-dash.png
+webapp/app-zone.png

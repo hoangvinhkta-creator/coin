@@ -1,5 +1,11 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
+const path = require('path');
+
+// __dirname thay vì cwd: test phải chạy đúng bất kể được gọi từ đâu — F-027.
+const DIR = __dirname;
+const APP_FINAL = path.join(DIR, 'app_final.html');
+const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -9,13 +15,13 @@ const fs = require('fs');
   p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
   p.on('console', m => { if (m.type() === 'error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push('console: ' + m.text()); });
 
-  await p.goto('file://' + process.cwd() + '/app_final.html');
+  await p.goto('file://' + APP_FINAL);
   await p.waitForTimeout(400);
 
   console.log('-- initial banners:', (await p.textContent('#banners')).replace(/\s+/g,' ').slice(0,120));
 
   // 1. nạp seed
-  await p.setInputFiles('#seedFile', 'demo/results3/live_seed.json');
+  await p.setInputFiles('#seedFile', SEED_PATH);
   await p.waitForTimeout(900);
   console.log('-- seed msg:', (await p.textContent('#seedMsg')).trim());
   console.log('-- OSCORE:', (await p.textContent('#osVal')).trim());
@@ -106,7 +112,7 @@ const fs = require('fs');
   });
   console.log('-- template decodable:', okHtml);
 
-  await p.screenshot({ path: 'app-dash.png', fullPage: true });
+  await p.screenshot({ path: path.join(DIR, 'app-dash.png'), fullPage: true });
   await ctx.close(); await b.close();
   console.log(errs.length ? '\nERRORS:\n' + errs.join('\n') : '\nno page errors');
 })();

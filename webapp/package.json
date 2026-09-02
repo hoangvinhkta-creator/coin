@@ -1,0 +1,12 @@
+{
+  "name": "eth-dca-webapp-tests",
+  "private": true,
+  "description": "Test harness cho app theo dõi ETH DCA OS trên web (webapp/). Không phải package publish.",
+  "scripts": {
+    "build": "node build_app.js",
+    "test": "node test_app.js && node test_zone.js && node test_v01_v02_v03.js && node test_multi_month_invariant.js"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

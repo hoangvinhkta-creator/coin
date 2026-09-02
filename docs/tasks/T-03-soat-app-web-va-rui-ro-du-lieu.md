@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-BLOCKED
+VERIFYING
 
 Phase:
 Phase 1 — Discovery & Baseline
@@ -176,13 +176,38 @@ Priority:
 REQUIRED
 
 Status:
-BLOCKED
+PASS
 
 Evidence Level:
-E0
+E1
 
 Evidence:
-KHÔNG thực hiện được trong S001. Ba nghi vấn NV-1/NV-2/NV-3 đòi dựng ca kiểm thử MỚI, mà quy tắc S001 số 10 cấm viết test mới trong phiên này. Giữ nguyên mức E0 — nghi vấn, KHÔNG phải kết luận. Chuyển thành verification task V-01, V-02, V-03.
+Cập nhật tại WP-C1 (`docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md`,
+CHECK-C1-03/04/05/06), chạy thật trên `app_final.html` đã build, seed DEMO/SYNTHETIC sinh bằng
+`ethdca synth` + `ethdca export-live`:
+
+- **NV-1 (= V-01) — XÁC NHẬN LÀ LỖI.** `webapp/test_v01_v02_v03.js` + `webapp/test_multi_month_invariant.js`:
+  huỷ/invalidate một ladder thuộc tháng A sau khi tháng B (mới hơn) trở thành `currentMonth()`
+  khiến `releaseLadder()` (`webapp/app_logic.js:302-322`, dùng `currentMonth()` thay vì tháng
+  gốc của ladder) hoặc (a) cộng nhầm vốn vào `smart.a` của tháng B trong khi rút nhầm từ
+  `smart.r` đang backing một ladder RIÊNG, vẫn ACTIVE, của tháng B — hoặc (b) khiến vốn của
+  tháng A kẹt vĩnh viễn ở `smart.r` nếu tháng B không có reserved sẵn. Cả hai đều quan sát
+  được bằng chạy thật, kèm assertion PASS.
+- **NV-2 (= V-02) — XÁC NHẬN LÀ LỖI.** `webapp/test_v01_v02_v03.js`: với Smart unlock đo được
+  = 0,0% (OSCORE thật của seed synthetic), `reserveFor()` (`webapp/app_logic.js:289-297`) vẫn
+  cho reserve 100% Smart available — không có so sánh nào với `view.smartUnlock`.
+- **NV-3 (= V-03) — KHÔNG PHẢI LỖI về mặt hành vi quan sát được, nhưng an toàn một cách tình
+  cờ.** `webapp/test_v01_v02_v03.js`: mọi trạng thái đạt được `data_quality = INVALID` (cần
+  <7 ngày lịch sử để 8/8 sub-factor đều NaN — `webapp/engine.js` `factorScores`) đều đã có
+  `adr30` = NaN (cần ≥30 ngày), nên `createLadder()` luôn bị chặn bởi guard "Chưa đủ lịch sử
+  để tính ADR30" (`webapp/app_logic.js:327`) — KHÔNG phải một kiểm tra `data_quality` tường
+  minh (không hề tồn tại trong `createLadder()`, dòng 324-335). Hành vi hiện tại khớp yêu cầu
+  Strategy §3 trong mọi trạng thái quan sát được, nhưng cơ chế bảo vệ này dễ vỡ nếu logic
+  spacing thay đổi độc lập với data_quality trong tương lai — ghi HARDENING trong
+  `PROJECT/HARDENING_BACKLOG.md`, không phải BLOCKING.
+
+Ba nghi vấn đều có kết luận dứt khoát, không nghi vấn nào còn E0. Chi tiết đầy đủ + output
+chạy thật: `docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md` §Completion Gate.
 
 ### CHECK-03-02 — Bản đồ đường mất dữ liệu được lập đầy đủ
 Priority:
@@ -310,3 +335,24 @@ V-01, V-02, V-03 cho phase sau (xem `docs/reviews/S001-audit-findings.md`).
 Thu hẹp được một phần bằng bằng chứng E1: `webapp/test_zone.js` cho thấy bất biến
 `TOTAL = A + R + D` giữ đúng trong kịch bản **một tháng**. Điều này không bác bỏ NV-1 vì NV-1 nói
 về kịch bản **đa tháng** — đúng điểm mù của test hiện có.
+
+---
+
+## Cập nhật WP-C1 — 2026-09-02
+
+CHECK-03-01 chuyển **BLOCKED → PASS** (E0 → E1) dựa trên bằng chứng chạy thật do WP-C1 cung
+cấp — xem khối Evidence cập nhật ở trên và `docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md`.
+Chỉ trạng thái/evidence của CHECK-03-01 được sửa; nội dung yêu cầu của check không đổi
+(CHECK-C1-08).
+
+Với CHECK-03-01 nay PASS, cả năm REQUIRED check của T-03 đều PASS (03-01, 03-02, 03-03, 03-04,
+03-06) và RECOMMENDED 03-05 cũng PASS. Trường `Status` ở đầu file chuyển `BLOCKED` → `VERIFYING`
+(gỡ trạng thái chặn, KHÔNG tự đóng `DONE`) — WP-C1 chỉ được phép sửa trạng thái CHECK-03-01,
+không được tự đóng một task khác; việc chuyển `Status` của T-03 sang `DONE` (đối chiếu đủ toàn
+bộ Exit Criteria, gồm xác nhận `docs/reviews/S001-audit-findings.md` đã đủ vai trò của
+`docs/reviews/S001-audit-findings-webapp.md` như dự kiến ban đầu) cần một phiên riêng cho T-03.
+
+**Escalation theo đúng trigger của T-03 và WP-C1**: NV-1 và NV-2 đều được **XÁC NHẬN LÀ LỖI
+THẬT** trong lần chạy này. Nếu chủ dự án đang dùng `webapp/app_final.html` để ghi giao dịch
+tiền thật, cần dừng dùng hoặc xuất dữ liệu (`localStorage`) ra ngoài trước khi tiếp tục dùng
+app, cho tới khi T-09A vá xong. Severity nâng lên tối thiểu HIGH.

@@ -403,6 +403,43 @@ huỷ khi dữ liệu INVALID.
 
 ---
 
+## H-16 — `createLadder()` chặn được INVALID chỉ nhờ trùng hợp toán học, không phải kiểm tra tường minh
+
+Capability: `CAP-WEBAPP` · Owner: `WP-C1` (phát hiện) → `T-09A` (nếu chủ dự án muốn vá phòng
+thủ) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (WP-C1)
+
+V-03 (nghi vấn NV-3 của T-03): "trạng thái dữ liệu INVALID không chặn tạo action mới như
+Strategy §3 yêu cầu" — kiểm bằng ca chạy thật (`webapp/test_v01_v02_v03.js`) cho kết quả
+**BÁC BỎ** về hành vi quan sát được: không tạo được ladder nào trong bất kỳ trạng thái INVALID
+nào dựng được. Nhưng đọc `createLadder()` (`webapp/app_logic.js:324-335`) xác nhận nó **không
+hề kiểm tra `view.score.data_quality`** ở bất kỳ đâu. Lý do chặn thực tế là guard
+`!Number.isFinite(sp)` ("Chưa đủ lịch sử để tính ADR30", `sp` từ `view.smartSpacing`/
+`oppSpacing`, cần ≥30 ngày lịch sử liên tục — `webapp/engine.js` `smartSpacing`).
+
+`INVALID` (`data_quality`, `webapp/engine.js` `factorScores`) xảy ra khi cả 8 sub-factor đều
+NaN, mà `R` (rsi14) chỉ cần >14 ngày và `S7` (return7) chỉ cần ≥7 ngày — nên với engine hiện
+tại, `INVALID` chỉ đạt được khi tổng lịch sử <7 ngày, và ở đó `adr30` (cần ≥30 ngày) LUÔN NaN.
+Hai điều kiện không giao nhau về mặt toán học trong cách `computeIndicators`/`factorScores`
+hiện được viết — đây là lý do hành vi hiện tại AN TOÀN, không phải vì có chủ đích.
+
+Vì sao KHÔNG phải BLOCKING: không có đường production nào cho ra kết quả sai — mọi trạng thái
+INVALID dựng được đều bị chặn tạo ladder, đúng yêu cầu Strategy §3. Không risk nào trong
+`PROJECT/PROJECT_PROGRESS.md` § Active Risks ánh xạ tới hành vi này (RSK-003 mục (c)/V-03 đã
+ghi BÁC BỎ, không phải BLOCKING).
+
+    RE_TRIGGER_CONDITION:
+    - `smartSpacing`/`oppSpacing` hoặc `adr30` được đổi để không còn cần đủ 30 ngày liên tục
+      (ví dụ thêm giá trị mặc định/fallback khi thiếu dữ liệu) — khi đó guard ADR30 có thể
+      không còn tình cờ trùng với vùng INVALID nữa; HOẶC
+    - `factorScores`/`SUB_NAMES` được đổi (thêm/bớt sub-factor, đổi ngưỡng `R`/`S7`) làm
+      ngưỡng đạt INVALID không còn cố định ở <7 ngày; HOẶC
+    - `T-09A` mở để vá V-01/V-02 và chủ dự án muốn thêm luôn một kiểm tra `data_quality`
+      tường minh trong `createLadder()` làm phòng thủ chiều sâu (không bắt buộc — hành vi
+      hiện tại đã đúng yêu cầu).
+
+---
+
 ## Soát lại toàn bộ backlog dưới Owner Product Intent (2026-09-01)
 
 `DEC-011` bổ sung trục `BLOCKING V1` (tiêu chí A–F). Đã soát lại **từng mục** H-01…H-13 theo
