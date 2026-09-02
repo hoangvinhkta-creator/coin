@@ -795,3 +795,31 @@ con số đo (`docs/reviews/T-09B-batch-review.md` §1).
     RE_TRIGGER_CONDITION:
     - chủ dự án cập nhật `PRODUCTION_PATHS.md` (cùng lúc với `H-12`/`H-21`); HOẶC
     - một phiên dùng con số "theo khai báo" để tuyên bố diff production = 0 trong khi ba file này đổi.
+
+---
+
+## H-28 — Dependency footprint của `firebase-tools` (devDependency) rộng hơn nhiều phạm vi dùng thật
+
+Capability: `CAP-WEBAPP` · Owner: `T-09B` (ghi nhận tại phiên real-setup) · Phân loại: **PROVISIONAL HARDENING** (tầng tooling, không phải sản phẩm)
+Ngày ghi nhận: 2026-09-02 (phiên tiếp nối S014 — REAL FIREBASE SETUP; `DEC-022` §11 sanity check)
+
+`firebase-tools@15.28.2` là một CLI monolith: cài nó kéo theo transitive dependency cho MỌI sản
+phẩm Firebase (`@google-cloud/pubsub`, `@google-cloud/cloud-sql-connector`, `@apphosting/common`,
+`@electric-sql/pglite` cho Data Connect emulator, …) dù T-09B chỉ dùng đúng hai lệnh:
+`emulators:start --only auth,firestore` và `deploy --only hosting,firestore:rules`. Đo được: 723
+package entry mới trong `webapp/package-lock.json`, 677/723 không có chuỗi "firebase" trong đường
+dẫn nhưng đều là transitive dependency trực tiếp của `firebase-tools` hoặc của package `firebase`
+(SDK modular — mọi sản phẩm nằm sẵn trong npm package dù trang chỉ nạp 3 file compat qua CDN,
+không byte nào của phần không dùng tới trình duyệt).
+
+Vì sao KHÔNG BLOCKING: đây là devDependency (test/setup), không phải runtime browser — 0 ảnh hưởng
+tới người dùng cuối; không có đường production nào bị chạm; kích thước `node_modules/` (~440 MB)
+không nằm trong bất kỳ Completion Gate hay risk register nào. Vendor một `firebase-tools` tối giản
+là provider-abstraction/over-engineering, trái Personal Tool Simplification Principle (`DEC-021`
+§10 Over-engineering Guard) — không tự làm.
+
+    RE_TRIGGER_CONDITION:
+    - `webapp/node_modules` vượt hạn mức đĩa/thời gian cài đặt thực tế gây khó cho Owner; HOẶC
+    - `firebase-tools` phát hành bản CLI tách nhỏ theo sản phẩm (modular install) mà dự án muốn
+      chuyển sang; HOẶC
+    - một audit bảo mật dependency (không phải mục tiêu V1, `DEC-021` §3) yêu cầu giảm bề mặt.

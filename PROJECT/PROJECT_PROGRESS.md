@@ -25,7 +25,21 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **T-09B IMPLEMENTED (S014)**: persistence bền trên Firebase đã được **cài đặt và kiểm
+2026-09-02 — **OWNER DECISION `DEC-022` (`OD-WEBAPP-05`) — Integration size disposition cho
+`T-09B`: ACCEPT THE DIVERGENCE.** Phiên tiếp nối S014 trên cùng branch
+`claude/t09b-firebase-implementation-nz50is` báo `INTEGRATION_DECISION_REQUIRED: loc>5000`
+(divergence LOC = 12.272). Chủ dự án xác nhận CHẤP NHẬN kích thước hiện tại — KHÔNG merge `main`,
+KHÔNG cut scope, KHÔNG rewrite dependency management chỉ để hạ số đo. Đo lại cho thấy phần lớn
+divergence (~11.550/12.272 dòng) là generated dependency metadata (`webapp/package-lock.json`
++9.482 dòng ghim `firebase`/`firebase-tools`) + test/harness (~1.063 dòng, không phải production
+path); production implementation thật theo khai báo chỉ +560/−162 (khớp `REVIEW_BUDGET_LEDGER.md`
+§2.2.4). Sanity check dependency (`DEC-022` §11): 723 package mới, toàn bộ là transitive dependency
+của `firebase`/`firebase-tools`, không có gói lạ — thêm `HARDENING_BACKLOG.md` **H-28** (footprint
+`firebase-tools` rộng hơn phạm vi dùng thật: chỉ dùng emulator Auth+Firestore và deploy
+hosting+firestore rules, nhưng CLI kéo theo Cloud SQL/Pub-Sub/App Hosting/Data Connect — tầng
+tooling, không phải sản phẩm, không sửa). Chi tiết: `PROJECT/PROJECT_DECISIONS.md` `DEC-022`.
+
+Trước đó, 2026-09-02 — **T-09B IMPLEMENTED (S014)**: persistence bền trên Firebase đã được **cài đặt và kiểm
 chứng** trên branch `claude/t09b-firebase-implementation-nz50is` (BASE `4502ea6`, production commit
 `a19d3ad`, test commit `0d4917a`). Kiến trúc đúng baseline FROZEN `DEC-020`/`DEC-021`: Browser →
 Firebase Hosting → Firebase Anonymous Auth (một owner UID trong `firestore.rules`) → Cloud
@@ -885,6 +899,15 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- T-09B (REAL FIREBASE SETUP — tiếp nối S014) — 2026-09-02 — cùng branch
+  `claude/t09b-firebase-implementation-nz50is` @ HEAD `7f78c14`. Mục tiêu: thiết lập Firebase
+  project thật + xác minh production reachability. Bước đầu gặp
+  `INTEGRATION_DECISION_REQUIRED: loc>5000` (branch authority check) → chủ dự án ACCEPT THE
+  DIVERGENCE (`DEC-022`, không merge, không cut scope). Kiểm tra thẩm quyền Firebase CLI:
+  `firebase login:list` → "No authorized accounts" — môi trường agent KHÔNG có Firebase
+  Console/CLI authority (không trình duyệt, không credential). Theo đúng chỉ thị phiên §3: DỪNG
+  ở bước đầu tiên cần Owner thao tác, không tự invent project ID/config/UID. Xem yêu cầu gửi chủ
+  dự án ở cuối báo cáo phiên này.
 - T-09B (IMPLEMENTATION — S014) — 2026-09-02 — branch `claude/t09b-firebase-implementation-nz50is`
   từ `origin/main` @ `4502ea6`. **IMPLEMENTED** — 16/16 REQUIRED check PASS (E1), toàn bộ qua đường
   sản phẩm (trang build thật → Firebase SDK compat 12.18.0 thật → Firebase Emulator Suite Auth +

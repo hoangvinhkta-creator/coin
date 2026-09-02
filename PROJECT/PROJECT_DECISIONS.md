@@ -1557,3 +1557,72 @@ Can Revisit After:
 Khi có người thứ hai dùng công cụ hoặc công cụ được phát hành cho người khác (cùng điều kiện
 `DEC-011`/`DEC-019` đã ghi) — khi đó Personal Tool Simplification Principle và `OD-C = R2` phải
 được định tuyến lại toàn bộ, và `H-23` được xem xét lại.
+
+---
+
+## DEC-022 — `OD-WEBAPP-05`: Integration size disposition cho `T-09B` — ACCEPT THE DIVERGENCE
+
+Date:
+2026-09-02 (phiên tiếp nối S014 — REAL FIREBASE SETUP & PRODUCTION REACHABILITY)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Đóng hard-stop `INTEGRATION_DECISION_REQUIRED` mà
+`branch_authority_check.sh` báo trên branch `claude/t09b-firebase-implementation-nz50is`
+(divergence LOC = 12.272, ngưỡng cảnh báo > 5.000).
+
+Decision:
+
+    ACCEPT THE DIVERGENCE cho `T-09B` tại thời điểm này. KHÔNG "integrate now" (không merge
+    `main`), KHÔNG cut scope.
+
+Bằng chứng đo được — số đo LOC thô của script KHÔNG đại diện cho business/production
+complexity:
+
+    git diff --shortstat main..claude/t09b-firebase-implementation-nz50is
+      -> divergence LOC = 12.272
+
+    Phân rã theo declared production path (PRODUCTION_PATHS.md §1 bảng + §2 loại trừ):
+      webapp/app_logic.js + app_shell.html + build_app.js  -> +560 / -162  (implementation thật)
+
+    Phần còn lại (~11.550 dòng) là generated dependency metadata:
+      webapp/package-lock.json  -> +9.482 dòng (ghim `firebase@12.18.0` + `firebase-tools@15.28.2`
+                                    và toàn bộ transitive dependency của hai package đó)
+      webapp/test_firebase_harness.js, test_t09b_persistence.js (mới) và bảo trì 5 test cũ
+                                 -> ~892 + ~171 dòng test/harness (KHÔNG phải production path,
+                                    `PRODUCTION_PATHS.md` §2)
+
+    Kiểm tra tương ứng (sanity, KHÔNG cut/rewrite dependency tree chỉ để làm số này đẹp hơn):
+      723 package entry mới trong lockfile; 677/723 không chứa chuỗi "firebase" trong đường dẫn
+      nhưng TOÀN BỘ là transitive dependency trực tiếp của `firebase-tools` (CLI monolith bao
+      Cloud SQL connector, Pub/Sub, App Hosting, Data Connect/pglite — các sản phẩm Firebase
+      T-09B KHÔNG dùng) hoặc của package `firebase` (SDK modular — có mặt trong node_modules
+      cho MỌI sản phẩm Firebase, nhưng trang chỉ nạp 3 file compat qua CDN: app/auth/firestore;
+      không có byte nào của Analytics/Messaging/Storage/... được gửi tới trình duyệt). Không
+      phát hiện dependency nào ngoài `firebase`/`firebase-tools` — không cần scope-expand để dọn.
+
+Reason:
+`branch_authority_check.sh` đo LOC thô của toàn bộ diff, không phân biệt được production code với
+generated lockfile — đây là hạn mức của chính công cụ (`H-09`/`H-12`/`H-21` đã ghi các khiếm
+khuyết cùng lớp của bộ đo). Coi 9.482 dòng lockfile là "12.272 dòng thay đổi cần review" sẽ đánh
+giá sai độ phức tạp thật của T-09B: `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.4 đã đo delivery change
+budget CHUẨN (theo khai báo production path) là 3 file, +662/−188 — nằm trong mọi ngưỡng đã có.
+Không có lý do nghiệp vụ nào để cắt scope (rules/config/harness đều cần thiết cho architecture đã
+FROZEN ở `DEC-020`) hay viết lại cách quản lý dependency (vendor một `firebase-tools` tối giản là
+over-engineering, trái Personal Tool Simplification Principle `DEC-021`).
+
+Impact:
+- Hard-stop `INTEGRATION_DECISION_REQUIRED` trên branch `claude/t09b-firebase-implementation-nz50is`
+  **ĐÓNG** cho mục đích tiếp tục thực thi T-09B trên chính branch này. KHÔNG mở merge vào `main`.
+- `PROJECT/HARDENING_BACKLOG.md`: thêm `H-28` — dependency footprint của `firebase-tools`
+  (devDependency, không phải runtime browser) rộng hơn nhiều so với phạm vi dùng thật
+  (`emulators:start --only auth,firestore`, `deploy --only hosting,firestore:rules`) —
+  PROVISIONAL HARDENING, tầng tooling, không phải finding sản phẩm.
+- KHÔNG đổi `CAP-WEBAPP` budget (`REVIEW_BUDGET_LEDGER.md` §2.2/§2.2.4) — quyết định này không
+  phải repair cycle, không tiêu budget.
+- Số task ID mới = **0**. Số production file bị sửa bởi CHÍNH quyết định này = **0**.
+
+Can Revisit After:
+Khi branch `claude/t09b-firebase-implementation-nz50is` được đề xuất tích hợp vào `main` (một
+Owner Decision khác, theo đúng mẫu `DEC-013`) — khi đó đo lại divergence LOC tại thời điểm đó,
+không dùng lại con số của quyết định này. Hoặc khi `firebase-tools`/`firebase` phát hành phiên bản
+làm thay đổi đáng kể cỡ lockfile.
