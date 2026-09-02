@@ -25,7 +25,18 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **T-09A IMPLEMENTED**: hai lỗi kế toán app web mà `WP-C1` đã XÁC NHẬN nay đã
+2026-09-02 — **OWNER DECISION `DEC-018` (`OD-WEBAPP-01`) — T-09A chuyển `DONE`**: chủ dự án
+phê chuẩn hoàn thành T-09A và ratify hạn mức repair `CAP-WEBAPP`. **T-09A: IMPLEMENTED →
+DONE.** Completion Gate GIỮ NGUYÊN 12/12 REQUIRED PASS (E1) — không sửa câu chữ/ngữ nghĩa.
+`CAP-WEBAPP` budget: allowed 2 / used 0 / remaining 2 — nay là **Owner-ratified** (`DEC-018`),
+không còn ở trạng thái default V4.3 chưa khai; xác nhận lượt implementation ban đầu của T-09A
+KHÔNG tiêu repair cycle nào. Không mở repair cycle mới. Kết quả T-09A giữ nguyên: V-01 =
+FIXED/không còn tái hiện, V-02 = FIXED/không còn tái hiện, V-03 = REJECTED, H-18 = DEFERRED,
+H-19..H-22 = HARDENING với RE_TRIGGER_CONDITION, `F-T09A-03` = OUT_OF_SCOPE → WP-C4. Cảnh báo
+historical state (dữ liệu lưu TRƯỚC bản vá V-01/V-02 có thể đã sai sẵn) GIỮ NGUYÊN, CHƯA đóng.
+Task ID mới = 0.
+
+Trước đó, 2026-09-02 — **T-09A IMPLEMENTED**: hai lỗi kế toán app web mà `WP-C1` đã XÁC NHẬN nay đã
 được vá và kiểm chứng trên đường sản phẩm thật. **V-01** (release trả nhầm pool tháng) và
 **V-02** (unlock không giới hạn reserve) đều **không còn tái hiện** — reproduction của WP-C1
 chạy lại cho BÁC BỎ ở cả hai. 12/12 REQUIRED check PASS (E1). Batch review bắt buộc (Effective
@@ -54,7 +65,8 @@ Phase 2 — Lớp A (bắt buộc sửa trước official run). Năm gói lớp 
 WP-A4, WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A5, WP-A6**.
 
 Current Task:
-Không có (T-09A vừa IMPLEMENTED và qua batch review; chờ chủ dự án chuyển sang `DONE`)
+Không có (`T-09A` vừa chuyển `DONE` theo `DEC-018`; DỪNG theo chỉ thị chủ dự án — không mở
+task tiếp theo)
 
 Current Task Mode:
 —
@@ -120,7 +132,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | Sau WP-C2 (đóng F-020) |
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
-| IMPLEMENTED | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. Chuyển `DONE` cần chủ dự án |
+| DONE | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. **DONE 2026-09-02** theo Owner Decision `DEC-018` (`OD-WEBAPP-01`) — Completion Gate giữ nguyên 12/12 REQUIRED PASS (E1), không sửa câu chữ/ngữ nghĩa |
 | PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
@@ -1175,12 +1187,13 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 S010/T-09A và giữ nguyên làm dấu vết. Trạng thái hiện tại và hành động nhỏ nhất kế tiếp:
 
 - `WP-A4` **DONE** (S010, `CAP-DATA` repair cycle #1 đã tiêu).
-- `WP-C1` **DONE**; `T-09A` **IMPLEMENTED**, batch review PASS 0 BLOCKING.
-- **NEXT SMALLEST ACTION** — chủ dự án đọc `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md` +
-  `docs/reviews/T-09A-batch-review.md` và ra **đúng một** quyết định: chuyển `T-09A` sang
-  `DONE` hay không (`STATE_AUTHORITY.md` dành `DONE` cho chủ dự án). Kèm theo đó, nếu muốn,
-  đặt hạn mức repair tường minh cho `CAP-WEBAPP` như `DEC-012`/`DEC-017` đã làm cho
-  `CAP-PROV`/`CAP-DATA` — hiện đang dùng default V4.3 (allowed 2, used 0).
+- `WP-C1` **DONE**; `T-09A` **DONE** (2026-09-02, Owner Decision `DEC-018`/`OD-WEBAPP-01`).
+  `CAP-WEBAPP` budget Owner-ratified: allowed 2 / used 0 / remaining 2. DỪNG theo chỉ thị chủ
+  dự án ở phiên Integration này — không mở task tiếp theo, không chạy T-06, không xây dashboard.
+- **NEXT SMALLEST ACTION** — chủ dự án chọn giữa hai đường đang mở trên GATE-A:
+  `WP-A1` (`CAP-PROV` budget = 0, cần Owner Decision để mở `OWNER_EXTENSION`), `WP-A5`, `WP-A6`.
+  Lưu ý cảnh báo historical state ở mục V-01/V-02 bên dưới — chưa có evidence dữ liệu lịch sử
+  sạch, việc code T-09A DONE không tự động xác minh điều đó.
 - Blocker V1 còn lại **không đổi** vì T-09A: `WP-A1` (`CAP-PROV` budget = 0, cần Owner
   Decision), `WP-A5`, `WP-A6` trên đường găng GATE-A; `BLK-001` (mạng Binance); `T-09B`
   (RSK-001, lưu trữ bền) cho phần V1 "dữ liệu tồn tại sau reload/restart" ở mức bền vững.

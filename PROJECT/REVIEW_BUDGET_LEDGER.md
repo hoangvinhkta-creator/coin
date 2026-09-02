@@ -102,7 +102,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-DATA` | `WP-A4` | `06b381c` | **1** | 0 | DONE lại tại S010 sau CAP-DATA REPAIR CYCLE #1 (10/10 REQUIRED PASS) — xem §2.1 và §4.2 |
 | `CAP-MEASURE` | `WP-A5` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-ORDER` | `WP-A6` | chưa bắt đầu | 0 | 0 | PLANNED |
-| `CAP-WEBAPP` | `WP-C1` | `cb75f9d` | 0 | 0 | `WP-C1` DONE 2026-09-02; `T-09A` IMPLEMENTED 2026-09-02 — xem §2.2 |
+| `CAP-WEBAPP` | `WP-C1` | `cb75f9d` | 0 | 0 | `WP-C1` DONE 2026-09-02; `T-09A` DONE 2026-09-02 (`DEC-018`) — xem §2.2 |
 | `CAP-SPEC` | `WP-D2` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-GOVTOOL` | `MICRO-GOVDEF-001` | `4fab2e9` | 0 | 0 | Phần glob validator chưa có owner |
 
@@ -191,7 +191,7 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
 ### 2.2 `CAP-WEBAPP` — App web: sổ sách, trạng thái thực thi, parity JS/Python
 
     LINEAGE ROOT   = WP-C1 (docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md)
-    THÀNH VIÊN     = WP-C1 (DONE), T-09A (IMPLEMENTED), WP-C2 (BLOCKED), WP-C3, WP-C4 (PLANNED)
+    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), WP-C2 (BLOCKED), WP-C3, WP-C4 (PLANNED)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
     BRANCH         = main   (canonical trunk từ `DEC-013`)
@@ -228,11 +228,12 @@ của `RSK-002`.
 
 Trạng thái budget:
 
-    ALLOWED BUDGET            = 2 repair cycle   <- default V4.3 theo Effective Risk = HIGH
-                                                    (`GOVERNANCE_V4.md` §II.2). Chủ dự án
-                                                    CHƯA đặt con số tường minh cho
-                                                    `CAP-WEBAPP` như `DEC-012`/`DEC-017` đã
-                                                    làm cho `CAP-PROV`/`CAP-DATA`.
+    ALLOWED BUDGET            = 2 repair cycle   <- Owner-ratified qua `DEC-018`
+                                                    (`OD-WEBAPP-01`, 2026-09-02). Cùng con số
+                                                    default V4.3 theo Effective Risk = HIGH
+                                                    (`GOVERNANCE_V4.md` §II.2), nay được chủ
+                                                    dự án RATIFY tường minh như `DEC-012`/
+                                                    `DEC-017` đã làm cho `CAP-PROV`/`CAP-DATA`.
     CURRENT BUDGET USED       = 0 repair cycle
     CURRENT BUDGET REMAINING  = 2 repair cycle
     OWNER_EXTENSION           = KHÔNG CẦN
@@ -242,10 +243,10 @@ Blast Radius)`, và Blast Radius chấm theo đường dữ liệu — V-01/V-02
 money … settlement" của `RISK_MODEL.md`. Golden Reduction KHÔNG thoả (chưa có Golden —
 `H-10`). Hệ quả đã thi hành: batch review bắt buộc cuối phiên.
 
-Ghi rõ giới hạn, không tự nâng thẩm quyền: `ALLOWED = 2` ở đây là **default V4.3**, không
-phải một Owner Decision. Nếu chủ dự án muốn một con số khác cho `CAP-WEBAPP`, đó là quyết
-định của chủ dự án và phải ghi ở `PROJECT/PROJECT_DECISIONS.md`; phiên T-09A KHÔNG tự đặt
-hạn mức và KHÔNG cấp `OWNER_EXTENSION`.
+`ALLOWED = 2` ở đây là **Owner Decision** (`DEC-018`/`OD-WEBAPP-01`, 2026-09-02) — cùng con
+số default V4.3, nay được chủ dự án ratify tường minh thay vì để ở trạng thái default chưa
+khai. Nếu chủ dự án muốn đổi con số này sau này, đó là một quyết định mới ghi ở
+`PROJECT/PROJECT_DECISIONS.md`.
 
 Budget tầng B (`SESSION_PRODUCTION_DIFF_MAX` / `GOLDEN_CUMULATIVE_DIFF_MAX`) vẫn chưa khai
 được vì chưa có Golden baseline canonical — `H-10` vẫn mở, `GOLDEN_BASELINE_SHA` vẫn

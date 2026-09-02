@@ -1035,3 +1035,69 @@ Trạng thái thi hành tại phiên Integration:
 Can Revisit After:
 Khi `REMAINING` về 0 và cần `OWNER_EXTENSION`, hoặc khi có Golden baseline canonical làm đổi
 điều kiện Golden Reduction.
+
+---
+
+## DEC-018 — `OD-WEBAPP-01`: phê chuẩn hoàn thành T-09A (`DONE`) và ratify hạn mức repair `CAP-WEBAPP`
+
+Date:
+2026-09-02 (phiên Integration — GHI NHẬN VÀ THI HÀNH)
+
+Task:
+`T-09A` / capability `CAP-WEBAPP`. Đóng khe thẩm quyền `STATE_AUTHORITY.md` để lại: chuyển
+`DONE` cho một task đã `IMPLEMENTED` + batch review PASS là hành vi của chủ dự án; đặt hạn mức
+repair budget tường minh cho một capability cũng vậy (như `DEC-012`/`DEC-017` đã làm cho
+`CAP-PROV`/`CAP-DATA`).
+
+Decision:
+
+    (1) T-09A: IMPLEMENTED -> DONE.
+        Completion Gate T-09A GIỮ NGUYÊN: 12/12 REQUIRED PASS (E1). Không sửa câu chữ hay
+        ngữ nghĩa của gate.
+        Xác nhận rõ: bản vá T-09A vừa hoàn thành là INITIAL IMPLEMENTATION, KHÔNG phải một
+        repair cycle. Không mở repair cycle mới.
+
+    (2) CAP-WEBAPP Effective Risk = HIGH (đã chấm tại T-09A batch review — xem
+        REVIEW_BUDGET_LEDGER.md §2.2 — chủ dự án RATIFY, không đổi số).
+
+        Chủ dự án phê chuẩn hạn mức repair budget cho CAP-WEBAPP:
+
+            ALLOWED    = 2 repair cycle
+            USED       = 0
+            REMAINING  = 2
+
+        Ba con số trên đúng tại thời điểm SAU khi T-09A implementation ban đầu hoàn tất.
+        T-09A implementation ban đầu KHÔNG tiêu repair cycle nào (đây là initial
+        implementation, không phải repair — cùng quy ước ở DEC-016/DEC-017 cho CAP-DATA).
+
+Reason:
+`REVIEW_BUDGET_LEDGER.md` §2.2 trước quyết định này ghi `ALLOWED = 2 (default V4.3 theo
+Effective Risk HIGH)` và tự nói rõ đây KHÔNG phải Owner Decision. Quyết định này khai con số
+đó thành owner-ratified, đúng cơ chế `DEC-012`/`DEC-017` đã dùng cho `CAP-PROV`/`CAP-DATA`.
+Theo `STATE_AUTHORITY.md`, đặt một hạn mức và chuyển một task sang `DONE` đều là hành vi của
+chủ dự án; ledger và roadmap ghi lại, không tự chọn.
+
+Impact:
+- `PROJECT/PROJECT_PROGRESS.md`: roadmap row T-09A đổi `IMPLEMENTED` → `DONE`; "Current Task"
+  cập nhật để phản ánh quyết định. Không có nội dung Completion Gate nào bị sửa.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2: `ALLOWED`/`USED`/`REMAINING` giữ nguyên số
+  (2/0/2), chỉ đổi trạng thái xác thực từ "default V4.3, chưa Owner Decision" sang
+  "Owner-ratified qua `DEC-018`".
+- Budget CAP-WEBAPP là **cumulative**, KHÔNG được reset theo session/task/branch/finding —
+  cùng quy tắc bất di dịch đã áp dụng cho `CAP-PROV`/`CAP-DATA`.
+- V-01 = FIXED / không còn tái hiện, V-02 = FIXED / không còn tái hiện, V-03 = REJECTED,
+  H-18 = DEFERRED, H-19..H-22 = HARDENING với RE_TRIGGER_CONDITION, F-T09A-03 =
+  OUT_OF_SCOPE → WP-C4 — TẤT CẢ giữ nguyên, quyết định này không đụng tới.
+- Cảnh báo historical state (dữ liệu lưu TRƯỚC bản vá V-01/V-02 có thể đã sai sẵn) GIỮ
+  NGUYÊN, KHÔNG đóng — quyết định này không phải evidence xác minh dữ liệu lịch sử sạch.
+- `WP-A4` (`CAP-DATA`), `WP-A1` (`CAP-PROV`), `WP-C2`/`WP-C3`/`WP-C4` không đụng tới.
+
+Trạng thái thi hành tại phiên Integration:
+
+    THI HÀNH NGAY: cập nhật `PROJECT_PROGRESS.md` §roadmap + Last Updated,
+    `REVIEW_BUDGET_LEDGER.md` §2.2 theo đúng ba con số trên. Không sửa production code,
+    không mở repair cycle.
+
+Can Revisit After:
+Khi `REMAINING` về 0 và cần `OWNER_EXTENSION`, hoặc khi chủ dự án muốn đặt lại Effective Risk
+sau khi có Golden baseline canonical cho webapp.
