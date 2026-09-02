@@ -1,0 +1,32 @@
+rules_version = '2';
+// T-09B — DEC-020 OD-B2 / DEC-021 §4 Minimum Security Floor.
+//
+// Cloud Firestore chỉ cho ĐÚNG MỘT owner UID (Firebase Anonymous Auth) đọc/ghi hai document
+// `ethdca/state` (sổ kế toán) và `ethdca/seed` (dữ liệu tham chiếu). Mọi UID khác và mọi
+// truy cập không xác thực đều bị từ chối — không có public read/write.
+//
+// THIẾT LẬP LẦN ĐẦU (một lần, cần terminal):
+//   1. `firebase deploy --project <PROJECT_ID>` với file này còn nguyên OWNER_UID_REQUIRED.
+//   2. Mở app trên trình duyệt sẽ dùng hằng ngày. App báo "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ" và
+//      hiện UID ở tab "Thiết lập" → chép UID đó thay cho OWNER_UID_REQUIRED bên dưới.
+//   3. `firebase deploy --only firestore:rules --project <PROJECT_ID>`, rồi tải lại app.
+//
+// Cross-device / mất identity: OUT OF SCOPE V1 (PROJECT/HARDENING_BACKLOG.md H-23) — một
+// trình duyệt/máy khác sinh UID mới và bị từ chối ở đây; lối thoát là export/import JSON.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner() {
+      return request.auth != null && request.auth.uid == "OWNER_UID_REQUIRED";
+    }
+    // Không có `delete`: app không bao giờ xoá document; xoá nhầm sổ là mất tiền.
+    match /ethdca/state {
+      allow read, create, update: if isOwner();
+    }
+    match /ethdca/seed {
+      allow read, create, update: if isOwner();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

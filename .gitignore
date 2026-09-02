@@ -14,3 +14,12 @@ webapp/app_final.html
 webapp/node_modules/
 webapp/app-dash.png
 webapp/app-zone.png
+
+# T-09B — bản build cho Firebase Hosting, log/cache của Firebase CLI và emulator, project alias cục bộ
+webapp/public/
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+webapp/emulator-test.log

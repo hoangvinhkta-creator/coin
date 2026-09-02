@@ -1,5 +1,11 @@
 <title>ETH DCA Tracker</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+<!-- T-09B: Firebase SDK (compat build, global `firebase`) — DEC-020: Anonymous Auth + Cloud Firestore.
+     Pin đúng version với devDependency `firebase` trong package.json (test harness phục vụ bản
+     local của cùng version). Không nạp Analytics/Messaging/Storage/App Check — ngoài phạm vi. -->
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore-compat.js"></script>
 
 <style>
 :root{
@@ -146,6 +152,7 @@ nav.tabs button[aria-selected="true"]{color:var(--accent);border-color:var(--acc
 .stat .v{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;
   font-variant-numeric:tabular-nums;letter-spacing:-.015em;display:block;line-height:1.15}
 .stat .s{font-size:11.5px;color:var(--muted);margin:3px 0 0;font-family:"IBM Plex Mono",monospace}
+#fbBox .v{font-size:13px;word-break:break-all}
 
 /* pool bars */
 .pool{margin:11px 0 0}
@@ -215,9 +222,6 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
-<script id="app-state" type="application/json">__STATE__</script>
-<script id="app-seed" type="application/json">__SEED__</script>
-
 <div class="wrap">
   <header class="top">
     <div>
@@ -226,8 +230,8 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
         thật; hệ thống chỉ khuyến nghị, không tự đặt lệnh.</p>
     </div>
     <div class="hdr-right">
-      <span class="savechip" id="saveChip">—</span>
-      <button id="saveBtn" class="primary">Lưu</button>
+      <span class="savechip" id="saveChip" title="Trạng thái lưu bền trên Cloud Firestore">—</span>
+      <button id="saveBtn" class="primary" title="Ghi lại lên nguồn bền khi lần lưu trước thất bại">Lưu lại</button>
     </div>
   </header>
 
@@ -518,6 +522,28 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
     </div>
 
     <div class="sec">
+      <h2>Nguồn bền (Firebase)</h2>
+      <p class="lede">Sổ kế toán được lưu bền trên Cloud Firestore (<code>ethdca/state</code>) và
+        dữ liệu tham chiếu ở <code>ethdca/seed</code>. Trình duyệt này được nhận diện bằng một
+        Anonymous UID; chỉ UID ghi trong <code>firestore.rules</code> mới đọc/ghi được sổ.</p>
+      <div class="card">
+        <div class="stats" id="fbBox"></div>
+        <div class="formfoot">
+          <button id="fbCopyUid" class="sm">Chép UID</button>
+          <span class="formmsg" id="fbMsg"></span>
+        </div>
+      </div>
+      <div class="note">
+        <p><strong>Thiết lập lần đầu:</strong> deploy xong, mở app ở trình duyệt sẽ dùng hằng ngày,
+          chép UID ở trên vào <code>firestore.rules</code> (thay <code>OWNER_UID_REQUIRED</code>) rồi
+          deploy lại rules. Từ đó dùng web bình thường, không cần terminal.</p>
+        <p><strong>Đổi máy / đổi trình duyệt / cửa sổ riêng tư</strong> sinh UID mới và sẽ bị từ chối —
+          giới hạn V1 (H-23). Lối thoát: <em>Tải về JSON</em> ở máy cũ, <em>Nạp lại từ JSON</em> ở máy mới
+          (và cập nhật UID trong rules nếu muốn đổi hẳn máy).</p>
+      </div>
+    </div>
+
+    <div class="sec">
       <h2>Dữ liệu của bạn</h2>
       <div class="card">
         <div class="formfoot" style="margin-top:0">
@@ -529,8 +555,10 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
         </div>
       </div>
       <div class="note">
-        <p>Dữ liệu lưu trong trang này (nút <strong>Lưu</strong> ở đầu trang) và trong bộ nhớ
-          trình duyệt. Nút <em>Tải về JSON</em> cho bạn một bản sao độc lập — nên tải định kỳ.</p>
+        <p>Mỗi thao tác ghi sổ được đẩy lên Cloud Firestore ngay và chỉ hiện <strong>Đã lưu bền</strong>
+          khi máy chủ đã xác nhận. Bộ nhớ trình duyệt (localStorage) chỉ là bản sao/cache — mất nó
+          không mất sổ. Nút <em>Tải về JSON</em> cho bạn một bản sao độc lập — nên tải định kỳ, và
+          bắt buộc trước khi đổi máy (H-23).</p>
       </div>
     </div>
   </div>
