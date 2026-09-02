@@ -99,7 +99,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-PIPELINE` | `WP-A2` | `0f2a2ab` | 0 | 1 (PASS) | DONE tại S006 |
 | `CAP-ENGINE` | `WP-A3` | `5645a74` | 0 | 1 (PASS) | DONE tại S003; `WP-A7` DONE tại S004 (E2 PASS WITH FOLLOW-UPS) |
 | `CAP-DEBT` | `WP-D1` | `1f4c2b7` | 0 | 0 | DONE tại S005, E1 |
-| `CAP-DATA` | `WP-A4` | `06b381c` | 0 | 0 | DONE tại S009 (9/9 REQUIRED PASS) — xem §2.1 và §4.2. Sửa lại 2026-09-01: ô này còn ghi `VERIFYING` sau khi WP-A4 đã DONE, lệch với `CAPABILITY_REGISTRY.md` §2 |
+| `CAP-DATA` | `WP-A4` | `06b381c` | **1** | 0 | DONE lại tại S010 sau CAP-DATA REPAIR CYCLE #1 (10/10 REQUIRED PASS) — xem §2.1 và §4.2 |
 | `CAP-MEASURE` | `WP-A5` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-ORDER` | `WP-A6` | chưa bắt đầu | 0 | 0 | PLANNED |
 | `CAP-WEBAPP` | `WP-C1` | chưa bắt đầu | 0 | 0 | READY |
@@ -119,23 +119,39 @@ Các capability chưa bắt đầu có budget used = 0 vì **chưa tiêu**, khô
 | # | Loại | BASE SHA | HEAD SHA | Diff production path | Kết quả |
 |---|---|---|---|---|---|
 | 0 | Implementation ban đầu (S009) | `06b381c` | `85fa30f` | 5 files, +282 / −36 | 9/9 REQUIRED check PASS |
+| 1 | **Repair cycle 1** (S010, `DEC-016`) | `cb75f9d` | `ef8cdbb` | 1 file, +74 / −5 | `CHECK-A4-11` PASS (E1); batch review PASS → `ELIGIBLE_FOR_FREEZE` |
 
-    REPAIR CYCLES ĐÃ TIÊU  = 0
-    VÒNG E2 ĐÃ TIÊU        = 0   (CHECK-A4-09 là RECOMMENDED, không phải điều kiện DONE)
+Chu kỳ 1 đóng `F-S009-01`. Base SHA `cb75f9d1fb139f4c5daae063e754245998819f22` là
+`origin/main` tại thời điểm mở chu kỳ; head SHA `ef8cdbb00a7ff2d271c1233df4baf151ab46b62a`
+là commit mang bản sửa production. Cặp SHA này là thứ làm cho quy tắc "finding nằm trong
+cumulative repair diff thuộc CÙNG chu kỳ" kiểm chứng được, chứ không thành chuyện ý kiến
+(`CAPABILITY_MODEL.md` §II.8).
+
+    REPAIR CYCLES ĐÃ TIÊU  = 1   (ngoài lượt implementation ban đầu)
+    VÒNG E2 ĐÃ TIÊU        = 0   (CHECK-A4-09 là RECOMMENDED, không phải điều kiện DONE;
+                                  batch review S010 là E1 + dò đối kháng, KHÔNG phải E2)
 
 Delivery change budget tích luỹ, đo trực tiếp (không cộng tay):
 
     git diff --shortstat 06b381cb8dd2fc41806104b2cfbb1a539d2ceaaf..HEAD \
         -- src/eth_dca_os webapp pyproject.toml pyproject.lock
 
-    -> 5 files changed, 282 insertions(+), 36 deletions(-)
+    -> 6 files changed, 356 insertions(+), 41 deletions(-)     (đo lại tại S010)
+
+Con số trước S010 là `5 files, +282 / −36`; chênh lệch đúng bằng chu kỳ 1
+(`indicators.py`, +74 / −5). Tổng tích luỹ vẫn là con số ĐO, không phải phép cộng.
 
 Trạng thái budget:
 
     ALLOWED BUDGET            = 2 repair cycle        <- DEC-017 (chủ dự án, 2026-09-01)
-    CURRENT BUDGET USED       = 0 repair cycle
-    CURRENT BUDGET REMAINING  = 2 repair cycle
+    CURRENT BUDGET USED       = 1 repair cycle        <- S010, CAP-DATA REPAIR CYCLE #1
+    CURRENT BUDGET REMAINING  = 1 repair cycle
     OWNER_EXTENSION           = KHÔNG CẦN
+
+Budget KHÔNG được reset ở phiên sau. `USED` đi từ 0 lên 1 vì chu kỳ 1 THỰC SỰ đã tiêu, không
+phải vì phiên S010 tự đặt lại số. Phiên tiếp theo phải ĐỌC hai con số này, không tự khai lại.
+Nếu cần một chu kỳ thứ hai, `REMAINING = 1` cho phép đúng một lần nữa; hết đó chỉ còn
+`ACCEPT_AS_IS | DESCOPE | OWNER_EXTENSION`.
 
 Effective Risk của `CAP-DATA` = **HIGH** — `DEC-017` (chủ dự án, 2026-09-01). Trước đó mục này
 ghi `MAX(Local Risk 3, Blast Radius 2)` = **3**, tính từ routing metadata đã FROZEN của WP-A4
@@ -212,9 +228,24 @@ Các commit governance-only, kiểm lại diff production path = 0 (nên KHÔNG 
     REMAINING repair cycles   = 2
     OWNER_EXTENSION           = KHÔNG CẦN
 
-    Ba con số trên đúng TRƯỚC bản sửa `F-S009-01`. Bản sửa đó, nếu thực hiện theo `DEC-016`,
-    là **repair cycle #1** của `CAP-DATA` và phải được ghi vào bảng §2.1. Budget KHÔNG được
-    reset ở phiên sau.
+    Ba con số trên đúng TRƯỚC bản sửa `F-S009-01`.
+
+**Cập nhật tại S010 (2026-09-01) — chu kỳ đã tiêu, đo lại bằng lệnh:**
+
+    git diff --shortstat cb75f9d..ef8cdbb -- <production paths>
+      -> 1 file changed, 74 insertions(+), 5 deletions(-)     = CAP-DATA REPAIR CYCLE #1
+    git diff --shortstat 06b381c..HEAD    -- <production paths>
+      -> 6 files changed, 356 insertions(+), 41 deletions(-)  = tích luỹ CAP-DATA
+
+    ALLOWED repair cycles     = 2                   <- DEC-017, KHÔNG đổi
+    USED repair cycles        = 1                   <- chu kỳ 1 đóng F-S009-01
+    REMAINING repair cycles   = 1
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+    Chu kỳ 1 KHÔNG bị reset bởi phản hồi của batch review: `DEC-016` và
+    `GOVERNANCE_V4.md` §II.2 quy định một repair cycle = MỘT lượt sửa sau khi reviewer trả
+    TOÀN BỘ BLOCKING finding. Batch review S010 trả 0 BLOCKING, nên không phát sinh lượt
+    sửa thứ hai và `USED` dừng ở 1. Phiên này KHÔNG tự mở chu kỳ #2.
 
 `USED = 0` **không** phải vì WP-A4 DONE thì được reset. Lượt `06b381c..85fa30f` là
 **implementation ban đầu**, và ledger này đã dùng đúng quy ước đó cho `CAP-PROV` ở §1
@@ -240,6 +271,15 @@ budget."* Ở đây điều ngược lại đúng: đây KHÔNG phải khiếm k
 nên sửa nó **SẼ tiêu một repair cycle mới** của capability nhận nó. Bản sửa không miễn phí —
 dữ kiện này phải nằm trước mặt chủ dự án khi chọn phương án ở
 `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` §II.7.
+
+**Đã thi hành tại S010 đúng như dự báo ở trên.** `indicators.py` nay có đúng MỘT commit kể từ
+baseline `666de14`:
+
+    git log --oneline 666de14..HEAD -- src/eth_dca_os/indicators.py
+      -> ef8cdbb  WP-A4 REPAIR CYCLE #1 — neo cửa sổ indicator daily vào NGÀY LỊCH
+
+Commit đó LÀ cumulative repair diff của chu kỳ 1. Mọi finding nằm bên trong `cb75f9d..ef8cdbb`
+từ đây trở đi là khiếm khuyết của CHÍNH chu kỳ 1 và **không** mở chu kỳ mới.
 
 ### 4.4 Không đổi
 

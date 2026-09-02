@@ -6,6 +6,11 @@ Ngày:
 Phân loại:
 **CONFIRMED BLOCKING** — theo `governance/v4/CORE/REVIEW_PROTOCOL.md` § Finding Routing
 
+Trạng thái:
+**CLOSED — 2026-09-01, phiên S010 / CAP-DATA REPAIR CYCLE #1.** Đóng bởi `CHECK-A4-11`
+(REQUIRED, E1) của `WP-A4`. Xem **PHẦN III** ở cuối file. Câu chữ của PHẦN I và PHẦN II
+giữ nguyên để đọc được lịch sử.
+
 Trạng thái ownership:
 `OWNER_ASSIGNMENT_REQUIRED` — **ĐÃ ĐÓNG 2026-09-01.** Chủ dự án phê chuẩn capability owner =
 `CAP-DATA` (`DEC-015`). Còn lại `OWNER_DECISION_REQUIRED` cho phương tiện thi hành — xem
@@ -390,3 +395,87 @@ mới** của owner nhận nó. Bản sửa không miễn phí — chủ dự á
 - `WP-A1` không đổi. `CAP-PROV` allowed=2 / used=2 / remaining=0 không đổi.
 - Số task ID mới tạo = **0**.
 - `H-01`…`H-15` không bị sửa. `H-08`, `H-14`, `H-15` không mở.
+
+---
+
+# PHẦN III — ĐÃ ĐÓNG (2026-09-01, phiên S010 / CAP-DATA REPAIR CYCLE #1)
+
+    F-S009-01 = CLOSED
+    Đóng bởi  = CHECK-A4-11 (REQUIRED, E1) của WP-A4
+    Phương tiện = phương án (A) của §II.7, đúng như DEC-016 phê duyệt
+    Task ID mới = 0
+
+## III.1 Bản sửa
+
+Hướng **1** của §8 ("reindex theo lịch trước khi tính") được chọn. Một điểm sửa duy nhất:
+`compute_daily_indicators` neo chỉ mục daily vào lịch ngày UTC liên tục
+(`indicators._calendar_index`), nên ngày thiếu hiện ra thành một hàng `NaN` thật thay vì
+biến mất khỏi chỉ mục.
+
+Hai hàm phụ được làm cho nhất quán với ngữ nghĩa đó, không hơn: `wilder_rsi` tính riêng
+từng dải ngày lịch liên tục (hồi quy Wilder không bắc qua được một ngày vắng mặt), và
+`_rolling_percentile_of_last` trả `NaN` khi cửa sổ thiếu ngày thay vì âm thầm đếm `NaN`
+là "không thấp hơn".
+
+Diff production: **một file, +74 / −5** (`git diff --shortstat cb75f9d..ef8cdbb`).
+
+## III.2 Lo ngại ở §8 đã được xử lý ra sao
+
+§8 nêu nhược điểm của hướng 1: *"đổi hành vi trên mọi dataset có gap, phải định lượng lại
+như CHECK-A4-07."* Đã định lượng, không suy luận:
+
+- **Dữ liệu SẠCH — không đổi một chữ số nào.** `eth_total` 2.1967521311211984 ở cả BEFORE
+  lẫn AFTER; 66 purchase; nominal BASE/SMART/CRASH/OPPORTUNITY y hệt; nhãn regime
+  140/169/57 y hệt; `data_quality` GOOD 366 y hệt; tổng `oscore` 8509.33685713 y hệt.
+- **Không hồi tố.** 896 ngày TRƯỚC ngày thiếu khớp **từng bit** trên mọi cột.
+- **Dữ liệu CÓ GAP (bỏ đúng 2020-06-15).** BEFORE: 365 ngày GOOD, 0 INVALID, ngày thiếu
+  hoàn toàn vô hình. AFTER: 31 INVALID (2020-06-15 → 2020-07-15, đúng cửa sổ `adr30`),
+  169 DEGRADED, 166 GOOD; nominal BASE 600.0 và SMART 520.0 **không đổi** (ST §9 [F3]).
+
+## III.3 Bốn indicator §II.2 đã đo — kiểm lại sau bản sửa
+
+| Indicator | BEFORE trên chuỗi có gap | AFTER |
+|---|---|---|
+| `return7` | hữu hạn, SAI 14,29% | **đúng theo lịch**, khớp chuỗi đầy đủ |
+| `ethbtc_return30` | hữu hạn, SAI | **đúng theo lịch** (chỉ đọc `D` và `D-30`) |
+| `adr30` | hữu hạn, SAI | `NaN` → INVALID (cửa sổ phủ ngày thiếu) |
+| `rsi14` | hữu hạn, SAI | `NaN` 15 ngày rồi warm-up lại |
+
+Cả hai vế của điều khoản đều thoả, và thoả ĐÚNG CHỖ.
+
+## III.4 §II.3 — điểm nối đã được nối
+
+§II.3 ghi: `invalid_mask` chỉ bắt giá trị không hữu hạn, nên cửa sổ theo vị trí luôn sinh ra
+một số hữu hạn nhưng sai và ngày đó không bao giờ INVALID. Bản sửa **không** đụng vào
+`invalid_mask`; nó làm cho `close` / `return7` / `adr30` thực sự là `NaN` khi thiếu đầu vào
+lịch, để cơ chế sẵn có tự chạy. Không có hệ validity thứ hai —
+`test_case_h_required_indicator_nan_is_what_drives_invalid` khoá điều đó.
+
+## III.5 §5 — `MAX_MISSING_RATIO` KHÔNG bị đụng
+
+Vẫn `= 0.01`. Đúng như §5 đã lập luận, ngưỡng không thể hạ về 0 và cũng không được nới. Bằng
+chứng cho thấy hai lớp thực sự độc lập: dataset thiếu 1/365 ngày (0,274%) vẫn **dưới** ngưỡng
+và `official_eligibility` vẫn trả `(True, 'verified')` — nhưng NGÀY bị ảnh hưởng nay là
+INVALID nên không tạo được quyết định official. Ngưỡng nói về DATASET; `CHECK-A4-11` nói về
+NGÀY.
+
+## III.6 §II.4 — phần dư SPEC_AMBIGUITY KHÔNG bị nuốt
+
+Phần dư (`ma200`, `adr30`, `rsi14`, `VR`, `ETHBTC_Percentile180` — spec nêu con số mà không
+nêu đơn vị) **vẫn thuộc `CAP-SPEC` / `WP-D2`** và KHÔNG bị chu kỳ này quyết thay. Bản sửa
+chọn `NaN` (fail-closed) cho nhóm cửa sổ dài và khai báo tường minh điều đó là một lựa chọn
+có thể bị WP-D2 xét lại — xem khối `DEFERRED_BY_MINIMAL_FIX` ở
+`docs/reviews/S010-batch-review-calendar-indicator.md` §4.
+
+## III.7 §7 — trạng thái sau khi đóng
+
+- `WP-A4`: `DONE` → `IN_PROGRESS` (mở chu kỳ) → **`DONE`** lại, 10/10 REQUIRED PASS.
+- `WP-A1` / `CAP-PROV`: **không đụng**. allowed 2 / used 2 / remaining 0 không đổi.
+- `CAP-DATA` budget: allowed 2 / **used 1** / remaining 1.
+- Blocker trước `T-06` mà §7 nêu: **đã gỡ**.
+- `H-01`…`H-15` không bị sửa. `H-08`, `H-14`, `H-15` không mở. Hai mục MỚI: `H-16`, `H-17`.
+- Số task ID mới = **0**.
+
+Chi tiết bằng chứng: `CHECK-A4-11` trong `docs/tasks/WP-A4-ngu-nghia-du-lieu-xau.md`;
+batch review `docs/reviews/S010-batch-review-calendar-indicator.md`; session handoff
+`docs/sessions/S010-cap-data-repair-cycle-1.md`.

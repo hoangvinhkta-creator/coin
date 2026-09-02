@@ -47,7 +47,7 @@ Golden. Đây là giới hạn thật, phải được nói rõ, không được
 | Capability | Tên | Lineage root | Owner task hiện hành | Trạng thái | Nằm trên Vertical Slice? |
 |---|---|---|---|---|---|
 | `CAP-PROV` | Nguồn gốc & khả năng tái lập của official run | `WP-A1` | `WP-A1` | IN_PROGRESS — E2 vòng ba FAIL | CÓ (bắt buộc cho GATE-A) |
-| `CAP-DATA` | Ngữ nghĩa dữ liệu thiếu/hỏng (gồm độ phủ theo khoảng được yêu cầu) | `WP-A4` | `WP-A4` | DONE — 9/9 REQUIRED check PASS tại S009 | CÓ (đường găng) |
+| `CAP-DATA` | Ngữ nghĩa dữ liệu thiếu/hỏng (gồm độ phủ theo khoảng được yêu cầu, và ngữ nghĩa cửa sổ indicator daily theo ngày lịch) | `WP-A4` | `WP-A4` | DONE — 10/10 REQUIRED check PASS tại S010 sau REPAIR CYCLE #1 | CÓ (đường găng) |
 | `CAP-ENGINE` | Vòng đời regime & ladder, kế toán vốn | `WP-A3` | `WP-A3` (DONE), `WP-A7` (DONE) | DONE | CÓ |
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | READY | CÓ |
@@ -83,6 +83,9 @@ Ranh giới từ đây, để không phải quyết lại:
 | Cơ chế LẤY dữ liệu: HTTP, retry, rate-limit, archive/REST | `CAP-PROV` (WP-A1) |
 | Ngữ nghĩa coverage / gap / đối chiếu khoảng được yêu cầu | `CAP-DATA` (WP-A4) |
 | Ngữ nghĩa DEGRADED / INVALID, nhãn gap trên bản ghi | `CAP-DATA` (WP-A4) |
+| Ngữ nghĩa cửa sổ indicator daily (ngày lịch vs vị trí hàng) | `CAP-DATA` (WP-A4) — `DEC-015`/`DEC-016`, đóng tại S010 |
+| Đơn vị/ngữ nghĩa còn để ngỏ của `ma200`/`adr30`/`rsi14`/`VR`/`ETHBTC_Percentile180` | `CAP-SPEC` (WP-D2) — phần dư SPEC_AMBIGUITY, KHÔNG bị chu kỳ sửa S010 quyết thay |
+| Đối chiếu parity JS/Python của cùng công thức | `CAP-WEBAPP` (WP-C4) — nhận `F-S010-03` |
 
 Không task ID mới được tạo trong cả quá trình này.
 
@@ -179,6 +182,9 @@ Quyết định này KHÔNG mở ranh giới capability mới — nó rơi đún
 | Chủ đề | Capability sở hữu |
 |---|---|
 | Ngữ nghĩa DEGRADED / INVALID, nhãn gap trên bản ghi | `CAP-DATA` (WP-A4) |
+| Ngữ nghĩa cửa sổ indicator daily (ngày lịch vs vị trí hàng) | `CAP-DATA` (WP-A4) — `DEC-015`/`DEC-016`, đóng tại S010 |
+| Đơn vị/ngữ nghĩa còn để ngỏ của `ma200`/`adr30`/`rsi14`/`VR`/`ETHBTC_Percentile180` | `CAP-SPEC` (WP-D2) — phần dư SPEC_AMBIGUITY, KHÔNG bị chu kỳ sửa S010 quyết thay |
+| Đối chiếu parity JS/Python của cùng công thức | `CAP-WEBAPP` (WP-C4) — nhận `F-S010-03` |
 
 Bằng chứng cơ chế thu tại phiên này: `score.py::invalid_mask` chỉ đặt INVALID trên giá trị
 **không hữu hạn**; cửa sổ theo vị trí luôn sinh số **hữu hạn nhưng sai**, nên nhánh

@@ -19,6 +19,10 @@ AMENDED — 2026-09-01 bởi `OD-A4-01` (chủ dự án): thêm ĐÚNG MỘT REQ
 `CHECK-A4-10`. Chín check FROZEN gốc giữ nguyên câu chữ và ngữ nghĩa; không check nào bị
 hạ, gộp hay nới. Xem `docs/decisions/OWNER-DISPOSITION-2026-09-01-product-intent-va-integration.md`
 §5.3 (đề xuất) và chỉ thị phiên S009 §0 (phê chuẩn).
+AMENDED — 2026-09-01 bởi `DEC-016` / `OD-DATA-01` (chủ dự án): CAP-DATA REPAIR CYCLE #1
+thêm ĐÚNG MỘT REQUIRED check `CHECK-A4-11` để đóng `F-S009-01`. Mười check trước đó giữ
+nguyên câu chữ và ngữ nghĩa; không check nào bị hạ, gộp hay nới. Không phát sinh
+`LEGACY_GATE_COMPATIBILITY_REQUIRED`.
 
 Routing Status:
 ROUTED
@@ -108,6 +112,10 @@ truy được **bản ghi nào** bị ảnh hưởng bởi gap, chỉ biết **c
 - **F-E2A1R3-05** — fetch bị cắt cụt vẫn đủ tư cách official; `missing_count` không phát
   hiện truncation. Được chủ dự án gán cho `CAP-DATA` và **hấp thụ** vào WP-A4 ngày
   2026-09-01 (`OD-A4-01`). Không tạo task ID mới — finding ≠ task.
+- **F-S009-01** — indicator daily tính theo VỊ TRÍ HÀNG, nên một ngày lịch thiếu làm
+  `return7` / rolling trả một số HỮU HẠN SAI mà không NaN, không DEGRADED, không INVALID.
+  Được chủ dự án gán cho `CAP-DATA` (`DEC-015`) và thi hành bằng **CAP-DATA REPAIR CYCLE
+  #1** trên chính WP-A4 (`DEC-016`). Không tạo task ID mới — finding ≠ task.
 
 ## Scope
 
@@ -153,6 +161,11 @@ Allowed:
 - `docs/CONVENTIONS.md`
 - (làm rõ bởi `OD-A4-01`, 2026-09-01) `src/eth_dca_os/data/dataset.py`, `fetch.py`,
   `synth.py` — **chỉ** phần ngữ nghĩa coverage/gap và khai báo khoảng thời gian được yêu cầu
+- (mở rộng tối thiểu bởi `DEC-016`, 2026-09-01, CAP-DATA REPAIR CYCLE #1)
+  `src/eth_dca_os/indicators.py` — **chỉ** phần ngữ nghĩa cửa sổ theo ngày lịch, cộng
+  wiring/test trực tiếp bắt buộc. Thẩm quyền này KHÔNG cho phép viết lại indicator
+  subsystem, thiết kế lại kiến trúc dataset, đổi time-series engine, dọn mã không liên
+  quan, hay xử lý hardening
 
 Do not touch without Scope Expansion:
 - `src/eth_dca_os/regime.py`, `ladders.py`, `capital.py`, `verdict.py`, `failure_signals.py`
@@ -171,6 +184,7 @@ Do not touch without Scope Expansion:
 - [x] A4.5 Gắn tag `DELAYED_DATA_FILL` lên purchase record, không chỉ đếm
 - [x] A4.6 Viết test cho từng ca dữ liệu xấu, gồm ca biên giữa DEGRADED và INVALID
 - [x] A4.7 Định lượng thay đổi kết quả mô phỏng trên dataset tổng hợp **có gap**
+- [x] A4.8 (CAP-DATA REPAIR CYCLE #1, `DEC-016`) Neo cửa sổ indicator daily vào NGÀY LỊCH; ngày thiếu phải ra NaN → DEGRADED/INVALID, không ra số hữu hạn sai
 
 ## Ready Gate
 
@@ -587,6 +601,176 @@ S009 — agent phiên WP-A4 (Tier C / xhigh), 2026-09-01
 Timestamp:
 2026-09-01
 
+### Calendar Semantics — bổ sung bởi `DEC-016` / `OD-DATA-01` (2026-09-01)
+
+Check dưới đây do chủ dự án phê duyệt qua `DEC-016` khi mở **CAP-DATA REPAIR CYCLE #1**.
+Nó là REQUIRED check thứ MƯỜI MỘT và là bổ sung DUY NHẤT của chu kỳ này; không check nào
+trong mười check trước bị sửa, hạ hay gộp. Chỉ thị mở chu kỳ ghi rõ: "Bổ sung đúng
+REQUIRED check cần thiết cho repair này. Không thêm nhiều gate hơn cần thiết."
+
+#### CHECK-A4-11 — Indicator daily không âm thầm dùng row-position semantics khi thiếu ngày lịch bắt buộc
+Priority:
+REQUIRED
+
+Status:
+PASS
+
+Evidence Level:
+E1
+
+Evidence:
+Câu chữ chủ dự án phê duyệt: *"Nếu một daily candle bắt buộc bị thiếu, indicator bị ảnh
+hưởng phải được tính đúng theo calendar semantics, HOẶC bị DEGRADED / INVALID / NaN theo
+spec, nhưng KHÔNG được trả một giá trị hữu hạn sai rồi tiếp tục như dữ liệu bình thường."*
+Đóng **F-S009-01**. V1 BLOCKING theo `DEC-011` vì chạm A (CORRECT DECISION), D (REAL MARKET
+DATA), F (OFFICIAL RESULT VALIDITY) — `DEC-015`, `DEC-016`.
+
+**BEFORE — tái lập trên đường sản xuất bình thường, KHÔNG sửa tay artifact.**
+`fetch_all` (stub CHỈ thay lớp HTTP — nguồn canonical 1 + 2 của `PRODUCTION_PATHS.md` §3)
+→ `build_lineage` → `official_eligibility` → `Prepared` → `compute_daily_indicators`.
+Yêu cầu `--start 2019-01-01 --end 2020-01-01`; archive thiếu đúng một ngày (2019-07-15).
+Không mock eligibility, loader hay indicator; không input thù địch.
+
+```
+--- FULL DAILY SERIES ---
+  ETHUSDT_1d rows=365/365 missing=0 ratio=0.0000%
+  official_eligibility -> (True, 'verified')
+--- SAME SERIES, ONE CALENDAR DAY REMOVED (2019-07-15) ---
+  ETHUSDT_1d rows=364/365 missing=1 ratio=0.2740%
+  official_eligibility -> (True, 'verified')
+  2019-07-15 có trong index indicators? False        <- ngày thiếu BIẾN MẤT khỏi chỉ mục
+
+đọc tại 2019-07-20        FULL (đúng theo lịch)        GAP (engine trả về)     NaN?
+  return7                 6.98993449431e-05           7.98857633582e-05       False
+  ethbtc_return30        -3.33066907388e-16          -1.11022302463e-16       False
+  adr30                   9.98646841002e-06           1.03194055464e-05       False
+  rsi14                       99.9018663068               99.8996490166       False
+  ma200                          130.378014                  130.383227       False
+
+  data_quality = 'DEGRADED'   oscore = 9.928762762751692   invalid_mask = False
+  Prepared.official_eligible = True ('verified')
+```
+
+Cơ chế đo trực tiếp: tại 2019-07-20, phần tử `i-7` của chuỗi CÓ GAP là **2019-07-12**,
+trong khi lịch đòi **2019-07-13**. Năm indicator sai, không cái nào NaN, ngày vẫn đi tiếp
+như dữ liệu bình thường.
+
+**AFTER — cùng lệnh, cùng stub, cùng dữ liệu.**
+
+```
+  2019-07-15 có trong index indicators? True         <- ngày thiếu HIỆN RA thành hàng NaN
+  return7                 6.98993449431e-05           6.98993449431e-05       False  <- ĐÚNG
+  ethbtc_return30        -3.33066907388e-16          -3.33066907388e-16       False  <- ĐÚNG
+  adr30                   9.98646841002e-06                         nan       True
+  rsi14                       99.9018663068                         nan       True
+  ma200                          130.378014                         nan       True
+
+  phần tử i-7 của chuỗi CÓ GAP = 2019-07-13 == lịch đòi 2019-07-13
+  data_quality = 'INVALID'   oscore = nan   invalid_mask = True
+```
+
+Hai vế của điều khoản đều được thoả, và thoả ĐÚNG CHỖ: indicator nào còn đủ đầu vào lịch
+(`return7`, `ethbtc_return30` — chỉ đọc `D` và `D-7`/`D-30`) được tính **đúng**; indicator
+nào có cửa sổ phủ ngày thiếu trả **NaN** → INVALID qua `score.invalid_mask` sẵn có. Không
+còn giá trị hữu hạn sai nào.
+
+**CASE A–H** — `tests/test_wp_a4_calendar_indicator_semantics.py`, 54 test, chạy trên hàm
+production `compute_daily_indicators` / `compute_scores` / `invalid_mask`:
+
+| Case | Kịch bản | Kết quả |
+|---|---|---|
+| A | chuỗi daily liên tục, đầy đủ | **PASS** — chỉ mục không sinh thêm hàng; 8 indicator khớp oracle tính theo NHÃN NGÀY tới `rel=1e-12` |
+| B | thiếu đúng MỘT ngày trong cửa sổ `return7` | **PASS** — không indicator nào hữu-hạn-mà-sai; cửa sổ phủ gap → NaN; ngày thiếu hiện ra trong chỉ mục |
+| C | thiếu một ngày NGOÀI cửa sổ đang đọc | **PASS** — `return7`/`adr30` giữ nguyên giá trị đúng; ngày đọc KHÔNG bị INVALID oan; bóng INVALID chặn ở đúng cửa sổ REQUIRED dài nhất (30), khoá cả hai phía |
+| D | lỗ hổng NHIỀU ngày (3 ngày liền) | **PASS** — mọi ngày thiếu INVALID; ngày đọc INVALID; không giá trị hữu hạn sai |
+| E | gap ở BIÊN ĐẦU cửa sổ | **PASS** — gap đúng `D-7` → `return7` NaN; gap `D-8` → `return7` vẫn đúng (khoá off-by-one). Tương tự `D-30`/`D-31` cho `ethbtc_return30` |
+| F | gap ở BIÊN CUỐI / vùng hiện tại | **PASS** — gap trên chính ngày đọc → `close` NaN + INVALID; gap `D-1` không sinh giá trị hữu hạn sai; thiếu ở ĐUÔI không bị hàm này đoán thêm ngày (độ phủ hai đầu vẫn là việc của CHECK-A4-10, không dựng lại) |
+| G | đối chứng dương, dữ liệu SẠCH | **PASS** — 13 cột khớp **từng bit** với công thức row-position cũ (`np.array_equal(..., equal_nan=True)`), cộng `percentile365` và `rsi14`; tập ngày INVALID không trôi (chỉ warm-up 30 ngày đầu) |
+| H | tích hợp `Prepared` / `invalid_mask` | **PASS** — ngày bị ảnh hưởng có `data_quality = INVALID`, `oscore = NaN`, nên không tạo được quyết định official; và test đối chứng ghi lại rằng luật CŨ cho chính ngày đó một `oscore` hữu hạn với `invalid_mask = False` |
+
+**Đường hệ quả dùng lại cơ chế đã có, không dựng hệ validity thứ hai** (`DEC-016` cấm):
+`test_case_h_required_indicator_nan_is_what_drives_invalid` khẳng định INVALID đến từ
+`score.REQUIRED_DAILY_INDICATORS` sẵn có (`close`, `return7`, `adr30`) chứ không từ một
+cờ mới. `indicators.py` không thêm trường trạng thái nào.
+
+**Non-regression ở tầng QUYẾT ĐỊNH trên dataset SẠCH** (§11 của chỉ thị mở chu kỳ) — chạy
+`run_engine` thật, cùng seed, cùng parquet, `BASELINE_STRATEGY` + `GATE1_LOW_FRICTION`,
+cửa sổ 2020-01-01…2021-01-01:
+
+| Đầu ra quyết định | BEFORE | AFTER | |
+|---|---|---|---|
+| `eth_total` | 2.1967521311211984 | 2.1967521311211984 | không đổi |
+| `n_purchases` | 66 | 66 | không đổi |
+| nominal BASE / SMART / CRASH / OPPORTUNITY | 600.0 / 520.0 / 14.1027503435 / 0.2633261223 | y hệt | không đổi |
+| `triggered` / `executed` / `base_early` | 18 / 18 / 2 | 18 / 18 / 2 | không đổi |
+| `cooldown_override` | STRESSED 4 | STRESSED 4 | không đổi |
+| nhãn regime (CRASH/NORMAL/STRESSED) | 140 / 169 / 57 | 140 / 169 / 57 | không đổi |
+| `data_quality` | GOOD 366 | GOOD 366 | không đổi |
+| tổng `oscore` | 8509.33685713 | 8509.33685713 | không đổi |
+
+Decision output trên dữ liệu sạch **không trôi một chữ số nào**.
+
+**Bóng của MỘT ngày lịch thiếu — đo, không suy luận.** Dataset synth 2018-01-01…2021-01-01,
+bỏ đúng 2020-06-15:
+
+- **Không hồi tố:** 896 ngày TRƯỚC ngày thiếu khớp từng bit trên MỌI cột. Bản sửa chỉ tác
+  động từ ngày thiếu trở đi.
+- Bóng NaN theo cột: `return7` 2 ngày (chính ngày đó và `D+7`), `ethbtc_return30` 2 ngày,
+  `rsi14` 15 ngày (Wilder warm-up lại sau khi chuỗi đứt), `adr30` 31 ngày,
+  `volume_ratio` 90, `ethbtc_percentile180` 180, `ma200`/`high365`/`percentile365` 200
+  (tới hết dataset — cửa sổ 200/365 ngày).
+- Ở tầng quyết định trên cùng dataset có gap: BEFORE = 365 ngày GOOD, 0 INVALID, 0 `oscore`
+  NaN — ngày thiếu **hoàn toàn vô hình**. AFTER = 31 INVALID (2020-06-15 → 2020-07-15, đúng
+  cửa sổ `adr30`), 169 DEGRADED, 166 GOOD; `nominal` BASE 600.0 và SMART 520.0 **không đổi**
+  (ST §9 [F3] — vốn không bị bỏ), CRASH/OPPORTUNITY về 0 vì `oscore` thấp hơn khi
+  sub-component thiếu — đúng chiều bảo thủ mà CHECK-A4-06 đã khoá ("DEGRADED không đẩy
+  score lên").
+
+Escalation trigger "siết định nghĩa làm engine dừng phần lớn thời gian" **KHÔNG kích hoạt**:
+INVALID = 31/366 ≈ 8,5%, và toàn bộ vốn BASE + SMART vẫn được giải ngân đủ.
+
+**`MAX_MISSING_RATIO` KHÔNG bị sửa.** Vẫn `= 0.01` trong `data/dataset.py`; không bị hạ về
+0 và không bị nới. Hai lớp độc lập, và bằng chứng ở trên cho thấy đúng như vậy: dataset
+thiếu 1/365 ngày (0,274%) vẫn **dưới** ngưỡng độ phủ và `official_eligibility` vẫn trả
+`(True, 'verified')` — nhưng NGÀY bị ảnh hưởng nay là INVALID nên không tạo được quyết định
+official. Ngưỡng độ phủ nói về DATASET; `CHECK-A4-11` nói về NGÀY.
+
+**Độ lệch dư sau khi bóng gap đi qua — công bố thẳng, không giấu trong chữ "không đổi".**
+Trên dataset CÓ GAP, sau khi cửa sổ đã trượt qua hẳn ngày thiếu (đo trên 134 ngày cách gap
+hơn 365 ngày), bốn cột vẫn KHÔNG bằng nhau từng bit so với chuỗi đầy đủ:
+
+| Cột | max lệch tương đối | max lệch tuyệt đối | Nguyên nhân |
+|---|---|---|---|
+| `ma200` | 2,11e-16 | 3,55e-15 | pandas cộng dồn rolling theo kiểu online; một `NaN` đi qua cửa sổ làm đổi thứ tự kết hợp phép cộng — sai số ở mức 1 ULP của `double` |
+| `ma_ratio` | 3,04e-16 | 2,22e-16 | dẫn xuất từ `ma200` |
+| `ma200_slope` | 5,83e-10 | 7,11e-15 | hiệu của hai `ma200`; lệch TUYỆT ĐỐI vẫn ở mức ULP, tỷ lệ lớn chỉ vì mẫu số gần 0 |
+| `rsi14` | 7,44e-13 | 4,42e-11 | Wilder là hồi quy có bộ nhớ vô hạn; dải sau gap được warm-up lại nên mang một đuôi suy giảm theo `(13/14)^k` — sau 365 ngày còn ~3e-12, đúng bậc đo được |
+
+`high365`, `percentile365`, `adr30`, `return7`, `volume_ratio`, `ethbtc_percentile180`
+lệch **đúng bằng 0** trên cùng tập ngày.
+
+Đây KHÔNG phải hình dạng lỗi của `F-S009-01` (lệch 14,29% ở §3 và 295% đổi dấu ở §II.2 của
+`docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md`), và KHÔNG xuất hiện trên dữ liệu
+sạch (CASE G khoá bit-identical). Nó được phân loại HARDENING kèm `RE_TRIGGER_CONDITION` ở
+`PROJECT/HARDENING_BACKLOG.md` **H-16**, không được nuốt im lặng.
+
+**Ranh giới KHÔNG thuộc check này.** Ngày thiếu ở HAI ĐẦU khoảng được yêu cầu không quan
+sát được từ `compute_daily_indicators` (`_calendar_index` neo vào ngày đầu/cuối QUAN SÁT
+ĐƯỢC). Đó là việc của `CHECK-A4-10` và cố ý không bị dựng lại ở đây — dựng lại sẽ là hệ
+validity thứ hai, điều `DEC-016` cấm. `test_case_f_gap_at_series_tail_does_not_extend_the_calendar`
+khoá đúng ranh giới này.
+
+**Regression.** `python -m pytest -q` → **286 PASS, 0 FAIL, 0 SKIP, 0 XFAIL** (232 trước
+chu kỳ này + 54 test mới). Chứng minh bằng git chứ không bằng lời: `git diff --stat --
+tests/` rỗng (không file test cũ nào bị sửa), `git status --short tests/` chỉ có một file
+`??` mới, và toàn repo không có marker `skip`/`xfail` nào.
+
+Executed By:
+S010 — agent phiên CAP-DATA REPAIR CYCLE #1 (Tier C / xhigh), 2026-09-01
+
+Timestamp:
+2026-09-01
+
 ### Audit
 
 #### CHECK-A4-09 — Rà soát độc lập E2 cho ngữ nghĩa INVALID
@@ -620,16 +804,20 @@ Timestamp:
 —
 
 ## Exit Criteria
-- [x] 100% REQUIRED checks PASS — **9/9** (CHECK-A4-01…08 FROZEN + CHECK-A4-10 do
-      `DEC-014` bổ sung). CHECK-A4-09 là RECOMMENDED, `NOT_TESTED`, không phải điều kiện DONE
+- [x] 100% REQUIRED checks PASS — **10/10** (CHECK-A4-01…08 FROZEN + CHECK-A4-10 do
+      `DEC-014` bổ sung + CHECK-A4-11 do `DEC-016` bổ sung ở CAP-DATA REPAIR CYCLE #1).
+      CHECK-A4-09 là RECOMMENDED, `NOT_TESTED`, không phải điều kiện DONE
 - [x] Mức evidence yêu cầu được thoả (E1 toàn bộ REQUIRED)
 - [x] Danh sách "indicator bắt buộc" được ghi ở nơi tra cứu được — `docs/CONVENTIONS.md`
       §"Indicator daily bắt buộc và ranh giới DEGRADED / INVALID"
 - [x] Mọi sai lệch kết quả được định lượng và quy về điều khoản spec — CHECK-A4-07
 - [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật
 - [x] Session handoff được viết — `docs/sessions/S009-wp-a4-ngu-nghia-du-lieu-xau.md`
-- [x] Không hạ REQUIRED check nào để đạt DONE — chín check FROZEN giữ nguyên câu chữ; bổ
-      sung duy nhất là CHECK-A4-10 do chủ dự án phê duyệt TRƯỚC khi implementation
+- [x] Không hạ REQUIRED check nào để đạt DONE — chín check FROZEN giữ nguyên câu chữ; hai
+      bổ sung đều do chủ dự án phê duyệt TRƯỚC khi phần implementation tương ứng bắt đầu:
+      CHECK-A4-10 (`OD-A4-01`) và CHECK-A4-11 (`DEC-016`)
+- [x] `F-S009-01` đóng bằng CAP-DATA REPAIR CYCLE #1 — CHECK-A4-11 PASS ở E1; batch review
+      bắt buộc (Effective Risk HIGH, `DEC-017`) đã chạy: `docs/reviews/S010-batch-review-calendar-indicator.md`
 
 ## Escalation Triggers
 
@@ -653,12 +841,19 @@ simulation sai một cách **âm thầm**.
 ## Changed Files Registry
 
 Created:
+- `tests/test_wp_a4_calendar_indicator_semantics.py` — CHECK-A4-11, CASE A–H (54 test,
+  CAP-DATA REPAIR CYCLE #1)
+- `docs/reviews/S010-batch-review-calendar-indicator.md` — batch review bắt buộc của chu kỳ
+- `docs/sessions/S010-cap-data-repair-cycle-1.md` — session handoff + bằng chứng
 - `tests/test_wp_a4_bad_data_semantics.py` — CHECK-A4-01…06
 - `tests/test_wp_a4_requested_range_coverage.py` — CHECK-A4-10, CASE A–F
 - `tests/wp_a4_fetch_stub.py` — stub I/O Binance (chỉ thay lớp HTTP)
 - `docs/sessions/S009-wp-a4-ngu-nghia-du-lieu-xau.md` — session handoff + bằng chứng
 
 Modified:
+- `src/eth_dca_os/indicators.py` — (CAP-DATA REPAIR CYCLE #1) `_calendar_index`, chỉ mục
+  lịch ngày liên tục trong `compute_daily_indicators`, `wilder_rsi` tách dải liên tục,
+  `_rolling_percentile_of_last` trả NaN khi cửa sổ thiếu ngày
 - `src/eth_dca_os/score.py` — `REQUIRED_DAILY_INDICATORS`, `invalid_mask`, `factor_scores(ind=...)`
 - `src/eth_dca_os/engine.py` — `missing_before` trên nến, `tags` + `missing_candles_before`
   trên purchase record, bộ đếm `execution_data_gap`
@@ -675,7 +870,16 @@ Modified:
 Deleted:
 - Không
 
-Migration Impact:
+Migration Impact (CAP-DATA REPAIR CYCLE #1):
+- `compute_daily_indicators` trả DataFrame indexed theo LỊCH NGÀY LIÊN TỤC. Trên dataset
+  **liên tục** (mọi dataset đang có trong repo và mọi test hiện hữu) chỉ mục KHÔNG đổi và
+  kết quả trùng khớp từng bit — đo ở CASE G và ở bảng non-regression tầng quyết định.
+  Trên dataset **có ngày daily thiếu**, chỉ mục nay có thêm hàng cho ngày đó (giá trị NaN),
+  và ngày đó là INVALID. `dataset_hash`, `manifest_hash`, chữ ký hàm public đều KHÔNG đổi.
+- `wilder_rsi` nay warm-up lại sau mỗi lần chuỗi ngày lịch đứt. Chuỗi không đứt chỉ có một
+  dải nên kết quả không đổi.
+
+Migration Impact (WP-A4 gốc):
 - Purchase record mang thêm `tags` và `missing_candles_before`; lineage entry mang thêm
   `requested_start`/`requested_end`/`expected_count`/`missing_head`/`missing_internal`/
   `missing_tail`. **`dataset_hash` KHÔNG đổi** (vẫn chỉ dẫn xuất từ danh sách `file_hash`),
