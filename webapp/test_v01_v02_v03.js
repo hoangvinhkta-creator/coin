@@ -7,6 +7,10 @@
  * bị từ chối, và nếu không có ladder thì không dựng được ca V-01. Logic kết luận
  * XÁC NHẬN/BÁC BỎ không bị sửa: chạy trên cây đã vá, cả V-01 lẫn V-02 phải in BÁC BỎ — đó
  * chính là bằng chứng AFTER của T-09A. testV02/testV03 không đổi một dòng nào.
+ *
+ * BẢO TRÌ T-09B (2026-09-02): trang chạy trên Firebase (harness emulator). newPage/readState
+ * cục bộ được thay bằng bản của harness: readState đọc bản DURABLE từ Firestore và đối chiếu
+ * bit-exact với bộ nhớ trang. Ba kịch bản và logic kết luận XÁC NHẬN/BÁC BỎ KHÔNG đổi.
  */
 const { chromium } = require('playwright');
 const path = require('path');
@@ -22,20 +26,9 @@ function assert(cond, label) {
   else console.log('  ok:', label);
 }
 
-async function newPage(b) {
-  const ctx = await b.newContext({ viewport: { width: 1200, height: 1000 } });
-  const p = await ctx.newPage();
-  const errs = [];
-  p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-  p.on('console', m => { if (m.type() === 'error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push(m.text()); });
-  await p.goto('file://' + APP_FINAL);
-  await p.waitForTimeout(300);
-  return { ctx, p, errs };
-}
-
-async function readState(p) {
-  return p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
-}
+// T-09B: trang mới = Owner bootstrap trên Firebase emulator, CHƯA nạp seed (mỗi ca tự nạp).
+async function newPage(b) { return H.newPage(b, { seed: false }); }
+const readState = H.readState;
 
 /* ---------------------------------------------------------------------- */
 /* V-02 — Mức unlock có giới hạn số vốn được reserve hay không (CHECK-C1-04) */
@@ -45,7 +38,7 @@ async function testV02(b) {
   const { ctx, p, errs } = await newPage(b);
 
   await p.setInputFiles('#seedFile', SEED_PATH);
-  await p.waitForTimeout(900);
+  await H.waitSaved(p);
   const chips = (await p.textContent('#stateChips')).replace(/\s+/g, ' ').trim();
   console.log('  chips sau khi nạp seed:', chips);
   const unlockMatch = chips.match(/Smart unlock ([\d.]+)%/);
@@ -176,7 +169,7 @@ async function testV01(b) {
   const { ctx, p, errs } = await newPage(b);
 
   await p.setInputFiles('#seedFile', SEED_PATH);
-  await p.waitForTimeout(900);
+  await H.waitSaved(p);
 
   // Tiền đề T-09A: mở Smart unlock (xem chú thích đầu file). Không đổi bản chất ca kiểm thử —
   // V-01 nói về THÁNG NHẬN vốn release, không về mức unlock.
@@ -271,11 +264,12 @@ async function testV01(b) {
 }
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const stopEmu = await H.ensureEmulators();
+  const b = await chromium.launch({ executablePath: H.CHROMIUM });
   const v02 = await testV02(b);
   const v03 = await testV03(b);
   const v01 = await testV01(b);
-  await b.close();
+  await b.close(); await stopEmu();
 
   console.log('\n=== TÓM TẮT E1 ===');
   console.log('V-01 (release đa tháng sai pool):', v01.confirmed ? 'XÁC NHẬN' : 'BÁC BỎ');

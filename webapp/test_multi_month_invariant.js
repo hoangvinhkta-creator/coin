@@ -8,6 +8,9 @@
  * Thêm MỘT bước tiền đề: nhập một chuỗi ngày giảm giá qua đúng UI "Nhập số liệu" để đẩy
  * OSCORE lên và mở unlock. Chuỗi fill -> partial fill -> invalidation -> release phía sau
  * GIỮ NGUYÊN từng bước; các assertion bất biến KHÔNG bị nới lỏng.
+ *
+ * BẢO TRÌ T-09B (2026-09-02): trang chạy trên Firebase (harness emulator); readState đọc bản
+ * DURABLE từ Firestore, đối chiếu bit-exact với bộ nhớ trang. Kịch bản GIỮ NGUYÊN.
  */
 const { chromium } = require('playwright');
 const path = require('path');
@@ -31,19 +34,11 @@ function noNegative(x, label) {
 }
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const ctx = await b.newContext({ viewport: { width: 1200, height: 1000 } });
-  const p = await ctx.newPage();
-  const errs = [];
-  p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-  p.on('console', m => { if (m.type() === 'error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push(m.text()); });
+  const stopEmu = await H.ensureEmulators();
+  const b = await chromium.launch({ executablePath: H.CHROMIUM });
+  const { ctx, p, errs } = await H.newPage(b);
 
-  await p.goto('file://' + APP_FINAL);
-  await p.waitForTimeout(300);
-  await p.setInputFiles('#seedFile', SEED_PATH);
-  await p.waitForTimeout(900);
-
-  const readState = () => p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+  const readState = () => H.readState(p);
 
   // --- Tiền đề T-09A: mở Smart unlock qua đường nhập giá thật (xem chú thích đầu file) ---
   const unlock0 = await H.pushDeclineDays(p, 12);
@@ -205,7 +200,7 @@ function noNegative(x, label) {
   }
 
   assert(errs.length === 0, 'không có page error trong toàn bộ kịch bản: ' + errs.join('; '));
-  await ctx.close(); await b.close();
+  await ctx.close(); await b.close(); await stopEmu();
 
   if (failures > 0) {
     console.log('\n' + failures + ' assertion(s) FAILED.');

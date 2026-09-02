@@ -4,9 +4,13 @@
   "description": "Test harness cho app theo dõi ETH DCA OS trên web (webapp/). Không phải package publish.",
   "scripts": {
     "build": "node build_app.js",
-    "test": "node test_app.js && node test_zone.js && node test_v01_v02_v03.js && node test_multi_month_invariant.js && node test_t09a_accounting.js"
+    "test": "node test_app.js && node test_zone.js && node test_v01_v02_v03.js && node test_multi_month_invariant.js && node test_t09a_accounting.js && node test_t09b_persistence.js",
+    "test:t09b": "node test_t09b_persistence.js",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-ethdca --config ../firebase.json"
   },
   "devDependencies": {
+    "firebase": "12.18.0",
+    "firebase-tools": "15.28.2",
     "playwright": "1.56.1"
   }
 }

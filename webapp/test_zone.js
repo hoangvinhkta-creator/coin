@@ -1,4 +1,6 @@
 /* WP-C1 — kiểm tra vòng đời zone và bất biến TOTAL = A + R + D trong MỘT tháng.
+ * BẢO TRÌ T-09B (2026-09-02): trang chạy trên Firebase (harness emulator); state đọc từ bản
+ * DURABLE đã đối chiếu với bộ nhớ trang. Kịch bản GIỮ NGUYÊN.
  * BẢO TRÌ T-09A (2026-09-02): thêm MỘT bước tiền đề — nhập chuỗi ngày giảm giá qua đúng UI
  * "Nhập số liệu" để mở Smart unlock. Trước T-09A, kịch bản reserve 100% Smart available khi
  * Smart unlock = 0%, tức đúng hành vi mà V-02 tố cáo là SAI (Strategy §12). Sau bản vá,
@@ -15,15 +17,9 @@ const APP_FINAL = path.join(DIR, 'app_final.html');
 const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const p = await (await b.newContext({viewport:{width:1200,height:1000}})).newPage();
-  const errs = [];
-  p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-  p.on('console', m => { if (m.type()==='error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push(m.text()); });
-  await p.goto('file://' + APP_FINAL);
-  await p.waitForTimeout(300);
-  await p.setInputFiles('#seedFile', SEED_PATH);
-  await p.waitForTimeout(800);
+  const stopEmu = await H.ensureEmulators();
+  const b = await chromium.launch({ executablePath: H.CHROMIUM });
+  const { ctx, p, errs } = await H.newPage(b);
 
   const unlock0 = await H.pushDeclineDays(p, 12);
   console.log('-- Smart unlock sau tiền đề T-09A:', (unlock0.smartUnlock * 100).toFixed(2) + '%');
@@ -52,7 +48,7 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   await p.click('#buyAdd'); await p.waitForTimeout(300);
   console.log('-- buy msg:', (await p.textContent('#buyMsg')).trim());
 
-  let st = await p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+  let st = await H.readState(p);
   let L = st.ladders[0];
   console.log('-- zone statuses:', L.zones.map(z=>z.index+':'+z.status+'/'+Math.round(z.filled_vnd||0)).join(' '));
   console.log('-- smart pool a/r/d:', Math.round(st.months['2026-06'].smart.a), Math.round(st.months['2026-06'].smart.r), Math.round(st.months['2026-06'].smart.d));
@@ -64,7 +60,7 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   await p.fill('#buyUsdt','10'); await p.fill('#buyPrice','200'); await p.fill('#buyVndRate','25445');
   await p.click('#buyAdd'); await p.waitForTimeout(300);
   console.log('-- partial msg:', (await p.textContent('#buyMsg')).trim());
-  st = await p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+  st = await H.readState(p);
   L = st.ladders[0];
   console.log('-- after partial:', L.zones.map(z=>z.index+':'+z.status+'/'+Math.round(z.filled_vnd||0)).join(' '));
   console.log('-- smart a/r/d:', Math.round(st.months['2026-06'].smart.a), Math.round(st.months['2026-06'].smart.r), Math.round(st.months['2026-06'].smart.d));
@@ -79,7 +75,7 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
     await p.fill('#pxBtc', '350000'); await p.fill('#pxVol','100000');
     await p.click('#pxAdd'); await p.waitForTimeout(250);
   }
-  st = await p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+  st = await H.readState(p);
   L = st.ladders[0];
   console.log('-- ladder after 2 closes above inv:', L.status, '| zones:', L.zones.map(z=>z.status).join(','));
   console.log('-- smart a/r/d after release:', Math.round(st.months['2026-06'].smart.a), Math.round(st.months['2026-06'].smart.r), Math.round(st.months['2026-06'].smart.d));
@@ -88,6 +84,7 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   await p.click('[data-tab="history"]'); await p.waitForTimeout(200);
   console.log('-- trade rows:', await p.$$eval('#tradeTable tbody tr', r=>r.length));
   await p.screenshot({path: path.join(DIR, 'app-zone.png'), fullPage:true});
-  await b.close();
+  await ctx.close(); await b.close(); await stopEmu();
   console.log(errs.length ? '\nERRORS:\n'+errs.join('\n') : '\nno errors');
+  if (errs.length) process.exit(1);
 })();

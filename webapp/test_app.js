@@ -1,6 +1,11 @@
 /* WP-C1 — smoke test đường sản phẩm: seed -> vốn -> P2P -> ladder -> mua -> dashboard ->
  * lịch sử -> reload.
  *
+ * BẢO TRÌ T-09B (2026-09-02): trang chạy trên Firebase (harness emulator, xem
+ * test_firebase_harness.js). Bước đọc state lấy bản DURABLE từ Firestore; bước 10 (quine
+ * template) không còn — trang không nhúng state/template nữa (DEC-020 OD-A). Các bước khác
+ * và phép kiểm GIỮ NGUYÊN.
+ *
  * BẢO TRÌ T-09A (2026-09-02): thêm MỘT bước tiền đề — nhập chuỗi ngày giảm giá qua đúng UI
  * "Nhập số liệu" để mở Smart unlock. Trước T-09A, bước 4 reserve 100% Smart available khi
  * Smart unlock = 0%, tức đúng hành vi mà V-02 tố cáo là SAI (Strategy §12). Sau bản vá,
@@ -18,21 +23,17 @@ const APP_FINAL = path.join(DIR, 'app_final.html');
 const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
 
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const ctx = await b.newContext({ viewport: { width: 1200, height: 1000 } });
-  const p = await ctx.newPage();
-  const errs = [];
-  p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-  p.on('console', m => { if (m.type() === 'error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push('console: ' + m.text()); });
-
-  await p.goto('file://' + APP_FINAL);
-  await p.waitForTimeout(400);
+  const stopEmu = await H.ensureEmulators();
+  const b = await chromium.launch({ executablePath: H.CHROMIUM });
+  // T-09B: Owner mở app lần đầu -> bootstrap rules với UID của trình duyệt -> ONLINE, chưa seed
+  const { ctx, p, errs } = await H.newPage(b, { seed: false });
 
   console.log('-- initial banners:', (await p.textContent('#banners')).replace(/\s+/g,' ').slice(0,120));
+  console.log('-- save chip before seed:', (await p.textContent('#saveChip')).trim());
 
   // 1. nạp seed
   await p.setInputFiles('#seedFile', SEED_PATH);
-  await p.waitForTimeout(900);
+  await H.waitSaved(p);
   console.log('-- seed msg:', (await p.textContent('#seedMsg')).trim());
   console.log('-- OSCORE:', (await p.textContent('#osVal')).trim());
   console.log('-- chips:', (await p.textContent('#stateChips')).replace(/\s+/g,' ').trim());
@@ -88,8 +89,8 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   console.log('-- treasury:', trez.replace(/\s+/g,' ').slice(0, 200));
   console.log('-- action:', (await p.textContent('#actionBox')).replace(/\s+/g,' ').slice(0,150));
 
-  // 7. invariant check qua state trong localStorage
-  const st = await p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+  // 7. invariant check qua state ĐÃ ĐI QUA Firestore (đối chiếu với bản trong bộ nhớ)
+  const st = await H.readState(p);
   const m = st.months['2026-06'];
   const tot = x => x.a + x.r + x.d;
   console.log('-- base pool total:', tot(m.base), '(expect 5,000,000)');
@@ -106,27 +107,21 @@ const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
   console.log('-- trade rows:', await p.$$eval('#tradeTable tbody tr', r => r.length));
   console.log('-- ledger rows:', await p.$$eval('#ledgerTable tbody tr', r => r.length));
 
-  // 9. persistence: reload -> state phải còn
+  // 9. persistence: reload -> state phải còn (nạp lại từ Firestore)
   await p.reload();
-  await p.waitForTimeout(700);
+  await H.waitPhase(p, 'ONLINE');
   console.log('-- after reload OSCORE:', (await p.textContent('#osVal')).trim());
-  const st2 = await p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+  const st2 = await H.readState(p);
   console.log('-- after reload eth:', st2.eth, 'trades:', st2.trades.length);
+  console.log('-- after reload save chip:', (await p.textContent('#saveChip')).trim());
 
-  // 10. pageHTML() dựng được tài liệu hợp lệ
-  const okHtml = await p.evaluate(() => {
-    const el = document.getElementById('page-template');
-    if (!el) return 'no template el';
-    const b64 = el.textContent.trim();
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-    const tpl = new TextDecoder('utf-8').decode(bytes);
-    return tpl.startsWith('<!doctype html>') && tpl.includes('__STATE__') ? 'ok' : 'bad';
-  });
-  console.log('-- template decodable:', okHtml);
+  // 10. T-09B: trang KHÔNG nhúng state/template — nguồn bền là Firestore, không phải chính trang
+  const embedded = await p.evaluate(() =>
+    !!document.getElementById('app-state') || !!document.getElementById('page-template'));
+  console.log('-- embedded state/template in page:', embedded, '(expect false)');
 
   await p.screenshot({ path: path.join(DIR, 'app-dash.png'), fullPage: true });
-  await ctx.close(); await b.close();
+  await ctx.close(); await b.close(); await stopEmu();
   console.log(errs.length ? '\nERRORS:\n' + errs.join('\n') : '\nno page errors');
+  if (errs.length || embedded) process.exit(1);
 })();
