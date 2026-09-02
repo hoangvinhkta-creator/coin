@@ -81,3 +81,80 @@ này, không phải nơi audit một ứng dụng khác).
     CoinDCA rules matrix        = PASS (12/12, §8 chỉ thị)
     Rules merged                = CÓ, tại `firestore.rules` (owner UID còn placeholder)
     Rules deployed               = CHƯA — chờ Owner UID thật + Owner deploy
+
+---
+
+## Addendum — Owner UID production thật (checkpoint tiếp nối, cùng ngày)
+
+Owner deploy Hosting thành công (`https://tinphatcontent.web.app`), mở bằng trình duyệt sẽ
+dùng CoinDCA hằng ngày, Anonymous Auth sinh UID:
+
+    XWUo6IvUqhULI1v1EBrfndEDrE13
+
+**Không sửa `firestore.rules` (git-tracked) để bake UID này vào.** Lý do: file đó đóng vai trò
+kép — vừa là bản deploy, vừa là TEST FIXTURE mà `webapp/test_t09b_persistence.js` (285
+assertion, 14/14 CHECK-T09B) và `webapp/test_shared_rules_merge.js` (120 assertion) đang
+`.replace(/OWNER_UID_REQUIRED/g, <uid động của mỗi lượt test>)` để chạy lặp lại được. Nếu thay
+placeholder bằng UID thật cố định, mọi lượt test sau (dùng UID Anonymous Auth MỚI do chính
+Auth Emulator sinh mỗi lần chạy) sẽ không còn khớp owner UID trong rules → toàn bộ 14 CHECK
+owner-authenticated FAIL. Giữ template là quyết định kỹ thuật đúng, không phải bỏ sót yêu cầu.
+Bù lại: **xác minh trực tiếp bằng chính UID thật này qua emulator** (không phải một UID khác
+đại diện) — kết quả dưới đây — rồi đưa Owner lệnh deploy tự thay UID cục bộ, không commit.
+
+### Xác minh với UID thật (không sửa file, chỉ thay trong bộ nhớ emulator giống hệt cơ chế
+`H.rulesWithUid()` mà bộ test production đang dùng)
+
+| Kiểm | Kết quả |
+|---|---|
+| Định dạng UID (28 ký tự Firebase) | PASS |
+| Unauthenticated → `ethdca/state`/`seed` | DENY |
+| UID sai (Auth Emulator sinh ngẫu nhiên) → `ethdca/state`/`seed` | DENY |
+| **UID thật** → đọc/ghi `ethdca/state` | ALLOW |
+| **UID thật** → đọc/ghi `ethdca/seed` | ALLOW |
+| **UID thật** → document `ethdca/other` (ngoài allow-list) | DENY |
+| **UID thật** → xoá `ethdca/state`/`seed` | DENY (khớp canonical: app không bao giờ xoá) |
+| Content (`config`/`audit_logs`/`users`, mẫu tối thiểu §7) với ruleset mang UID thật | không đổi hành vi |
+
+**16/16 assertion PASS.** Cơ chế mint token: Auth Emulator `accounts:signInWithCustomToken`
+với custom token KHÔNG ký (`alg: none`, chỉ Auth Emulator chấp nhận — không dùng được với
+Firebase thật) mang đúng `uid` cần test — kỹ thuật chuẩn để pin UID cụ thể trong Auth Emulator
+khi `accounts:signUp` không nhận `localId` tuỳ ý.
+
+### Git diff của checkpoint này
+
+    0 file thay đổi. Không có gì cần commit vào code/rules — xác minh xong không để lại trạng
+    thái tạm nào trong worktree.
+
+### Lệnh Owner cần chạy để deploy Firestore Rules thật
+
+Trên máy Owner (cần `firebase login` một lần nếu chưa, và `npm --prefix webapp install` nếu
+`webapp/node_modules/.bin/firebase` chưa có):
+
+```bash
+cd coin   # gốc repo
+
+# 1. Tạo bản deploy cục bộ (KHÔNG commit) — thay OWNER_UID_REQUIRED bằng UID thật:
+sed 's/OWNER_UID_REQUIRED/XWUo6IvUqhULI1v1EBrfndEDrE13/' firestore.rules > /tmp/firestore.rules.deploy
+
+# 2. Deploy đúng file đó (KHÔNG cần sửa firebase.json — trỏ path trực tiếp qua flag):
+webapp/node_modules/.bin/firebase deploy --only firestore:rules --project tinphatcontent \
+  --config <(sed 's#"rules": *"firestore.rules"#"rules": "/tmp/firestore.rules.deploy"#' firebase.json)
+
+# 3. Xoá bản tạm (không bắt buộc, /tmp tự dọn):
+rm -f /tmp/firestore.rules.deploy
+```
+
+Nếu `--config <(...)` (process substitution) không chạy được trên shell của bạn, cách đơn giản
+hơn: tạm thời `sed -i` thay placeholder ngay trong `firestore.rules`, deploy, rồi `git checkout
+-- firestore.rules` để khôi phục template — miễn KHÔNG commit lúc file đang mang UID thật:
+
+```bash
+sed -i 's/OWNER_UID_REQUIRED/XWUo6IvUqhULI1v1EBrfndEDrE13/' firestore.rules
+webapp/node_modules/.bin/firebase deploy --only firestore:rules --project tinphatcontent
+git checkout -- firestore.rules   # khôi phục template ngay sau khi deploy xong
+```
+
+Sau khi rules deploy xong: quay lại đây, tôi sẽ chuẩn bị và chạy production verification
+CHECK-T09B-01/02/03/04/14 trên `https://tinphatcontent.web.app` (lưu ý: môi trường agent hiện
+tại chặn `*.web.app` ở tầng mạng — phần verify cần mở URL thật vẫn cần bạn thực hiện và xác nhận
+lại kết quả; phần verify qua Firestore/Auth REST trực tiếp thì agent làm được).

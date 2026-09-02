@@ -25,7 +25,18 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **OWNER DECISION `DEC-023` (`OD-WEBAPP-06`) — Firebase project thật DÙNG CHUNG
+2026-09-02 — **Owner UID production thật xác minh (checkpoint tiếp nối `DEC-023`)**: Owner
+deploy Hosting thành công (`https://tinphatcontent.web.app`), mở bằng trình duyệt hằng ngày,
+Anonymous Auth sinh UID `XWUo6IvUqhULI1v1EBrfndEDrE13`. Xác minh trực tiếp UID này qua emulator
+(mint token bằng Auth Emulator custom-token, không sửa `firestore.rules` — file đó là test
+fixture dùng chung cho 285+ assertion, thay placeholder cố định sẽ làm gãy toàn bộ owner-flow
+test): 16/16 PASS — unauthenticated/wrong-UID deny, UID thật đọc/ghi state+seed allow, document
+lạ + xoá đều deny, Content không đổi hành vi. Git diff checkpoint này = 0 file. Đưa Owner lệnh
+deploy chính xác (thay UID cục bộ, không commit, rồi deploy `firestore.rules`). Evidence:
+`docs/reviews/T-09B-shared-rules-merge.md` § Addendum. CHƯA deploy rules — chờ Owner tự chạy
+lệnh. `CAP-WEBAPP` budget không đổi (2/0/2).
+
+Trước đó, 2026-09-02 — **OWNER DECISION `DEC-023` (`OD-WEBAPP-06`) — Firebase project thật DÙNG CHUNG
 với ứng dụng "Content"; merge `firestore.rules` an toàn; Hosting RESOLVED.** Project thật
 (`tinphatcontent`, display "CoinDCA") KHÔNG dành riêng cho ETH DCA OS — Firestore đang có dữ
 liệu Content (`users`, `contents`, `schedules`, `groups`, `config`, `fb_queue`, `audit_logs`).
