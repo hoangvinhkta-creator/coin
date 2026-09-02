@@ -25,7 +25,17 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-01 — S010 hoàn tất: **CAP-DATA REPAIR CYCLE #1** thi hành `DEC-016`. `F-S009-01`
+2026-09-02 — **T-09A IMPLEMENTED**: hai lỗi kế toán app web mà `WP-C1` đã XÁC NHẬN nay đã
+được vá và kiểm chứng trên đường sản phẩm thật. **V-01** (release trả nhầm pool tháng) và
+**V-02** (unlock không giới hạn reserve) đều **không còn tái hiện** — reproduction của WP-C1
+chạy lại cho BÁC BỎ ở cả hai. 12/12 REQUIRED check PASS (E1). Batch review bắt buộc (Effective
+Risk HIGH) → **PASS, 0 CONFIRMED BLOCKING**; sinh 4 HARDENING mới (H-19, H-20, H-21, H-22) và 1
+`OUT_OF_SCOPE` định tuyến sang `WP-C4`. `CAP-WEBAPP` budget: allowed 2 (default V4.3) / used 0
+/ remaining 2 — lượt vừa rồi là implementation ban đầu, không phải repair cycle. Task ID mới
+= 0. `webapp/engine.js` và `src/eth_dca_os/**` 0 dòng đổi. **Chuyển T-09A sang `DONE` là hành
+vi của chủ dự án** (`STATE_AUTHORITY.md`).
+
+Trước đó, 2026-09-01 — S010 hoàn tất: **CAP-DATA REPAIR CYCLE #1** thi hành `DEC-016`. `F-S009-01`
 ĐÃ ĐÓNG bằng `CHECK-A4-11` (REQUIRED, E1) — indicator daily nay neo cửa sổ vào NGÀY LỊCH,
 ngày thiếu ra NaN → DEGRADED/INVALID thay vì một số hữu hạn sai. **WP-A4 trở lại DONE**
 với 10/10 REQUIRED check PASS. Batch review bắt buộc (Effective Risk HIGH) → PASS, 0
@@ -44,8 +54,7 @@ Phase 2 — Lớp A (bắt buộc sửa trước official run). Năm gói lớp 
 WP-A4, WP-A7 (+ WP-D1 lớp D). Còn lại của GATE-A: **WP-A1, WP-A5, WP-A6**.
 
 Current Task:
-Không có (S010 vừa đóng CAP-DATA REPAIR CYCLE #1 và đưa WP-A4 về DONE; chờ chỉ thị của
-chủ dự án)
+Không có (T-09A vừa IMPLEMENTED và qua batch review; chờ chủ dự án chuyển sang `DONE`)
 
 Current Task Mode:
 —
@@ -111,7 +120,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | Sau WP-C2 (đóng F-020) |
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
-| READY | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE) |
+| IMPLEMENTED | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. Chuyển `DONE` cần chủ dự án |
 | PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
@@ -483,6 +492,31 @@ khi tiếp tục, cho tới khi **T-09A** vá xong. Severity nâng lên **HIGH**
 
 Sửa: **T-09A** (đã có phạm vi xác định — xem mục T-09A trong roadmap).
 
+**Cập nhật T-09A (2026-09-02) — hai lỗi ĐÃ VÁ, escalation GỠ; risk hạ xuống mức thấp, CHƯA
+đóng.** Bằng chứng E1 chạy thật trên đường sản phẩm
+(`webapp/test_t09a_accounting.js`, 68 assertion — **17 FAIL trước vá, 0 FAIL sau vá**;
+`docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`; `docs/reviews/T-09A-batch-review.md`):
+
+- **(a) V-01 — ĐÃ VÁ.** Ladder nay mang tháng sở hữu tường minh (`L.month`) ghi ngay tại lúc
+  reserve; release VÀ deploy đều quay về đúng pool tháng đó. Reproduction gốc của WP-C1
+  (`test_v01_v02_v03.js::testV01`) chạy lại cho **BÁC BỎ**: huỷ ladder tháng A trả 1.000.000 đ
+  về đúng `smart.a` tháng A, pool tháng B (đang backing một ladder ACTIVE riêng) không đổi một
+  đồng. Ca đa tháng của `test_multi_month_invariant.js` cũng hết kẹt vốn (`smart.r` tháng 1 về
+  0 sau invalidation, trước đây kẹt 1.755.550 đ).
+- **(b) V-02 — ĐÃ VÁ.** `reserveFor()` nay áp đúng công thức của
+  `capital.py::smart_reservable`. Với Smart unlock = 0,0% thì reserve bị TỪ CHỐI hoàn toàn và
+  pool không bị đụng (fail closed, không side effect); biên trên kiểm tại 101% / 99,9% hạn
+  mức; hạn mức trừ dần phần đã reserve/deploy trong tháng. Reproduction gốc cho **BÁC BỎ**.
+- **(c) V-03 — KHÔNG ĐỔI.** Vẫn BÁC BỎ, `H-18` giữ nguyên DEFERRED: ba điều kiện re-trigger
+  đều không xảy ra (`webapp/engine.js` 0 dòng đổi).
+
+Vì sao **chưa đóng RSK-003** ở phiên này: `STATE_AUTHORITY.md` dành `DONE` cho chủ dự án, và
+risk này gắn với `T-09A` + `T-03` — cả hai chưa được chủ dự án chuyển trạng thái. Escalation
+"dừng dùng app với tiền thật" thì **gỡ được ngay**: hai đường làm sai sổ đã bị chặn và có test
+hồi quy giữ chúng. Lưu ý dữ liệu cũ: state đã lưu TRƯỚC bản vá có thể đã sai sẵn do V-01/V-02;
+bản vá KHÔNG migrate và KHÔNG sửa lịch sử — chủ dự án cần tự đối chiếu sổ. Ladder tạo trước
+bản vá được suy luận tháng sở hữu và ĐƯỢC BÁO HIỆN bằng banner trên app.
+
 ### RSK-004 — Bộ test app web không chạy được từ bản checkout sạch (mức: trung bình) — S001 XÁC NHẬN (E1); **ĐÃ KHẮC PHỤC tại WP-C1 (2026-09-02)**
 Bằng chứng E1 tại S000: hai test webapp **chạy được và cho kết quả đúng**, nhưng chỉ sau khi
 dựng thủ công hai thứ không có trong repo — `webapp/app_final.html` (phải build) và
@@ -720,6 +754,52 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- T-09A (REPAIR V-01/V-02) — 2026-09-02 — branch `claude/t09a-accounting-repair-v4ewhq` từ
+  `origin/main` @ `814d185`. **IMPLEMENTED** — 12/12 REQUIRED check PASS (E1), toàn bộ bằng
+  chứng chạy thật qua đường sản phẩm (UI → `app_logic` → `engine` → state), không gọi trực
+  tiếp hàm engine.
+  (1) **Test trước, vá sau.** Chạy lại reproduction WP-C1 trên `origin/main` @ `814d185`:
+  `BEFORE V-01 = XÁC NHẬN`, `BEFORE V-02 = XÁC NHẬN`. Dựng
+  `webapp/test_t09a_accounting.js` (68 assertion, sáu bất biến A–F) và chứng minh nó **FAIL 17
+  assertion trên cây chưa vá** trước khi sửa một dòng production nào.
+  (2) **Root cause V-01**: ladder không mang tháng kế toán sở hữu vốn; `releaseLadder()` **và**
+  `poolFor()` trong `addBuy()` đều dùng `currentMonth()` (key tháng lớn nhất) làm pool đích.
+  Sửa: `L.month` ghi tường minh ngay tại lúc reserve; release và deploy đều quay về đúng pool
+  đó. Ladder tạo trước bản vá được suy luận tháng từ `L.created` và **được báo hiện bằng
+  banner** — không migrate, không ghi đè state.
+  (3) **Root cause V-02**: `reserveFor()` chỉ so với available, không tham chiếu unlock. Sửa:
+  `smartReservable()`/`oppReservable()` dùng đúng công thức của `capital.py::smart_reservable`
+  (unlocked(tháng) − đã reserve − đã deploy trong tháng, kẹp trên bởi available), fail closed
+  khi chưa có `view`.
+  (4) Bút toán `RELEASE` nay ghi số **thực sự dịch chuyển** (trước ghi số cam kết) và đánh dấu
+  `LADDER_RELEASE_SHORTFALL` khi hai số lệch nhau.
+  (5) `AFTER V-01 = BÁC BỎ`, `AFTER V-02 = BÁC BỎ` (reproduction gốc của WP-C1, không sửa logic
+  kết luận). `test_t09a_accounting.js` **0 FAIL / 68**. `npm --prefix webapp test` 5/5 exit 0.
+  `python3 -m pytest -q` **286 passed, exit 0**.
+  (6) Diff production theo KHAI BÁO: **1 file, +88 / −16** (`webapp/app_logic.js`).
+  `webapp/engine.js`, `src/eth_dca_os/**`, `pyproject.*` = **0 dòng đổi**.
+  (7) **Batch review bắt buộc** (Effective Risk HIGH) → **PASS, 0 CONFIRMED BLOCKING**,
+  `ELIGIBLE_FOR_FREEZE` (advisory). 4 HARDENING mới: `H-19` (`monthKey()` dùng giờ địa phương),
+  `H-20` (đường mua trực tiếp không bị giới hạn unlock), `H-21` (lệnh đo budget trong
+  `PRODUCTION_PATHS.md` §1 nuốt file test mà §2 loại trừ), `H-22`
+  (`task_registry_snapshot.sh` bỏ sót `IMPLEMENTED`/`VERIFYING` — khiếm khuyết CÓ TRƯỚC phiên
+  này, `T-03` đã vắng mặt trong ảnh chụp từ trước). 1 `OUT_OF_SCOPE` → `WP-C4`
+  (`F-T09A-03`: thiếu HWM §6 / hysteresis §5 / daily limit §11 — lệch theo chiều CHẶT HƠN).
+  Biên bản: `docs/reviews/T-09A-batch-review.md`.
+  (8) `H-18` / V-03: **giữ nguyên DEFERRED**, không re-trigger.
+  (9) Budget `CAP-WEBAPP`: allowed 2 (default V4.3 theo Effective Risk HIGH — chủ dự án CHƯA
+  đặt con số tường minh) / used **0** / remaining 2. Lượt `814d185..d125fe5` là implementation
+  ban đầu, không phải repair cycle. Ledger §2.2 mới khởi lập.
+  (10) **Task ID mới = 0.** `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md` là Task Spec cho ID
+  **đã đăng ký sẵn** trong registry (`CAPABILITY_MODEL.md` §II.5 hình thức 1). Registry đo lại
+  bằng tay với danh sách trạng thái ĐẦY ĐỦ: **BEFORE 29 → AFTER 29 task ID, diff RỖNG**; file
+  task 20 → 21. (`task_registry_snapshot.sh` báo 28 → 27 vì nó bỏ sót `IMPLEMENTED` và
+  `VERIFYING` — `H-22`, khiếm khuyết có trước phiên này.)
+  (11) KHÔNG đụng: `WP-A4` (`DONE`), `F-S009-01` (`CLOSED`), `CAP-DATA` (allowed 2 / used 1 /
+  remaining 1), `F-S010-03` (`OUT_OF_SCOPE` → `WP-C4`). KHÔNG mở dashboard, `WP-C2`, `WP-A6`,
+  KHÔNG chạy `T-06`.
+  (12) **Escalation "dừng dùng app với tiền thật" được GỠ** — xem `RSK-003`. Cảnh báo còn lại:
+  state đã lưu TRƯỚC bản vá có thể đã sai sẵn; bản vá không sửa lịch sử.
 - WP-C1 (STREAM WEB) — 2026-09-02 — branch `claude/wp-c1-web-skeleton-b3oieq` từ `origin/main`
   @ `cb75f9d`. **DONE** — 8/8 REQUIRED check PASS (E1), evidence chạy thật, không đọc code suông.
   (1) F-027 đóng: harness khôi phục từ bản checkout sạch — `webapp/package.json` mới (ghim
@@ -1090,6 +1170,20 @@ lưu lại để đối chiếu lịch sử: D2 R2 B2 A1 X2 → 1.85 → B; U1 V
 D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
+
+**Cập nhật sau T-09A (2026-09-02).** Mục "Recommended Session" bên dưới được viết trước
+S010/T-09A và giữ nguyên làm dấu vết. Trạng thái hiện tại và hành động nhỏ nhất kế tiếp:
+
+- `WP-A4` **DONE** (S010, `CAP-DATA` repair cycle #1 đã tiêu).
+- `WP-C1` **DONE**; `T-09A` **IMPLEMENTED**, batch review PASS 0 BLOCKING.
+- **NEXT SMALLEST ACTION** — chủ dự án đọc `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md` +
+  `docs/reviews/T-09A-batch-review.md` và ra **đúng một** quyết định: chuyển `T-09A` sang
+  `DONE` hay không (`STATE_AUTHORITY.md` dành `DONE` cho chủ dự án). Kèm theo đó, nếu muốn,
+  đặt hạn mức repair tường minh cho `CAP-WEBAPP` như `DEC-012`/`DEC-017` đã làm cho
+  `CAP-PROV`/`CAP-DATA` — hiện đang dùng default V4.3 (allowed 2, used 0).
+- Blocker V1 còn lại **không đổi** vì T-09A: `WP-A1` (`CAP-PROV` budget = 0, cần Owner
+  Decision), `WP-A5`, `WP-A6` trên đường găng GATE-A; `BLK-001` (mạng Binance); `T-09B`
+  (RSK-001, lưu trữ bền) cho phần V1 "dữ liệu tồn tại sau reload/restart" ở mức bền vững.
 
 Branch authority (bắt buộc, từ `DEC-013` 2026-09-01):
 

@@ -421,8 +421,20 @@ E1
 Evidence:
 `webapp/engine.js` và `src/eth_dca_os/**` **0 dòng đổi** (`git diff --stat`). Bản vá làm JS
 **tiến gần** bản Python chứ không rời xa: `smartReservable()` dùng đúng công thức của
-`capital.py::smart_reservable`. Chạy đầy đủ `python3 -m pytest -q` để xác nhận đường
-Python/official không bị ảnh hưởng.
+`capital.py::smart_reservable`. Chạy đầy đủ bộ test Python để xác nhận đường Python/official
+không bị ảnh hưởng:
+
+```
+$ pip install -q -e ".[dev]" && python3 -m pytest -q
+........................................................................ [ 25%]
+........................................................................ [ 50%]
+........................................................................ [ 75%]
+......................................................................   [100%]
+286 passed — exit code 0
+```
+
+Phiên bản công cụ được ghim vào bằng chứng: Python 3.11.15 · node v22.22.2 · npm 10.9.7 ·
+playwright 1.56.1 · Chromium `/opt/pw-browsers/chromium`.
 
 Executed By:
 Claude (T-09A)
@@ -477,15 +489,27 @@ Evidence Level:
 E1
 
 Evidence:
-`governance/scripts/governance/task_registry_snapshot.sh` BEFORE/AFTER — số task ID trong vùng
-registry của `PROJECT/PROJECT_PROGRESS.md` không đổi (28). Số file task tăng 20 → 21 vì file
-này là Task Spec cho **T-09A đã đăng ký sẵn**, không phải ID mới:
+Đo trên **registry**, không grep cả repo (`CAPABILITY_MODEL.md` §II.9).
+
+`governance/scripts/governance/task_registry_snapshot.sh` BEFORE/AFTER cho `28 → 27`. Con số
+đó **SAI** và không phải do phiên này: script bỏ sót hai trạng thái `IMPLEMENTED` và
+`VERIFYING` của chính lifecycle canonical — xem `HARDENING_BACKLOG.md` **H-22** /
+`F-T09A-05`. `T-03` (`VERIFYING`) đã vắng mặt trong ảnh chụp TRƯỚC khi T-09A chạm vào bất cứ
+thứ gì.
+
+Đo lại bằng tay với danh sách trạng thái ĐẦY ĐỦ (`git show 814d185:PROJECT/PROJECT_PROGRESS.md`
+so với working tree):
 
 ```
-new_registered_task_ids            = 0
-proposals_created                  = 0
+BEFORE = 29 task ID   AFTER = 29 task ID   diff = RỖNG (tập ID trùng khít)
+
+new_registered_task_ids                 = 0
+proposals_created                       = 0
 owner_assignment_required_entries_added = 0
 ```
+
+Số file task tăng 20 → 21 vì file này là Task Spec cho **T-09A đã đăng ký sẵn** (hình thức 1
+của `CAPABILITY_MODEL.md` §II.5), không phải ID mới.
 
 WP-A4 giữ `DONE`; `F-S009-01` giữ `CLOSED`; `CAP-DATA` giữ `allowed 2 / used 1 / remaining 1`;
 `F-S010-03` giữ `OUT_OF_SCOPE → WP-C4`. Bản vá không chạm `src/eth_dca_os/**` nên không chạm
@@ -510,7 +534,9 @@ E1
 Evidence:
 `docs/reviews/T-09A-batch-review.md` — một lượt duy nhất trên TOÀN BỘ diff tích luỹ của T-09A,
 trả tất cả finding BLOCKING trong một lần theo `REVIEW_PROTOCOL.md`. Kết quả: **0 CONFIRMED
-BLOCKING**; các finding còn lại phân loại HARDENING kèm `RE_TRIGGER_CONDITION`.
+BLOCKING**, 0 PROVISIONAL, **4 HARDENING** (`H-19`, `H-20`, `H-21`, `H-22` — mỗi mục có
+`RE_TRIGGER_CONDITION`), **1 OUT_OF_SCOPE** đã có owner (`F-T09A-03` → `WP-C4`).
+VERDICT = PASS → `ELIGIBLE_FOR_FREEZE` (advisory; phiên này KHÔNG ghi `FROZEN`/`DONE`).
 
 Executed By:
 Claude (T-09A)

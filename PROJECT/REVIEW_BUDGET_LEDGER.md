@@ -102,7 +102,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-DATA` | `WP-A4` | `06b381c` | **1** | 0 | DONE lại tại S010 sau CAP-DATA REPAIR CYCLE #1 (10/10 REQUIRED PASS) — xem §2.1 và §4.2 |
 | `CAP-MEASURE` | `WP-A5` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-ORDER` | `WP-A6` | chưa bắt đầu | 0 | 0 | PLANNED |
-| `CAP-WEBAPP` | `WP-C1` | chưa bắt đầu | 0 | 0 | READY |
+| `CAP-WEBAPP` | `WP-C1` | `cb75f9d` | 0 | 0 | `WP-C1` DONE 2026-09-02; `T-09A` IMPLEMENTED 2026-09-02 — xem §2.2 |
 | `CAP-SPEC` | `WP-D2` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-GOVTOOL` | `MICRO-GOVDEF-001` | `4fab2e9` | 0 | 0 | Phần glob validator chưa có owner |
 
@@ -140,6 +140,13 @@ Delivery change budget tích luỹ, đo trực tiếp (không cộng tay):
 
 Con số trước S010 là `5 files, +282 / −36`; chênh lệch đúng bằng chu kỳ 1
 (`indicators.py`, +74 / −5). Tổng tích luỹ vẫn là con số ĐO, không phải phép cộng.
+
+**Ghim mốc đo (thêm tại T-09A, 2026-09-02 — KHÔNG đổi con số nào ở trên).** `HEAD` trong lệnh
+trên là `ef8cdbb`, HEAD của S010. Đọc lại lệnh đó ở một HEAD muộn hơn sẽ ra số khác vì glob
+`webapp` nuốt cả công việc của capability khác (T-09A sửa `webapp/app_logic.js`) — đó là
+`HARDENING_BACKLOG.md` **H-21**. Phép đo tích luỹ của `CAP-DATA` phải chạy với
+`06b381c..ef8cdbb`, hoặc giới hạn path vào `src/eth_dca_os`, để không quy nhầm công việc của
+`CAP-WEBAPP` sang `CAP-DATA`.
 
 Trạng thái budget:
 
@@ -179,6 +186,74 @@ nhau (`WP-A4` vs `WP-A1`); đây không phải một task split để giải ph�
 tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budget (`DEC-012`,
 2026-09-01). Việc hấp thụ `F-E2A1R3-05` vào WP-A4 (`DEC-014`) là định tuyến finding theo
 `REVIEW_PROTOCOL.md`, không phải tạo unit công việc mới: số task ID mới = **0**.
+
+
+### 2.2 `CAP-WEBAPP` — App web: sổ sách, trạng thái thực thi, parity JS/Python
+
+    LINEAGE ROOT   = WP-C1 (docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md)
+    THÀNH VIÊN     = WP-C1 (DONE), T-09A (IMPLEMENTED), WP-C2 (BLOCKED), WP-C3, WP-C4 (PLANNED)
+    BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
+                     khi nhánh web WP-C1 tách ra khỏi `main`)
+    BRANCH         = main   (canonical trunk từ `DEC-013`)
+
+Mục này được **khởi lập tại T-09A** vì trước đó `CAP-WEBAPP` chưa tiêu gì. Bảng §2 ghi
+"chưa bắt đầu" là đúng ở thời điểm viết (2026-09-01), nhưng đã lạc hậu kể từ khi `WP-C1`
+DONE ngày 2026-09-02. `USED` vẫn = 0 vì **chưa tiêu**, không phải vì được reset.
+
+| # | Loại | BASE SHA | HEAD SHA | Diff production path (theo khai báo) | Kết quả |
+|---|---|---|---|---|---|
+| — | `WP-C1` (kết luận, không vá) | `cb75f9d` | `814d185` | **0** — `CHECK-C1-07` chứng minh `app_logic.js`/`engine.js` không đổi một dòng | 8/8 REQUIRED PASS (E1) |
+| 0 | `T-09A` implementation ban đầu | `814d185` | `d125fe5` | 1 file, +88 / −16 (`webapp/app_logic.js`) | 12/12 REQUIRED PASS (E1); batch review PASS, 0 BLOCKING |
+
+    REPAIR CYCLES ĐÃ TIÊU  = 0   (lượt trên là implementation ban đầu, không phải repair
+                                  cycle — cùng quy ước đã dùng ở §1 cho CAP-PROV và §2.1
+                                  cho CAP-DATA)
+    VÒNG E2 ĐÃ TIÊU        = 0   (WP-C1 và T-09A đều đóng ở mức E1; batch review T-09A là
+                                  E1 + dò đối kháng, KHÔNG phải E2)
+
+Delivery change budget tích luỹ, đo trực tiếp (không cộng tay). Hai con số vì
+`PRODUCTION_PATHS.md` tự mâu thuẫn — xem `HARDENING_BACKLOG.md` **H-21**:
+
+    # lệnh glob ghi ở PRODUCTION_PATHS.md §1 (nuốt cả file test mà §2 loại trừ)
+    git diff --shortstat cb75f9d..HEAD -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 8 files changed, 590 insertions(+), 17 deletions(-)
+
+    # theo KHAI BÁO production path (§1 bảng + §2 loại trừ) — con số CÓ THẨM QUYỀN
+    git diff --shortstat cb75f9d..HEAD -- webapp/app_logic.js webapp/engine.js \
+        webapp/app_shell.html webapp/build_app.js src/eth_dca_os pyproject.toml pyproject.lock
+      -> 1 file changed, 88 insertions(+), 16 deletions(-)
+
+`webapp/engine.js` = 0 dòng đổi kể từ baseline, nên T-09A KHÔNG mở rộng bề mặt trôi parity
+của `RSK-002`.
+
+Trạng thái budget:
+
+    ALLOWED BUDGET            = 2 repair cycle   <- default V4.3 theo Effective Risk = HIGH
+                                                    (`GOVERNANCE_V4.md` §II.2). Chủ dự án
+                                                    CHƯA đặt con số tường minh cho
+                                                    `CAP-WEBAPP` như `DEC-012`/`DEC-017` đã
+                                                    làm cho `CAP-PROV`/`CAP-DATA`.
+    CURRENT BUDGET USED       = 0 repair cycle
+    CURRENT BUDGET REMAINING  = 2 repair cycle
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+Effective Risk của `CAP-WEBAPP` tại T-09A = **HIGH**: `Effective Risk = MAX(Local Risk 3,
+Blast Radius)`, và Blast Radius chấm theo đường dữ liệu — V-01/V-02 rơi thẳng vào "wrong
+money … settlement" của `RISK_MODEL.md`. Golden Reduction KHÔNG thoả (chưa có Golden —
+`H-10`). Hệ quả đã thi hành: batch review bắt buộc cuối phiên.
+
+Ghi rõ giới hạn, không tự nâng thẩm quyền: `ALLOWED = 2` ở đây là **default V4.3**, không
+phải một Owner Decision. Nếu chủ dự án muốn một con số khác cho `CAP-WEBAPP`, đó là quyết
+định của chủ dự án và phải ghi ở `PROJECT/PROJECT_DECISIONS.md`; phiên T-09A KHÔNG tự đặt
+hạn mức và KHÔNG cấp `OWNER_EXTENSION`.
+
+Budget tầng B (`SESSION_PRODUCTION_DIFF_MAX` / `GOLDEN_CUMULATIVE_DIFF_MAX`) vẫn chưa khai
+được vì chưa có Golden baseline canonical — `H-10` vẫn mở, `GOLDEN_BASELINE_SHA` vẫn
+`PENDING_OWNER_DATA / MIGRATION_REQUIRED`.
+
+`CAP-WEBAPP` KHÔNG kế thừa và KHÔNG bị tính vào budget của `CAP-PROV` hay `CAP-DATA`: ba
+lineage root khác nhau, và `T-09A` đã tồn tại trong roadmap từ RCP-001 (2026-08-23) — không
+phải task tách ra để giải phóng budget. Số task ID mới do T-09A tạo = **0**.
 
 ---
 

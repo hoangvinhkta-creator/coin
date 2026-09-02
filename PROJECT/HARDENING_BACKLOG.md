@@ -514,6 +514,112 @@ ghi BÁC BỎ, không phải BLOCKING).
 
 ---
 
+## H-19 — `monthKey()` dùng giờ địa phương của máy, không dùng `accounting_timezone` đã khai
+
+Capability: `CAP-WEBAPP` · Owner: `T-09A` (ghi nhận tại batch review) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09A batch review, `docs/reviews/T-09A-batch-review.md` §4 `F-T09A-01`)
+
+`monthKey()` (`webapp/app_logic.js`) tính khoá tháng bằng `getFullYear()`/`getMonth()` — giờ
+địa phương của máy đang chạy — trong khi `config.accounting_timezone = "Asia/Ho_Chi_Minh"`
+được khai trong seed và không được dùng ở bất kỳ đâu trong app. Bản vá T-09A mở rộng vùng ảnh
+hưởng của hàm này: nhánh suy luận của `ladderMonth()` gọi `monthKey(new Date(L.created))` để
+đoán tháng sở hữu của ladder tạo TRƯỚC bản vá.
+
+Vì sao KHÔNG phải BLOCKING: ladder tạo từ bản vá trở đi luôn mang `L.month` tường minh nên
+nhánh suy luận không chạy; mọi ladder rơi vào nhánh suy luận đều được liệt kê tên trên banner
+"THÁNG SỞ HỮU SUY LUẬN" (fail visibly, `DEC-011` điểm 9); và `DEC-011` OD-1 xác định V1 chạy
+trên MỘT máy của chủ dự án, nên không dựng được counterexample từ nguồn canonical nào của
+`PRODUCTION_PATHS.md` §3. Cùng lớp với `H-02` (tzdata quyết định biên accounting month).
+
+    RE_TRIGGER_CONDITION:
+    - app được mở trên máy hoặc múi giờ khác `Asia/Ho_Chi_Minh`; HOẶC
+    - banner "THÁNG SỞ HỮU SUY LUẬN" bật lên trên state thật của chủ dự án; HOẶC
+    - `WP-C2` / `T-09B` chốt lại ngữ nghĩa biên accounting month cho app.
+
+---
+
+## H-20 — Đường mua TRỰC TIẾP (không gắn zone) không bị giới hạn theo unlock
+
+Capability: `CAP-WEBAPP` · Owner: `T-09A` (ghi nhận tại batch review) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09A batch review, `F-T09A-02`)
+
+`addBuy()` nhánh không gắn zone trừ thẳng `pool.a → pool.d` mà không tham chiếu unlock. Sau
+bản vá V-02, đây là đường duy nhất còn lại để vốn Smart chưa unlock chuyển sang DEPLOYED.
+
+Vì sao KHÔNG phải BLOCKING — và vì sao chặn nó sẽ là lỗi TỆ HƠN: đường này **ghi nhận một
+giao dịch đã xảy ra ngoài đời**. Chặn nó theo unlock sẽ làm mất bản ghi giao dịch thật, chạm
+thẳng tiêu chí **C** của `DEC-011` ("mất hoặc làm hỏng lịch sử giao dịch thực tế") — nặng hơn
+hẳn hệ quả nó gây ra. Strategy §12 nói về **reserve**, không về ghi nhận.
+
+    RE_TRIGGER_CONDITION:
+    - `WP-C2` biến app từ GHI NHẬN sang ĐẶT LỆNH (execution state machine); HOẶC
+    - chủ dự án yêu cầu đường mua trực tiếp cũng bị chặn theo unlock, kèm một lối thoát tường
+      minh để vẫn ghi được giao dịch đã xảy ra.
+
+---
+
+## H-21 — Lệnh đo budget ở `PRODUCTION_PATHS.md` §1 nuốt cả file test mà §2 loại trừ
+
+Capability: `CAP-GOVTOOL` · Owner: **chưa có** (cùng khe với `H-08`, `H-12`) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09A batch review, `F-T09A-04`)
+
+`PRODUCTION_PATHS.md` §2 loại trừ tường minh `webapp/test_app.js`, `webapp/test_zone.js` khỏi
+production path, nhưng lệnh đo budget chuẩn ở §1 dùng glob `-- ... webapp ...` nên đếm cả file
+test. Đo được ở T-09A: **590 insertion** (glob) so với **88 insertion** (theo khai báo) — lệch
+bảy lần.
+
+`GOVERNANCE_V4.md` §II.6 yêu cầu nguồn cao hơn thắng **và** phải nêu finding reconciliation
+khi mâu thuẫn nằm trong CÙNG một artifact. Bảng khai báo (§1 + §2) thắng lệnh tiện dụng, nên
+T-09A báo cáo con số theo khai báo và ghi cả hai. Đây là `H-12` biểu hiện ở dạng đo được.
+
+Không BLOCKING: hệ quả là phép đo budget bị thổi phồng — chặt hơn chứ không lỏng hơn; không
+đường production nào cho ra kết quả sai.
+
+    RE_TRIGGER_CONDITION:
+    - một phiên bất kỳ dùng con số glob làm căn cứ tuyên bố `CHANGE_BUDGET_EXCEEDED`; HOẶC
+    - `H-12` được chủ dự án mở để khai lại production path theo CHUỖI dữ liệu; HOẶC
+    - `webapp/` có thêm file production mới khiến hai phép đo lệch tiếp.
+
+---
+
+## H-22 — `task_registry_snapshot.sh` bỏ sót trạng thái `IMPLEMENTED` và `VERIFYING` của chính lifecycle canonical
+
+Capability: `CAP-GOVTOOL` · Owner: **chưa có** (cùng khe với `H-08`, `H-09`, `H-21`) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09A batch review, `F-T09A-05`)
+
+`governance/scripts/governance/task_registry_snapshot.sh` lọc dòng roadmap bằng danh sách
+trạng thái `DONE|PLANNED|READY|BLOCKED|IN_PROGRESS|DEFERRED|CANCELLED|NOT_PLANNED`. Thiếu
+**`IMPLEMENTED`** và **`VERIFYING`** — hai trạng thái nằm ngay trong lifecycle canonical mà
+`AGENTS.md` §4 và `CLAUDE.md` khai (`NOT_PLANNED → PLANNED → READY → IN_PROGRESS →
+IMPLEMENTED → VERIFYING → DONE`). Task ở hai trạng thái đó **biến mất im lặng** khỏi ảnh chụp
+registry.
+
+Đo được: `T-03` đang `VERIFYING` từ 2026-09-02 và **đã** vắng mặt trong ảnh chụp TRƯỚC khi
+T-09A đụng vào bất cứ thứ gì — khiếm khuyết này có trước phiên T-09A. Khi T-09A chuyển
+`READY → IMPLEMENTED`, `T-09A` cũng biến mất, làm `count_roadmap_task_ids` **giảm** 28 → 27
+trong khi tập ID thật không đổi.
+
+Vì sao nguy hiểm hơn vẻ ngoài: đây đúng là công cụ mà `CAPABILITY_MODEL.md` §II.9 chỉ định để
+đo chống-sinh-sôi ("measured, not asserted"). Một công cụ đếm thiếu có thể (a) giấu một ID
+thật sự mới nếu nó được thêm ở trạng thái `IMPLEMENTED`/`VERIFYING`, hoặc (b) làm một phiên
+trung thực trông như vừa xoá task. `STATE_AUTHORITY.md` § Vacuous Validation cấm coi một phép
+đo không nhìn thấy hết tập là PASS có ý nghĩa.
+
+Vì sao KHÔNG phải BLOCKING: không có đường production nào cho ra kết quả sai — đây là tầng
+tooling governance, cùng lớp với `H-08` và `H-09`, và `CAP-GOVTOOL` vẫn đang
+`OWNER_ASSIGNMENT_REQUIRED`. T-09A KHÔNG tự sửa script (ngoài Expected Touch Area, và sửa nó
+là kéo việc ngoài Vertical Slice lên đường găng — ngưỡng **D** của Absorption Limit). Phiên
+T-09A thay vào đó ĐO LẠI BẰNG TAY với danh sách trạng thái đầy đủ và báo cáo cả hai con số.
+
+    RE_TRIGGER_CONDITION:
+    - chủ dự án giao owner cho `CAP-GOVTOOL` (khi đó gom cùng `H-08`, `H-09`, `H-21` thành một
+      gói — ba lần sửa rời rạc là lãng phí); HOẶC
+    - một phiên bất kỳ dùng `count_roadmap_task_ids` làm bằng chứng chống-sinh-sôi mà không đo
+      lại bằng tay; HOẶC
+    - lifecycle canonical được bổ sung thêm trạng thái mới.
+
+---
+
 ## Soát lại toàn bộ backlog dưới Owner Product Intent (2026-09-01)
 
 `DEC-011` bổ sung trục `BLOCKING V1` (tiêu chí A–F). Đã soát lại **từng mục** H-01…H-13 theo
@@ -553,3 +659,15 @@ mục nào bị xoá và không mục nào được coi là đã đóng.
 Một finding thứ ba của cùng batch review — **F-S010-03**, lệch parity JS/Python — KHÔNG nằm
 trong backlog này vì nó có owner: `OUT_OF_SCOPE` → `CAP-WEBAPP` / `WP-C4`, dưới rủi ro đã
 đăng ký `RSK-002`. Ghi ở đây một dòng để người đọc backlog không tưởng rằng nó bị bỏ quên.
+
+**Cập nhật 2026-09-02 (T-09A batch review).** Bốn mục mới **H-19**, **H-20**, **H-21**, **H-22** đã được
+soát theo A–F của `DEC-011` ngay khi ghi; không mục nào chạm A–F, không mục nào nằm trên đường
+găng V1. `H-18` **giữ nguyên DEFERRED**: ba điều kiện re-trigger của nó đều KHÔNG xảy ra —
+`webapp/engine.js` 0 dòng đổi (nên `smartSpacing`/`adr30`/`factorScores`/`SUB_NAMES` không đổi)
+và chủ dự án không yêu cầu thêm kiểm tra `data_quality` tường minh.
+
+Một finding thứ tư của batch review T-09A — **F-T09A-03** (app chỉ áp SMART_UNLOCK hiện hành;
+thiếu HWM §6, hysteresis §5, daily limit §11) — KHÔNG nằm trong backlog này vì nó có owner:
+`OUT_OF_SCOPE` → `CAP-WEBAPP` / `WP-C4`, cùng đường với `F-S010-03`, dưới `RSK-002`. Lệch theo
+chiều CHẶT HƠN spec (fail closed), đã khai ở khối `DEFERRED_BY_MINIMAL_FIX` của
+`docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`.
