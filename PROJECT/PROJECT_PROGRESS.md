@@ -91,7 +91,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-00 | Mở dự án và dựng bộ điều hành | Chọn profile, khởi tạo trạng thái dự án, lập kế hoạch khảo sát và lộ trình sơ bộ | C | xhigh | Không phụ thuộc. Mở đường cho T-01 |
 | DONE | T-01 | Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C | xhigh | Sau T-00. Chế độ AUDIT read-only |
 | DONE | T-02 | Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C | xhigh | Sau T-01. Song song được với T-03 |
-| BLOCKED | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. Chuyển DONE khi WP-C1 hoàn tất và ba nghi vấn có kết luận E1 |
+| VERIFYING | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. **CHECK-03-01 PASS tại WP-C1 (2026-09-02)** — gỡ BLOCKED; tất cả REQUIRED/RECOMMENDED check đều PASS. Chuyển DONE cần phiên riêng xác nhận Exit Criteria đầy đủ |
 | DONE | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. HOÀN TẤT tại S002 — 15 file task đã đóng băng gate |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
 | IN_PROGRESS | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S008: CHECK-A1-01..A1-10 PASS (E2 xác nhận), CHECK-A1-11 E2 **FAIL** vòng ba — hai finding chặn F-E2A1-01/02 đã đóng nhưng F-E2A1-03 còn mở và nay ở mức CAO, cộng sai lệch contract F-E2A1R3-03. KHÔNG mở vòng patch thứ tư (ESCALATION_PROTOCOL) |
@@ -106,12 +106,12 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | Sau T-06. Song song với WP-B1, WP-B3 |
 | PLANNED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Sau T-06. Song song với WP-B1, WP-B2. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | Sau T-06 và **GATE-B** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE). Chặn T-11 |
-| READY | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | Sau T-01 (đã DONE). Độc lập hoàn toàn — có thể chạy ngay, song song với toàn bộ lớp A. Gỡ BLOCKED cho T-03 khi xong (đóng V-01, V-02, V-03, F-027) |
+| DONE | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | **DONE 2026-09-02** (8/8 REQUIRED PASS, E1). V-01 XÁC NHẬN, V-02 XÁC NHẬN, V-03 BÁC BỎ (an toàn tình cờ, HARDENING). Harness khôi phục (F-027 đóng). Gỡ BLOCKED cho T-03 (CHECK-03-01 PASS) |
 | BLOCKED | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | Sau T-05 (DEC-005 còn PENDING → BLOCKED). Cần ADR quyết định phạm vi trước khi bắt đầu (đóng F-006) |
 | PLANNED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | Sau WP-C2 (đóng F-020) |
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
-| PLANNED | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi nếu WP-C1 xác nhận là có thật, trước khi app được dùng với tiền thật | C | high | Sau WP-C1. Nếu WP-C1 bác bỏ cả ba nghi vấn, T-09A có thể thu hẹp phạm vi hoặc CANCELLED |
+| READY | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE) |
 | PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
@@ -449,22 +449,41 @@ nhưng parity chỉ phủ OSCORE tổng — chưa phủ unlock, spacing, phân b
 regime. Mỗi tính năng port thêm sang JS sẽ mở rộng bề mặt trôi nhanh hơn khả năng phát hiện.
 Giảm thiểu: **WP-C4** (RCP-001) — mở rộng phạm vi parity trước khi port thêm.
 
-### RSK-003 — Nghi vấn ba lỗi kế toán trong app web (mức: trung bình, một phần đã được loại trừ)
+### RSK-003 — Ba lỗi kế toán trong app web (mức: CAO — hai trong ba XÁC NHẬN LÀ LỖI THẬT) — WP-C1 XÁC NHẬN (E1)
 Ghi nhận ban đầu từ việc đọc code: (a) hàm chọn tháng hiện hành trả về tháng có key lớn nhất
 chứ không phải tháng của ladder, nên release vốn có thể trả nhầm pool khi có nhiều tháng;
 (b) mức unlock không giới hạn số vốn được reserve; (c) trạng thái dữ liệu INVALID không chặn
 tạo action mới như Strategy §3 yêu cầu.
 
-Cập nhật sau bằng chứng E1 tại S000: `webapp/test_zone.js` chạy thật và cho thấy bất biến kế
-toán **giữ đúng trong kịch bản một tháng** — tổng bảo toàn 3.000.000 qua đủ chuỗi thao tác
-fill toàn phần → fill một phần → invalidation → release, và không pool nào âm.
-Nghĩa là (a) **chưa bị bác bỏ nhưng cũng chưa được tái hiện**: test hiện có chỉ dùng một tháng,
-đúng vào điểm mù của nghi vấn. (b) và (c) chưa có ca kiểm thử nào chạm tới.
+**Cập nhật WP-C1 (2026-09-02) — kết luận E1 bằng ca kiểm thử chạy thật, không đọc code suông**
+(`webapp/test_v01_v02_v03.js`, `webapp/test_multi_month_invariant.js` — output đầy đủ trong
+`docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md`):
 
-Còn lại phải xác minh ở **WP-C1** (RCP-001) bằng ca kiểm thử **đa tháng** cho (a), và ca kiểm
-thử riêng cho (b), (c). Sửa (nếu xác nhận): T-09A.
+- **(a) V-01 — XÁC NHẬN LÀ LỖI THẬT.** Ca kiểm thử đa tháng (ladder tháng A + ladder riêng
+  tháng B, huỷ ladder tháng A khi tháng B đang là `currentMonth()`) cho thấy `releaseLadder()`
+  (`webapp/app_logic.js:302-322`) cộng nhầm vốn vào `smart.a` tháng B đồng thời rút nhầm từ
+  `smart.r` đang backing ladder RIÊNG, còn ACTIVE, của tháng B — trong khi `smart.r` của tháng
+  A (nơi vốn thực sự bị reserve) không hề giảm, tức KẸT VĨNH VIỄN. Tái hiện được cả bằng thao
+  tác Hủy thủ công lẫn qua luồng invalidation tự động (2 daily close liên tiếp trên
+  invalidation price).
+- **(b) V-02 — XÁC NHẬN LÀ LỖI THẬT.** Với Smart unlock đo được = 0,0% (OSCORE thật của seed),
+  `reserveFor()` (`webapp/app_logic.js:289-297`) vẫn cho reserve 100% Smart available — không
+  hề so sánh với `view.smartUnlock`. Vi phạm trực tiếp Strategy §12 "Không được reserve vốn
+  chưa unlock".
+- **(c) V-03 — BÁC BỎ về hành vi quan sát được, nhưng an toàn một cách TÌNH CỜ, không phải do
+  chủ đích.** Toán học của `engine.js` khiến `data_quality = INVALID` (cần <7 ngày lịch sử) và
+  `adr30` hữu hạn (cần ≥30 ngày) không bao giờ cùng đúng, nên `createLadder()` luôn bị chặn bởi
+  guard ADR30 trước khi có cơ hội tạo ladder khi INVALID — dù `createLadder()` không hề kiểm
+  tra `data_quality`. Ghi HARDENING (không BLOCKING) vì cơ chế bảo vệ này dễ vỡ nếu spacing
+  logic thay đổi độc lập với data quality sau này — xem `PROJECT/HARDENING_BACKLOG.md`.
 
-### RSK-004 — Bộ test app web không chạy được từ bản checkout sạch (mức: trung bình) — S001 XÁC NHẬN (E1)
+**Escalation đã kích hoạt theo đúng trigger của WP-C1 và T-03**: NV-1/NV-2 (=V-01/V-02) là lỗi
+thật → nếu app đang được dùng để ghi tiền thật, phải dừng dùng hoặc xuất dữ liệu ra ngoài trước
+khi tiếp tục, cho tới khi **T-09A** vá xong. Severity nâng lên **HIGH**.
+
+Sửa: **T-09A** (đã có phạm vi xác định — xem mục T-09A trong roadmap).
+
+### RSK-004 — Bộ test app web không chạy được từ bản checkout sạch (mức: trung bình) — S001 XÁC NHẬN (E1); **ĐÃ KHẮC PHỤC tại WP-C1 (2026-09-02)**
 Bằng chứng E1 tại S000: hai test webapp **chạy được và cho kết quả đúng**, nhưng chỉ sau khi
 dựng thủ công hai thứ không có trong repo — `webapp/app_final.html` (phải build) và
 `demo/results3/live_seed.json` (**không tồn tại ở bất kỳ đâu trong repo**).
@@ -474,7 +493,16 @@ Ghi nhận thêm: hai test ghi ảnh chụp màn hình vào thư mục làm vi�
 `webapp/` sẽ để lại `app-dash.png` và `app-zone.png` trong repo, mà hai file này không nằm trong
 `.gitignore`.
 
-Giảm thiểu: **WP-C1** (RCP-001) khôi phục harness trước khi định lượng mức bảo vệ hồi quy thật.
+**Cập nhật WP-C1 (2026-09-02) — RESOLVED, bằng chứng E1 chạy thật từ bản checkout sạch mô
+phỏng** (xoá toàn bộ artifact sinh ra, làm lại từ đầu chỉ bằng lệnh trong repo):
+`webapp/package.json` (mới, ghim `playwright@1.56.1`) + `npm --prefix webapp install` →
+`ethdca synth` + `ethdca export-live --out-dir demo/results3` (dữ liệu DEMO/SYNTHETIC) →
+`node webapp/build_app.js` → `npm --prefix webapp test` (4 test: `test_app.js`, `test_zone.js`,
+`test_v01_v02_v03.js` mới, `test_multi_month_invariant.js` mới) — exit code 0, không page
+error. `build_app.js`/`test_*.js` chuyển từ path tương đối theo `process.cwd()` sang
+`__dirname` nên chạy đúng dù gọi từ gốc repo hay từ trong `webapp/`. Ảnh chụp màn hình
+(`app-dash.png`, `app-zone.png`) và `app_final.html` nay nằm trong `.gitignore`;
+`git status --porcelain` sau khi chạy test không xuất hiện file nào trong số đó. Đóng F-027.
 
 ### RSK-005 — Quy ước không thuộc spec đang nằm trong đường ra verdict (mức: trung bình) — S001 XÁC NHẬN VÀ MỞ RỘNG (E1)
 S001 xác nhận và phát hiện quy ước không được ghi ở nhiều chỗ hơn dự kiến: ngoài ánh xạ
@@ -692,6 +720,31 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- WP-C1 (STREAM WEB) — 2026-09-02 — branch `claude/wp-c1-web-skeleton-b3oieq` từ `origin/main`
+  @ `cb75f9d`. **DONE** — 8/8 REQUIRED check PASS (E1), evidence chạy thật, không đọc code suông.
+  (1) F-027 đóng: harness khôi phục từ bản checkout sạch — `webapp/package.json` mới (ghim
+  `playwright@1.56.1`), `webapp/build_app.js` + `webapp/test_app.js` + `webapp/test_zone.js`
+  chuyển path tương đối theo `__dirname` (trước đó phụ thuộc `process.cwd()`, gãy khi gọi từ
+  gốc repo — chính là root cause của F-027 đúng như tên gọi). `demo/results3/live_seed.json`
+  sinh bằng `ethdca synth` + `ethdca export-live` (DEMO/SYNTHETIC, không phải Binance thật).
+  Ảnh chụp màn hình test (`app-dash.png`, `app-zone.png`) và `app_final.html` thêm vào
+  `.gitignore`. (2) Ba nghi vấn kết luận E1 bằng hai test mới —
+  `webapp/test_v01_v02_v03.js`, `webapp/test_multi_month_invariant.js`: **V-01 XÁC NHẬN**
+  (release đa tháng trả nhầm pool VÀ/HOẶC kẹt vốn vĩnh viễn, tái hiện cả qua Hủy thủ công lẫn
+  invalidation tự động), **V-02 XÁC NHẬN** (reserve không bị giới hạn theo unlock — reserve
+  100% available dù unlock đo được = 0%), **V-03 BÁC BỎ** (INVALID luôn trùng với ADR30 NaN
+  theo toán học của `engine.js` nên `createLadder()` vẫn bị chặn trong mọi trạng thái quan sát
+  được — nhưng KHÔNG do một kiểm tra `data_quality` tường minh; ghi HARDENING). (3) `git diff`
+  xác nhận `webapp/app_logic.js` và `webapp/engine.js` không đổi một dòng nào (CHECK-C1-07).
+  (4) Cập nhật: `RSK-003` (mức trung bình → **CAO**, escalation NV-1/NV-2 = lỗi thật), `RSK-004`
+  (RESOLVED), `T-03` `CHECK-03-01` `BLOCKED` → `PASS`, `Status` `BLOCKED` → `VERIFYING`
+  (KHÔNG tự đóng `DONE` — ngoài scope WP-C1), `T-09A` `PLANNED` → `READY` với phạm vi xác định
+  (sửa `releaseLadder()` dùng đúng tháng gốc của ladder; `reserveFor()`/`createLadder()` phải
+  nhân giới hạn unlock). (5) 0 task ID mới tạo, 0 WP mới mở, không mở WP-C2/C3/C4/UI polish/
+  auth/mobile/chart task. (6) DATA stream dependency = **KHÔNG** — không chạm
+  `src/eth_dca_os/**`, không pull/cherry-pick branch DATA. (7) **Escalation kích hoạt**: V-01 và
+  V-02 là lỗi thật — nếu app đang ghi tiền thật, dừng dùng hoặc xuất dữ liệu ra ngoài cho tới
+  khi T-09A vá xong.
 - Integration (DEC-013) — 2026-09-01 — **governance-only**, integration SHA `febc2ec`.
   KHÔNG sửa production code, KHÔNG sửa test code, KHÔNG mở WP, KHÔNG mở repair cycle,
   KHÔNG tạo task ID, KHÔNG chạy T-06. Kết quả:

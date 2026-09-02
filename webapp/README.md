@@ -30,24 +30,77 @@ trên trang. Kết quả đối chiếu hiển thị ở tab **Thiết lập**.
 
 Lần kiểm gần nhất: lệch tối đa 7.4e-11 trên 40 ngày — hai bản đồng thuận.
 
-## Build
+## Từ một bản checkout sạch (F-027)
+
+Toàn bộ dưới đây chạy được chỉ bằng lệnh có trong repo, không cần thao tác thủ công ngoài repo.
+
+`demo/results3/live_seed.json` **đã có sẵn trong repo** (dữ liệu DEMO/SYNTHETIC, xem
+"Demo/synthetic vs Real/official" bên dưới) nên bước sinh seed KHÔNG bắt buộc — chỉ cần khi
+muốn làm mới seed.
 
 ```bash
-node webapp/build_app.js      # ghép shell + engine + logic -> app_final.html
+# 1. cài dependency test (chỉ Playwright — package.json riêng cho webapp/, không publish).
+#    Nếu môi trường đã có Chromium cài sẵn (biến PLAYWRIGHT_BROWSERS_PATH trỏ tới đó — kiểm
+#    tra bằng `echo $PLAYWRIGHT_BROWSERS_PATH`), đặt PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 để
+#    postinstall không tải lại; nếu chưa có, bỏ biến này để postinstall tự tải Chromium.
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm --prefix webapp install
+
+# 2. build app_final.html (ghép shell + engine + logic)
+node webapp/build_app.js
+
+# 3. chạy toàn bộ test
+node webapp/test_app.js
+node webapp/test_zone.js
+node webapp/test_v01_v02_v03.js
+node webapp/test_multi_month_invariant.js
+# hoặc gộp cả bốn:
+npm --prefix webapp test
 ```
 
-`build_app.js` nhúng base64 của chính template vào trang (quine) để app tự publish được bản
-mới khi bạn bấm **Lưu** — đó là cách dữ liệu sống qua nhiều thiết bị. Song song, state được
-ghi vào `localStorage` ngay lập tức nên một lần lưu thất bại không mất dữ liệu.
+`build_app.js` và các file `test_*.js` tự định vị đường dẫn theo `__dirname` (không theo
+`process.cwd()`), nên chạy đúng bất kể gọi từ gốc repo (`node webapp/build_app.js`) hay từ
+trong `webapp/` (`node build_app.js`).
+
+### Làm mới `demo/results3/live_seed.json` (tuỳ chọn)
+
+```bash
+# cần cài engine Python trước — xem README.md ở gốc repo, mục "Cài đặt"
+# (venv + `pip install -e ".[dev]"`)
+ethdca --raw-dir data/raw synth --start 2024-01-01 --end 2026-06-30
+ethdca --raw-dir data/raw --out-dir demo/results3 export-live
+```
+
+`webapp/app_final.html`, `webapp/node_modules/` và ảnh chụp màn hình do test sinh ra
+(`webapp/app-dash.png`, `webapp/app-zone.png`) là artifact sinh ra được, không commit vào repo
+(`.gitignore`) — trừ `webapp/package.json`, `webapp/package-lock.json` (ghim version) và
+`demo/results3/live_seed.json` (fixture demo cho test), ba file này ĐƯỢC commit.
+
+Playwright cần một Chromium đã cài sẵn; môi trường CI/sandbox của dự án set
+`PLAYWRIGHT_BROWSERS_PATH` trỏ tới bản đã cài và các test tự truyền
+`executablePath: '/opt/pw-browsers/chromium'` khi khởi động trình duyệt — không gọi
+`playwright install` tải lại.
+
+## Demo/synthetic vs Real/official
+
+`demo/results3/live_seed.json` do bước 2 ở trên sinh ra là dữ liệu **DEMO/SYNTHETIC**
+(`ethdca synth`, có seed cố định, không phải Binance thật) — dùng để chứng minh app và bộ
+test chạy được, KHÔNG phải bằng chứng về hiệu năng chiến lược. Muốn seed REAL/OFFICIAL, chạy
+`ethdca fetch` (cần mạng Binance) trước `ethdca export-live` — xem Backtest §2. App tự nó
+không phân biệt hai nguồn này trong UI (ngoài chuỗi `dataset_hash`/`strategy_config_hash`
+trong file); đó là giới hạn đã biết, nằm ngoài phạm vi WP-C1 (WP-C1 chỉ kiểm chứng kế toán,
+không thêm tính năng UI).
 
 ## Test
 
 ```bash
-node webapp/test_app.js     # luồng: nạp seed -> vốn -> P2P -> ladder -> mua -> reload
-node webapp/test_zone.js    # zone fill, partial fill, invalidation và release đúng kế toán
+node webapp/test_app.js                    # luồng: nạp seed -> vốn -> P2P -> ladder -> mua -> reload
+node webapp/test_zone.js                    # zone fill, partial fill, invalidation và release đúng kế toán
+node webapp/test_v01_v02_v03.js             # WP-C1 — kết luận E1 cho V-01/V-02/V-03 (xem docs/tasks/WP-C1-*.md)
+node webapp/test_multi_month_invariant.js   # WP-C1 — bất biến TOTAL=A+R+D qua kịch bản đa tháng đầy đủ
 ```
 
-Hai test này cần Playwright và chạy trên `app_final.html` đã build.
+Cả bốn test đều cần Playwright (`npm --prefix webapp install`) và chạy trên `app_final.html`
+đã build.
 
 ## Những gì app CHƯA làm
 

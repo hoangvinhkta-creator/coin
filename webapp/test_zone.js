@@ -1,13 +1,20 @@
 const { chromium } = require('playwright');
+const path = require('path');
+
+// __dirname thay vì cwd: test phải chạy đúng bất kể được gọi từ đâu — F-027.
+const DIR = __dirname;
+const APP_FINAL = path.join(DIR, 'app_final.html');
+const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
+
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const p = await (await b.newContext({viewport:{width:1200,height:1000}})).newPage();
   const errs = [];
   p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
   p.on('console', m => { if (m.type()==='error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push(m.text()); });
-  await p.goto('file://' + process.cwd() + '/app_final.html');
+  await p.goto('file://' + APP_FINAL);
   await p.waitForTimeout(300);
-  await p.setInputFiles('#seedFile', 'demo/results3/live_seed.json');
+  await p.setInputFiles('#seedFile', SEED_PATH);
   await p.waitForTimeout(800);
 
   await p.click('[data-tab="entry"]');
@@ -69,7 +76,7 @@ const { chromium } = require('playwright');
 
   await p.click('[data-tab="history"]'); await p.waitForTimeout(200);
   console.log('-- trade rows:', await p.$$eval('#tradeTable tbody tr', r=>r.length));
-  await p.screenshot({path:'app-zone.png', fullPage:true});
+  await p.screenshot({path: path.join(DIR, 'app-zone.png'), fullPage:true});
   await b.close();
   console.log(errs.length ? '\nERRORS:\n'+errs.join('\n') : '\nno errors');
 })();

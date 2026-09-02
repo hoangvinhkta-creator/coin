@@ -1,8 +1,12 @@
 const fs = require('fs');
+const path = require('path');
 
-const shell  = fs.readFileSync('app_shell.html', 'utf8');
-const engine = fs.readFileSync('engine.js', 'utf8');
-const logic  = fs.readFileSync('app_logic.js', 'utf8');
+// __dirname thay vì cwd: script phải chạy đúng bất kể được gọi từ đâu
+// (`node build_app.js` trong webapp/, hay `node webapp/build_app.js` từ gốc repo) — F-027.
+const DIR = __dirname;
+const shell  = fs.readFileSync(path.join(DIR, 'app_shell.html'), 'utf8');
+const engine = fs.readFileSync(path.join(DIR, 'engine.js'), 'utf8');
+const logic  = fs.readFileSync(path.join(DIR, 'app_logic.js'), 'utf8');
 
 // BODY chứa 3 placeholder: __STATE__, __SEED__, __TEMPLATE__
 const BODY = shell
@@ -29,7 +33,7 @@ const page = BODY
   .replace('__STATE__', () => initialState)
   .replace('__SEED__', () => 'null');
 
-fs.writeFileSync('app_final.html', page);
+fs.writeFileSync(path.join(DIR, 'app_final.html'), page);
 console.log('BODY', BODY.length, 'FULL', FULL.length, 'b64', b64.length, 'page', page.length);
 
 // kiểm tra quine: giải mã b64 -> thay lại -> phải ra tài liệu hợp lệ
