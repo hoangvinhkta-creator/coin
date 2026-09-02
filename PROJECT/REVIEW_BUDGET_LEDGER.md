@@ -305,6 +305,23 @@ phải implementation.
 
 `T-09B` vẫn `PLANNED`, chưa `IN_PROGRESS`, nên không có implementation nào để tiêu budget.
 
+#### 2.2.3 Phiên `DEC-021` (2026-09-02) — `OD-C` đóng = R2, `T-09B: PLANNED → READY`
+
+Personal Tool Simplification Principle chốt `OD-C = R2`. Ready Gate 15/15 ĐẠT, Completion Gate
+16/16 REQUIRED FROZEN, `T-09B: PLANNED → READY`. Đây vẫn là chuẩn bị, KHÔNG phải implementation.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+
+    git diff --shortstat origin/main..HEAD -- webapp/app_logic.js webapp/engine.js \
+        webapp/app_shell.html webapp/build_app.js src/eth_dca_os pyproject.toml pyproject.lock
+      -> 0   (production diff = 0)
+
+Khi implementation thật của `T-09B` bắt đầu (task chuyển `READY → IN_PROGRESS`), lượt đầu tiên
+vẫn là **INITIAL IMPLEMENTATION** — cùng quy ước `WP-A4`/`T-09A` — và không tự động tiêu repair
+cycle.
+
 ---
 
 ## 3. Golden cumulative change budget

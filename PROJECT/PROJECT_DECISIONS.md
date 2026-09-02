@@ -1371,3 +1371,189 @@ Impact:
 Can Revisit After:
 Khi chủ dự án chọn R1 hay R2 cho `OD-C`. Sau đó: hoàn tất Ready Gate, freeze Completion Gate,
 `T-09B: PLANNED → READY`, rồi mở phiên thực thi riêng.
+
+---
+
+## DEC-021 — `OD-WEBAPP-04`: Personal Tool Simplification Principle; `OD-C` = R2 (SIMPLIFIED PERSONAL-TOOL RECOVERY)
+
+Date:
+2026-09-02 (phiên Owner Decision — T-09B OD-C, tiếp nối `DEC-020` trên cùng nhánh thẩm quyền)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Đồng thời là quyết định cấp sản phẩm áp dụng cho toàn bộ
+ETH DCA OS, không riêng T-09B — ghi theo §0 của chỉ thị phiên.
+
+Canonical location:
+File này (`PROJECT/PROJECT_DECISIONS.md`) — **cùng vị trí** đã giữ `DEC-011` (Owner Product
+Intent gốc) và `DEC-019` (bổ sung lần một). Quyết định dưới đây là **lần bổ sung thứ hai** vào
+cùng một mạch Product Intent, KHÔNG tạo artifact riêng: `DEC-011` đã lập tiền lệ "map vào
+authority sản phẩm hiện có" thay vì nhân bản sang `PROJECT_PROFILE.md`; quyết định này giữ
+đúng tiền lệ đó để không vi phạm `STATE_AUTHORITY.md` § Single Source Of Truth.
+
+Decision:
+
+    (1) PERSONAL TOOL SIMPLIFICATION PRINCIPLE — BỔ SUNG LẦN HAI cho `DEC-011`
+        (`DEC-019` là lần một), KHÔNG thay thế.
+
+        ETH DCA OS là công cụ CÁ NHÂN, SINGLE-USER, DÙNG KHI CẦN, TẦN SUẤT THẤP — không phải
+        sản phẩm thương mại, không phải public multi-user, không phải enterprise application.
+        Mục tiêu KHÔNG phải một hệ thống hoàn hảo về mọi khía cạnh kỹ thuật. Mục tiêu là ĐƠN
+        GIẢN + DỄ SỬ DỤNG + ĐÚNG Ở NHỮNG CHỖ ẢNH HƯỞNG ĐẾN TIỀN.
+
+        PRIORITY ORDER (thay thế cách viết rút gọn "correctness · usability · low operational
+        burden · implementation simplicity · cost · technical elegance · scalability" của
+        `DEC-019` điểm 1 bằng một danh sách chi tiết hơn — KHÔNG mâu thuẫn, chỉ khai triển):
+
+            1. Financial correctness
+            2. Algorithm correctness
+            3. Decision/recommendation usefulness
+            4. Accounting correctness
+            5. Không mất dữ liệu quan trọng
+            6. Daily usability
+            7. Implementation simplicity
+            8. Low operational burden
+            9. Cost
+            10. Security hardening
+            11. Scalability / enterprise concerns
+
+        KHÔNG đảo thứ tự này chỉ vì technical best practice chung.
+
+    (2) CRITICAL PRODUCT QUESTION — bài kiểm tra bắt buộc trước khi một finding/proposal vào
+        V1 critical path:
+
+            "Nếu không xử lý vấn đề này, nó có khả năng thực tế:
+             A. làm Owner đưa ra quyết định tài chính sai?
+             B. làm thuật toán phân tích giá sai?
+             C. làm Buy Score/regime/budget/recommendation sai?
+             D. làm accounting/holdings/average cost sai?
+             E. làm mất dữ liệu tài chính quan trọng?
+             F. hoặc khiến Owner không thể sử dụng app theo workflow cá nhân thông thường?"
+
+        Nếu KHÔNG cho cả sáu: mặc định route HARDENING / DEFER / OUT OF SCOPE theo canonical
+        governance phù hợp. Finding không tự động tạo task.
+
+        Đây khớp với `DEC-011` điểm A–F đã có (làm sai recommendation/tiền/mất lịch sử/dữ
+        liệu thị trường không đúng/app không chạy được/official result sai) — quyết định này
+        diễn đạt lại thành một câu hỏi thực thi trực tiếp, KHÔNG thay `DEC-011` điểm A–F.
+
+    (3) SECURITY PHILOSOPHY. Security KHÔNG phải trọng tâm chính của V1. Chủ dự án chấp nhận:
+        công cụ chỉ phục vụ cá nhân; khả năng có người chủ động reverse-engineer/tấn công được
+        xem là THẤP; dữ liệu không cần mức bảo vệ enterprise; không cần threat model phức tạp;
+        không cần security architecture vượt nhu cầu thực tế. Vẫn giữ một MINIMUM SECURITY
+        FLOOR.
+
+    (4) MINIMUM SECURITY FLOOR — V1 chỉ cần đủ để tránh:
+          - vô tình public write nếu điều đó có thể làm state bị sửa/hỏng;
+          - commit password/private credential/service-account secret vào repo;
+          - lỗi authentication/persistence làm app hiểu nhầm dữ liệu sai là state hợp lệ;
+          - lỗi ghi dữ liệu nhưng UI báo đã lưu thành công;
+          - security mechanism quá yếu đến mức tạo nguy cơ thực tế làm sai/mất accounting
+            state.
+        KHÔNG mở rộng security scope chỉ để chống hypothetical attacker.
+
+    (5) OD-C = R2 — SIMPLIFIED PERSONAL-TOOL RECOVERY. APPROVED.
+
+        Chủ dự án KHÔNG yêu cầu V1 đảm bảo seamless identity recovery khi đổi máy, đổi
+        browser, mất toàn bộ browser profile, hoặc mất Firebase Anonymous Auth identity. Các
+        tình huống này KHÔNG phải V1 critical acceptance requirement. KHÔNG xây email/password
+        recovery chỉ để giải quyết các edge case này — giữ nguyên architecture Anonymous Auth
+        thuần, KHÔNG thêm email/password, Google Sign-In, account system, registration, login
+        UI, password recovery, multi-user support cho V1.
+
+        Đây là **OWNER SCOPE DECISION dựa trên Product Intent mới**, KHÔNG phải kết luận kỹ
+        thuật rằng Anonymous Auth "đủ" theo nghĩa PASS — khe kỹ thuật ghi ở `DEC-020` (Anonymous
+        UID mới sau đổi máy/browser/cửa sổ riêng tư bị Firestore rules từ chối) vẫn ĐÚNG và
+        KHÔNG bị phủ nhận. Điều thay đổi là phạm vi CHẤP NHẬN của V1, không phải sự thật kỹ
+        thuật.
+
+    (6) `CHECK-T09B-04` DISPOSITION — audit trail bắt buộc, KHÔNG được gọi đây là bug fix hay
+        evidence PASS:
+
+            OLD REQUIREMENT (viết tại `DEC-019`/Task Spec ban đầu):
+              "đóng hẳn trình duyệt (hoặc dùng một profile/cửa sổ khác), mở lại, state phục
+              hồi đầy đủ" — bao gồm cả nhánh cross-device/cross-browser.
+
+            OWNER PRODUCT INTENT CHANGE (quyết định này):
+              Personal Tool Simplification Principle §(1)-(4) + OD-C = R2: cross-device /
+              cross-browser / lost-identity recovery KHÔNG phải V1 critical acceptance
+              requirement.
+
+            NEW V1 REQUIREMENT:
+              Đóng/mở lại trình duyệt THÔNG THƯỜNG (cùng browser profile); reload; quay lại
+              app sau một khoảng thời gian; restart máy NẾU browser profile / site identity
+              (tức `IndexedDB` giữ Anonymous Auth session) vẫn còn — state PHẢI tiếp tục sử
+              dụng được, và bất biến kế toán PHẢI được bảo toàn.
+
+              Cross-device / cross-browser / lost-identity recovery: **OUT OF SCOPE V1**.
+              Khi rules từ chối một UID không khớp owner (đúng kịch bản này), app PHẢI hiện rõ
+              đây là "không nhận diện được thiết bị/trình duyệt này" — KHÔNG được im lặng hiện
+              state rỗng như thể đó là sổ hợp lệ của một owner mới (thuộc `CHECK-T09B-11`,
+              không mở REQUIRED check mới). Lối thoát cho cross-device V1: export/import JSON
+              thủ công (capability đã giữ nguyên qua `OD-A`, `DEC-019`).
+
+        `CHECK-T09B-03` (xoá `localStorage`+`sessionStorage`, cùng browser) **KHÔNG đổi, KHÔNG
+        bị làm yếu** — kịch bản đó không đụng `IndexedDB`, không liên quan `OD-C`.
+
+    (7) PERSISTENCE CORRECTNESS VẪN REQUIRED, không bị hạ bởi việc giảm ưu tiên security:
+        save đúng; load đúng; Firebase write có xác nhận từ server; write failure visible;
+        load failure visible (gồm cả "rules từ chối UID" — một dạng read/auth failure, PHẢI
+        visible, KHÔNG được hiểu nhầm thành state hợp lệ); malformed/corrupt state không âm
+        thầm thành official accounting state; localStorage mirror không âm thầm ghi đè durable
+        source mới hơn; T-09A accounting invariants được bảo toàn. KHÔNG đổi 16 REQUIRED check
+        khác ngoài `CHECK-T09B-04`.
+
+    (8) FINANCIAL/ALGORITHM/ACCOUNTING CORRECTNESS GIỮ NGUYÊN NGHIÊM NGẶT — market data
+        correctness, indicator correctness, Buy Score, regime, budget, opportunity fund,
+        recommendation, trade accounting, holdings, average cost, pool ownership,
+        reserve/release, ladder accounting, historical transaction integrity: KHÔNG một gate/
+        evidence nào trong nhóm này bị hạ bởi quyết định này.
+
+    (9) HARDENING RULE. Finding thuộc advanced security, cross-device identity recovery,
+        enterprise backup, high availability, scalability, multi-user, roles, advanced
+        authorization, sophisticated attacker, provider abstraction, disaster recovery,
+        future-proof architecture — KHÔNG tự động là V1 blocker. Mặc định HARDENING / DEFER /
+        OUT OF SCOPE, trừ khi có bằng chứng production-realistic cho A-F ở điểm (2).
+
+    (10) OVER-ENGINEERING GUARD. Trước khi thêm bất kỳ mechanism mới: hỏi "Owner có thực sự
+         cần cơ chế này để sử dụng ETH DCA OS không?" — nếu KHÔNG, không implement chỉ vì đó
+         là best practice. Ưu tiên minimal sufficient implementation.
+
+    (11) T-09B SCOPE giữ nguyên: DURABLE PERSISTENCE. KHÔNG biến thành authentication project,
+         security project, backup project, deployment platform project, data migration
+         project.
+
+    (12) HISTORICAL STATE giữ nguyên `DEC-019` điểm 6: forensic/migrate/backfill = OUT OF
+         SCOPE T-09B V1. Không tự sửa lịch sử, không tự tuyên bố sạch. Banner cảnh báo hiện có
+         phải sống sót qua persistence round-trip (đã yêu cầu ở `CHECK-T09B-15`, không đổi).
+
+Reason:
+`OD-C` (`DEC-020`) trả đúng hai phương án kỹ thuật và không tự chọn thay chủ dự án, vì đó là
+đánh đổi thật giữa thêm một credential tối thiểu (R1) và thu hẹp lời hứa recovery (R2). Chủ
+dự án chọn R2 và đi xa hơn: phát biểu tường minh một nguyên tắc sản phẩm bao trùm để các phiên
+tương lai không phải hỏi lại "có cần cơ chế X không" cho từng finding — đúng tinh thần
+`CAPABILITY_MODEL.md` § Capability-First Question Order, nay có thêm một bộ lọc sản phẩm cụ
+thể trước khi một finding được xem xét đưa vào V1 critical path.
+
+Impact:
+- `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`: `OD-C` đóng = R2. `CHECK-T09B-04` được viết
+  lại theo audit trail ở điểm (6) — KHÔNG xoá lịch sử yêu cầu cũ, chỉ thêm bằng
+  `COMPLETION GATE CHANGE PROPOSAL`-style disclosure trước khi freeze. Ready Gate đánh giá lại
+  toàn bộ; nếu không còn blocker nào thuộc financial/data/persistence correctness →
+  `T-09B: PLANNED → READY`, Completion Gate → FROZEN.
+- `PROJECT/HARDENING_BACKLOG.md`: thêm `H-23` — cross-device/lost-identity recovery, OUT OF
+  SCOPE V1, `RE_TRIGGER_CONDITION` = khi có người dùng thứ hai hoặc khi Owner tự yêu cầu lại.
+- `PROJECT/PROJECT_PROGRESS.md`, `PROJECT/CAPABILITY_REGISTRY.md`: cập nhật trạng thái `T-09B`
+  và ghi nhận Personal Tool Simplification Principle.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md`: `CAP-WEBAPP` budget KHÔNG đổi — allowed 2 / used 0 /
+  remaining 2. Freeze Completion Gate và chuyển `READY` không tiêu repair cycle (đây vẫn là
+  chuẩn bị, không phải implementation).
+- KHÔNG đổi `DEC-011` (10 điểm Acceptance, điểm A–F) — điểm (2) của quyết định này diễn đạt lại
+  thành câu hỏi thực thi, không thay nội dung. KHÔNG đổi `DEC-019` điểm 1 (thứ tự ưu tiên 7
+  mục) — điểm (1) của quyết định này khai triển chi tiết hơn, không mâu thuẫn.
+- KHÔNG đổi bất kỳ REQUIRED check nào thuộc financial/algorithm/accounting correctness.
+- Số task ID mới = **0**. Số production file bị sửa = **0**.
+
+Can Revisit After:
+Khi có người thứ hai dùng công cụ hoặc công cụ được phát hành cho người khác (cùng điều kiện
+`DEC-011`/`DEC-019` đã ghi) — khi đó Personal Tool Simplification Principle và `OD-C = R2` phải
+được định tuyến lại toàn bộ, và `H-23` được xem xét lại.

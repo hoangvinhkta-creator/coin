@@ -671,3 +671,39 @@ thiếu HWM §6, hysteresis §5, daily limit §11) — KHÔNG nằm trong backlo
 `OUT_OF_SCOPE` → `CAP-WEBAPP` / `WP-C4`, cùng đường với `F-S010-03`, dưới `RSK-002`. Lệch theo
 chiều CHẶT HƠN spec (fail closed), đã khai ở khối `DEFERRED_BY_MINIMAL_FIX` của
 `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`.
+
+---
+
+## H-23 — Cross-device / cross-browser / lost-identity recovery cho `T-09B` (Firebase Anonymous Auth) — OUT OF SCOPE V1
+
+Capability: `CAP-WEBAPP` · Owner: `T-09B` (`WP-C1` lineage) · Phân loại: **OWNER SCOPE DECISION,
+OUT OF SCOPE V1** (không phải defect)
+Ngày ghi nhận: 2026-09-02 (`DEC-020` phát hiện khe kỹ thuật; `DEC-021` chốt phạm vi V1)
+
+Firebase Anonymous Auth (đã APPROVED cho `T-09B` tại `DEC-020`) lưu danh tính trong `IndexedDB`
+của một browser profile. Cửa sổ riêng tư, đổi máy, đổi trình duyệt đều sinh một Anonymous UID
+mới; nếu Firestore Security Rules khoá cứng vào một owner UID cố định (đúng thiết kế đã duyệt),
+UID mới bị từ chối đọc/ghi dữ liệu đã có. Đây là bằng chứng kỹ thuật thật, ghi đầy đủ tại
+`docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` § OD-C và `DEC-020`.
+
+`DEC-021` (Personal Tool Simplification Principle + `OD-C = R2`) chốt: đây KHÔNG phải V1 critical
+acceptance requirement. Chủ dự án chấp nhận giới hạn này để giữ Anonymous Auth thuần — không
+thêm email/password, Google Sign-In, account system nào chỉ để đóng edge case này.
+
+Vì sao KHÔNG BLOCKING theo `PRODUCTION_PATH_RULE.md` và Critical Product Question của `DEC-021`:
+mất khả năng auto-recover trên máy mới KHÔNG làm sai tiền, KHÔNG làm sai thuật toán, KHÔNG làm
+mất dữ liệu đã bền trên Firestore (dữ liệu vẫn còn — chỉ không đọc được từ thiết bị chưa được
+công nhận), và có lối thoát thủ công (export/import JSON, capability giữ nguyên qua `OD-A`).
+Không thoả điều nào trong A–F của `DEC-011`/`DEC-021`.
+
+Ràng buộc vẫn giữ (KHÔNG bị hạ bởi quyết định này): khi rules từ chối một UID lạ, app PHẢI hiện
+rõ đây là "không nhận diện được thiết bị/trình duyệt này" — KHÔNG được im lặng hiện state rỗng
+như thể đó là sổ hợp lệ của một owner mới. Đây thuộc `CHECK-T09B-11` (Firebase read/auth failure
+visible) đã FINALIZED, không phải một REQUIRED check mới.
+
+    RE_TRIGGER_CONDITION:
+    - có người thứ hai dùng công cụ, hoặc công cụ được phát hành cho người khác (điều kiện
+      `DEC-011`/`DEC-019`/`DEC-021` đều dùng chung); HOẶC
+    - chủ dự án tự yêu cầu lại cross-device recovery sau khi trải nghiệm thực tế việc đổi máy;
+      HOẶC
+    - Firebase thay đổi cách Anonymous Auth persist khiến bằng chứng ở `DEC-020` không còn đúng.

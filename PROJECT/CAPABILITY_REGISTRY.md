@@ -331,3 +331,32 @@ Chi tiết, bằng chứng, hai phương án (R1/R2): `docs/tasks/T-09B-dung-luu
     T-09B = PLANNED (không đổi). Ready Gate 14/15 dòng ✅ (đếm cả dòng "+"); chỉ OD-C còn chặn.
     Completion Gate 16/16 REQUIRED vẫn FINALIZED, KHÔNG sửa yếu, CHƯA frozen.
     CAP-WEBAPP budget KHÔNG đổi: 2/0/2. Không mở repair cycle. Không chuyển IN_PROGRESS.
+
+---
+
+## 9. Cập nhật tại phiên Owner Decision `DEC-021` (2026-09-02) — Personal Tool Simplification Principle; `OD-C` đóng = R2
+
+Bảng §2 **KHÔNG đổi**. Số task ID mới = **0**.
+
+### 9.1 `OD-C` (§8.2) — RESOLVED = R2 (SIMPLIFIED PERSONAL-TOOL RECOVERY)
+
+Chủ dự án chọn **không** thêm recovery credential; cross-device/cross-browser/lost-identity
+recovery = **OUT OF SCOPE V1** (`PROJECT/HARDENING_BACKLOG.md` **H-23**). Đây là Owner Scope
+Decision dựa trên một nguyên tắc sản phẩm mới — **Personal Tool Simplification Principle**
+(`DEC-021`, khai triển từ `DEC-011`/`DEC-019`) — KHÔNG phải phủ nhận bằng chứng kỹ thuật đã ghi
+tại §8.2 (Anonymous UID mới sau đổi máy vẫn thật sự bị Firestore rules từ chối).
+
+### 9.2 T-09B: `PLANNED → READY`
+
+Ready Gate đánh giá lại đầy đủ (14 điều kiện riêng + 17 dòng MAJOR Ready Gate chuẩn), không
+auto-PASS: **15/15 ĐẠT.** Completion Gate 16/16 REQUIRED **FROZEN**. Không còn Owner Decision
+hay architecture ambiguity nào chặn `CAP-WEBAPP` ở nhánh `T-09B`.
+
+    T-09B: PLANNED -> READY   (STATE_AUTHORITY.md: READY do Implementer/Owner viết —
+                                 chỉ thị phiên §18 uỷ quyền tường minh chuyển trạng thái này)
+
+### 9.3 Ranh giới capability không đổi
+
+`CAP-WEBAPP` budget vẫn 2/0/2 — chuyển `READY` là chuẩn bị, không phải implementation, không
+tiêu repair cycle. `T-09B` implementation sau này vẫn là **INITIAL IMPLEMENTATION** khi bắt
+đầu (đúng quy ước `WP-A4`/`T-09A`).

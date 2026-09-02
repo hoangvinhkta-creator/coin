@@ -3,7 +3,8 @@
 ## Metadata
 
 Status:
-PLANNED
+READY (chuyển từ `PLANNED` tại phiên `DEC-021`, 2026-09-02 — Ready Gate 15/15, không còn Owner
+Decision nào chặn)
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật
@@ -15,12 +16,15 @@ Lớp (RCP-001):
 C — MUST FIX BEFORE PRODUCTIZATION
 
 Completion Gate Freeze:
-**FINALIZED, CHƯA FROZEN.** T-04/S002 chỉ đóng băng gate cho 15 work package; T-09B không nằm
-trong 15 gói đó, nên chưa từng có gate nào được đóng băng cho task này. Gate dưới đây được
-**finalize** tại phiên này theo `TASK_COMPLETION_GATE_STANDARD.md` mục "Gate Creation Timing"
-("Before Task Becomes READY — review and finalize"). Nó **đóng băng tại đúng thời điểm
-`PLANNED → READY`**, tức sau khi hai Owner Decision ở mục "OWNER_DECISION_REQUIRED" được trả
-lời. KHÔNG có gate cũ nào bị sửa, xoá hay làm yếu.
+**FROZEN — 2026-09-02, tại phiên `DEC-021`.** T-04/S002 chỉ đóng băng gate cho 15 work package;
+T-09B không nằm trong 15 gói đó, nên gate của task này được finalize và freeze qua đúng quy
+trình `TASK_COMPLETION_GATE_STANDARD.md` mục "Gate Creation Timing" ("Before Task Becomes
+READY — review and finalize" → freeze tại `PLANNED → READY`). 16 REQUIRED check giữ nguyên số
+lượng; `CHECK-T09B-04` được tái phạm vi MỘT LẦN, trước khi freeze, bằng audit trail tường minh
+(OLD REQUIREMENT → OWNER PRODUCT INTENT CHANGE → NEW V1 REQUIREMENT, xem chi tiết tại chính
+check đó) theo Owner Scope Decision `DEC-021` — đây KHÔNG phải sửa yếu gate sau khi freeze, mà
+là bước finalize hợp lệ trước khi freeze. Từ đây, mọi thay đổi khác phải qua
+`COMPLETION GATE CHANGE PROPOSAL`.
 
 Routing Status:
 ROUTED
@@ -127,8 +131,12 @@ KHÔNG có thẩm quyền đổi quyết định đó.
 
 `OD-A` (runtime host), `OD-B` (thành phần Firebase), `OD-B2` (danh tính) đã được chủ dự án
 giải quyết tại `DEC-020` (`OD-WEBAPP-03`, 2026-09-02): Firebase Hosting · Cloud Firestore ·
-Firebase Anonymous Auth. `DEC-020` cũng mở một khe mới — `OD-C` (recovery semantics) — vẫn
-CHẶN `PLANNED → READY`. Xem mục OWNER_DECISION_REQUIRED bên dưới, nay đã cập nhật.
+Firebase Anonymous Auth. `DEC-020` mở một khe mới — `OD-C` (recovery semantics) — được chủ dự
+án đóng ngay sau đó tại `DEC-021` (`OD-WEBAPP-04`, cùng ngày): **R2 — SIMPLIFIED
+PERSONAL-TOOL RECOVERY**, một phần của **Personal Tool Simplification Principle** áp dụng cho
+toàn bộ sản phẩm. Ready Gate nay ĐẠT 15/15; Completion Gate đã **FROZEN**; `T-09B: PLANNED →
+READY`. Xem mục OD-C bên dưới cho chi tiết, và `CHECK-T09B-04` (mục Completion Gate) cho audit
+trail đầy đủ.
 
 ---
 
@@ -320,21 +328,26 @@ Hosting + Firestore giải quyết; **(B) khả năng AUTHENTICATE làm owner sa
 identity** thì CHƯA. Không được tuyên bố "Firestore durable" = "chắc chắn recover được từ máy
 mới" — và Task Spec này không tuyên bố như vậy.
 
-### Hai phương án — chờ chủ dự án chọn (`OWNER_DECISION_REQUIRED`)
+### RESOLVED = R2 — SIMPLIFIED PERSONAL-TOOL RECOVERY (`DEC-021`, 2026-09-02)
 
-| | Phương án | Đánh giá |
+| | Phương án | Kết quả |
 |---|---|---|
-| **R1** | **Link một recovery credential vào Anonymous UID** — `linkWithCredential` gắn một cặp email/password (hoặc phone) vào UID nặc danh, một lần, ngay sau khi tạo UID lần đầu | **KHUYẾN NGHỊ.** Sinh hoạt hằng ngày KHÔNG đổi — vẫn tự động đăng nhập nặc danh trên browser đã liên kết, không có màn hình đăng nhập. Credential CHỈ dùng trên máy/browser mới: `signInWithEmailAndPassword` để quay lại ĐÚNG UID cũ, mở lại quyền đọc/ghi Firestore đã có. Đây KHÔNG phải "login UI phức tạp" hay "account system" — là một bước one-time setup, đúng tinh thần "tối thiểu cần cho durable persistence" (`DEC-019` điểm 3) |
-| R2 | **Chấp nhận giới hạn, thu hẹp tuyên bố trung thực** — không thêm credential nào; viết lại phạm vi "recover" của `CHECK-T09B-04` chỉ còn same-browser-profile | Giữ đúng "không xây login system" tuyệt đối, nhưng để hở đúng kịch bản "đổi máy" — kịch bản `RSK-001` nêu tên đầu tiên. Lối thoát duy nhất còn lại cho "đổi máy" là export JSON thủ công |
+| R1 | Link một recovery credential vào Anonymous UID | KHÔNG chọn — chủ dự án không muốn thêm bất kỳ credential nào cho V1, kể cả một credential chỉ dùng cho recovery |
+| **R2** | Chấp nhận giới hạn, thu hẹp phạm vi "recover" của `CHECK-T09B-04` xuống same-browser-profile | **APPROVED.** Xem `DEC-021` §(5)-(6) |
 
-**KHÔNG làm yếu `CHECK-T09B-04` để né khe này.** Cho tới khi chủ dự án chọn R1 hay R2:
+Đây là **OWNER SCOPE DECISION dựa trên Personal Tool Simplification Principle**
+(`DEC-021`), KHÔNG phải kết luận kỹ thuật rằng Anonymous Auth "đủ" theo nghĩa PASS. Khe kỹ
+thuật ghi ở trên (Anonymous UID mới sau đổi máy/browser/cửa sổ riêng tư bị Firestore rules từ
+chối) vẫn **ĐÚNG** và **KHÔNG bị phủ nhận** — điều thay đổi là phạm vi CHẤP NHẬN của V1, không
+phải sự thật kỹ thuật. Cross-device/lost-identity recovery được ghi `OUT OF SCOPE V1` tại
+`PROJECT/HARDENING_BACKLOG.md` **H-23**.
 
-    T-09B = PLANNED
-    OWNER_DECISION_REQUIRED = OD-C (duy nhất còn chặn)
+    T-09B: Ready Gate được đánh giá lại — xem mục Ready Gate bên dưới.
     Số task ID mới = 0 · Số production file bị sửa = 0
 
-`CHECK-T09B-03` và `CHECK-T09B-04` (bên dưới, mục Completion Gate) được chú thích tham chiếu
-`OD-C` — nội dung acceptance KHÔNG bị viết lại, vì nó phụ thuộc R1 hay R2 được chọn.
+`CHECK-T09B-03` **KHÔNG đổi, KHÔNG bị làm yếu** — kịch bản đó không đụng `IndexedDB`, không
+liên quan `OD-C`. `CHECK-T09B-04` được viết lại theo audit trail bắt buộc — xem mục Completion
+Gate bên dưới.
 
 ---
 
@@ -424,14 +437,18 @@ Mất `localStorage` **không được** đồng nghĩa mất state thật.
 
     MỞ APP
       → khởi tạo Firebase bằng config trong webapp/ (Firebase Hosting phục vụ trang — OD-A)
-      → AUTHENTICATE: đã có Anonymous session (IndexedDB) → dùng lại UID cũ
-                       chưa có (lần đầu, hoặc IndexedDB trống — xem OD-C)
+      → AUTHENTICATE: đã có Anonymous session (IndexedDB) → dùng lại UID cũ (kịch bản
+                       REQUIRED của CHECK-T09B-04 — same-browser-profile)
+                       chưa có (lần đầu, hoặc IndexedDB trống — thiết bị/trình duyệt mới)
                          → tạo Anonymous UID mới
-                         → NẾU UID mới KHÔNG khớp owner UID đã ghi trong rules:
-                           Firestore từ chối đọc — đây chính là khe OD-C, KHÔNG phải lỗi
-                           Firestore. Hành vi cụ thể (bắt buộc thử recovery credential theo
-                           R1, hay báo rõ "không phải máy đã đăng ký" theo R2) PHỤ THUỘC
-                           quyết định OD-C, CHƯA thi hành ở gate này.
+                         → UID mới KHÔNG khớp owner UID trong rules → Firestore từ chối đọc.
+                           Đây KHÔNG phải lỗi Firestore, và KHÔNG phải app lỗi — đây là hành
+                           vi ĐÚNG theo `OD-C = R2` (`DEC-021`): cross-device recovery ngoài
+                           phạm vi V1. Hiện banner **"không nhận diện được thiết bị/trình
+                           duyệt này"** (gate K/`CHECK-T09B-11`), khác thông điệp với lỗi
+                           mạng; hướng dẫn export/import JSON (`H-23`). KHÔNG tạo Anonymous
+                           UID mới rồi âm thầm cho ghi — điều đó sẽ mở một bản sổ "rỗng" song
+                           song với bản sổ thật, đúng thứ gate L cấm.
       → ĐỌC durable state (document sổ + document seed)
       → VALIDATE: schema + bất biến kế toán T-09A
           ├─ hợp lệ            → state := bản durable
@@ -583,8 +600,9 @@ Theo `TASK_READY_GATE_STANDARD.md` § MAJOR Ready Gate, cộng 14 điều kiện
 - [x] Expected touch area được xác định
 - [x] Requirement liên quan được hiểu — `DEC-011` điểm 5-9, Strategy §8, Data Model §6
 - [x] Data impact được biết — state inventory ở trên, phân loại đủ ba nhóm
-- [~] **Security impact được biết** — danh tính rules ✅ (`OD-B2` = Anonymous Auth một UID,
-      `DEC-020`); **giới hạn recovery của danh tính đó CHƯA chốt** — xem `OD-C`
+- [x] Security impact được biết — danh tính rules ✅ (`OD-B2` = Anonymous Auth một UID,
+      `DEC-020`); Minimum Security Floor ✅ (`DEC-021` §4); giới hạn recovery của danh tính đó
+      ✅ đã chốt = OUT OF SCOPE V1, `OD-C = R2` (`DEC-021`)
 - [x] Routing/API impact được biết — không có API nội bộ; routing giữ Tier D / xhigh
 - [x] Migration prerequisite sẵn sàng — `OD-A` resolved (Firebase Hosting, `DEC-020`): biết rõ
       app chạy ở đâu, biết đường đưa state hiện có lên Firestore lần đầu
@@ -594,8 +612,8 @@ Theo `TASK_READY_GATE_STANDARD.md` § MAJOR Ready Gate, cộng 14 điều kiện
 - [x] Primary agent tier được gán — D / xhigh, xác nhận bằng `routing_engine.py`
 - [x] Escalation trigger được định nghĩa
 - [x] Completion Gate được finalize
-- [ ] **Completion Gate được freeze trước implementation** — chỉ freeze khi Ready Gate đầy đủ;
-      còn `OD-C` mở nên CHƯA freeze
+- [x] Completion Gate được freeze trước implementation — Ready Gate đủ 15/15; freeze thực hiện
+      ngay dưới đây, cùng phiên với `DEC-021`
 
 ### 14 điều kiện riêng (§13 chỉ thị)
 
@@ -612,26 +630,23 @@ Theo `TASK_READY_GATE_STANDARD.md` § MAJOR Ready Gate, cộng 14 điều kiện
 | 9 | T-09A invariants rõ | ✅ |
 | 10 | Historical boundary rõ | ✅ |
 | 11 | Expected Touch Area rõ | ✅ |
-| 12 | Firebase component được xác định | ✅ — Cloud Firestore, **`OD-B` RESOLVED (`DEC-020`)** |
-| 13 | Completion Gate finalized | ✅ — 16 REQUIRED check dưới đây, không sửa yếu |
+| 12 | Firebase component được xác định | ✅ — Cloud Firestore, `OD-B` RESOLVED (`DEC-020`) |
+| 13 | Completion Gate finalized | ✅ — 16 REQUIRED check dưới đây, không sửa yếu (1 check tái phạm vi theo Owner Scope Decision có audit trail, xem `CHECK-T09B-04`) |
 | 14 | Routing xác nhận | ✅ — `routing_engine.py` trả D / xhigh |
-| + | Không còn architecture ambiguity ngăn implementation | ❌ — **`OD-C` chặn** (recovery semantics của Anonymous Auth, xem mục riêng ở trên) |
+| + | Không còn architecture ambiguity ngăn implementation | ✅ — `OD-C = R2` RESOLVED (`DEC-021`); khe kỹ thuật vẫn ghi lại (không phủ nhận), nhưng không còn ambiguity về việc phải làm gì |
 
 ### Kết quả Ready Gate
 
-    READY GATE = KHÔNG ĐẠT — 14/15 dòng ✅ (đếm cả dòng "+"); CHỈ dòng "+" còn ❌
-    OD-A, OD-B, OD-B2 = RESOLVED tại DEC-020 (Firebase Hosting · Cloud Firestore ·
-    Anonymous Auth một UID).
-    Thiếu duy nhất: OD-C (recovery semantics — CHECK-T09B-04 nhánh "profile/cửa sổ khác"
-    không PASS được trung thực với Anonymous Auth đơn thuần; chọn R1 hay R2).
-    Dòng chuẩn "Completion Gate được freeze" vẫn ❌ vì nó chỉ đóng khi Ready Gate đủ 15/15.
+    READY GATE = ĐẠT — 15/15 dòng ✅ (đếm cả dòng "+"), 17/17 dòng MAJOR Ready Gate chuẩn ✅
+    OD-A, OD-B, OD-B2 = RESOLVED tại DEC-020. OD-C = RESOLVED (R2) tại DEC-021.
+    Không còn Owner Decision nào chặn.
 
-    T-09B = PLANNED  (giữ nguyên — chỉ một Owner Decision còn thiếu, nhưng vẫn là một
-    Owner Decision đang chặn theo đúng nghĩa chỉ thị §17/§"STATE TRANSITION")
+    T-09B: PLANNED -> READY
+    Completion Gate: FINALIZED -> FROZEN (freeze thực hiện tại phiên DEC-021, 2026-09-02)
 
 ---
 
-## Completion Gate — FINALIZED
+## Completion Gate — FROZEN (2026-09-02, `DEC-021`)
 
 Effective Risk = HIGH → **E1 bắt buộc** cho mọi REQUIRED check kiểm chứng được, và **bắt buộc
 batch review cuối phiên thực thi**. Mọi check chạy qua **đường sản phẩm thật**
@@ -663,15 +678,35 @@ Ghi chú (`OD-C`, `DEC-020`): kịch bản này **không** đụng `IndexedDB` n
 bởi khe recovery của Anonymous Auth — acceptance criteria trên vẫn đứng nguyên, PASS được
 trung thực với thiết kế đã duyệt.
 
-#### CHECK-T09B-04 (§14.D) — Đóng/mở lại môi trường sử dụng vẫn recover được state
+#### CHECK-T09B-04 (§14.D) — Đóng/mở lại môi trường sử dụng vẫn recover được state (đã tái phạm vi bởi Owner Scope Decision, `DEC-021`)
 Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
-Yêu cầu: đóng hẳn trình duyệt (hoặc dùng một profile/cửa sổ khác), mở lại, state phục hồi đầy đủ.
-**CHẶN bởi `OD-C` (`DEC-020`), CHƯA đóng băng nội dung acceptance của nhánh "profile/cửa sổ
-khác":** nhánh đó tạo `IndexedDB` trống → Anonymous UID mới → bị Firestore rules từ chối, nên
-PASS trung thực phụ thuộc chủ dự án chọn R1 (recovery credential — PASS được qua đường
-`signInWithEmailAndPassword`) hay R2 (thu hẹp phạm vi "recover" xuống same-browser-profile —
-nhánh "profile/cửa sổ khác" khi đó tách khỏi acceptance của check này). KHÔNG tự chọn thay chủ
-dự án; KHÔNG hạ acceptance criteria hiện tại chỉ để né kết luận NOT_TESTED.
+
+**Audit trail bắt buộc (`DEC-021` §6) — KHÔNG phải bug fix, KHÔNG phải evidence PASS:**
+
+    OLD REQUIREMENT (DEC-019 / bản gốc của Task Spec này):
+      "đóng hẳn trình duyệt (hoặc dùng một profile/cửa sổ khác), mở lại, state phục hồi
+      đầy đủ" — bao gồm cả nhánh cross-device/cross-browser.
+
+    OWNER PRODUCT INTENT CHANGE:
+      DEC-021 — Personal Tool Simplification Principle + OD-C = R2 (SIMPLIFIED
+      PERSONAL-TOOL RECOVERY). Chủ dự án không yêu cầu V1 đảm bảo seamless identity
+      recovery khi đổi máy/browser/mất profile. Không xây recovery credential chỉ để
+      đóng edge case này.
+
+    NEW V1 REQUIREMENT (áp dụng từ đây):
+      Đóng/mở lại trình duyệt THÔNG THƯỜNG (cùng browser profile, IndexedDB còn nguyên);
+      reload; quay lại app sau một khoảng thời gian; restart máy NẾU browser profile / site
+      identity vẫn còn — state kế toán PHẢI phục hồi đầy đủ, và bất biến kế toán T-09A PHẢI
+      được bảo toàn.
+
+Cross-device / cross-browser / lost-identity recovery: **OUT OF SCOPE V1** —
+`PROJECT/HARDENING_BACKLOG.md` **H-23**. Khi Firestore rules từ chối một Anonymous UID không
+khớp owner (đúng kịch bản này), app PHẢI hiện rõ đây là **"không nhận diện được thiết bị/trình
+duyệt này"** — KHÔNG được im lặng hiện state rỗng như thể đó là sổ hợp lệ của một owner mới.
+Đây là một dạng của `CHECK-T09B-11` (Firebase read/auth failure visible) — không mở REQUIRED
+check mới, chỉ là một tình huống cụ thể mà check đó phải phủ.
+
+Lối thoát V1 cho cross-device: export/import JSON thủ công (capability giữ nguyên qua `OD-A`).
 
 ### Data — bảo toàn sổ qua vòng lưu/nạp
 
@@ -718,6 +753,11 @@ còn để cứu.
 Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
 Yêu cầu: dựng một lần đọc thất bại. App **không** được im lặng khởi động với state rỗng như thể
 sổ trống là sự thật. Banner đỏ, và mọi hành động ghi sổ bị chặn.
+Ghi chú (`DEC-021`): "đọc thất bại" gồm cả trường hợp Firestore rules **từ chối** vì UID hiện
+tại không khớp owner (thiết bị/trình duyệt mới, ngoài phạm vi V1 theo `CHECK-T09B-04`/`H-23`).
+Nhánh đó phải hiện banner phân biệt rõ **"không nhận diện được thiết bị/trình duyệt này"**,
+không dùng chung thông điệp mơ hồ với lỗi mạng, để chủ dự án biết cần export/import JSON thay
+vì chờ tự phục hồi.
 
 #### CHECK-T09B-12 (§14.L) — Corrupt / malformed durable state không thành accounting state
 Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
