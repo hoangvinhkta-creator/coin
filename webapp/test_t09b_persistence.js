@@ -45,7 +45,7 @@ const near = (a, b, tol) => Math.abs(a - b) <= (tol === undefined ? 1e-6 : tol);
 const same = (a, b) => Object.is(a, b) || (a === null && b === null);
 const banners = (p) => p.textContent('#banners').then((t) => t.replace(/\s+/g, ' '));
 const chip = (p) => p.textContent('#saveChip').then((t) => t.trim());
-const rulesReadOnly = (uid) => H.rulesWithUid(uid).replace(/allow read, create, update: if isOwner\(\);/g, 'allow read: if isOwner();');
+const rulesReadOnly = (uid) => H.rulesWithUid(uid).replace(/allow read, create, update: if isCoinDcaOwner\(\);/g, 'allow read: if isCoinDcaOwner();');
 
 /* Ghi sổ qua UI thật: một lệnh nạp vốn nhỏ. Trả msg. */
 async function uiContribute(p, mk, amt) {
