@@ -1626,3 +1626,85 @@ Khi branch `claude/t09b-firebase-implementation-nz50is` được đề xuất t�
 Owner Decision khác, theo đúng mẫu `DEC-013`) — khi đó đo lại divergence LOC tại thời điểm đó,
 không dùng lại con số của quyết định này. Hoặc khi `firebase-tools`/`firebase` phát hành phiên bản
 làm thay đổi đáng kể cỡ lockfile.
+
+---
+
+## DEC-023 — `OD-WEBAPP-06`: `T-09B` chạy trên Firebase project DÙNG CHUNG (`tinphatcontent`); merge rules an toàn; Hosting site mặc định
+
+Date:
+2026-09-02 (phiên tiếp nối — SHARED FIREBASE PROJECT / FIRESTORE RULES SAFE MERGE)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`.
+
+Decision:
+
+    (1) SHARED PROJECT LÀ THỰC TẾ ĐƯỢC CHẤP NHẬN, KHÔNG PHẢI ARCHITECTURE_CHANGE_REQUIRED.
+
+        Project Firebase thật Owner cấp cho T-09B (`tinphatcontent`, display name "CoinDCA")
+        trước đó phục vụ một ứng dụng khác ("Content — công cụ Zalo Group, Tín Phát"). Kiến
+        trúc T-09B (`DEC-020`) — Browser → Firebase Hosting → Anonymous Auth → Cloud Firestore
+        → `ethdca/state` + `ethdca/seed` — KHÔNG đổi. Điểm triển khai thực tế duy nhất: cùng
+        một Cloud Firestore database còn chứa namespace Content (`users`, `contents`,
+        `schedules`, `groups`, `config`, `fb_queue`, `audit_logs`). Không tạo Firebase project
+        mới, không đổi Firestore sang database khác, không đổi Authentication model, không thêm
+        backend/provider abstraction chỉ để cách ly Content.
+
+    (2) FIRESTORE RULES — MERGE AN TOÀN, KHÔNG THAY THẾ.
+
+        `firestore.rules` của repo nay là rules Content THẬT (giữ nguyên văn, không refactor/
+        format lại/đổi tên/thêm-bớt quyền) cộng thêm đúng hai khối `match /ethdca/state` và
+        `match /ethdca/seed` (hàm đổi tên `isCoinDcaOwner()` để không trùng hàm `isOwner(f)`
+        đã có sẵn của Content — trùng tên là lỗi biên dịch rules). Không thêm catch-all mới.
+
+        Kiểm chứng bằng Firestore Rules Emulator (`webapp/test_shared_rules_merge.js`, đăng ký
+        `npm run test:rules-merge`): battery 53 probe phủ toàn bộ 8 collection Content, so
+        ALLOW/DENY giữa rules Content nguyên văn (BEFORE) và rules đã merge (AFTER) —
+        **0 lệch**. Ma trận CoinDCA 12 ca (§8 chỉ thị) PASS 12/12 trên rules đã merge. Chi tiết
+        đầy đủ: `docs/reviews/T-09B-shared-rules-merge.md`.
+
+        `CONTENT_BEHAVIOR_PRESERVED = YES`. Chưa deploy — owner UID trong rules còn placeholder
+        `OWNER_UID_REQUIRED`; deploy thật cần UID Anonymous Auth thật của Owner (lấy từ trình
+        duyệt hằng ngày, chưa có tại phiên này) và do chính Owner chạy (agent không có Firebase
+        CLI authority trong môi trường này — không đổi từ checkpoint trước).
+
+    (3) HOSTING — RESOLVED = DÙNG SITE MẶC ĐỊNH CỦA `tinphatcontent`.
+
+        Owner tự kiểm tra Firebase Console: Hosting của project `tinphatcontent` **chưa được
+        setup** (còn màn hình "Get started"), không có site/deployment Content nào cần bảo
+        toàn. Owner quyết định CoinDCA dùng Hosting site mặc định — KHÔNG cần multi-site,
+        hosting target riêng, hay project Firebase mới chỉ để cách ly Content. `firebase.json`
+        của repo (`webapp/public` → Hosting) giữ nguyên, không cần sửa.
+
+    (4) OBSERVATION VỀ RULES CONTENT — KHÔNG SỬA.
+
+        Rules Content hiện tại cho `schedules` (update) và `fb_queue` (write) chỉ yêu cầu
+        `signedIn()` (bất kỳ ai đã xác thực, kể cả Anonymous, không cần role) — permissive hơn
+        các collection khác. Đây là thiết kế có sẵn của Content, không liên quan tới merge của
+        CoinDCA (xác nhận identical BEFORE/AFTER), không thuộc `DEC-021` Critical Product
+        Question A-F của ETH DCA OS. Không sửa trong T-09B. Không tạo `HARDENING_BACKLOG.md`
+        entry — đó là backlog của CAP-* thuộc dự án này, không phải nơi audit ứng dụng khác.
+
+Reason:
+Firestore chỉ có một rules document cho cả database; deploy nguyên văn `firestore.rules` cũ
+(chỉ có CoinDCA, catch-all deny) lên project dùng chung sẽ xoá quyền truy cập của Content —
+đúng loại hậu quả `CLAUDE.md` § Conflict Rule yêu cầu dừng lại và xử lý tường minh, KHÔNG được
+đoán. Owner đã tự xác nhận Hosting an toàn (chưa setup) nên không cần quyết định gì thêm ở đó;
+phần rules cần bằng chứng kỹ thuật (không chỉ lời hứa "sẽ không đổi hành vi Content"), nên dùng
+đúng cơ chế RISK_MODEL.md đã có sẵn cho HIGH Blast Radius: batch verification trước khi cho
+phép bước kế tiếp (deploy), không phải một hard-stop kiến trúc.
+
+Impact:
+- `firestore.rules`: merge hoàn tất, CHƯA deploy.
+- `webapp/test_shared_rules_merge.js` (mới), `webapp/package.json` (`test:rules-merge`).
+- `docs/reviews/T-09B-shared-rules-merge.md` (mới) — evidence đầy đủ.
+- `PROJECT/PROJECT_PROGRESS.md`: cập nhật Last Updated + Session History (tối thiểu).
+- KHÔNG đổi Completion Gate 16 REQUIRED check nào. KHÔNG đổi `DEC-019`/`DEC-020`/`DEC-021`/
+  `DEC-022`. KHÔNG tiêu `CAP-WEBAPP` budget (2/0/2 không đổi) — đây không phải repair cycle.
+- Số task ID mới = **0**. Số hàm/quyền Content bị đổi = **0** (đo được bằng 53 probe emulator).
+
+Can Revisit After:
+Khi rules Content thật đổi (Owner tự deploy thay đổi phía Content, ngoài phạm vi T-09B) — khi
+đó `webapp/test_shared_rules_merge.js` cần chạy lại với bản BEFORE mới trước khi tái xác nhận
+merge an toàn. Hoặc khi Owner tách CoinDCA sang project Firebase riêng (không còn lý do giữ
+merge phức tạp này).

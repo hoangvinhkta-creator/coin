@@ -25,7 +25,23 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **OWNER DECISION `DEC-022` (`OD-WEBAPP-05`) — Integration size disposition cho
+2026-09-02 — **OWNER DECISION `DEC-023` (`OD-WEBAPP-06`) — Firebase project thật DÙNG CHUNG
+với ứng dụng "Content"; merge `firestore.rules` an toàn; Hosting RESOLVED.** Project thật
+(`tinphatcontent`, display "CoinDCA") KHÔNG dành riêng cho ETH DCA OS — Firestore đang có dữ
+liệu Content (`users`, `contents`, `schedules`, `groups`, `config`, `fb_queue`, `audit_logs`).
+Kiến trúc T-09B (`DEC-020`) KHÔNG đổi — chỉ thêm bước merge rules an toàn. `firestore.rules`
+nay là rules Content THẬT (giữ nguyên văn) + khối CoinDCA riêng biệt (`isCoinDcaOwner()`, đổi
+tên khỏi `isOwner()` để không trùng hàm sẵn có của Content). Kiểm bằng Firestore Rules
+Emulator (`webapp/test_shared_rules_merge.js`, `npm run test:rules-merge`): battery 53 probe
+phủ toàn bộ 8 collection Content, BEFORE (rules Content nguyên văn) == AFTER (đã merge) —
+**0 lệch** → `CONTENT_BEHAVIOR_PRESERVED = YES`. Ma trận CoinDCA 12 ca (§8) PASS 12/12. Evidence
+đầy đủ: `docs/reviews/T-09B-shared-rules-merge.md`. Hosting: Owner tự kiểm Console — chưa
+setup, không có site Content cần bảo toàn → dùng site mặc định, không cần multi-site. **CHƯA
+DEPLOY** — owner UID trong rules còn placeholder, chờ Owner lấy UID thật từ trình duyệt hằng
+ngày rồi tự deploy (agent không có Firebase CLI authority). `CAP-WEBAPP` budget không đổi:
+2/0/2. Không tiêu repair cycle. Chi tiết: `PROJECT/PROJECT_DECISIONS.md` `DEC-023`.
+
+Trước đó, 2026-09-02 — **OWNER DECISION `DEC-022` (`OD-WEBAPP-05`) — Integration size disposition cho
 `T-09B`: ACCEPT THE DIVERGENCE.** Phiên tiếp nối S014 trên cùng branch
 `claude/t09b-firebase-implementation-nz50is` báo `INTEGRATION_DECISION_REQUIRED: loc>5000`
 (divergence LOC = 12.272). Chủ dự án xác nhận CHẤP NHẬN kích thước hiện tại — KHÔNG merge `main`,
@@ -899,6 +915,20 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- T-09B (SHARED FIREBASE PROJECT / RULES SAFE MERGE — tiếp nối) — 2026-09-02 — cùng branch
+  `claude/t09b-firebase-implementation-nz50is` @ HEAD `f9330eb`. Owner xác nhận project thật
+  (`tinphatcontent`) dùng chung với ứng dụng Content, cung cấp nguyên văn rules Content đang
+  chạy. Phân tích: không có collection nào tên `ethdca`, không có catch-all sẵn có — merge an
+  toàn bằng cách CHỈ thêm hai khối `match /ethdca/state`/`match /ethdca/seed` (hàm đổi tên
+  `isCoinDcaOwner()`), không đụng bất kỳ match/function nào của Content. Dựng
+  `webapp/test_shared_rules_merge.js` trên `test_firebase_harness.js` đã có: battery 53 probe
+  Content (đọc từ chính rules text, phủ cả 8 collection — vượt yêu cầu tối thiểu `audit_logs`/
+  `config`/`users`) chạy trên Firestore Rules Emulator, so BEFORE (rules Content nguyên văn) ==
+  AFTER (đã merge) — **0 lệch**, cả 53 probe khớp đúng phân tích rules text. Ma trận CoinDCA 12
+  ca (§8 chỉ thị) PASS 12/12, gồm xác nhận owner UID KHÔNG có thêm quyền Content nào ngoài đúng
+  mức "signedIn thường" mà Content vốn đã cấp cho MỌI actor. `DEC-023` ghi quyết định + Hosting
+  RESOLVED (Owner tự kiểm Console: chưa setup, dùng site mặc định). CHƯA deploy — chờ owner UID
+  thật. Evidence: `docs/reviews/T-09B-shared-rules-merge.md`.
 - T-09B (REAL FIREBASE SETUP — tiếp nối S014) — 2026-09-02 — cùng branch
   `claude/t09b-firebase-implementation-nz50is` @ HEAD `7f78c14`. Mục tiêu: thiết lập Firebase
   project thật + xác minh production reachability. Bước đầu gặp
