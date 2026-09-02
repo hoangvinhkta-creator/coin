@@ -232,3 +232,63 @@ absorption_status = DEFERRED_UNTIL_WP-A4_REOPENED_BY_OWNER
 
 Ba lựa chọn và khuyến nghị: `docs/reviews/S009-F-S009-01-indicator-theo-vi-tri.md` §II.7.
 Phiên này KHÔNG tự mở lại `WP-A4`, KHÔNG tự sửa gate, KHÔNG tạo task ID.
+
+---
+
+## 7. Cập nhật tại phiên Owner Authority T-09B (2026-09-02) — `DEC-019`
+
+Nguồn thẩm quyền: `DEC-019` (`OD-WEBAPP-02`), và
+`docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`.
+
+Bảng §2 **KHÔNG đổi**: không capability nào được thêm, đổi tên hay đổi lineage root. Số task ID
+mới = **0**. Giữ nguyên §2 theo đúng tiền lệ §5/§6 — bảng đó ghi lại trạng thái tại thời điểm
+lập (2026-09-01), và các mục dưới đây là bản đính chính có ngày tháng, không phải viết đè.
+
+### 7.1 `CAP-WEBAPP` — danh sách thành viên, đính chính
+
+Ô "Owner task hiện hành" của `CAP-WEBAPP` ở §2 ghi `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4`. Đúng tại
+2026-09-01, lạc hậu từ 2026-09-02. Danh sách đầy đủ tính đến hôm nay:
+
+| Task | Trạng thái | Ghi chú |
+|---|---|---|
+| `WP-C1` | DONE (2026-09-02) | Lineage root |
+| `T-09A` | DONE (2026-09-02, `DEC-018`) | Vá V-01/V-02 |
+| `T-09B` | **PLANNED** | Lưu trữ bền trên Firebase (`DEC-019`) — task này |
+| `WP-C2` | BLOCKED | Sau T-05 (`DEC-005` PENDING) |
+| `WP-C3` | PLANNED | Sau WP-C2 |
+| `WP-C4` | PLANNED | Sau WP-A3/A4/A6/A7 |
+
+Cả `T-09A` và `T-09B` đều **đã tồn tại trong roadmap từ RCP-001 (2026-08-23)**. Chúng không phải
+task tách ra để giải phóng budget — `GOVERNANCE_V4.md` §II.2, trục ngang.
+
+### 7.2 `T-09B` — không chạm Absorption Limit
+
+T-09B là một **thành viên đã có sẵn** của capability, không phải một mục được hấp thụ vào task
+khác. Bốn ngưỡng của `CAPABILITY_MODEL.md` §Absorption Limit đo trên hành vi *hấp thụ*, nên
+không áp dụng ở đây:
+
+    ABSORPTION_LIMIT_REACHED = KHÔNG (không có hành vi hấp thụ nào diễn ra)
+
+### 7.3 Ràng buộc kiến trúc gắn vào capability
+
+`CAP-WEBAPP` nay mang một ràng buộc nền tảng do chủ dự án đặt: **persistence của app web dùng
+Firebase** (`DEC-019` điểm 2). Ràng buộc này thuộc về capability, không thuộc về một task, nên
+các task thành viên sau này (`WP-C2`, `WP-C3`) thừa hưởng nó và không được mở lại cuộc so sánh
+provider mà không có Owner Decision mới.
+
+`DEC-019` điểm 3 giới hạn phạm vi: chỉ thành phần Firebase tối thiểu cần cho durable
+persistence. "Đã chọn Firebase" không mở cửa cho phần còn lại của hệ sinh thái.
+
+### 7.4 Khe thẩm quyền còn mở
+
+    OWNER_DECISION_REQUIRED
+    OD-A  — runtime host của app web (CHẶN T-09B PLANNED -> READY)
+    OD-B  — thành phần Firebase: Cloud Firestore vs Realtime Database
+    OD-B2 — danh tính tối thiểu cho security rules
+
+Chi tiết, bằng chứng và khuyến nghị: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`
+§ OWNER_DECISION_REQUIRED, và `DEC-019` mục "Hệ quả phát sinh ngay tại phiên chuẩn bị".
+
+Đây là khe thẩm quyền **thi hành**, giống hình thái §6.3: capability có authority, nhưng ba rào
+(host, component, danh tính) đều do `STATE_AUTHORITY.md` dành cho chủ dự án. Phiên này KHÔNG tự
+chọn host, KHÔNG tự chọn component, KHÔNG tạo task ID, KHÔNG sửa production code.

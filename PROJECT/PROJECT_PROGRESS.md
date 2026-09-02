@@ -25,7 +25,21 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **OWNER DECISION `DEC-018` (`OD-WEBAPP-01`) — T-09A chuyển `DONE`**: chủ dự án
+2026-09-02 — **OWNER DECISION `DEC-019` (`OD-WEBAPP-02`) — Firebase là ràng buộc kiến trúc cố định cho
+T-09B**, phiên Owner Authority / Ready-Gate Preparation. Chủ dự án bổ sung Product Intent (công cụ cá nhân,
+single-user, dùng khi cần, tần suất thấp; ưu tiên correctness → usability → low operational burden →
+implementation simplicity → cost → technical elegance → scalability) và chốt **Firebase** làm nền tảng
+persistence — KHÔNG so sánh lại với Supabase/SQLite/PostgreSQL/D1/JSON Server. Lập Task Spec
+`docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` cho ID **đã tồn tại** (Task ID mới = **0**). State inventory
+đọc từ schema thật (`app_logic.js::emptyState()`, `engine.js::buildLadder()`, `live_seed.json`), phân loại
+MUST_PERSIST (hai tầng) / CAN_RECOMPUTE / EPHEMERAL. Completion Gate **FINALIZED** 16/16 REQUIRED, tất cả
+`NOT_TESTED`. **T-09B GIỮ `PLANNED`** — Ready Gate KHÔNG đạt vì còn `OWNER_DECISION_REQUIRED`: `OD-A`
+(runtime host — CSP của host hiện tại chặn mọi host ngoài trừ Google Fonts, nên Firebase không với tới được
+và gate A/B/C/D không thể PASS; khuyến nghị Firebase Hosting), `OD-B` (Firestore vs Realtime Database —
+khuyến nghị Cloud Firestore), `OD-B2` (danh tính tối thiểu cho security rules). `CAP-WEBAPP` budget KHÔNG
+đổi: allowed 2 / used 0 / remaining 2. Không mở repair cycle. **Production file bị sửa = 0.**
+
+Trước đó, 2026-09-02 — **OWNER DECISION `DEC-018` (`OD-WEBAPP-01`) — T-09A chuyển `DONE`**: chủ dự án
 phê chuẩn hoàn thành T-09A và ratify hạn mức repair `CAP-WEBAPP`. **T-09A: IMPLEMENTED →
 DONE.** Completion Gate GIỮ NGUYÊN 12/12 REQUIRED PASS (E1) — không sửa câu chữ/ngữ nghĩa.
 `CAP-WEBAPP` budget: allowed 2 / used 0 / remaining 2 — nay là **Owner-ratified** (`DEC-018`),
@@ -133,7 +147,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
 | DONE | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. **DONE 2026-09-02** theo Owner Decision `DEC-018` (`OD-WEBAPP-01`) — Completion Gate giữ nguyên 12/12 REQUIRED PASS (E1), không sửa câu chữ/ngữ nghĩa |
-| PLANNED | T-09B | Dựng lưu trữ dữ liệu bền | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04. Nên làm trước T-10 |
+| PLANNED | T-09B | Dựng lưu trữ dữ liệu bền (Firebase) | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | Sau T-04, WP-C1 (DONE), T-09A (DONE). Nên làm trước T-10. **Nền tảng persistence = Firebase — FIXED OWNER CONSTRAINT (`DEC-019`/`OD-WEBAPP-02`)**; không so sánh lại provider. Task Spec: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` (Task ID mới = 0 — ID này có từ RCP-001 2026-08-23). Completion Gate **FINALIZED** 16/16 REQUIRED (ánh xạ 14 mục A–N của chủ dự án + ranh giới historical + vai trò mirror), tất cả `NOT_TESTED`; gate đóng băng tại `PLANNED → READY`. **GIỮ `PLANNED` — `OWNER_DECISION_REQUIRED`**: `OD-A` (runtime host — app đang chạy dưới CSP chặn mọi host ngoài trừ Google Fonts nên Firebase không với tới được; gate A/B/C/D không thể PASS ở host hiện tại; khuyến nghị Firebase Hosting), `OD-B` (thành phần Firebase — khuyến nghị Cloud Firestore), `OD-B2` (danh tính tối thiểu cho security rules — khuyến nghị Anonymous Auth khoá một UID). `CAP-WEBAPP` budget KHÔNG đổi: 2/0/2 |
 | PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
 | READY | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
@@ -461,6 +475,10 @@ App web hiện lưu state trong localStorage của trình duyệt cộng cơ ch�
 Đây không phải "một database" như Implementation Plan §9 yêu cầu. Xóa dữ liệu site, dùng cửa sổ
 riêng tư, đổi máy, hoặc publish thất bại đều có thể làm mất dữ liệu chưa xuất ra ngoài.
 Giảm thiểu: T-09B. Cho tới khi T-09B xong, chủ dự án nên xuất file JSON định kỳ.
+**Cập nhật 2026-09-02 (`DEC-019`)**: nền tảng giảm thiểu đã được chốt là **Firebase**; T-09B có Task Spec
+và Completion Gate FINALIZED (`docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`). Risk **CHƯA giảm** — chưa
+một dòng production nào đổi. T-09B vẫn `PLANNED`, chờ `OD-A`/`OD-B`/`OD-B2`. Khuyến nghị xuất JSON định kỳ
+vẫn còn nguyên hiệu lực.
 
 ### RSK-002 — Hai bản cài đặt chiến lược trôi khỏi nhau (mức: cao) — S001 XÁC NHẬN (E1)
 Implementation Plan §1 yêu cầu live và backtest dùng chung một core strategy function. Trang

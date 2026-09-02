@@ -191,7 +191,8 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
 ### 2.2 `CAP-WEBAPP` — App web: sổ sách, trạng thái thực thi, parity JS/Python
 
     LINEAGE ROOT   = WP-C1 (docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md)
-    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), WP-C2 (BLOCKED), WP-C3, WP-C4 (PLANNED)
+    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (PLANNED), WP-C2 (BLOCKED),
+                     WP-C3, WP-C4 (PLANNED)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
     BRANCH         = main   (canonical trunk từ `DEC-013`)
@@ -255,6 +256,37 @@ Budget tầng B (`SESSION_PRODUCTION_DIFF_MAX` / `GOLDEN_CUMULATIVE_DIFF_MAX`) v
 `CAP-WEBAPP` KHÔNG kế thừa và KHÔNG bị tính vào budget của `CAP-PROV` hay `CAP-DATA`: ba
 lineage root khác nhau, và `T-09A` đã tồn tại trong roadmap từ RCP-001 (2026-08-23) — không
 phải task tách ra để giải phóng budget. Số task ID mới do T-09A tạo = **0**.
+
+#### 2.2.1 Phiên Owner Authority T-09B (2026-09-02) — `DEC-019`, budget KHÔNG đổi
+
+`T-09B` được thêm vào THÀNH VIÊN ở trên. Đây là **mapping một task đã tồn tại** trong roadmap từ
+RCP-001 (2026-08-23) vào capability đã tồn tại — không phải task mới, không phải nhánh tách ra để
+xin thêm budget (`GOVERNANCE_V4.md` §II.2, trục ngang).
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI (Owner-ratified, `DEC-018`;
+                                                     `DEC-019` điểm 5 xác nhận lại)
+    CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+Ba con số trên **không được đọc lại như thể vừa được cấp mới**. `USED = 0` vì `CAP-WEBAPP` chưa
+tiêu chu kỳ sửa nào, không phải vì phiên này đặt lại. Implementation `T-09B` sau này là **INITIAL
+IMPLEMENTATION**, KHÔNG tiêu repair cycle — cùng quy ước đã dùng cho `WP-A4` (`DEC-016`/`DEC-017`)
+và `T-09A` (`DEC-018`).
+
+Effective Risk của `CAP-WEBAPP` tại `T-09B` = **HIGH**, cùng mức đã chấm tại `T-09A`:
+`Effective Risk = MAX(Local Risk 3, Blast Radius 3) = 3`. Blast Radius của T-09B chấm **3** (cao
+hơn mức 2 của T-09A) vì một lớp lưu trữ hỏng làm sai **toàn bộ** sổ, không chỉ một đường kế toán.
+Mức HIGH không đổi vì công thức lấy MAX. Golden Reduction KHÔNG dùng được (`H-10`).
+
+Phiên ghi `DEC-019` là phiên governance-only. Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat <base>..HEAD -- webapp/app_logic.js webapp/engine.js \
+        webapp/app_shell.html webapp/build_app.js src/eth_dca_os pyproject.toml pyproject.lock
+      -> 0   (production diff = 0; xem `docs/sessions/S011-t09b-firebase-authority.md`)
+
+Vì diff production = 0, phiên này **không tiêu** chu kỳ nào và không cần cặp BASE/HEAD SHA trong
+bảng §2.2. Cặp SHA sẽ được ghi tại lượt implementation thật của `T-09B`.
 
 ---
 

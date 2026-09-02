@@ -1101,3 +1101,132 @@ Trạng thái thi hành tại phiên Integration:
 Can Revisit After:
 Khi `REMAINING` về 0 và cần `OWNER_EXTENSION`, hoặc khi chủ dự án muốn đặt lại Effective Risk
 sau khi có Golden baseline canonical cho webapp.
+
+---
+
+## DEC-019 — `OD-WEBAPP-02`: Firebase là ràng buộc kiến trúc cố định cho T-09B; bổ sung Product Intent
+
+Date:
+2026-09-02 (phiên Owner Authority / Ready-Gate Preparation cho T-09B)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Đây là quyết định cấp kiến trúc + cấp sản phẩm của chủ dự
+án, ghi theo §0, §1, §2 và §6 của chỉ thị phiên. Không thuộc thẩm quyền agent.
+
+Decision:
+
+    (1) PRODUCT INTENT — BỔ SUNG cho DEC-011, KHÔNG thay thế.
+
+        ETH DCA OS là công cụ CÁ NHÂN, SINGLE-USER, DÙNG KHI CẦN. Không phải ứng dụng tần
+        suất cao, không phải hệ thống enterprise. Không cần tối ưu cho scale lớn, không cần
+        kiến trúc backend phức tạp. Ưu tiên DỄ SỬ DỤNG và ÍT VẬN HÀNH.
+
+        Mục tiêu phát biểu nguyên văn: "mở web lên là sử dụng được, state thật được lưu bền,
+        đóng/mở lại vẫn tiếp tục được".
+
+        Không tối ưu kiến trúc chỉ để đạt technical elegance nếu làm giảm usability hoặc
+        tăng operational burden.
+
+        THỨ TỰ ƯU TIÊN khi có nhiều phương án khả thi:
+            1. correctness · 2. usability · 3. low operational burden ·
+            4. implementation simplicity · 5. cost · 6. technical elegance · 7. scalability
+
+    (2) FIREBASE = FIXED OWNER CONSTRAINT cho persistence của T-09B.
+
+        KHÔNG thực hiện comparison để thay Firebase bằng Supabase, SQLite, PostgreSQL,
+        Cloudflare D1, JSON Server hay database/provider nào khác. Agent KHÔNG có thẩm quyền
+        đổi quyết định này chỉ vì một phương án khác được đánh giá technical-optimal hơn.
+
+        Nếu Firebase có limitation thực sự ngăn Completion Gate: báo OWNER_DECISION_REQUIRED
+        kèm evidence cụ thể. KHÔNG silently đổi architecture.
+
+    (3) FIREBASE SCOPE PRINCIPLE.
+
+        "Đã chọn Firebase" KHÔNG có nghĩa "phải dùng toàn bộ hệ sinh thái Firebase". Chỉ dùng
+        thành phần TỐI THIỂU cần cho durable persistence. Không tự thêm authentication phức
+        tạp, Cloud Functions, analytics, messaging, hosting migration, multi-user permission
+        system, realtime collaboration, event architecture, microservices — nếu Completion
+        Gate của T-09B không cần.
+
+        Trong phạm vi Firebase, agent ĐƯỢC PHÉP đánh giá thành phần phù hợp nhất (Realtime
+        Database vs Cloud Firestore) và trả recommendation để chủ dự án duyệt, nhưng KHÔNG
+        được đổi khỏi Firebase.
+
+    (4) T-09B AUTHORITY.
+
+        T-09B là existing V1 task. KHÔNG tạo task ID mới.
+        Capability = CAP-WEBAPP · Lineage root = WP-C1.
+        Routing giữ nguyên: Tier D / Effort xhigh, category `accounting_financial` +
+        `material_sensitive_data_corruption`. KHÔNG tự hạ routing.
+
+    (5) CAP-WEBAPP BUDGET GIỮ NGUYÊN — KHÔNG reset, KHÔNG cấp thêm.
+
+            ALLOWED = 2 · USED = 0 · REMAINING = 2      (không đổi so với DEC-018)
+
+        Implementation T-09B sau này là INITIAL IMPLEMENTATION, KHÔNG phải repair cycle —
+        cùng quy ước ở DEC-016/DEC-017 (CAP-DATA) và DEC-018 (T-09A).
+
+    (6) HISTORICAL STATE.
+
+        Forensic / migrate / sửa historical accounting state tạo trước T-09A = OUT OF SCOPE
+        T-09B V1. Giữ nguyên cảnh báo hiện tại. T-09B KHÔNG được tự tuyên bố historical state
+        là sạch.
+
+Reason:
+Trước quyết định này, `PROJECT/PROJECT_PROGRESS.md` ghi T-09B là "Dựng lưu trữ dữ liệu bền"
+mà không nêu nền tảng, và `PROJECT/PROJECT_PROFILE.md` để ngỏ ("Backup: KHÔNG có cơ chế backup
+nào"). Thiếu một ràng buộc kiến trúc do chủ dự án đặt, mọi phiên chuẩn bị T-09B đều có xu
+hướng mở lại cuộc so sánh provider — tốn ngân sách mà không tiến gần hơn tới việc app dùng
+được. Chủ dự án chốt nền tảng để phiên thực thi bắt đầu từ một điểm cố định.
+
+Điểm (1) bổ sung chứ không thay `DEC-011`: `DEC-011` đã chốt single-user và 10 điểm V1 Daily-Use
+Acceptance; quyết định này thêm trục *tần suất sử dụng thấp* và *thứ tự ưu tiên khi chọn giữa
+nhiều cách cài đặt đúng*. Ràng buộc đối xứng của `DEC-011` giữ nguyên: KHÔNG được hạ một finding
+chỉ vì "dự án cá nhân" — vẫn phải chứng minh nó không ảnh hưởng A–F.
+
+Impact:
+- `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` được lập (Task Spec cho ID **đã tồn tại** từ
+  RCP-001 2026-08-23). Số task ID mới = **0**.
+- `PROJECT/PROJECT_PROGRESS.md`: roadmap row T-09B giữ `PLANNED`, ghi thêm ràng buộc Firebase
+  và trạng thái `OWNER_DECISION_REQUIRED`. Không gate nào bị sửa.
+- `PROJECT/CAPABILITY_REGISTRY.md` §2: `T-09B` được ghi vào danh sách owner task của
+  `CAP-WEBAPP`. KHÔNG capability mới, KHÔNG đổi lineage root.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2: thêm `T-09B` vào THÀNH VIÊN; ba con số budget
+  **không đổi** (2/0/2).
+- `PROJECT/PROJECT_PROFILE.md`: KHÔNG đổi. Profile vẫn PRODUCT (`DEC-001`); mục "Backup: KHÔNG
+  có cơ chế nào" vẫn đúng cho tới khi T-09B DONE.
+- KHÔNG đổi `DEC-011` (Product Intent + 10 điểm Acceptance vẫn nguyên hiệu lực).
+- KHÔNG đổi `DEC-018` (T-09A DONE, hạn mức CAP-WEBAPP 2/0/2 giữ nguyên).
+- KHÔNG mở repair cycle. Số production file bị sửa tại phiên ghi quyết định này = **0**.
+
+Hệ quả phát sinh ngay tại phiên chuẩn bị — CHƯA được quyết:
+
+    OWNER_DECISION_REQUIRED — hai quyết định còn thiếu, chặn T-09B PLANNED -> READY:
+
+    OD-A (CHẶN) — RUNTIME HOST của app web.
+      App hiện chạy trên host artifact, dưới CSP chặn mọi host ngoài trừ Google Fonts
+      (`webapp/README.md:13`, `docs/reviews/S001-discovery-baseline.md:94-95`,
+      `webapp/app_shell.html:2`). Firebase cần gọi mạng tới endpoint của chính Firebase lúc
+      chạy, nên Completion Gate A/B/C/D KHÔNG THỂ PASS chừng nào app còn ở host đó.
+      Đây KHÔNG phải limitation của Firebase — đây là limitation của nơi app đang chạy, và
+      vì vậy KHÔNG phải lý do để đổi khỏi Firebase.
+      Khuyến nghị: Firebase Hosting (cùng hệ sinh thái đã chọn, một URL cố định, không cần
+      terminal cho việc dùng hằng ngày). Chi tiết ba phương án:
+      `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` § OWNER_DECISION_REQUIRED.
+
+    OD-B (phụ thuộc OD-A) — THÀNH PHẦN FIREBASE.
+      Khuyến nghị: Cloud Firestore, vì Realtime Database xoá âm thầm khoá có giá trị `null`
+      (nguy hiểm cho `filled_vnd`/`released_vnd`/`ladder.month`) và vì trần 1 MiB/document
+      của Firestore ép tách seed khỏi sổ kế toán — đúng ranh giới cần có.
+
+    OD-B2 (kèm OD-B) — DANH TÍNH TỐI THIỂU cho security rules.
+      Không có danh tính thì lựa chọn còn lại là cho ghi công khai, tức bất kỳ ai biết
+      project ID đều sửa được sổ tiền — rơi vào điểm C của `DEC-011` (mất/hỏng lịch sử giao
+      dịch thực tế). Khuyến nghị tối thiểu: Firebase Anonymous Auth, rules khoá vào đúng một
+      UID. Đây KHÔNG phải "authentication phức tạp" theo điểm (3) ở trên.
+
+Can Revisit After:
+Khi có người thứ hai dùng công cụ hoặc công cụ được phát hành cho người khác — khi đó điểm (1)
+và điểm (3) phải được định tuyến lại toàn bộ. Hoặc khi Firebase thay đổi điều khoản/giới hạn
+làm Completion Gate T-09B không đạt được — khi đó là `ARCHITECTURE_CHANGE_REQUIRED`, không phải
+quyết định của agent.
