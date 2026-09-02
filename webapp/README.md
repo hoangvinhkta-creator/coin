@@ -41,6 +41,14 @@ Lần kiểm gần nhất: lệch tối đa 7.4e-11 trên 40 ngày — hai bản
 Kiến trúc cố định (`DEC-020`): Browser → Firebase Hosting → Firebase Anonymous Auth → Cloud
 Firestore. `localStorage` chỉ là bản sao/cache; mất nó không mất sổ (CHECK-T09B-03).
 
+**Nếu project Firebase đang DÙNG CHUNG với một ứng dụng khác** (trường hợp thật của dự án này —
+project `tinphatcontent` trước đó phục vụ ứng dụng "TinphatContent"/Content, Firestore đang có
+dữ liệu Content cũ): **KHÔNG** chạy lệnh `firebase deploy` (không scope) hay
+`firebase deploy --only firestore:rules` với nguyên văn `firestore.rules`/`firebase.json` của
+repo này. Firestore chỉ có MỘT rules document cho cả database, và Hosting site mặc định chỉ
+phục vụ MỘT bộ nội dung — deploy thẳng có thể xoá quyền truy cập của Content hoặc ghi đè site
+đang chạy. Xem cảnh báo chi tiết ở đầu `firestore.rules` trước khi làm bước 3-4 dưới đây.
+
 1. Tạo project trên <https://console.firebase.google.com> (gói Spark/free đủ cho một người dùng).
    Bật **Authentication → Sign-in method → Anonymous**. Tạo **Firestore Database** (production
    mode — rules của repo sẽ được deploy đè lên). Thêm một **Web app** trong Project settings và

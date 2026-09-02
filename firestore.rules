@@ -1,15 +1,33 @@
 rules_version = '2';
 // T-09B — DEC-020 OD-B2 / DEC-021 §4 Minimum Security Floor.
 //
+// ============================================================================
+// CẢNH BÁO — PROJECT `tinphatcontent` DÙNG CHUNG VỚI ỨNG DỤNG KHÁC (2026-09-02)
+// ============================================================================
+// File này hiện là bản DRAFT cho một project Firebase RIÊNG. Project thật đang dùng
+// (`tinphatcontent`) trước đó phục vụ ứng dụng "TinphatContent"/Content và Firestore của nó
+// đang có dữ liệu Content cũ. File này CHƯA được merge với rules hiện có của Content.
+//
+//   KHÔNG chạy `firebase deploy --only firestore:rules` (hay `firebase deploy` không scope)
+//   với NGUYÊN VĂN file này lên project `tinphatcontent` — nó sẽ THAY TOÀN BỘ ruleset của
+//   project (Firestore chỉ có MỘT rules document cho cả database), có nguy cơ làm ứng dụng
+//   Content mất quyền truy cập chính dữ liệu của nó.
+//
+//   Trước khi deploy: lấy nguyên văn rules hiện tại của Content (Console → Firestore Database
+//   → Rules), merge CHỈ thêm hai khối `match /ethdca/state` và `match /ethdca/seed` bên dưới
+//   vào rules đó — KHÔNG thêm/đổi catch-all `match /{document=**}` nếu Content đã có một cái,
+//   và validate bằng Firestore Rules emulator rằng hành vi Content không đổi trước/sau merge.
+//
 // Cloud Firestore chỉ cho ĐÚNG MỘT owner UID (Firebase Anonymous Auth) đọc/ghi hai document
 // `ethdca/state` (sổ kế toán) và `ethdca/seed` (dữ liệu tham chiếu). Mọi UID khác và mọi
 // truy cập không xác thực đều bị từ chối — không có public read/write.
 //
-// THIẾT LẬP LẦN ĐẦU (một lần, cần terminal):
+// THIẾT LẬP LẦN ĐẦU trên project RIÊNG (không dùng chung — một terminal, một lần):
 //   1. `firebase deploy --project <PROJECT_ID>` với file này còn nguyên OWNER_UID_REQUIRED.
 //   2. Mở app trên trình duyệt sẽ dùng hằng ngày. App báo "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ" và
 //      hiện UID ở tab "Thiết lập" → chép UID đó thay cho OWNER_UID_REQUIRED bên dưới.
 //   3. `firebase deploy --only firestore:rules --project <PROJECT_ID>`, rồi tải lại app.
+// Trên project DÙNG CHUNG: làm theo cảnh báo merge ở trên trước bước 3.
 //
 // Cross-device / mất identity: OUT OF SCOPE V1 (PROJECT/HARDENING_BACKLOG.md H-23) — một
 // trình duyệt/máy khác sinh UID mới và bị từ chối ở đây; lối thoát là export/import JSON.
