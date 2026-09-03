@@ -2,7 +2,12 @@
 
 ## Metadata
 Status:
-PLANNED
+**IMPLEMENTED — 9/9 REQUIRED PASS (E1) tại S015 (2026-09-03)**. Đóng phần đo lường của F-002 và
+toàn bộ F-016. Sau run đủ phase: `UNKNOWN: []` — không Failure Signal nào còn UNKNOWN. Không hạ
+REQUIRED check nào. Phát sinh `F-S015-01` (BLOCKING): phần thuộc WP-A5 đã sửa trong gói; phần gốc
+ở `failure_signals.py` định tuyến sang `WP-B1` vì nằm ngoài Expected Touch Area và `CHECK-A5-07`
+(FROZEN) bắt buộc chứng minh file đó KHÔNG đổi.
+Chuyển `DONE` là hành động của chủ dự án (`STATE_AUTHORITY.md`).
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -301,7 +306,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -311,11 +316,39 @@ Yêu cầu: in ra trạng thái của cả FS-01…FS-12 sau một run đầy đ
 `None`. Nếu một FS vẫn `None` vì lý do khác (ví dụ dữ liệu đầu vào không đủ dài), lý do đó phải được
 ghi rõ và **không được che bằng một giá trị mặc định**.
 
+Kết quả (S015). Run đủ phase trên dữ liệu tổng hợp 2018-01-01 → 2026-06-30 (`run_gate1` →
+`run_gate2` → `run_gate3` → `run_controls` → `run_verdict`, dev_limit 25, tổng 1029 s):
+
+    SIGNALS: {"FS-01": false, "FS-02": true,  "FS-03": true,  "FS-04": true,
+              "FS-05": false, "FS-06": false, "FS-07": false, "FS-08": true,
+              "FS-09": false, "FS-10": false, "FS-11": "False", "FS-12": true}
+    UNKNOWN: []
+
+**`UNKNOWN` rỗng — không Failure Signal nào còn UNKNOWN.** Và đạt ở nghĩa mạnh: không mục nào được
+che bằng giá trị mặc định, mọi đại lượng đều có đường sinh ra thật. FS-06 nhận đúng **18** config
+OFAT từ manifest Gate 2 (`n_adjacent = 18`, khớp số OFAT manifest sinh ra), `flip = false`.
+
+Khối `failure_signal_inputs_wp_a5` trong run record ghi phạm vi + lý do của cả năm đại lượng WP-A5
+chạm tới, nên nếu về sau một signal quay lại UNKNOWN thì record tự nói được vì sao.
+
+**Chính run này phát hiện `F-S015-01`** (xem `PROJECT/PROJECT_PROGRESS.md` § RSK-007 và
+`docs/sessions/S015-wp-a5-do-failure-signal.md` §6b): lần chạy TRƯỚC khi sửa kiểu ghi ra
+`"FS-11": "False"` và `"FS-12": "True"` dạng **chuỗi** — dấu vết `numpy.bool_`, mà
+`np.bool_(True) is True` cho `False`, nên signal đó vô hình với cờ chặn `any_true` của BT §17.
+Bằng chứng trước/sau của lần chạy này: `FS-12` chuyển từ `"True"` (chuỗi) sang `true` (bool JSON)
+sau khi WP-A5 ép kiểu tại `metrics.py`, trong khi `FS-11` **vẫn** là `"False"` — đúng ranh giới
+phạm vi: phần WP-A5 sở hữu đã đóng, phần gốc trong `failure_signals.py` định tuyến sang `WP-B1`.
+Mười signal còn lại giữ nguyên giá trị giữa hai lần chạy ⇒ sửa kiểu chỉ đổi KIỂU, không đổi một
+kết luận nào.
+
+Verdict của run: `DO_NOT_BUILD` (lý do: `Gate 1 FAIL`) — đúng như kỳ vọng trên dữ liệu tổng hợp và
+KHÔNG phải verdict official (`DEC-003`; cờ `official = false` vì dữ liệu synthetic + dev_limit).
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-05 — FS-03 và FS-07 được tính trên toàn bộ chín window
 Priority:
@@ -503,13 +536,13 @@ Timestamp:
 2026-09-03
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ)
-- [ ] Phạm vi tính của từng Failure Signal được ghi ở `docs/CONVENTIONS.md`
-- [ ] Không quyết định chính sách verdict nào được đưa ra trong gói này
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-007 được cập nhật
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [x] 100% REQUIRED checks PASS — **9/9** (CHECK-A5-01…09)
+- [x] Mức evidence yêu cầu được thoả (E1 toàn bộ) — gói này không có check nào đòi E2
+- [x] Phạm vi tính của từng Failure Signal được ghi ở `docs/CONVENTIONS.md` — quy ước **#20 (a)–(f)**
+- [x] Không quyết định chính sách verdict nào được đưa ra trong gói này — `git diff` rỗng trên `verdict.py`/`failure_signals.py`; `F-S015-01` được định tuyến sang WP-B1 chứ không tự sửa
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-007 được cập nhật — RSK-007 hạ từ "cao" xuống "trung bình", ghi phần dư và `F-S015-01`
+- [x] Session handoff được viết — `docs/sessions/S015-wp-a5-do-failure-signal.md`
+- [x] Không hạ REQUIRED check nào để đạt DONE — 9 check giữ nguyên câu chữ
 
 ## Escalation Triggers
 

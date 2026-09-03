@@ -119,9 +119,14 @@ dương ở bất kỳ regime nào — bằng chứng thực nghiệm cho lựa 
 
 ## 6. Kết quả run đủ phase (CHECK-A5-04)
 
-Run đủ phase trên dữ liệu tổng hợp (gate1 + gate2 + gate3 + controls + verdict, dev_limit 25):
+Run đủ phase trên dữ liệu tổng hợp (gate1 + gate2 + gate3 + controls + verdict, dev_limit 25,
+tổng 1029 s):
 
+    SIGNALS: {"FS-01": false, "FS-02": true,  "FS-03": true,  "FS-04": true,
+              "FS-05": false, "FS-06": false, "FS-07": false, "FS-08": true,
+              "FS-09": false, "FS-10": false, "FS-11": "False", "FS-12": true}
     UNKNOWN: []
+    VERDICT: DO_NOT_BUILD (Gate 1 FAIL) — KHÔNG official (synthetic + dev_limit, DEC-003)
 
 **Không còn Failure Signal nào UNKNOWN.** Đây là mục tiêu chính của gói, và nó đạt được ở
 nghĩa mạnh: không phải "UNKNOWN được che bằng giá trị mặc định", mà là mọi đại lượng đều có
@@ -167,6 +172,18 @@ ghi lại cơ chế và sẽ **đỏ** khi WP-B1 đóng khiếm khuyết — lú
 nhưng chính `T-06` mới phát ra verdict official. Nếu giữ nguyên trình tự, verdict official
 đầu tiên sẽ được tạo bởi mã còn mang khiếm khuyết này. Phiên S015 nêu ra chứ không tự đổi
 trình tự.
+
+**Bằng chứng TRƯỚC/SAU của chính lần sửa này** (hai run đủ phase, cùng dataset, cùng dev_limit):
+
+| Signal | Trước khi ép kiểu | Sau khi ép kiểu |
+|---|---|---|
+| `FS-12` | `"True"` (chuỗi ⇒ `numpy.bool_`, vô hình với `any_true`) | **`true`** (bool JSON ⇒ cờ chặn thấy được) |
+| `FS-11` | `"False"` (chuỗi) | `"False"` (**vẫn** chuỗi — ngoài phạm vi WP-A5) |
+| 10 signal còn lại | không đổi | không đổi |
+
+Bảng này là bằng chứng hai chiều: (1) phần WP-A5 sở hữu đã thật sự đóng; (2) phần định tuyến
+sang WP-B1 đúng là còn mở, không phải suy đoán. Và vì mười signal còn lại giữ nguyên giá trị,
+sửa kiểu chỉ đổi **kiểu**, không đổi **kết luận** nào.
 
 ## 7. Ranh giới ĐO LƯỜNG / CHÍNH SÁCH được giữ (CHECK-A5-07)
 
