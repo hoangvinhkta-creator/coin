@@ -2093,3 +2093,95 @@ integration, không tự động tiếp tục divergence).
 Signal; đổi official verdict hay official dataset; thiết kế V2.2; chọn Objective A/C; thực
 hiện AE audit hay Control F investigation; merge/rebase/reset/squash; genericize chiến lược
 ETH; productionize khuyến nghị V2.1.5; tạo task ID mới. Production diff = 0.
+
+---
+
+## DEC-032 — `OD-INT-02`: DEC-029 INTEGRATION CLOSURE — `RESOLVED / INTEGRATED` (fast-forward `main` lên DATA head)
+
+Date:
+2026-09-03 (S022, governance/state-sync session, tiếp nối `DEC-029`/`DEC-031`)
+
+Task:
+Không thuộc work package nào. Đóng lifecycle của `DEC-029` (`OD-INT-01`, ACCEPT DIVERGENCE)
+sau khi điều kiện review deadline của chính `DEC-029` đã thoả (ghi nhận
+`INTEGRATION_REVIEW_REQUIRED` tại `DEC-031`) và Owner đã tự thực hiện integration. Phạm vi:
+**DOCS/GOVERNANCE STATE ONLY**. Production diff = 0.
+
+Measured (đo bằng git tại phiên này, không chép từ tuyên bố — chi tiết đầy đủ tại
+`docs/sessions/S022-dec029-integration-closure.md` §1):
+
+    origin/main HEAD                              = 3284371131935f518952feb95ef0235df0b48cfc
+    origin/claude/coindca-data-stream-vv0vwv HEAD = 3284371131935f518952feb95ef0235df0b48cfc
+    ahead/behind (main...DATA)                    = 0 / 0
+    merge-base(main, DATA)                        = 3284371131935f518952feb95ef0235df0b48cfc
+                                                     (== cả hai HEAD ⇒ true fast-forward, không
+                                                     có commit riêng ở phía nào sau điểm hội tụ)
+    v2.1.5-official-T06 tag peel (^{commit})      = 5228130677e9e9875335eef890b6ed748a384603
+                                                     (KHÔNG đổi so với S019/DEC-031)
+    branch_authority_check.sh                     = PASS; ahead of default = 0;
+                                                     INTEGRATION_DECISION_REQUIRED=NO;
+                                                     production diff = EMPTY
+
+Không có `REMOTE_STATE_CONFLICT`.
+
+## Decision
+
+**Terminology.** Enum/terminology cho việc đóng một Integration Decision bằng tích hợp đã có
+sẵn trong governance của repo này — `DEC-013` (2026-09-01) đã dùng nhãn **`RESOLVED /
+INTEGRATED`** cho đúng loại chuyển trạng thái này (Integration Decision → phương án
+INTEGRATE, đã thực hiện). Quyết định này tái sử dụng đúng nhãn đó cho `DEC-029`, không tự
+phát minh state mới.
+
+    DEC-029 (OD-INT-01)  trước: ACCEPT DIVERGENCE
+                         → (DEC-031, sau khi BLK-001 RESOLVED + T-06 DONE): INTEGRATION_REVIEW_REQUIRED
+                         → (quyết định này): RESOLVED / INTEGRATED
+
+**Cách thức tích hợp.** Owner re-confirm convergence và tự thực hiện fast-forward `main` lên
+đúng DATA head — **fast-forward update, không force push, không rebase, không reset, không
+squash, không cherry-pick**, khớp khuyến nghị FAST-FORWARD MAIN TO DATA HEAD. `main` và
+`claude/coindca-data-stream-vv0vwv` nay cùng HEAD; không còn hai-chiều phân kỳ nào giữa hai
+ref. Việc fast-forward xảy ra TRƯỚC và BÊN NGOÀI phiên S022 — phiên S022 chỉ đo lại độc lập
+và ghi nhận governance closure, không tự thực hiện thêm bất kỳ merge/rebase/reset/squash/
+cherry-pick nào.
+
+**Official evidence không đổi.** Tag annotated `v2.1.5-official-T06` không bị move/recreate,
+vẫn peel đúng về `5228130677e9e9875335eef890b6ed748a384603`. Integration KHÔNG thay đổi
+verdict, KHÔNG thay đổi validation state, KHÔNG rerun official experiment.
+
+## Reason
+
+`DEC-029` tự quy định: quyết định integration (integrate/merge, cut scope, hay tiếp tục
+accept divergence với ngày tái xét mới) thuộc thẩm quyền Owner, agent không tự merge/rebase/
+reset/squash. `DEC-031` đã ghi nhận điều kiện review deadline của `DEC-029` đã thoả
+(`INTEGRATION_REVIEW_REQUIRED`) nhưng KHÔNG tự thực hiện integration, đúng đúng ranh giới
+thẩm quyền đó. Owner sau đó đã tự thực hiện integration (fast-forward) bên ngoài phiên
+governance. Quyết định này là hành vi đóng sổ (closure) tương ứng: xác nhận lại bằng số đo
+git độc lập rằng integration đã hoàn tất đúng như khuyến nghị, và cập nhật state field
+`DEC-029` sang nhãn canonical đã có sẵn trong framework (`RESOLVED / INTEGRATED`, theo tiền lệ
+`DEC-013`) — không phải một quyết định mới về NỘI DUNG integration.
+
+## Consequence
+
+`DEC-029`: `ACCEPT DIVERGENCE` → `INTEGRATION_REVIEW_REQUIRED` (`DEC-031`) → **`RESOLVED /
+INTEGRATED`** (quyết định này). Không còn Integration Decision nào đang mở trên nhánh này.
+
+**State giữ nguyên, KHÔNG bị đổi bởi việc đóng sổ integration này** (đầy đủ tại
+`docs/sessions/S022-dec029-integration-closure.md` §5):
+
+    T-06 lifecycle       = DONE
+    V2.1.5 validation    = FAILED
+    official verdict     = DO_NOT_BUILD
+    can_proceed_to_app   = false
+    BLK-001              = RESOLVED
+    WP-B1                = READY
+    WP-B2                = READY
+    WP-B3                = BLOCKED (bởi WP-C2)
+    GATE-B               = chưa mở
+    T-07                 = NOT READY (PLANNED)
+    T-11                 = BLOCKED
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: chạy `WP-B1`/`WP-B2`/`WP-B3`; resolve
+`WP-C2`; mở `GATE-B`; chạy `T-07`; mở `V2.2`; AE audit; Control F investigation; rerun `T-06`;
+sửa strategy/algorithm/threshold/verdict/dataset; move/recreate official tag; thêm merge/
+rebase/reset/squash/cherry-pick; push `main` (Owner đã tự thực hiện trước phiên này). Production
+diff = 0. Không tạo task ID mới.

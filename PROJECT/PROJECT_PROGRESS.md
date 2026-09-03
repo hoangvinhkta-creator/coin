@@ -924,6 +924,26 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S022 — DEC-029 INTEGRATION CLOSURE (`DEC-032`) — 2026-09-03 — branch
+  `claude/coindca-data-stream-vv0vwv`. Governance/state-sync session, KHÔNG thực hiện thêm
+  integration. Owner đã tự fast-forward `main` lên đúng DATA head TRƯỚC phiên này (không force
+  push, không rebase, không reset, không squash, không cherry-pick). Đo lại độc lập bằng git:
+  `origin/main` = `origin/claude/coindca-data-stream-vv0vwv` = `3284371131935f518952feb95ef0235df0b48cfc`;
+  ahead/behind = 0/0; merge-base = cùng SHA đó (true fast-forward); tag
+  `v2.1.5-official-T06` không đổi, vẫn peel `5228130677e9e9875335eef890b6ed748a384603`;
+  `branch_authority_check.sh` PASS (`INTEGRATION_DECISION_REQUIRED=NO`, production diff =
+  EMPTY). Ghi `DEC-032` (`OD-INT-02`): `DEC-029` chuyển `INTEGRATION_REVIEW_REQUIRED` (ghi tại
+  `DEC-031`) → **`RESOLVED / INTEGRATED`** (nhãn tái sử dụng từ tiền lệ `DEC-013`, không tự
+  phát minh state mới). KHÔNG đổi `T-06` (`DONE`), `V2.1.5` validation (`FAILED`), verdict
+  (`DO_NOT_BUILD`), `can_proceed_to_app` (`false`), `BLK-001` (`RESOLVED`), `WP-B1`/`WP-B2`
+  (`READY`), `WP-B3` (`BLOCKED` bởi `WP-C2`), `GATE-B` (chưa mở), `T-07` (`NOT READY`), `T-11`
+  (`BLOCKED`). Không chạy WP-B1/B2/B3, không resolve WP-C2, không mở GATE-B/T-07/V2.2, không AE
+  audit, không Control F, không rerun T-06, không move/recreate tag, không thêm merge/rebase/
+  reset/squash/cherry-pick nào. Production diff = 0; không sửa `src/`/`tests/`/`webapp/`/
+  lockfile/task files/evidence record. 7 validator governance liên quan PASS (`Checked 0` ở
+  `validate_evidence`/`validate_task_completion` là vacuous đã biết, KHÔNG dùng làm bằng chứng
+  closure — bằng chứng đến từ số đo git). Chi tiết đầy đủ:
+  `docs/sessions/S022-dec029-integration-closure.md`.
 - S020 — T-06 HISTORICAL GOVERNANCE DISPOSITION (`DEC-031`) — 2026-09-03 — branch
   `claude/coindca-data-stream-vv0vwv`. Owner ban hành **`DEC-031`** (`OD-T06DISP-01`,
   `PROJECT/PROJECT_DECISIONS.md`) sau khi review S018/S019: **`T-06: PLANNED → DONE`**
