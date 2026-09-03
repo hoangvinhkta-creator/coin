@@ -98,7 +98,7 @@ def main(argv=None):
                 return 2
             print("Random controls F/G ...")
             n = 200 if args.dev_limit else 1000
-            ctl = run_controls(prep, out_dir, g1["_full_run_monthly_deployments"],
+            ctl = run_controls(prep, out_dir, g1["_full_run_monthly_tranches"],
                                g1["_full_run_eth"], n_sims=n)
             results["controls"] = ctl
             print(f"F p95={ctl['random_timing']['p95']:.3f} "

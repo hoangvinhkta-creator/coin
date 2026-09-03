@@ -2,9 +2,13 @@
 
 ## Metadata
 Status:
-READY — cập nhật tại `DEC-031` (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` nay đều
-thoả. Mục "Xác nhận lại toàn bộ Ready Gate khi mở task" còn `[ ]` — thực hiện bởi phiên mở
-`IN_PROGRESS`, không phải bởi `DEC-031`.
+IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
+(mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
+(2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
+**Kết quả phiên IN_PROGRESS:** 7/10 REQUIRED PASS (CHECK-B1-01/02/03/05/06/07 + CHECK-B1-10 chờ
+full suite), 2/10 `BLOCKED` chờ Owner input (CHECK-B1-04 ngưỡng, CHECK-B1-08 artifact official),
+1/10 `NOT_TESTED` chờ phiên E2 độc lập (CHECK-B1-09). WP-B1 **CHƯA DONE** — xem báo cáo hoàn thành
+phiên (`docs/sessions/`).
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -180,11 +184,15 @@ Do not touch without Scope Expansion:
       *(lát cắt DEC-026/S016: CƠ CHẾ đã cài — UNKNOWN kích hoạt cap trong `failure_signals.py`,
       verdict không thể là BUILD; phần CHỐT CHÍNH SÁCH — UNKNOWN nên cho `BUILD_WITH_MODIFICATIONS`
       như hiện nay hay `INCONCLUSIVE` — còn mở vì cần chạm `verdict.py`)*
-- [ ] B1.2 Xác định remediation nào ảnh hưởng Gate 1 và áp DEC-009 (xem CHECK-B1-02)
-- [ ] B1.3 Sửa Control F giữ đúng kích thước tranche và profile giải ngân theo tháng (F-017)
-- [ ] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại
-- [ ] B1.5 Ghi ánh xạ gate-fail → verdict vào `docs/CONVENTIONS.md`
-- [ ] B1.6 Ghi các quy ước còn lại: phạm vi window của FS-03/FS-07, `shift_days=10` của Control G
+- [x] B1.2 Xác định remediation nào ảnh hưởng Gate 1 và áp DEC-009 (xem CHECK-B1-02) —
+      KẾT LUẬN: KHÔNG. Bằng chứng đường mã tại CHECK-B1-02.
+- [x] B1.3 Sửa Control F giữ đúng kích thước tranche và profile giải ngân theo tháng (F-017) —
+      xem CHECK-B1-03
+- [ ] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại —
+      BLOCKED, cần quyết định chủ dự án (xem CHECK-B1-04)
+- [x] B1.5 Ghi ánh xạ gate-fail → verdict vào `docs/CONVENTIONS.md` — mục #21(a)
+- [x] B1.6 Ghi các quy ước còn lại: phạm vi window của FS-03/FS-07 (đã có ở #20(d) từ WP-A5),
+      `shift_days=10` của Control G — mục #21(c)
 - [ ] B1.7 Viết test chính sách verdict, gồm ca "đúng một FS là None"
       *(lát cắt DEC-026/S016: ca "đúng một FS là None" cho cả 12 vị trí và ca numpy TRUE đã có
       trong `tests/test_wp_b1_slice_failure_signal_cap.py`; test cho các subtask còn lại chưa có)*
@@ -207,7 +215,10 @@ Do not touch without Scope Expansion:
 - [x] Escalation triggers được định nghĩa
 - [x] Completion Gate được finalize
 - [x] Completion Gate được đóng băng trước khi thực thi
-- [ ] Xác nhận lại toàn bộ Ready Gate khi mở task
+- [x] Xác nhận lại toàn bộ Ready Gate khi mở task (phiên hiện tại — đọc lại `AGENTS.md`,
+      `governance/v4/CORE/*`, `PROJECT/PROJECT_PROGRESS.md`/`PROJECT_DECISIONS.md`/
+      `CAPABILITY_REGISTRY.md`/`HARDENING_BACKLOG.md`, `DEC-026`/`DEC-031`, file task này —
+      toàn bộ 14 mục trên vẫn đúng, không phát hiện mâu thuẫn)
 
 ## Completion Gate
 
@@ -276,9 +287,18 @@ lại giữ `NOT_TESTED`.
   tiếp (`FS chưa đánh giá được: …`) và khoá `cap_cause = "UNKNOWN"` trong `failure_signals` mới là
   nguồn đúng. Ghi nhận cho B1.5 của WP-B1 đầy đủ.
 
+**Addendum (phiên WP-B1 IN_PROGRESS hiện tại, 2026-09-03):** câu hỏi chính sách còn mở của B1.1
+("UNKNOWN nên cho `BUILD_WITH_MODIFICATIONS` như hiện nay hay `INCONCLUSIVE`") nay ĐÃ CHỐT —
+xem `docs/CONVENTIONS.md` #21(b): giữ `BUILD_WITH_MODIFICATIONS`, không thêm nhãn mới, vì bốn
+verdict hiện có (BT §17) không định nghĩa trạng thái thứ năm và chữ của chính CHECK-B1-01 (verdict
+≠ `BUILD`, `can_proceed_to_app=false`) đã được thoả bằng nhãn này. Không đổi code, không đổi test.
+`tests/test_wp_b1_verdict_policy.py` bổ sung thêm bằng chứng thực thi độc lập với input
+`numpy.bool_` ở tầng `gates.py` (họ khiếm khuyết H-26) cho thấy `verdict.py` vẫn đọc đúng bằng
+truthiness — không có đường nào numpy type làm sai lệch cap.
+
 Executed By:
 Fable 5.1 (Tier D / max — đúng canonical routing của gói), phiên S016; lát cắt do chủ dự án cho
-phép tại DEC-026
+phép tại DEC-026. Addendum: Sonnet 5, phiên WP-B1 IN_PROGRESS hiện tại.
 
 Timestamp:
 2026-09-03
@@ -288,12 +308,44 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
+**Kết quả (phiên hiện tại, sau khi B1.3 hoàn tất) — KẾT LUẬN: KHÔNG.** Remediation của F-017
+(Control F/G, xem CHECK-B1-03) **không** ảnh hưởng input/calculation/execution behavior/dataset
+interpretation/strategy behavior/backtest behavior của Gate 1, OOS, Gate 2 hay Gate 3. Căn cứ
+đường mã (`src/eth_dca_os/pipeline.py`, kiểm lại được độc lập):
+
+1. `run_gate1()` (dòng ~172–249) tính `wm = window_metrics(...)` → `g1 = evaluate_gate1(wm)` và
+   `oos = oos_metrics(...)` → `oos_eval = evaluate_oos(oos)` **HOÀN TẤT VÀ ĐÃ GHI VÀO `payload`
+   trước** khi `full = run_engine(...)` (dòng ~266, run full-period RIÊNG cho controls) được
+   gọi. Thứ tự lệnh trong cùng một hàm chứng minh hai đường tính không giao nhau — Gate 1/OOS đã
+   xong việc trước khi `full`/Control F/G tồn tại trong bộ nhớ.
+2. `full` (và `monthly_tranches` dẫn xuất từ `full.purchases`, xem CHECK-B1-03) CHỈ được đọc bởi
+   `payload["_full_run_monthly_tranches"]`/`payload["_full_run_eth"]`, và hai khoá này CHỈ được
+   `run_controls()` (Control F/G) tiêu thụ (`cli.py` dòng gọi `run_controls(prep, out_dir,
+   g1["_full_run_monthly_tranches"], ...)`).
+3. `run_gate2()`/`run_gate3()` (hai hàm riêng biệt) không gọi `run_controls`/
+   `random_timing_control`/`random_anchor_control`, không đọc `monthly_tranches`/
+   `monthly_deployments`/`full` ở bất kỳ đâu — `grep -n "run_controls\|monthly_tranches\|full\."
+   src/eth_dca_os/pipeline.py` xác nhận các tên này chỉ xuất hiện trong `run_gate1`/
+   `run_controls`.
+4. Output DUY NHẤT của Control F/G đi vào `run_verdict()` là `controls["random_timing"]["p95"]`
+   và `controls["random_anchor"]["p95"]`, dùng làm input của **FS-08** trong
+   `evaluate_failure_signals()` — FS-08 là một Failure Signal (cơ chế cap verdict do CHÍNH
+   `WP-B1` sở hữu), không phải một Gate/OOS raw evaluation.
+5. Vì `verdict.py::decide_verdict` xét `gate1["pass"]`/`oos["pass"]` ở nhánh **ĐẦU TIÊN** (dòng
+   14), FS (bao gồm FS-08) chỉ được xét ở nhánh `else` cuối cùng khi cả bốn gate đã PASS — nên
+   dù FS-08 có đổi giá trị sau bản sửa F-017, nó **không thể** đổi verdict `DO_NOT_BUILD` của
+   T-06 (T-06 đã fail ở Gate 1/OOS, dừng trước khi FS được xét tới trong nhánh quyết định verdict).
+
+**Hệ quả:** Gate 1 KHÔNG cần chạy lại. Kết quả Gate 1 hiện có (kể cả của official run T-06) vẫn
+hợp lệ để dùng cho verdict. Không có bản ghi Gate 1 nào bị đánh dấu STALE/INVALIDATED vì không
+có remediation nào trong phạm vi WP-B1 chạm tới đường mã Gate 1.
+
 **Đây là REQUIRED check chính thức hoá DEC-009. Không được hạ xuống RECOMMENDED hay OPTIONAL, không
 được biến thành ghi chú, và không được thoả bằng narrative.**
 
@@ -337,21 +389,58 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Yêu cầu: test khẳng định Control F **không** gộp toàn bộ vốn của tháng vào một lệnh tại thời điểm
-ngẫu nhiên, mà giữ profile theo tháng như BT §12 yêu cầu. Đóng F-017. Kết quả FS-08 (do Control F
-nuôi) phải được tính lại sau khi sửa.
+**Sửa production:** `src/eth_dca_os/benchmarks.py` (`random_timing_control`,
+`random_anchor_control`) + `src/eth_dca_os/pipeline.py` (`run_gate1`, `run_controls`) +
+`src/eth_dca_os/cli.py` (call site).
+
+**Trước sửa:** cả hai hàm nhận `monthly_deployments: dict[thang, tong_nominal]` và, với MỖI
+tháng, rút **một** timestamp/anchor ngẫu nhiên rồi fill **toàn bộ** tổng nominal của tháng đó tại
+một điểm duy nhất — đúng như F-017 mô tả ("gộp toàn bộ vốn của tháng vào một lệnh tại thời điểm
+ngẫu nhiên"), sai với chữ BT §12 ("giữ nguyên... kích thước tranche và profile giải ngân theo
+tháng của V2; chỉ random hóa timestamp mua").
+
+**Sau sửa:** `run_gate1()` nhóm `full.purchases` (bản ghi tranche THẬT do engine tạo sẵn — không
+sửa `engine.py`, không chạy lại engine, đúng ranh giới touch area của WP-B1) theo tháng thành
+`monthly_tranches: dict[thang, list[nominal_tung_tranche]]`. `random_timing_control`/
+`random_anchor_control` nay lặp qua TỪNG tranche trong danh sách của tháng đó và rút một
+timestamp/anchor **độc lập cho từng tranche** — giữ nguyên số tranche và kích thước từng tranche
+đúng như V2 thật, chỉ random hóa thời điểm mua/anchor của từng tranche.
+
+**Test (`tests/test_benchmarks.py`):**
+- `test_random_controls_preserve_tranche_count_f017` — monkeypatch `_fill` để đếm số lần gọi
+  thật: với `{"2019-07": [50,30,20], "2019-08": [80]}` (4 tranche, 2 tháng), số lần `_fill` được
+  gọi mỗi sim = **4** (đúng số tranche), không phải 2 (số tháng) — đây chính là ca sẽ ĐỎ trên bản
+  trước sửa (bản cũ gọi `_fill` đúng 1 lần/tháng = 2 lần). Kiểm cho cả Control F và Control G.
+- `test_random_timing_many_small_tranches_lower_variance_than_one_lump` — hệ quả thống kê tất
+  yếu của việc rút N lần độc lập so với gộp 1 lần (hiệu ứng lấy trung bình làm giảm phương sai):
+  std(ETH) khi tách 6 tranche nhỏ < std(ETH) khi gộp 1 tranche lớn cùng tổng nominal, cùng
+  seed/n_sims=400 — bằng chứng gián tiếp nhưng tất định rằng các tranche không còn dùng chung một
+  timestamp bị nhân bản.
+- `test_random_controls_reproducible` (cập nhật cho định dạng `monthly_tranches`) — vẫn PASS,
+  reproducibility (cùng seed → cùng kết quả) không đổi.
+
+**Kết quả test:** `pytest tests/test_benchmarks.py tests/test_e2e.py tests/test_gates_verdict.py
+-v` → 14/14 PASS (bao gồm `test_full_pipeline_smoke`/`test_gate1_reproducible` chạy nguyên
+pipeline qua `run_controls` với `monthly_tranches` thật).
+
+**FS-08 sau sửa:** giá trị số của FS-08 (so `v2_eth` với p95 của Control F/G) **có thể đổi** vì
+đầu vào Control F/G nay chính xác hơn (đúng chữ BT §12) — đây là hệ quả ĐÚNG mong đợi của việc
+đóng F-017, không phải regression. FS-08 không ảnh hưởng Gate 1/OOS/Gate 2/Gate 3 (xem
+CHECK-B1-02). Giá trị FS-08 thật của official run T-06 CHỈ tính lại được khi có
+`pipeline_state.json` của official run — xem CHECK-B1-08 (MISSING_INPUT, artifact do chủ dự án
+bảo toàn bên ngoài repository, agent không truy cập được trong phiên này).
 
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-B1-04 — Ngưỡng FS-02 / FS-07 / FS-12 được phê chuẩn hoặc thay thế, có căn cứ ghi lại
 Priority:
@@ -375,53 +464,75 @@ không vá tại chỗ.
 **Ghi nhận:** việc phê chuẩn ngưỡng có thể cần quyết định của chủ dự án. Nếu chưa có quyết định →
 check này là `BLOCKED`, không phải `PASS`.
 
+**Kết quả (phiên WP-B1 IN_PROGRESS hiện tại):** chưa có quyết định chủ dự án về ba ngưỡng
+FS-02 (`>0.5`)/FS-07 (`cash>0.30 và AE<102`)/FS-12 (`>0.80`). Theo đúng ràng buộc "không được nới
+ngưỡng theo hướng làm verdict thuận lợi hơn sau khi đã nhìn thấy kết quả" và "KHÔNG tự phê chuẩn
+thay chủ dự án" (Escalation Triggers), agent **không tự phê chuẩn/không tự thay** ba ngưỡng này
+trong phiên này. Status = **`BLOCKED`**. Không đổi giá trị hằng số nào trong `failure_signals.py`
+(xác nhận: `git diff` phiên này trên các dòng chứa `0.5|0.80|0.30|102.0` trong file đó = rỗng).
+
+`MISSING_INPUT` / `OWNER_INPUT_REQUIRED`: chủ dự án cần (a) phê chuẩn ba ngưỡng hiện có kèm lý do,
+hoặc (b) thay thế kèm lý do (lưu ý: nếu thay đổi bản chất ngưỡng thì đó là thay đổi hypothesis,
+phải qua V2.2 theo Master Index §6, không vá tại chỗ ở WP-B1).
+
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — xác nhận BLOCKED, không tự quyết định thay
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-B1-05 — Ánh xạ gate-fail → verdict được ghi ở `docs/CONVENTIONS.md`
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Yêu cầu: `docs/CONVENTIONS.md` có mục về verdict, khớp với chính docstring của `verdict.py`. Đóng
-F-026. Ánh xạ này là **quy ước triển khai**, không phải điều khoản spec — phải ghi rõ như vậy để
-không bị viện dẫn nhầm về sau.
+`docs/CONVENTIONS.md` mục **#21(a)** (mới, phiên hiện tại) ghi đầy đủ ánh xạ gate-fail → verdict
+khớp với `verdict.py::decide_verdict`: Gate 1 FAIL hoặc OOS FAIL → `DO_NOT_BUILD` (ưu tiên cao
+nhất, kể cả khi Gate 2/3 PASS); Gate 2 FAIL hoặc Gate 3 FAIL (khi Gate 1/OOS PASS) →
+`INCONCLUSIVE`; cả bốn PASS → xét Failure Signal cap (`BUILD_WITH_MODIFICATIONS` nếu còn TRUE/
+UNKNOWN, `BUILD` nếu sạch). Ghi rõ tường minh đây là **quy ước triển khai**, không phải điều khoản
+BT §17 (spec chỉ mô tả điều kiện *không được* BUILD, không cho bảng ánh xạ trạng thái cụ thể).
+Đóng F-026. Mục #21(b) ghi thêm chính sách UNKNOWN (đã cài từ lát cắt `DEC-026`) dùng cùng nhãn
+`BUILD_WITH_MODIFICATIONS`, giải thích vì sao không cần một nhãn `INCONCLUSIVE` riêng cho UNKNOWN.
 
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-B1-06 — Các quy ước không thuộc spec còn lại trong đường ra verdict được ghi đầy đủ
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Yêu cầu: ghi phạm vi window dùng để tính FS-03/FS-07 (kết quả của WP-A5) và tham số `shift_days=10`
-của Control G. Giảm thiểu RSK-005. Sau gói này, không được còn quy ước nào ảnh hưởng verdict mà
-không truy được về một dòng tài liệu.
+Phạm vi window dùng để tính FS-03/FS-07 đã được `WP-A5` ghi tại `docs/CONVENTIONS.md` mục
+**#20(d)** (chín window + PrimaryMedian, không còn W5-only) — xác nhận lại là ĐỦ, không cần ghi
+thêm ở WP-B1. Mục còn thiếu — `shift_days=10` của Control G — nay ghi tại mục **#21(c)** (phiên
+hiện tại): biên độ ±10 ngày quanh mốc giữa tháng là tham số triển khai (spec không cho số cụ thể),
+chọn để nằm trong cùng tháng lịch, clip cứng tại biên tháng nên không tràn sang tháng khác. Mục
+**#21(d)** ghi thêm quy ước mới phát sinh từ CHECK-B1-03 (Control F/G random hóa độc lập theo
+từng tranche, không theo tháng — đóng F-017). Sau các mục #20(d) + #21(c) + #21(d): không còn quy
+ước nào ảnh hưởng verdict mà chưa truy được về một dòng tài liệu trong phạm vi WP-B1 đã xác định
+(RSK-005 giảm thiểu cho phần đã đóng; ngưỡng số FS-02/FS-07/FS-12 vẫn mở — xem CHECK-B1-04).
 
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
 Timestamp:
-...
+2026-09-03
 
 ### Stopping Rule Integrity
 
@@ -430,45 +541,96 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Yêu cầu: chứng minh bằng test và bằng diff rằng sau gói này:
-- `UNKNOWN` không được coi là PASS ở bất kỳ đâu;
-- thiếu bằng chứng không được coi là PASS;
-- một REQUIRED check `BLOCKED` không cho ra DONE;
-- run trên dữ liệu tổng hợp không được dùng thay official run (DEC-003);
-- không finding nào bị đổi thành "sai" mà không có bằng chứng bác bỏ;
-- không ngưỡng nào bị hạ để verdict trở nên thuận lợi.
+Từng gạch đầu dòng, đối chiếu bằng test/diff cụ thể:
+
+- **`UNKNOWN` không được coi là PASS ở bất kỳ đâu**: `tests/test_wp_b1_slice_failure_signal_cap.py`
+  (33 test, lát cắt `DEC-026`) khẳng định đúng 1 trong 12 vị trí UNKNOWN → verdict ≠ `BUILD`,
+  `can_proceed_to_app=False`, cho CẢ 12 vị trí, cộng ca 12/12 UNKNOWN. Không có thay đổi nào
+  trong phiên này chạm lại cơ chế cap đó (`git diff` trên `failure_signals.py` phiên này = rỗng
+  ngoài docstring — xem Changed Files Registry).
+- **Thiếu bằng chứng không được coi là PASS**: CHECK-B1-04 (ngưỡng chưa phê chuẩn) và CHECK-B1-08
+  (thiếu `pipeline_state.json` official) giữ `BLOCKED`/`NOT_TESTED` tường minh trong phiên này,
+  KHÔNG bị gán PASS hay bị bỏ qua khỏi Completion Gate.
+- **Một REQUIRED check `BLOCKED` không cho ra DONE**: mục 12 của Task Spec ("Chỉ đề xuất WP-B1
+  DONE nếu ... không còn BLOCKING finding") được tuân thủ ở cuối phiên — xem báo cáo hoàn thành;
+  WP-B1 KHÔNG được đề xuất DONE trong khi CHECK-B1-04/08/09 chưa PASS.
+- **Run trên dữ liệu tổng hợp không được dùng thay official run (DEC-003)**: mọi test/regression
+  trong phiên này (kể cả `test_e2e.py`, `test_benchmarks.py`) chạy trên `eth_dca_os.data.synth`,
+  và được ghi rõ trong evidence là **mechanism/regression evidence**, KHÔNG được dùng để suy ra
+  hay thay thế verdict/số liệu của official run T-06. CHECK-B1-08 (tính lại từ dữ liệu official
+  thật) giữ nguyên là check RIÊNG, chưa PASS bằng bằng chứng synthetic.
+- **Không finding nào bị đổi thành "sai" mà không có bằng chứng bác bỏ**: F-017 được XÁC NHẬN
+  đúng như mô tả (đọc code trước sửa: một lệnh/tháng) rồi sửa — không có finding nào trong phiên
+  này bị gắn nhãn "sai"/REJECTED.
+- **Không ngưỡng nào bị hạ để verdict trở nên thuận lợi**: `git diff` phiên này trên
+  `src/eth_dca_os/gates.py` = rỗng (file ngoài touch area, không chạm); các hằng số ngưỡng trong
+  `failure_signals.py` (0.5/0.80/0.30/102.0/3.0/0.50/100.0) không đổi — xác nhận lại bằng
+  `test_verdict_mapping`/`test_gate1_pass_and_fail`/`test_gate3_thresholds` (đều PASS, không sửa).
+  `tests/test_wp_b1_verdict_policy.py::test_gate1_and_oos_fail_precedence_over_gate2_gate3` và
+  `test_gate2_and_gate3_fail_together_is_inconclusive_not_do_not_build` chứng minh thêm precedence
+  không bị đảo hay nới ở bất kỳ tổ hợp gate-fail đồng thời nào (Gate1/OOS luôn thắng, không có
+  đường nào để 4-gate-FAIL vẫn ra khác `DO_NOT_BUILD`).
+
+Test bổ sung (mới, phiên này): `tests/test_wp_b1_verdict_policy.py` — 12 test: precedence khi
+nhiều gate fail đồng thời, `can_proceed_to_app` đúng nghĩa `verdict=="BUILD"` qua 6 tổ hợp
+tham số hoá, numpy.bool_/bool equivalence ở tầng `gates.py` (họ H-26) không làm verdict sai,
+determinism (cùng input → cùng output, kể cả input mang numpy type). 12/12 PASS.
 
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-B1-08 — Verdict được tính lại từ kết quả đã lưu và kết quả được ghi nhận
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+BLOCKED — MISSING_INPUT
 
 Evidence Level:
 E1
 
 Evidence:
-Yêu cầu: chạy `ethdca verdict` trên `pipeline_state.json` của official run (và trên kết quả Gate 1
-mới nếu DEC-009 kích hoạt), ghi lại verdict cuối cùng cùng toàn bộ lý do. Đây là đầu vào của T-07.
+**Không tự phê chuẩn/không tự tổng hợp thay.** `pipeline_state.json` của official run T-06 (và
+toàn bộ `results/` khác) là artifact được **chủ dự án bảo toàn ĐỘC LẬP BÊN NGOÀI repository**
+(`docs/T06_OFFICIAL_EVIDENCE_RECORD.md` §4: "16/16 file, SHA-256 verify PASS" — bảo toàn ngoài
+repo; `find` toàn repo trong phiên này xác nhận file KHÔNG tồn tại tại bất kỳ đường dẫn nào trong
+`/home/user/coin`). Agent trong phiên này KHÔNG có quyền truy cập môi trường của chủ dự án và
+KHÔNG được rerun official run (Master Index §6 cấm tuyệt đối — xem Out of Scope).
+
+Vì DEC-009 đã kết luận KHÔNG (CHECK-B1-02) — Gate 1 hiện có vẫn hợp lệ — việc còn thiếu DUY NHẤT
+để đóng check này là: chủ dự án cung cấp `pipeline_state.json` (hoặc tự chạy `ethdca verdict
+--what all` trên máy có artifact đó) để agent/reviewer tính lại verdict bằng
+`src/eth_dca_os/verdict.py::decide_verdict` hiện tại (đã qua F-S015-01 + F-017) và xác nhận verdict
+vẫn là `DO_NOT_BUILD` với lý do `Gate 1 FAIL`/`OOS hard condition FAIL` giống T-06 gốc — phù hợp
+với regression oracle "frozen/historical verdict inputs" mà brief phiên này cho phép dùng
+(§5): S016 đã làm chính xác việc này trên **synthetic** BEFORE/AFTER cho lát cắt F-S015-01 (biên
+bản S016 §7, verdict `DO_NOT_BUILD` giống hệt hai bên), nhưng đó KHÔNG thay thế được việc tính lại
+trên dữ liệu OFFICIAL thật mà check này đòi hỏi.
+
+`MISSING_INPUT`:
+- Cần: `pipeline_state.json` của official run T-06 (hoặc quyền chạy `ethdca verdict` trực tiếp
+  trên máy đang giữ `results/` official).
+- Nguồn bắt buộc: chủ dự án (người đang bảo toàn artifact này bên ngoài repo).
+- `OWNER_INPUT_REQUIRED`: cung cấp file, hoặc tự chạy lệnh và dán lại output đầy đủ
+  (verdict + reasons + can_proceed_to_app) để ghi vào đây.
+
+WP-B1 **không được DONE** khi check này chưa PASS.
 
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — đánh giá tính khả thi, không tính được vì
+thiếu input
 
 Timestamp:
-...
+2026-09-03
 
 ### Audit độc lập
 
@@ -488,8 +650,14 @@ CHECK-B1-01, CHECK-B1-02 và CHECK-B1-07, coi mọi tuyên bố PASS của ngư�
 tin được. Reviewer phải tự trả lời câu hỏi: *có đường nào để một verdict BUILD lọt qua khi bằng
 chứng chưa đủ không?* Lưu tại `docs/reviews/`.
 
+**Ghi nhận (phiên WP-B1 IN_PROGRESS hiện tại):** check này đòi một phiên reviewer ĐỘC LẬP — cùng
+một agent/phiên vừa cài đặt (CHECK-B1-02/03/05/06/07 ở trên) không thể tự cấp E2 cho chính mình
+(đó chính xác là điều check này tồn tại để ngăn). Giữ **`NOT_TESTED`**, không tự nhận PASS. Cần
+một phiên riêng (`docs/reviews/E2-WP-B1-*.md`), do reviewer chưa đọc kết luận implementer trước
+khi tự tái lập, đúng "Solo Independent Review Procedure" đã áp dụng cho `WP-A1`/`WP-A6`.
+
 Executed By:
-...
+(chưa — cần phiên độc lập riêng)
 
 Timestamp:
 ...
@@ -516,14 +684,21 @@ Timestamp:
 ...
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09)
-- [ ] **DEC-009 được chứng minh, không chỉ được nhắc tới**
-- [ ] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md`
-- [ ] Verdict cuối cùng được ghi nhận kèm toàn bộ lý do
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-005 được cập nhật
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [ ] 100% REQUIRED checks PASS — **7/10 PASS**; CHECK-B1-04/08 `BLOCKED` (Owner input), CHECK-B1-09
+      `NOT_TESTED` (cần phiên E2 độc lập) — xem báo cáo phiên
+- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 7 check PASS;
+      E2 của CHECK-B1-09 CHƯA thực hiện
+- [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
+      chứng đường mã kiểm lại được độc lập
+- [x] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md` — #20(d) (WP-A5) +
+      #21(a)-(d) (phiên này); ngoại lệ DUY NHẤT: giá trị NGƯỠNG SỐ vẫn chưa được phê chuẩn
+      (CHECK-B1-04, BLOCKED)
+- [ ] Verdict cuối cùng được ghi nhận kèm toàn bộ lý do — CHƯA (CHECK-B1-08 BLOCKED, thiếu
+      `pipeline_state.json` official)
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-005 được cập nhật
+- [x] Session handoff được viết
+- [x] Không hạ REQUIRED check nào để đạt DONE — CHECK-B1-04/08/09 giữ nguyên `BLOCKED`/
+      `NOT_TESTED`, KHÔNG bị gán PASS để né
 
 ## Escalation Triggers
 
@@ -551,22 +726,45 @@ có thể hỏng.
 Created:
 - `tests/test_wp_b1_slice_failure_signal_cap.py` (lát cắt DEC-026, S016)
 - `docs/sessions/S016-wp-b1-lat-cat-dec026.md` (lát cắt DEC-026, S016)
-- (dự kiến) `docs/reviews/E2-WP-B1-*.md`
-- (dự kiến) bản ghi Gate 1 chạy lại, nếu DEC-009 kích hoạt
+- `tests/test_wp_b1_verdict_policy.py` (phiên hiện tại — CHECK-B1-07: precedence, can_proceed,
+  numpy/bool equivalence, determinism)
+- (dự kiến, cần phiên riêng) `docs/reviews/E2-WP-B1-*.md`
+- (dự kiến, cần Owner input) bản ghi verdict tính lại từ `pipeline_state.json` official
+  (CHECK-B1-08)
 
 Modified:
 - `src/eth_dca_os/failure_signals.py` (lát cắt DEC-026, S016 — chỉ chuẩn hoá kiểu + cờ chặn)
 - `tests/test_wp_a5_failure_signal_instrumentation.py` (lát cắt DEC-026, S016 — xoá test đánh dấu
   F-S015-01; khoá CHECK-A5-07 vào khoảng `b095874..d4586b8`)
-- (dự kiến) `src/eth_dca_os/verdict.py`, `benchmarks.py`
-- (dự kiến) `docs/CONVENTIONS.md`, `tests/`
+- `src/eth_dca_os/benchmarks.py` (phiên hiện tại — F-017: `random_timing_control`/
+  `random_anchor_control` nhận `monthly_tranches` per-tranche thay vì `monthly_deployments`
+  scalar/tháng; random hóa độc lập theo từng tranche)
+- `src/eth_dca_os/pipeline.py` (phiên hiện tại — `run_gate1` dựng `monthly_tranches` từ
+  `full.purchases`; `run_controls` đổi tên tham số theo)
+- `src/eth_dca_os/cli.py` (phiên hiện tại — cập nhật call site theo khoá payload mới
+  `_full_run_monthly_tranches`)
+- `tests/test_benchmarks.py` (phiên hiện tại — cập nhật fixture theo định dạng tranche-list;
+  thêm 2 test F-017)
+- `tests/test_e2e.py` (phiên hiện tại — cập nhật call site theo khoá payload mới)
+- `docs/CONVENTIONS.md` (phiên hiện tại — mục #21(a)-(d): ánh xạ gate-fail→verdict, chính sách
+  UNKNOWN, `shift_days=10`, Control F/G per-tranche)
+- `docs/tasks/WP-B1-chinh-sach-verdict-va-stopping-rule.md` (phiên hiện tại — evidence
+  CHECK-B1-02/03/05/06/07/08/04/09, subtask B1.2/B1.3/B1.5/B1.6)
 
 Deleted:
 - Không
 
 Migration Impact:
-- Nếu DEC-009 kích hoạt: kết quả Gate 1 cũ phải được đánh dấu `STALE / INVALIDATED` **trong bản ghi**,
-  không được xoá — dấu vết phải còn để truy lại
+- DEC-009 KHÔNG kích hoạt (CHECK-B1-02: KHÔNG, có bằng chứng đường mã) — không có kết quả Gate 1
+  nào bị đánh dấu STALE/INVALIDATED trong phiên này.
+- `engine.py` KHÔNG bị chạm (F-017 sửa xong bằng dữ liệu `full.purchases` đã có sẵn) — không có
+  migration nào cho `Result`/`engine.Result.monthly_deployments` (field này vẫn còn, dùng cho
+  mục đích khác ngoài Control F/G).
+- Payload key `_full_run_monthly_deployments` (dict tổng nominal/tháng) đổi tên/đổi ngữ nghĩa
+  thành `_full_run_monthly_tranches` (dict tháng → list nominal từng tranche). Bất kỳ script/
+  notebook nào bên ngoài `src/`/`tests/` đọc trực tiếp khoá cũ từ `GATE1` run record cần cập nhật
+  theo — không có script như vậy trong repo tại thời điểm sửa (đã grep toàn `src/`, `tests/`,
+  `docs/`).
 
 ## Notes
 

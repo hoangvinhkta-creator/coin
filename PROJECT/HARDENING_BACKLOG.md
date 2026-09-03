@@ -912,6 +912,19 @@ thật ngay khi một người tiêu thụ chuyển sang `is True` / `is False` 
       `numpy.bool` qua `default=str` cho chuỗi `"True"`/`"False"` — đúng dấu vết đã giúp
       phát hiện `F-S015-01`).
 
+    **Cập nhật (phiên WP-B1 IN_PROGRESS, 2026-09-03):** B1.1 (addendum, `docs/CONVENTIONS.md`
+    #21(b)) và B1.5 (#21(a)) nay đã đóng — điều kiện thứ hai của RE_TRIGGER_CONDITION ĐÃ KÍCH
+    HOẠT theo đúng chữ đã viết. Tuy nhiên `src/eth_dca_os/gates.py` nằm trong danh sách "Do not
+    touch without Scope Expansion" của Expected Touch Area file task `WP-B1` (lý do khai báo:
+    "ngưỡng gate là điều khoản spec") — dù bản sửa ở đây chỉ là chuẩn hoá KIỂU (`bool()`), không
+    đổi ngưỡng nào. Theo `CLAUDE.md` § Scope Expansion ("Không được mở rộng chỉ vì thấy code lân
+    cận chưa đẹp" / "Finding không tự động tạo task"), agent phiên này KHÔNG tự ý chạm
+    `gates.py`. Ghi nhận: `RE_TRIGGER_CONDITION` đã kích hoạt về mặt ĐIỀU KIỆN, nhưng việc SỬA
+    cần một quyết định `SCOPE EXPANSION` tường minh (mở rộng Expected Touch Area của `WP-B1`
+    hoặc giao cho một owner khác) trước khi thực hiện — chưa tự động thực hiện. Vẫn
+    **CONFIRMED HARDENING**, không nâng BLOCKING: không có hậu quả nghiệp vụ hiện tại (consumer
+    vẫn đọc bằng truthiness, xem lý do KHÔNG BLOCKING gốc ở trên).
+
 ---
 
 ## H-27 — `N-01` — `code_commit` có thể phân giải SHA của một git repo LẠ khi chạy từ bản sao mã trần nằm trong repo khác

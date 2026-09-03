@@ -175,56 +175,68 @@ def run_benchmark_D(dataset, indicators, start, end, contribution=100.0, exec_cf
 
 # --------------------------------------------------- Random controls (lightweight replay)
 
-def random_timing_control(dataset, monthly_deployments: dict, start, end,
+def random_timing_control(dataset, monthly_tranches: dict, start, end,
                           n_sims=1000, master_seed=42, exec_cfg=None) -> dict:
-    """Control F: giữ tổng giải ngân theo tháng của V2, random timestamp mua trong tháng."""
-    ts, op = _candles(dataset, start, end)
-    local = ts + TZ_OFFSET
-    month = pd.Series(pd.to_datetime(local, unit="s")).dt.strftime("%Y-%m").to_numpy()
-    idx_by_month: dict[str, np.ndarray] = {
-        mk: np.nonzero(month == mk)[0] for mk in set(monthly_deployments)}
-    eths = np.zeros(n_sims)
-    for s in range(n_sims):
-        rng = np.random.default_rng(deterministic_hash(master_seed, "random_timing", s))
-        tot = 0.0
-        for mk, nominal in monthly_deployments.items():
-            idxs = idx_by_month.get(mk)
-            if idxs is None or len(idxs) == 0 or nominal <= 0:
-                continue
-            i = int(rng.choice(idxs))
-            e, _ = _fill(nominal, op[i], exec_cfg)
-            tot += e
-        eths[s] = tot
-    return {"eth_distribution": eths, "p50": float(np.median(eths)),
-            "p95": float(np.percentile(eths, 95))}
-
-
-def random_anchor_control(dataset, monthly_deployments: dict, start, end,
-                          n_sims=1000, master_seed=42, exec_cfg=None,
-                          shift_days=10) -> dict:
-    """Control G: giữ luật vốn, random hóa ngày tạo anchor trong phạm vi tháng.
-
-    Lightweight replay: xấp xỉ bằng dịch chuyển ngẫu nhiên (±shift_days) thời điểm
-    giải ngân của tháng, mô phỏng anchor đặt ở ngày khác trong tháng cho phép.
+    """Control F (BT §12, F-017): giữ nguyên tháng, KÍCH THƯỚC TRANCHE và PROFILE giải ngân
+    theo tháng của V2 — mỗi tranche thật giữ đúng nominal của nó; chỉ random hóa ĐỘC LẬP
+    timestamp mua của TỪNG tranche trong cùng tháng. `monthly_tranches`: tháng -> danh sách
+    nominal từng tranche thật (không phải tổng tháng — dồn về một lệnh sẽ làm sai profile).
     """
     ts, op = _candles(dataset, start, end)
     local = ts + TZ_OFFSET
     month = pd.Series(pd.to_datetime(local, unit="s")).dt.strftime("%Y-%m").to_numpy()
     idx_by_month: dict[str, np.ndarray] = {
-        mk: np.nonzero(month == mk)[0] for mk in set(monthly_deployments)}
+        mk: np.nonzero(month == mk)[0] for mk in set(monthly_tranches)}
+    eths = np.zeros(n_sims)
+    for s in range(n_sims):
+        rng = np.random.default_rng(deterministic_hash(master_seed, "random_timing", s))
+        tot = 0.0
+        for mk, tranches in monthly_tranches.items():
+            idxs = idx_by_month.get(mk)
+            if idxs is None or len(idxs) == 0:
+                continue
+            for nominal in tranches:
+                if nominal <= 0:
+                    continue
+                i = int(rng.choice(idxs))
+                e, _ = _fill(nominal, op[i], exec_cfg)
+                tot += e
+        eths[s] = tot
+    return {"eth_distribution": eths, "p50": float(np.median(eths)),
+            "p95": float(np.percentile(eths, 95))}
+
+
+def random_anchor_control(dataset, monthly_tranches: dict, start, end,
+                          n_sims=1000, master_seed=42, exec_cfg=None,
+                          shift_days=10) -> dict:
+    """Control G: giữ luật vốn VÀ đúng kích thước tranche/profile theo tháng của V2 (như
+    Control F), chỉ random hóa ĐỘC LẬP ngày tạo anchor của TỪNG tranche trong phạm vi tháng.
+
+    Lightweight replay: xấp xỉ bằng dịch chuyển ngẫu nhiên (±shift_days) quanh mốc anchor
+    giữa tháng, áp riêng cho mỗi tranche — không dồn cả tháng vào một lệnh.
+    """
+    ts, op = _candles(dataset, start, end)
+    local = ts + TZ_OFFSET
+    month = pd.Series(pd.to_datetime(local, unit="s")).dt.strftime("%Y-%m").to_numpy()
+    idx_by_month: dict[str, np.ndarray] = {
+        mk: np.nonzero(month == mk)[0] for mk in set(monthly_tranches)}
     eths = np.zeros(n_sims)
     per_day = 96
     for s in range(n_sims):
         rng = np.random.default_rng(deterministic_hash(master_seed, "random_anchor", s))
         tot = 0.0
-        for mk, nominal in monthly_deployments.items():
+        for mk, tranches in monthly_tranches.items():
             idxs = idx_by_month.get(mk)
-            if idxs is None or len(idxs) == 0 or nominal <= 0:
+            if idxs is None or len(idxs) == 0:
                 continue
-            shift = int(rng.integers(-shift_days, shift_days + 1)) * per_day
-            i = int(np.clip(idxs[len(idxs) // 2] + shift, idxs[0], idxs[-1]))
-            e, _ = _fill(nominal, op[i], exec_cfg)
-            tot += e
+            anchor = idxs[len(idxs) // 2]
+            for nominal in tranches:
+                if nominal <= 0:
+                    continue
+                shift = int(rng.integers(-shift_days, shift_days + 1)) * per_day
+                i = int(np.clip(anchor + shift, idxs[0], idxs[-1]))
+                e, _ = _fill(nominal, op[i], exec_cfg)
+                tot += e
         eths[s] = tot
     return {"eth_distribution": eths, "p50": float(np.median(eths)),
             "p95": float(np.percentile(eths, 95))}

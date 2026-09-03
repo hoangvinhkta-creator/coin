@@ -45,7 +45,7 @@ def test_full_pipeline_smoke(env):
     attr = g3["shortfall_attribution"]
     assert set(attr) >= {"manual_delay_pp", "funding_pp", "fee_slippage_pp"}
 
-    ctl = run_controls(prep, out, g1["_full_run_monthly_deployments"],
+    ctl = run_controls(prep, out, g1["_full_run_monthly_tranches"],
                        g1["_full_run_eth"], n_sims=30)
     assert "p95" in ctl["random_timing"]
 

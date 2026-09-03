@@ -229,6 +229,56 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     trị mặc định. Run record mang khối `failure_signal_inputs_wp_a5` ghi phạm vi và lý do của
     từng đại lượng, để một Failure Signal còn UNKNOWN luôn nói được **vì sao** (`CHECK-A5-04`).
 
+21. **Ánh xạ gate-fail → verdict, và quy ước còn lại trong đường ra verdict (WP-B1, đóng
+    F-026 và phần còn lại của F-017/RSK-005)** — các mục dưới đây là **QUY ƯỚC TRIỂN KHAI**,
+    không phải điều khoản của Backtest Spec (BT §17 chỉ mô tả *khi nào không được BUILD*,
+    không cho một bảng ánh xạ trạng thái gate → nhãn verdict cụ thể). Ghi rõ như vậy để không
+    ai viện dẫn nhầm các mục này về sau như thể chúng là spec.
+
+    (a) **Ánh xạ gate-fail → verdict** (`verdict.py::decide_verdict`, đóng F-026): Gate 1 FAIL
+    HOẶC OOS hard condition FAIL → `DO_NOT_BUILD` (kể cả khi Gate 2/3 PASS — hai điều kiện này
+    là "cứng", không có giá trị cấu trúc trung gian). Ngược lại, nếu Gate 2 FAIL HOẶC Gate 3
+    FAIL → `INCONCLUSIVE`. Chỉ khi cả bốn (Gate 1, OOS, Gate 2, Gate 3) đều PASS thì verdict
+    mới xét tới Failure Signal cap: còn signal nào TRUE hoặc UNKNOWN → tối đa
+    `BUILD_WITH_MODIFICATIONS`; không còn tín hiệu nào TRUE/UNKNOWN → `BUILD`. Thứ tự ưu tiên
+    này (Gate1/OOS trước Gate2/3 trước Failure Signal cap) là quy ước triển khai, được chọn vì
+    Gate 1/OOS là điều kiện "cứng" của BT §7/§8 trong khi Gate 2/3 đo tính ổn định qua manifest
+    — hỏng điều kiện cứng thì không còn ý nghĩa để hỏi tiếp về tính ổn định.
+    `can_proceed_to_app = (verdict == "BUILD")` là khoá duy nhất T-07/T-11 được đọc.
+
+    (b) **Failure Signal cap khi UNKNOWN** (lát cắt `DEC-026`, `CHECK-B1-01`): một hoặc nhiều
+    Failure Signal còn UNKNOWN tạo cùng cờ chặn (`any_true`) như khi có signal TRUE — verdict
+    tối đa `BUILD_WITH_MODIFICATIONS`, không bao giờ `BUILD`, khi cả 12 signal chưa được đánh
+    giá đủ. Đây là fail-closed policy bắt buộc bởi BT §17 (không mục nào trong FS-01..FS-12
+    được đánh dấu tuỳ chọn). Nhãn cụ thể vẫn là `BUILD_WITH_MODIFICATIONS` (không phải một nhãn
+    `INCONCLUSIVE` riêng cho UNKNOWN) vì cấu trúc bốn verdict hiện có (BT §17) không định nghĩa
+    thêm trạng thái thứ năm; điều CHECK-B1-01 đòi hỏi — verdict khác `BUILD` và
+    `can_proceed_to_app=false` — được thoả bằng nhãn này.
+
+    (c) **`shift_days=10` của Control G** (`random_anchor_control`, BT §12 "Control G bổ sung
+    bằng cách random hóa điểm neo"): biên độ dịch chuyển anchor ngẫu nhiên trong khoảng
+    ±10 ngày quanh mốc giữa tháng là **tham số triển khai** (spec không cho con số cụ thể),
+    chọn để nằm trong cùng tháng lịch cho phần lớn tháng thường (28–31 ngày) — clip tại biên
+    tháng (`idx_by_month` của chính tháng đó) đảm bảo không bao giờ tràn sang tháng khác dù
+    dịch chuyển kịch biên. Không thay đổi số tranche hay kích thước tranche.
+
+    (d) **Control F/G random hóa ĐỘC LẬP theo TỪNG TRANCHE, không theo tháng** (đóng F-017):
+    trước bản sửa này, `random_timing_control`/`random_anchor_control` gộp toàn bộ nominal của
+    một tháng vào MỘT lệnh duy nhất tại một timestamp/anchor ngẫu nhiên — sai với chữ BT §12
+    ("giữ nguyên... kích thước tranche và profile giải ngân theo tháng của V2; chỉ random hóa
+    timestamp mua"). Bản sửa dùng lại `full.purchases` (bản ghi tranche thật do engine tạo,
+    không cần chạy lại engine, không sửa `engine.py`) để nhóm theo tháng thành
+    `monthly_tranches: {thang: [nominal_tranche_1, nominal_tranche_2, ...]}`, rồi Control F/G
+    rút một timestamp/anchor **độc lập cho từng tranche** trong danh sách đó. Số tranche và
+    kích thước từng tranche được giữ nguyên đúng như V2 thật đã tạo ra; chỉ thời điểm mua của
+    từng tranche mới bị random hóa. Hệ quả: `monthly_deployments` (tổng nominal/tháng, vẫn còn
+    trong `engine.Result` cho mục đích khác) không còn là input của Control F/G — input đúng
+    là `monthly_tranches` xây trong `pipeline.run_gate1`. Bằng chứng hồi quy:
+    `tests/test_benchmarks.py::test_random_controls_preserve_tranche_count_f017` (đếm đúng số
+    lần `_fill` mỗi sim bằng đúng tổng số tranche, không phải số tháng) và
+    `test_random_timing_many_small_tranches_lower_variance_than_one_lump` (hệ quả thống kê tất
+    yếu của việc rút độc lập N lần so với gộp một lần, với cùng seed/n_sims).
+
 ## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
 
 Nguồn dữ liệu được khai báo **tại nơi dataset được tạo** — đó là nơi duy nhất biết dữ liệu

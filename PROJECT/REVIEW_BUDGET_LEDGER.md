@@ -112,7 +112,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-MEASURE` | `WP-A5` | `b095874` | 0 | 0 | DONE tại S015 — implementation ban đầu (không phải repair cycle); 9/9 REQUIRED PASS (E1), gói không có check nào đòi E2 (chủ dự án xác nhận không yêu cầu E2 bổ sung) |
 | `CAP-ORDER` | `WP-A6` | `b717634` | 0 | 1 (PASS) | DONE tại S014 — implementation ban đầu (không phải repair cycle), 8/8 REQUIRED PASS, CHECK-A6-08 E2 PASS (`docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`) |
 | `CAP-WEBAPP` | `WP-C1` | `cb75f9d` | 0 | 0 | `WP-C1` DONE 2026-09-02; `T-09A` DONE 2026-09-02 (`DEC-018`) — xem §2.2 |
-| `CAP-VERDICT` | `WP-B1` | `28b0255` | 0 | 0 | Lát cắt pre-T06 tại S016 (`DEC-026`) — implementation ban đầu, KHÔNG tiêu repair cycle. `WP-B1` vẫn `PLANNED` |
+| `CAP-VERDICT` | `WP-B1` | `28b0255` | 0 | 0 | Lát cắt pre-T06 tại S016 (`DEC-026`) — implementation ban đầu, KHÔNG tiêu repair cycle. Tiếp nối phiên `WP-B1 IN_PROGRESS` (2026-09-03, nhánh `claude/wp-b1-verdict-correctness-j9d390`): 7/10 REQUIRED PASS (CHECK-B1-02/03/05/06/07 mới), vẫn là **implementation ban đầu** của `WP-B1` (task chưa từng DONE nên chưa có repair cycle nào để mở) — KHÔNG tiêu repair cycle. `WP-B1`: `PLANNED → READY (DEC-031) → IN_PROGRESS` (phiên này). Diff production đo được: `git diff --shortstat 28b0255..HEAD -- src/eth_dca_os` (ghi vào báo cáo phiên) |
 | `CAP-SPEC` | `WP-D2` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-GOVTOOL` | `MICRO-GOVDEF-001` | `4fab2e9` | 0 | 0 | Phần glob validator chưa có owner |
 

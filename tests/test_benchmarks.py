@@ -66,11 +66,53 @@ def test_benchmark_b_max4_mondays(data):
 
 def test_random_controls_reproducible(data):
     ds, _ = data
-    deployments = {"2019-07": 100.0, "2019-08": 80.0, "2020-03": 120.0}
-    f1 = random_timing_control(ds, deployments, START, END, n_sims=50)
-    f2 = random_timing_control(ds, deployments, START, END, n_sims=50)
+    tranches = {"2019-07": [60.0, 40.0], "2019-08": [80.0], "2020-03": [70.0, 30.0, 20.0]}
+    f1 = random_timing_control(ds, tranches, START, END, n_sims=50)
+    f2 = random_timing_control(ds, tranches, START, END, n_sims=50)
     assert np.array_equal(f1["eth_distribution"], f2["eth_distribution"])
-    g1 = random_anchor_control(ds, deployments, START, END, n_sims=50)
-    g2 = random_anchor_control(ds, deployments, START, END, n_sims=50)
+    g1 = random_anchor_control(ds, tranches, START, END, n_sims=50)
+    g2 = random_anchor_control(ds, tranches, START, END, n_sims=50)
     assert np.array_equal(g1["eth_distribution"], g2["eth_distribution"])
     assert f1["p95"] >= f1["p50"]
+
+
+def test_random_controls_preserve_tranche_count_f017(data, monkeypatch):
+    """CHECK-B1-03 / F-017: Control F/G không được dồn cả tháng vào MỘT lệnh tại một
+    timestamp ngẫu nhiên. `monthly_tranches` khai 3 tranche ở "2019-07" và 1 ở "2019-08";
+    số lần `_fill` thật sự được gọi mỗi sim phải bằng đúng TỔNG số tranche (4), không phải
+    số THÁNG (2) — đây chính là ca đỏ trước khi sửa (nominal gộp -> 1 lần gọi/tháng)."""
+    import eth_dca_os.benchmarks as bm
+
+    ds, _ = data
+    tranches = {"2019-07": [50.0, 30.0, 20.0], "2019-08": [80.0]}
+    calls = []
+    real_fill = bm._fill
+
+    def counting_fill(nominal, price, exec_cfg=None):
+        calls.append(nominal)
+        return real_fill(nominal, price, exec_cfg)
+
+    monkeypatch.setattr(bm, "_fill", counting_fill)
+    bm.random_timing_control(ds, tranches, START, END, n_sims=1)
+    assert len(calls) == 4
+    assert sorted(calls) == sorted([50.0, 30.0, 20.0, 80.0])
+
+    calls.clear()
+    bm.random_anchor_control(ds, tranches, START, END, n_sims=1)
+    assert len(calls) == 4
+    assert sorted(calls) == sorted([50.0, 30.0, 20.0, 80.0])
+
+
+def test_random_timing_many_small_tranches_lower_variance_than_one_lump(data):
+    """Hệ quả thống kê tất yếu của việc random hóa timestamp ĐỘC LẬP cho từng tranche
+    (thay vì dồn cả tháng vào một lệnh): độ lệch chuẩn của phân phối ETH khi tháng có N
+    tranche độc lập bằng nhau phải NHỎ HƠN rõ rệt so với khi cùng tổng nominal đó bị dồn
+    vào một tranche duy nhất — hiệu ứng lấy trung bình của N lần rút giá độc lập. Đây là
+    bằng chứng gián tiếp nhưng tất định (seed cố định, n_sims đủ lớn) rằng mỗi tranche
+    không còn dùng chung một timestamp ngẫu nhiên bị nhân bản."""
+    ds, _ = data
+    one_lump = {"2019-07": [120.0]}
+    many_tranches = {"2019-07": [20.0] * 6}
+    lump = random_timing_control(ds, one_lump, START, END, n_sims=400)
+    split = random_timing_control(ds, many_tranches, START, END, n_sims=400)
+    assert float(np.std(split["eth_distribution"])) < float(np.std(lump["eth_distribution"]))

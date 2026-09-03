@@ -28,7 +28,7 @@ from .config import (
 )
 from .data.dataset import SOURCE_UNKNOWN, load_dataset, official_eligibility
 from .diagnostics import run_all as run_diagnostics
-from .engine import _epoch_seconds, run_engine
+from .engine import TZ_OFFSET, _epoch_seconds, run_engine
 from .failure_signals import evaluate_failure_signals
 from .gates import evaluate_gate1, evaluate_gate2, evaluate_gate3, evaluate_oos
 from .indicators import compute_daily_indicators
@@ -265,7 +265,16 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
     # giữ full-period run cho controls
     full = run_engine(prep.dataset, scores, cfg, exec_cfg,
                       pd.Timestamp("2019-01-01"), prep.oos_end())
-    payload["_full_run_monthly_deployments"] = full.monthly_deployments
+    # F-017 (WP-B1/CHECK-B1-03, BT §12): Control F/G phải giữ đúng KÍCH THƯỚC TRANCHE và
+    # PROFILE giải ngân theo tháng của V2 — không phải tổng nominal của tháng dồn vào một
+    # lệnh. `full.purchases` đã có sẵn từng tranche thật (ts + nominal) do engine ghi; nhóm
+    # lại theo tháng ở ĐÂY (không sửa engine.py — engine.py ngoài touch area của WP-B1) là
+    # đủ để tái tạo đúng profile mà không cần chạy lại engine hay đổi Result.
+    monthly_tranches: dict[str, list[float]] = {}
+    for p in full.purchases:
+        mk = pd.Timestamp(p["ts"] + TZ_OFFSET, unit="s").strftime("%Y-%m")
+        monthly_tranches.setdefault(mk, []).append(p["nominal"])
+    payload["_full_run_monthly_tranches"] = monthly_tranches
     payload["_full_run_eth"] = full.eth_total
     # Backtest §16: XIRR / money-weighted return (WP-A2/F-013)
     payload["xirr"] = _xirr_payload(prep.dataset, full)
@@ -349,12 +358,12 @@ def run_gate3(prep: Prepared, out_dir, limit: int | None = None) -> dict:
     return payload
 
 
-def run_controls(prep: Prepared, out_dir, monthly_deployments: dict, v2_eth: float,
+def run_controls(prep: Prepared, out_dir, monthly_tranches: dict, v2_eth: float,
                  n_sims: int = 1000) -> dict:
     start, end = pd.Timestamp("2019-01-01"), prep.oos_end()
-    f = random_timing_control(prep.dataset, monthly_deployments, start, end,
+    f = random_timing_control(prep.dataset, monthly_tranches, start, end,
                               n_sims=n_sims, master_seed=MASTER_SEED)
-    g = random_anchor_control(prep.dataset, monthly_deployments, start, end,
+    g = random_anchor_control(prep.dataset, monthly_tranches, start, end,
                               n_sims=n_sims, master_seed=MASTER_SEED)
     payload = {"random_timing": {k: v for k, v in f.items() if k != "eth_distribution"},
                "random_anchor": {k: v for k, v in g.items() if k != "eth_distribution"},
