@@ -235,7 +235,7 @@ Nguồn dữ liệu được khai báo **tại nơi dataset được tạo** —
 thật sự đến từ đâu — rồi đi vào `lineage.json` cho từng series. `build_lineage()` bắt buộc
 nhận `source` (không có giá trị mặc định để quên) và từ chối mọi giá trị ngoài taxonomy.
 
-Taxonomy canonical (`data/dataset.py`):
+Taxonomy canonical **cho từng series** (`data/dataset.py::VALID_SOURCES`):
 
 | Giá trị | Nghĩa | Đủ tư cách official? |
 |---|---|---|
@@ -247,6 +247,32 @@ Taxonomy canonical (`data/dataset.py`):
 `unknown` không phải một nguồn hợp lệ về mặt nghiệp vụ — nó là trạng thái "chưa chứng minh
 được", dùng khi `lineage.json` thiếu và phải dựng lại từ file thô. Nó cố ý KHÔNG đủ tư cách
 official: thiếu thông tin phải dẫn tới từ chối, không phải mặc định chấp nhận.
+
+**Hai TẦNG nhãn nguồn — đừng nhầm (WP-A1, đóng `F-E2A1R3-06`/`F-E2A1-08`).** Bảng trên là
+nhãn của TỪNG SERIES. Ngoài ra `lineage.json` còn một nhãn **ở tầng DATASET**:
+
+| Giá trị | Tầng | Sinh ra ở đâu | Vai trò |
+|---|---|---|---|
+| bốn giá trị trong bảng trên | **series** | `build_lineage`, khai tại nơi tạo dataset | **Quyết định** tư cách official |
+| `mixed` | **dataset** | `data/dataset.py` — khi các series KHÔNG cùng một nguồn | **Chỉ mô tả**, KHÔNG quyết định gì |
+
+`mixed` xuất hiện khi tập series không đồng nhất về nguồn; nó đi vào `lineage["source"]` và
+từ đó vào trường `data_source` của run record. **Nó KHÔNG phải một lối tắt để đi qua cổng
+official**, và cũng không nằm trong `VALID_SOURCES`: `official_eligibility` kiểm nguồn
+**trên từng series** với `REAL_SOURCES = {binance_bulk_archive, binance_rest}`, nên một
+dataset gắn nhãn `mixed` vẫn bị từ chối ngay khi **một** series bất kỳ mang nguồn không
+thật, kèm lý do `source_not_real:<series>=<giá trị>`. Ghi rõ điều này ở đây vì tài liệu
+trước WP-A1 chỉ liệt kê bốn giá trị series và im lặng về `mixed`, khiến người đọc hiểu cơ
+chế **mạnh hơn** thực tế (`F-E2A1R3-06`).
+
+**Mã lý do từ chối — danh sách đầy đủ theo thứ tự kiểm.** `official_eligibility` trả
+`(False, <mã lý do>)` và mã đó đi thẳng vào `official_reason` của run record. Ngoài các mã
+đã nêu ở mục dưới, hai mã sau trước đây không được ghi ở đâu:
+
+| Mã lý do | Khi nào |
+|---|---|
+| `empty_series:<series>` | series có `row_count <= 0` — một series canonical RỖNG không được đọc thành "không có tin xấu" |
+| `source_not_real:<series>=<giá trị>` | nguồn của series không thuộc `REAL_SOURCES` (gồm cả `synthetic` và `unknown`) |
 
 **Series lắp từ nhiều cơ chế.** `fetch_series` lấy các tháng đã hoàn tất từ bulk archive rồi
 lấy phần đuôi còn thiếu qua REST, nên một series có thể do cả hai cơ chế đóng góp. Quy ước:

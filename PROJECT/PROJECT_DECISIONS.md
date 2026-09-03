@@ -1557,3 +1557,152 @@ Can Revisit After:
 Khi có người thứ hai dùng công cụ hoặc công cụ được phát hành cho người khác (cùng điều kiện
 `DEC-011`/`DEC-019` đã ghi) — khi đó Personal Tool Simplification Principle và `OD-C = R2` phải
 được định tuyến lại toàn bộ, và `H-23` được xem xét lại.
+
+---
+
+## Ghi chú đánh số: vì sao nhảy từ `DEC-021` sang `DEC-025`
+
+`DEC-022`, `DEC-023`, `DEC-024` **đã tồn tại** trên nhánh chưa merge
+`origin/claude/t09b-firebase-implementation-nz50is` (kiểm bằng
+`git show <branch>:PROJECT/PROJECT_DECISIONS.md | grep '^## DEC-02[2-9]'` → 3 kết quả). Đặt lại ba
+số đó ở nhánh này sẽ tạo đụng ID khi T-09B được tích hợp. Ba số được **giữ chỗ** cho nhánh đó;
+nhánh hiện tại tiếp tục từ `DEC-025`. Không sửa lịch sử, không đổi tên quyết định nào đã có.
+
+---
+
+## DEC-025 — `OD-A5-01`: phê chuẩn hoàn thành `WP-A5` (`DONE`)
+
+Date:
+2026-09-03 (Owner Checkpoint S015)
+
+Task:
+`WP-A5` / capability `CAP-MEASURE`.
+
+Decision:
+
+    (1) WP-A5: IMPLEMENTED -> DONE.
+        Completion Gate GIỮ NGUYÊN 9/9 REQUIRED PASS (E1). Không sửa câu chữ hay ngữ nghĩa
+        của bất kỳ check nào.
+
+    (2) KHÔNG yêu cầu E2 bổ sung cho WP-A5, vì Completion Gate của gói không đòi E2 ở
+        check nào (khác WP-A6/CHECK-A6-08 và WP-B1/CHECK-B1-09).
+
+    (3) CAP-MEASURE: lượt vừa rồi là INITIAL IMPLEMENTATION, KHÔNG tiêu repair cycle
+        (cùng quy ước DEC-016/DEC-017/DEC-018).
+
+    (4) `F-S015-01` được xác nhận **BLOCKING** và đã định tuyến đúng owner.
+
+Reason:
+9/9 REQUIRED PASS với bằng chứng E1 thật; 330/330 full suite PASS; run đủ phase cho
+`UNKNOWN: []`; instrumentation so bit-for-bit với engine trước gói = trùng khớp; `git diff`
+trên `verdict.py`/`failure_signals.py` = rỗng. Đóng phần đo lường của F-002 và toàn bộ F-016.
+
+Consequence:
+`GATE-A` nay chỉ còn `WP-A1` chưa DONE.
+
+---
+
+## DEC-026 — `OD-B1-01`: ROADMAP EXCEPTION — lát cắt `WP-B1` tối thiểu TRƯỚC `T-06`, và khởi tạo budget `CAP-VERDICT`
+
+Date:
+2026-09-03 (Owner Checkpoint S015)
+
+Task:
+`WP-B1` / capability `CAP-VERDICT`. Đóng `F-S015-01` và phần tương ứng của `CHECK-B1-01`.
+
+Decision:
+
+    (1) Canonical owner của `F-S015-01` = `WP-B1` / `CAP-VERDICT`. KHÔNG tạo task mới,
+        KHÔNG `OWNER_ASSIGNMENT_REQUIRED` — `CHECK-B1-01` (FROZEN 2026-08-23) đã nêu đích
+        danh `any_true = any(v is True ...)` là cơ chế phải sửa.
+
+    (2) ROADMAP EXCEPTION: cho phép triển khai một LÁT CẮT GIỚI HẠN của WP-B1 TRƯỚC T-06,
+        miễn điều kiện Ready Gate "Dependency T-06 DONE" CHỈ cho lát cắt này.
+        KHÔNG kéo toàn bộ WP-B1 lên trước T-06.
+
+    (3) SCOPE FREEZE của lát cắt — sửa cùng lúc HAI ngữ nghĩa tại đúng root cause:
+        A. mọi giá trị TRUE hợp lệ phải được nhận diện, không phụ thuộc bool singleton
+           của Python; `numpy.bool_(True)` không được vô hình;
+        B. UNKNOWN/`None` phải thi hành đúng fail-closed policy mà `CHECK-B1-01` quy định.
+        Cấm chỉ sửa (A) rồi để (B) mở.
+
+        IN : root cause trong `failure_signals.py`; regression test numpy TRUE; regression
+             test None/UNKNOWN; đóng `F-S015-01`; phần `CHECK-B1-01` tương ứng.
+        OUT: ngưỡng FS-02/FS-07/FS-12; Control F / F-017; B1.3/B1.4/B1.5/B1.8 ngoài phần
+             cần thiết; hoàn thành toàn bộ WP-B1; H-24/H-25; WP-D2; T-06; webapp.
+
+    (4) Sau lát cắt, `WP-B1` VẪN `PLANNED`. KHÔNG tuyên bố WP-B1 DONE. Completion Gate 10
+        REQUIRED không bị sửa câu chữ.
+
+    (5) `CHECK-B1-09` (E2 độc lập) VẪN thuộc WP-B1 đầy đủ — KHÔNG kéo lên lát cắt này.
+
+    (6) Khởi tạo budget `CAP-VERDICT` ở mức tối thiểu phù hợp với implementation ban đầu
+        của lát cắt. Implementation ban đầu KHÔNG tính là repair cycle theo quy ước ledger.
+        Quyết định này KHÔNG mở repair budget vô hạn.
+
+    (7) Nếu implementation ban đầu phát hiện blocker MỚI ngoài frozen slice: STOP và báo
+        chủ dự án.
+
+Reason:
+`F-S015-01` là BLOCKING trên official verdict path: một Failure Signal TRUE mang kiểu
+`numpy.bool_` vô hình với `any(v is True ...)`, nên verdict có thể ra `BUILD` trong khi
+BT §17 nói *"BUILD là không thể khi còn bất kỳ Failure Signal nào TRUE"*. Điều này trực tiếp
+làm sai decision/recommendation của CoinDCA. Thứ tự roadmap `T-06 → WP-B1` KHÔNG được dùng làm
+lý do để chạy một official verdict đã biết có blocker.
+
+Consequence:
+`T-06` BLOCKED cho tới khi lát cắt này PASS (cùng ba điều kiện còn lại — xem DEC-027 và §10
+của Owner Checkpoint S015).
+
+---
+
+## DEC-027 — `OD-A1-02`: `OWNER_EXTENSION` +1 repair cycle cho `CAP-PROV`; disposition ba hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED`
+
+Date:
+2026-09-03 (Owner Checkpoint S015)
+
+Task:
+`WP-A1` / capability `CAP-PROV`. Đóng khe `LEGACY_GATE_DISPOSITION_REQUIRED` mở từ
+2026-09-01 (`DEC-012` ghi budget đã hết, `OWNER_EXTENSION = NOT GRANTED`).
+
+Decision:
+
+    (1) CAP-PROV OWNER_EXTENSION = +1 repair cycle.
+
+            ALLOWED   = 3
+            USED      = 2
+            REMAINING = 1
+
+        KHÔNG reset budget lịch sử. KHÔNG tách branch/session/task để tạo thêm budget.
+
+    (2) Mục tiêu DUY NHẤT của extension: `F-E2A1-03` (B.1) VÀ `F-E2A1R3-03` (B.2) phải được
+        xử lý trong CÙNG MỘT repair cycle.
+
+    (3) `F-E2A1-03` = OWNER_EXTENSION. Sửa provenance behavior để KHÔNG âm thầm ghi
+        `code_commit = 'unknown'` / `dependency_lock_hash = 'no-lockfile'` trên
+        official/provenance-sensitive path khi provenance không phân giải được. Hành vi
+        cuối phải fail loudly hoặc biểu diễn trạng thái không hợp lệ đúng canonical
+        contract. Kiểm chứng bằng môi trường clean/non-editable như E2 finding yêu cầu.
+        KHÔNG đổi logic financial/algorithm.
+
+    (4) `F-E2A1R3-03` = OWNER_EXTENSION. Đóng frozen contract case 13: `dev_limit` phải sinh
+        `official_reason` đúng hợp đồng (`dev_limit_set`), không bị `'verified'` che mất
+        nguyên nhân. Gộp cùng repair cycle với (3).
+
+    (5) `F-E2A1R3-06` + `F-E2A1-08` = KHÔNG DESCOPE. Cho phép sửa **docs-only** để tài liệu
+        khớp implementation: thêm nhãn dataset-level `mixed` vào taxonomy; nói rõ tư cách
+        official vẫn dựa trên kiểm per-series `REAL_SOURCES`; ghi `empty_series`; cập nhật
+        evidence/reference lỗi thời liên quan. Production diff phần này PHẢI = 0, KHÔNG tiêu
+        repair cycle riêng (tiền lệ ledger: Decision pack PRE-S008, `2f20e6c..bd7c5ff`).
+
+Reason:
+Ba hạng mục đều KHÔNG chạm financial/algorithm correctness — chúng là provenance và tài liệu.
+Nhưng `F-E2A1-03` có tính KHÔNG THỂ HOÃN: Master Index §6 cấm chạy lại official run, nên nếu
+`T-06` chạy trong tình trạng hiện tại thì provenance mất VĨNH VIỄN, không vá được về sau.
+`F-E2A1R3-03` là vi phạm một FROZEN contract mới bảy ngày tuổi — `RISK_MODEL.md` xếp vi phạm
+FROZEN contract mà Completion Gate phụ thuộc là BLOCKING bất kể severity.
+
+Consequence:
+Sau khi (3)(4)(5) hoàn tất và các check tương ứng PASS, `WP-A1` đủ điều kiện để chủ dự án xét
+`DONE`, và `GATE-A` đóng được. `T-06` vẫn cần thêm: `T-05` được duyệt, lát cắt `DEC-026` PASS,
+và một production-realistic real-data execution path cho `BLK-001`.
