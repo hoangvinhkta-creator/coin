@@ -5,9 +5,13 @@
 Status:
 IMPLEMENTED (phiên thực thi S014, 2026-09-02, branch `claude/t09b-firebase-implementation-nz50is`:
 `READY → IN_PROGRESS` khi bắt đầu code, `IN_PROGRESS → IMPLEMENTED` khi 16/16 REQUIRED check
-PASS ở mức E1 trên Firebase Emulator Suite và batch review PASS. **Chưa `DONE`**: chuyển `DONE`
-là hành vi của chủ dự án (`STATE_AUTHORITY.md`), và production reachability trên project Firebase
-THẬT chưa được kiểm — chủ dự án chưa tạo project; xem mục "Thực thi — S014" bên dưới.)
+PASS ở mức E1 trên Firebase Emulator Suite và batch review PASS. **Cập nhật 2026-09-03**: chủ dự
+án đã tạo project Firebase thật, deploy Hosting + rules (đã merge an toàn với rules Content —
+`DEC-023`), và tự tay lặp lại CHECK-T09B-01/02/03/04/14 trên `https://tinphatcontent.web.app`
+thật — **PASS cả 5, E1** (`docs/reviews/T-09B-production-verification.md`). Production
+reachability không còn `NOT_TESTED`. **Vẫn chưa `DONE`**: chuyển `DONE` là hành vi của chủ dự án
+(`STATE_AUTHORITY.md`, cùng tiền lệ `DEC-018`/T-09A) — task này ghi nhận `ELIGIBLE_FOR_COMPLETION`
+làm khuyến nghị, chờ xác nhận tường minh của chủ dự án để ghi `DONE`.)
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật
@@ -685,6 +689,15 @@ chuyển sang harness (kịch bản/assertion giữ nguyên). Chi tiết: `docs/
   đóng khoảng trống này trước khi chuyển `DONE`.
 - Real deploy: **KHÔNG** thực hiện trong phiên (không có project, không có credential).
 
+**Cập nhật 2026-09-03 (production reachability đóng khoảng trống trên):** chủ dự án đã tạo
+project Firebase thật (`tinphatcontent`, dùng chung với ứng dụng Content — xem `DEC-023`), deploy
+Hosting (`https://tinphatcontent.web.app`) và `firestore.rules` đã merge với Owner UID thật
+(`XWUo6IvUqhULI1v1EBrfndEDrE13`), rồi tự tay lặp lại chuỗi CHECK-T09B-01/02/03/04/14 trên app
+thật theo đúng hướng dẫn. Kết quả: **PASS cả 5 check**, evidence E1 (Owner báo cáo trực tiếp —
+agent không tự tới được `*.web.app` từ môi trường này để tái xác nhận độc lập). Chi tiết đầy đủ
+kèm log từng bước: `docs/reviews/T-09B-production-verification.md`. **Production reachability
+trên project thật/Hosting thật = PASS (E1)**, không còn `NOT_TESTED`.
+
 ## Completion Gate — FROZEN (2026-09-02, `DEC-021`)
 
 Effective Risk = HIGH → **E1 bắt buộc** cho mọi REQUIRED check kiểm chứng được, và **bắt buộc
@@ -713,6 +726,15 @@ document `ethdca/state` (rev 23) và `ethdca/seed` (420 ngày) được đọc l
 REST API của emulator từ Node (`test_firebase_harness.getDoc`), bit-exact với bản trong bộ nhớ.
 Kết quả: PASS (0 assert FAIL trong 10).
 
+Evidence (production, E1 — Owner báo cáo trực tiếp, 2026-09-03, `https://tinphatcontent.web.app`
+thật, project `tinphatcontent`, Owner UID `XWUo6IvUqhULI1v1EBrfndEDrE13`): chuỗi bốn thao tác qua
+UI (nhập giá đóng cửa synthetic → nạp vốn tháng → P2P → mua ETH), mỗi thao tác chip chuyển đúng
+"Đang lưu…" → "Đã lưu bền · rev N", rev tăng dần 1→2→3→4 — khớp chính xác con số tính trước từ
+quy trình kế toán (`addContribution`/`addP2P`/`addBuy`), không phải trùng hợp ngẫu nhiên. Giới
+hạn trung thực: agent không tự thực hiện được (mạng môi trường agent chặn `*.web.app`, đã xác
+nhận nhiều lần trong phiên) — quan sát do Owner trực tiếp báo lại, ghi nhận E1 theo
+`EVIDENCE_STANDARD.md` ("browser/devtool verification result"), không phải E2 độc lập.
+
 #### CHECK-T09B-02 (§14.B) — App load đúng state từ Firebase
 Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: mở app trên một phiên mới, state nạp lên **bằng đúng** bản đã ghi ở CHECK-01 — so từng
@@ -722,6 +744,11 @@ Evidence (S014, E1 — emulator): § CHECK-T09B-02 — mở trang mới (phiên 
 `diff(canon(bản đã ghi), canon(bản nạp))` = 0 lệch, và so riêng từng trường `schema, rev, months,
 oppFund, treasury, eth, costUsdt, costVnd, ladders, trades, p2p, ledger, extraDays` (13/13 bằng
 nhau); seed nạp từ `ethdca/seed` (OSCORE hiển thị). PASS.
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03): đóng hẳn Chrome, mở lại
+`https://tinphatcontent.web.app` — phiên hoàn toàn mới; state nạp đúng bản đã ghi ở CHECK-01:
+chip "Đã lưu bền · rev 4", tab Lịch sử đúng 1 giao dịch ETH + 1 giao dịch P2P, ledger phục hồi
+đầy đủ. Cùng giới hạn trung thực về nguồn quan sát như CHECK-T09B-01.
 
 #### CHECK-T09B-03 (§14.C) — Xoá localStorage vẫn recover được state
 Priority: REQUIRED · Status: PASS · Evidence Level: E1
@@ -734,6 +761,13 @@ trung thực với thiết kế đã duyệt.
 Evidence (S014, E1 — emulator): § CHECK-T09B-03 — `localStorage.clear(); sessionStorage.clear()`
 (đo `length` = 0), tải lại: cùng Anonymous UID (IndexedDB còn), state phục hồi bit-exact từ
 Firestore (0 lệch), seed phục hồi, không banner lệch bản. PASS.
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03): chạy đúng
+`localStorage.clear(); sessionStorage.clear(); location.reload();` trong Console trên
+`https://tinphatcontent.web.app` thật (không đụng IndexedDB) — sau reload: không banner "KHÔNG
+NHẬN DIỆN ĐƯỢC THIẾT BỊ", durable state rev 4 còn nguyên, 1 giao dịch ETH + 1 giao dịch P2P còn
+nguyên. Xác nhận trực tiếp trên hạ tầng thật: Firestore, không phải localStorage, là nguồn bền.
+Cùng giới hạn trung thực về nguồn quan sát như CHECK-T09B-01.
 
 #### CHECK-T09B-04 (§14.D) — Đóng/mở lại môi trường sử dụng vẫn recover được state (đã tái phạm vi bởi Owner Scope Decision, `DEC-021`)
 Priority: REQUIRED · Status: PASS · Evidence Level: E1
@@ -771,6 +805,12 @@ bit-exact, bất biến T-09A (TOTAL = A+R+D theo contribution, không âm, rese
 ACTIVE, oppFund = Σ oppAdded) giữ nguyên; tiếp tục ghi sổ được (rev +1 bền). Phạm vi đúng NEW V1
 REQUIREMENT (same-browser-profile); cross-device KHÔNG kiểm ở đây (H-23) — nhánh UID lạ được kiểm
 tại CHECK-T09B-11. PASS.
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03): đóng hẳn Chrome (cùng browser profile
+Owner dùng hằng ngày), mở lại `https://tinphatcontent.web.app` — Anonymous identity vẫn được
+nhận diện (IndexedDB còn), không banner "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ", state/lịch sử/ledger
+nguyên vẹn ở rev 4. Đúng phạm vi NEW V1 REQUIREMENT trên hạ tầng thật; cùng giới hạn trung thực
+về nguồn quan sát như CHECK-T09B-01.
 
 ### Data — bảo toàn sổ qua vòng lưu/nạp
 
@@ -909,6 +949,14 @@ vào rules) có cần terminal — đúng ranh giới "Owner deploy khi setup" c
 `DEC-011` điểm 8 (hằng ngày). PASS. Ghi chú: chuỗi này chạy trên emulator; trên Hosting thật
 chủ dự án phải lặp lại một lần sau khi thiết lập (xem "Thực thi — S014").
 
+Evidence (production, E1 — Owner báo cáo, 2026-09-03, `https://tinphatcontent.web.app` thật —
+đóng nốt ghi chú "phải lặp lại trên Hosting thật" ở trên): chuỗi thao tác hằng ngày đầy đủ chạy
+thật trên trình duyệt Owner — mở app, nhập giá đóng cửa, ghi giao dịch (nạp vốn tháng → P2P →
+mua ETH qua UI), đóng hẳn trình duyệt, mở lại, xác nhận dữ liệu còn nguyên. Toàn bộ qua trình
+duyệt; agent chỉ đưa hướng dẫn bằng văn bản, không điều khiển hay truy cập được trình duyệt của
+Owner (không có quyền/khả năng đó). Không terminal, không AI coding agent thao tác thay. PASS —
+đóng dứt điểm phần production reachability còn treo của check này.
+
 ### Data — ranh giới historical (§9 chỉ thị)
 
 #### CHECK-T09B-15 — Không tuyên bố historical state là sạch
@@ -944,7 +992,8 @@ hiện "NGUỒN BỀN ĐÃ ĐỔI Ở NƠI KHÁC"; mirror CŨ HƠN nguồn bền
 ### Exit Criteria
 
 1. 16/16 REQUIRED check PASS ở mức E1. — **ĐẠT (S014)**, E1 trên Firebase Emulator Suite; project
-   thật: NOT_TESTED (xem "Thực thi — S014").
+   thật: **ĐẠT bổ sung 2026-09-03** cho 5 check được chủ dự án tự lặp lại trên production
+   (CHECK-01/02/03/04/14, E1 Owner báo cáo) — xem `docs/reviews/T-09B-production-verification.md`.
 2. Batch review cuối phiên PASS, 0 BLOCKING còn lại có production path. — **ĐẠT**:
    `docs/reviews/T-09B-batch-review.md`, CONFIRMED BLOCKING = 0, 4 HARDENING (H-24..H-27).
 3. `npm --prefix webapp test` PASS. — **ĐẠT** (6/6 file test).

@@ -25,7 +25,25 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-02 — **Owner UID production thật xác minh (checkpoint tiếp nối `DEC-023`)**: Owner
+2026-09-03 — **PRODUCTION VERIFICATION PASS — CHECK-T09B-01/02/03/04/14 trên hạ tầng thật.**
+Chủ dự án tự tay lặp lại toàn bộ chuỗi trên `https://tinphatcontent.web.app` (project Firebase
+thật, rules đã merge với Owner UID thật): nhập giá đóng cửa synthetic → nạp vốn tháng → P2P →
+mua ETH (rev 1→4, đúng dự đoán) → đóng hẳn trình duyệt/mở lại (CHECK-02+04 PASS) → xoá
+localStorage+sessionStorage/mở lại (CHECK-03 PASS). Một lần thử ban đầu bị chặn ở bước P2P
+("Không đủ VND trong kho") — xác nhận đây là accounting guard ĐÚNG (`addP2P` cần `treasury.vnd`
+đã nạp qua `addContribution` trước, `webapp/app_logic.js:209`), không phải defect; sửa QUY
+TRÌNH test (thêm bước nạp vốn tháng), không sửa code. **CHECK-T09B-14 PASS** — chuỗi hằng ngày
+chạy trọn vẹn qua trình duyệt thật, không terminal/AI agent. Evidence đầy đủ:
+`docs/reviews/T-09B-production-verification.md` (E1, Owner báo cáo trực tiếp — môi trường agent
+bị chặn mạng tới `*.web.app`, không tự tái xác nhận độc lập được). `docs/tasks/T-09B-*.md`: 5
+CHECK cập nhật thêm evidence production; Status ghi nhận production reachability PASS,
+**ELIGIBLE_FOR_COMPLETION** làm khuyến nghị — vẫn `IMPLEMENTED`, chuyển `DONE` là hành vi của
+chủ dự án (`STATE_AUTHORITY.md`, tiền lệ `DEC-018`). `RSK-001`: giảm đáng kể trên thực tế cho
+kịch bản trong scope V1 (xoá site data, ghi/đọc Firestore) — kịch bản "đổi máy" vẫn mở theo
+`H-23`, không đổi. Không phát hiện defect production. Không mở task mới. Không merge main.
+`CAP-WEBAPP` budget không đổi: 2/0/2.
+
+Trước đó, 2026-09-02 — **Owner UID production thật xác minh (checkpoint tiếp nối `DEC-023`)**: Owner
 deploy Hosting thành công (`https://tinphatcontent.web.app`), mở bằng trình duyệt hằng ngày,
 Anonymous Auth sinh UID `XWUo6IvUqhULI1v1EBrfndEDrE13`. Xác minh trực tiếp UID này qua emulator
 (mint token bằng Auth Emulator custom-token, không sửa `firestore.rules` — file đó là test
@@ -621,6 +639,20 @@ thực tế** vì project Firebase thật chưa tồn tại và chủ dự án v
 (a) thiết lập xong theo `webapp/README.md`, (b) dữ liệu cũ được export/import sang app Firebase,
 (c) chuỗi CHECK-01/02/03/04/14 được lặp lại bằng tay trên app thật. Kịch bản "đổi máy" vẫn mở theo
 `H-23` (export/import JSON). Risk KHÔNG tự đóng — thẩm quyền chủ dự án.
+**Cập nhật 2026-09-03 (production verification PASS)**: cả ba điều kiện (a)/(c) ở trên nay ĐẠT —
+chủ dự án đã tạo project Firebase thật (`tinphatcontent`, dùng chung với Content, `DEC-023`),
+deploy Hosting + rules với Owner UID thật, và tự tay lặp lại CHECK-01/02/03/04/14 trên
+`https://tinphatcontent.web.app` thật — **PASS cả 5, E1** (Owner báo cáo trực tiếp; agent không
+tự tới được `*.web.app` để tái xác nhận độc lập — xem giới hạn trung thực đầy đủ ở
+`docs/reviews/T-09B-production-verification.md`). Kịch bản chính risk này nêu tên — **xoá dữ
+liệu site (localStorage/sessionStorage) và mất khả năng ghi (nay đã chuyển sang Firestore)** —
+nay có bằng chứng giảm thiểu **trên hạ tầng thật**, không chỉ emulator. (b) "dữ liệu cũ được
+export/import sang app Firebase" **chưa áp dụng** — sổ Owner test trên production hiện là
+synthetic (rev 4), Owner chưa nạp dữ liệu tài chính thật; đây là bước Owner tự làm sau khi dọn
+dữ liệu test, không thuộc phạm vi risk này. Kịch bản "đổi máy"/"cửa sổ riêng tư" **vẫn mở**
+theo `H-23` (OUT OF SCOPE V1, `DEC-021`) — không đổi bởi cập nhật này; khuyến nghị xuất JSON
+định kỳ vẫn còn hiệu lực cho đúng kịch bản đó. **Risk giảm đáng kể trên thực tế cho phần trong
+scope V1; đóng hẳn (`DONE`) vẫn là quyết định của chủ dự án** (`STATE_AUTHORITY.md`).
 
 ### RSK-002 — Hai bản cài đặt chiến lược trôi khỏi nhau (mức: cao) — S001 XÁC NHẬN (E1)
 Implementation Plan §1 yêu cầu live và backtest dùng chung một core strategy function. Trang
@@ -926,6 +958,21 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- T-09B (PRODUCTION VERIFICATION — tiếp nối) — 2026-09-03 — cùng branch
+  `claude/t09b-firebase-implementation-nz50is` @ HEAD `7f5dc94`. Chủ dự án báo đã deploy Hosting
+  thật + rules đã merge với Owner UID thật, mở app bằng trình duyệt hằng ngày. Agent thiết kế quy
+  trình verification tối thiểu bằng dữ liệu synthetic (không dùng dữ liệu tài chính thật), đưa
+  hướng dẫn từng bước + expected result trước khi Owner thao tác. Lần thử đầu bị chặn ở P2P
+  ("Không đủ VND trong kho") — phân tích code (`addP2P`/`addContribution`) xác nhận đây là
+  accounting guard đúng (P2P cần treasury.vnd đã nạp qua contribution trước), sửa quy trình
+  (thêm bước "Nạp vốn tháng"), không sửa code. Owner chạy lại, báo PASS toàn bộ: CHECK-01 (rev
+  1→4 khớp dự đoán), CHECK-02+04 (đóng/mở lại trình duyệt, state+lịch sử nguyên vẹn), CHECK-03
+  (xoá localStorage/sessionStorage, phục hồi từ Firestore), CHECK-14 (chuỗi hằng ngày trọn vẹn
+  qua trình duyệt). Cập nhật `docs/tasks/T-09B-*.md` (5 CHECK + Status + Exit Criteria #1),
+  `docs/reviews/T-09B-production-verification.md` (mới, evidence đầy đủ + giới hạn trung thực),
+  `RSK-001` (giảm đáng kể trên thực tế cho scope V1). Không phát hiện defect. Không mở
+  hardening/task mới. `T-09B` vẫn `IMPLEMENTED` — `ELIGIBLE_FOR_COMPLETION` là khuyến nghị,
+  chuyển `DONE` chờ xác nhận tường minh của chủ dự án.
 - T-09B (SHARED FIREBASE PROJECT / RULES SAFE MERGE — tiếp nối) — 2026-09-02 — cùng branch
   `claude/t09b-firebase-implementation-nz50is` @ HEAD `f9330eb`. Owner xác nhận project thật
   (`tinphatcontent`) dùng chung với ứng dụng Content, cung cấp nguyên văn rules Content đang
