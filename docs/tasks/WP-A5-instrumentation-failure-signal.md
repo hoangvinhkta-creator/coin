@@ -2,12 +2,13 @@
 
 ## Metadata
 Status:
-**IMPLEMENTED — 9/9 REQUIRED PASS (E1) tại S015 (2026-09-03)**. Đóng phần đo lường của F-002 và
-toàn bộ F-016. Sau run đủ phase: `UNKNOWN: []` — không Failure Signal nào còn UNKNOWN. Không hạ
-REQUIRED check nào. Phát sinh `F-S015-01` (BLOCKING): phần thuộc WP-A5 đã sửa trong gói; phần gốc
-ở `failure_signals.py` định tuyến sang `WP-B1` vì nằm ngoài Expected Touch Area và `CHECK-A5-07`
-(FROZEN) bắt buộc chứng minh file đó KHÔNG đổi.
-Chuyển `DONE` là hành động của chủ dự án (`STATE_AUTHORITY.md`).
+**DONE — 9/9 REQUIRED PASS (E1) tại S015 (2026-09-03)**, chủ dự án phê chuẩn tại Owner Checkpoint
+S015 (2026-09-03). Đóng phần đo lường của F-002 và toàn bộ F-016. Sau run đủ phase: `UNKNOWN: []`
+— không Failure Signal nào còn UNKNOWN. Không hạ REQUIRED check nào; chủ dự án xác nhận KHÔNG yêu
+cầu E2 bổ sung vì Completion Gate của gói không đòi E2.
+Phát sinh `F-S015-01` (**BLOCKING**, chủ dự án xác nhận): phần thuộc WP-A5 đã sửa trong gói; phần
+root cause ở `failure_signals.py` định tuyến ra ngoài gói vì nằm ngoài Expected Touch Area và
+`CHECK-A5-07` (FROZEN) bắt buộc chứng minh file đó KHÔNG đổi.
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
