@@ -2,7 +2,8 @@
 
 ## Metadata
 Status:
-PLANNED
+BLOCKED — cập nhật tại `DEC-031` (2026-09-03): dependency `T-06 DONE` nay thoả; lý do chặn
+DUY NHẤT còn lại là `Dependency WP-C2 DONE` (`WP-C2` hiện `BLOCKED`).
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -158,7 +159,7 @@ Do not touch without Scope Expansion:
 - [x] Objective rõ ràng
 - [x] Scope được định nghĩa
 - [x] Out-of-scope được định nghĩa
-- [ ] **Dependency T-06 DONE**
+- [x] **Dependency T-06 DONE** — `DEC-031` (2026-09-03): official run thật đã chạy, verdict `DO_NOT_BUILD`
 - [ ] **Dependency WP-C2 DONE** — cho phần ngữ nghĩa trạng thái; nếu chưa, gói vẫn mở được nhưng
       CHECK-B3-02 sẽ BLOCKED và gói không DONE được
 - [x] Expected touch area được xác định

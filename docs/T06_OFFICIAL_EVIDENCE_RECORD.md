@@ -1,10 +1,13 @@
 # T-06 — Bản ghi bảo toàn evidence chính thức (Official Evidence Record)
 
-Trạng thái: **BẢO TOÀN EVIDENCE — KHÔNG phải Completion Gate, KHÔNG phải Owner Decision.**
-`T-06` vẫn `PLANNED` trong `PROJECT/PROJECT_PROGRESS.md`. File này KHÔNG tự cấp cho `T-06`
-tư cách `DONE`, KHÔNG resolve `BLK-001`, và KHÔNG viết acceptance criteria hậu nghiệm.
+Trạng thái: **CẬP NHẬT SAU `DEC-031`.** `T-06` = `DONE` (historical governance disposition,
+`DEC-031`, 2026-09-03) — verdict giữ nguyên `DO_NOT_BUILD`, `can_proceed_to_app=false`,
+`V2.1.5` validation = FAILED. `BLK-001` = `RESOLVED` (`DEC-031`). File này bản thân KHÔNG
+phải Owner Decision — nó là evidence record được `DEC-031` VIỆN DẪN làm căn cứ, không phải
+nơi ra quyết định. Xem `PROJECT/PROJECT_DECISIONS.md` `DEC-031` cho quyết định đầy đủ.
 
-Ngày lập: 2026-09-03. Phiên: S019 (`docs/sessions/S019-t06-evidence-preservation.md`).
+Ngày lập: 2026-09-03 (S019). Cập nhật: 2026-09-03 (S020,
+`docs/sessions/S020-t06-historical-disposition-dec031.md`, sau `DEC-031`).
 Code commit của official run: `5228130677e9e9875335eef890b6ed748a384603`.
 
 ## 0. File này LÀ gì / KHÔNG LÀ gì
@@ -263,19 +266,26 @@ theo cấu hình hiện có, không phải một khiếm khuyết của phiên n
 
 ---
 
-## 11. Không đổi gì (xác nhận rõ cho người đọc sau)
+## 11. Cập nhật sau `DEC-031` (2026-09-03) — trạng thái hiện hành
 
-`T-06` giữ nguyên `PLANNED`. `BLK-001` giữ nguyên ACTIVE trong `PROJECT/PROJECT_PROGRESS.md`.
-Không thuật toán, không ngưỡng, không verdict nào bị đổi. Official run **không** bị chạy lại
-để tạo file này — mọi phép tái lập ở trên (§3.2, §5, §7) chỉ dùng mã + seed + số Owner khai,
-không đụng tới `ethdca fetch`/`ethdca run`. `H-13` và các hardening khác **không** bị xử lý ở
-đây — việc ghi evidence này không đòi hỏi cập nhật `docs/CONVENTIONS.md`.
+`T-06`: `PLANNED → DONE` tại `DEC-031` — historical governance disposition, KHÔNG phải
+validation PASS. Verdict giữ nguyên `DO_NOT_BUILD`, `can_proceed_to_app=false`, `V2.1.5`
+validation = FAILED. `BLK-001`: `ACTIVE → RESOLVED` tại `DEC-031` (lịch sử blocker được giữ
+nguyên trong `PROJECT/PROJECT_PROGRESS.md`, chỉ thêm trạng thái RESOLVED). Không thuật toán,
+không ngưỡng, không verdict nào bị đổi bởi `DEC-031` — quyết định đó là governance
+disposition thuần tuý. Official run **chưa từng và không** bị chạy lại để ra quyết định này
+— mọi phép tái lập trong file này (§3.2, §5, §7) chỉ dùng mã + seed + số Owner khai, không
+đụng tới `ethdca fetch`/`ethdca run`. `H-13` và các hardening khác (trừ `H-06`/`H-02`, xem
+§12) **không** bị xử lý bởi `DEC-031`.
 
-## 12. Còn cần Owner Decision (KHÔNG ban hành ở đây)
+## 12. Owner Decision — trạng thái sau `DEC-031`
 
-Danh sách đầy đủ (không tạo mới, không đổi khỏi trạng thái nêu) tại
-`docs/sessions/S018-post-t06-evidence-closure.md` §13 (`OD-T06-01`…`OD-T06-10`). File này
-đóng góp trực tiếp cho `OD-T06-01` (bảo toàn — đã xác nhận qua §4) và `OD-T06-02` (cơ chế đưa
-evidence vào repo — bản thân file này là một phần câu trả lời khả dĩ, KHÔNG phải quyết định).
-Đường (A)/(B) của `OD-T06-03` (hợp thức hoá gate) **vẫn treo**, chờ Owner chọn — Owner đã báo
-sẽ chọn (B) trong một phiên riêng, chưa ban hành.
+`DEC-031` (`PROJECT/PROJECT_DECISIONS.md`) đã dispositioned: `OD-T06-03` (hợp thức hoá gate —
+chọn PHƯƠNG ÁN B), `OD-T06-05` (`H-06`/hai máy — `ACCEPT_AS_IS`), `OD-T06-10` (sai lệch
+Python patch — routed `CAP-PROV`/`H-02`, `ENVIRONMENT_REVERIFY_REQUIRED`). `OD-T06-01`
+(bảo toàn artifact) và `OD-T06-02` (cơ chế đưa evidence vào repo) đã RESOLVED trước đó tại
+S019 (§4 file này). **Còn treo, KHÔNG thuộc phạm vi `DEC-031`**: `OD-T06-04` (`H-13`, thi
+hành disposition công bố `row_count`), `OD-T06-06` (`H-16`, cần đọc dataset official),
+`OD-T06-07` (`H-01`, đã routed HARDENING, không cần thêm input), `OD-T06-08` (`H-24`/`H-25`,
+cần đọc artifact official), `OD-T06-09` (`H-27`/`H-04`/`H-14`/`H-28`, quy trình vận hành
+`T-06` chưa thành văn). Bảng disposition đầy đủ: `PROJECT/PROJECT_DECISIONS.md` `DEC-031`.

@@ -2,7 +2,8 @@
 
 ## Metadata
 Status:
-PLANNED
+READY — cập nhật tại `DEC-031` (2026-09-03): dependency `T-06 DONE` nay thoả. Mục "Xác nhận
+lại toàn bộ Ready Gate khi mở task" còn `[ ]` — thực hiện bởi phiên mở `IN_PROGRESS`.
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -154,7 +155,7 @@ Do not touch without Scope Expansion:
 - [x] Objective rõ ràng
 - [x] Scope được định nghĩa
 - [x] Out-of-scope được định nghĩa — **đặc biệt: không sửa `src/` để test đi qua**
-- [ ] **Dependency T-06 DONE**
+- [x] **Dependency T-06 DONE** — `DEC-031` (2026-09-03): official run thật đã chạy, verdict `DO_NOT_BUILD`
 - [x] Expected touch area được xác định
 - [x] Requirement liên quan được hiểu — BT §21.2, §21.3, §21.4
 - [x] Data impact được biết — không có

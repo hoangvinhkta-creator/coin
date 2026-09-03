@@ -62,6 +62,17 @@ hiện có là suy luận từ mã và lockfile, không phải divergence đo đ
     - `pyproject.lock` được sinh lại trên một OS/distro khác; HOẶC
     - bất kỳ sai lệch kết quả nào rơi đúng vào biên tháng kế toán.
 
+**Ghi chú routing tại `DEC-031` (2026-09-03).** Phát hiện tại S018: `pyproject.lock` chú
+thích `# Python: 3.11.15`, trong khi official run `T-06` khai Python `3.11.16`.
+`test_a1_08_lockfile_matches_installed_environment` bỏ qua dòng `#` nên không test nào bắt
+được sai lệch chú thích này. Theo `governance/v4/CORE/GOVERNANCE_V4.md` § II.8 (Interpreter /
+Environment Differences): một version mismatch tự nó là `ENVIRONMENT_REVERIFY_REQUIRED`,
+KHÔNG phải BLOCKING trừ khi một invariant thực sự fail. Chưa có bằng chứng semantics bị ảnh
+hưởng — `dependency_lock_hash` (sha256 của chính file) vẫn khớp khai báo, tái xác nhận tại
+S018/S019. KHÔNG sửa lockfile trong quyết định này. Phân loại **HARDENING** và
+`RE_TRIGGER_CONDITION` GIỮ NGUYÊN. Xem `PROJECT/PROJECT_DECISIONS.md` `DEC-031` — disposition
+`OD-T06-10`.
+
 ---
 
 ## H-03 — `F-E2A1-09` — `run_controls` ghi `official` không thống nhất với ba gate
@@ -173,6 +184,15 @@ giới hạn độ phủ — cả hai đã công bố ở `docs/CONVENTIONS.md` 
 thấp vì verdict là `DO_NOT_BUILD` (chiều bảo thủ, không dẫn tới xuống tiền), nhưng đây là
 quyết định của chủ dự án. Phân loại giữ **HARDENING**, chờ `OD-T06-05`. Biên bản:
 `docs/sessions/S018-post-t06-evidence-closure.md` §6 và §7.
+
+**Owner disposition tại `DEC-031` (2026-09-03).** `ACCEPT_AS_IS` cho câu hỏi "biện pháp đối
+trọng `DEC-003` (đối chiếu hai máy) có được thực hiện cho `T-06` hay không": Owner xác nhận
+đường hai máy là countermeasure cho kịch bản copy dữ liệu/IP bị chặn, KHÔNG phải acceptance
+criterion bắt buộc khi fetch và official run cùng một máy (production-realistic Mac
+environment của Owner có kết nối Binance trực tiếp). Không finding nào từ S018/S019 invalidate
+official execution `T-06`. Phân loại **HARDENING** và `RE_TRIGGER_CONDITION` GIỮ NGUYÊN —
+quyết định này không đóng finding, chỉ ghi nhận disposition cho câu hỏi đã nêu. Xem
+`PROJECT/PROJECT_DECISIONS.md` `DEC-031` mục H.
 
 ---
 

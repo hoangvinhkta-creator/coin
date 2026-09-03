@@ -1904,3 +1904,192 @@ Consequence:
 `T-06` chỉ còn phụ thuộc `GATE-A` (đã CLOSED, `DEC-028`) và `BLK-001` (hạ tầng, chưa gỡ).
 Trạng thái PENDING của `T-05`/`DEC-005` KHÔNG chặn `T-06`. `T-05` vẫn PENDING, vẫn là
 prerequisite của `T-08` và `WP-C2` — KHÔNG tự động approve `DEC-005` trong quyết định này.
+
+---
+
+## DEC-031 — `OD-T06DISP-01`: T-06 HISTORICAL GOVERNANCE DISPOSITION — `T-06: PLANNED → DONE` (verdict `DO_NOT_BUILD`, KHÔNG phải validation PASS); `BLK-001: ACTIVE → RESOLVED`
+
+Date:
+2026-09-03 (Owner Decision, tiếp nối `docs/sessions/S018-post-t06-evidence-closure.md` và
+`docs/sessions/S019-t06-evidence-preservation.md`)
+
+Task:
+Không thuộc work package nào — governance disposition cho `T-06` và `BLK-001`. Phạm vi:
+**DOCS/GOVERNANCE STATE ONLY**. Production diff = 0 (không sửa `src/`, `tests/`, `webapp/`,
+`pyproject.*`). Official run KHÔNG bị chạy lại để ra quyết định này.
+
+## Owner Findings (dẫn nguyên, làm cơ sở quyết định)
+
+1. `T-06` official execution đã thực sự xảy ra.
+2. Official code commit: `5228130677e9e9875335eef890b6ed748a384603`.
+3. Official immutable Git tag `v2.1.5-official-T06` tồn tại trên remote, annotated, peel
+   chính xác về official commit (đối chiếu lại tại S019, không lặp lại ở đây).
+4. Official raw artifacts đã được Owner bảo toàn độc lập: 16/16 file, SHA-256 verify PASS
+   (`docs/T06_OFFICIAL_EVIDENCE_RECORD.md` §4).
+5. Canonical repository evidence record tồn tại tại `docs/T06_OFFICIAL_EVIDENCE_RECORD.md`.
+6. S018 đã kiểm chứng độc lập các phần tái lập được mà không rerun official experiment.
+7. S019 đã canonicalize evidence và phân biệt tường minh REPOSITORY-VERIFIED /
+   OWNER-REPORTED-EXTERNALLY-VERIFIED / NOT-PRESENT-IN-REPOSITORY.
+8. Không finding nào từ S018/S019 được xác định là làm mất hiệu lực official `T-06` execution.
+9. Official verdict vẫn là `DO_NOT_BUILD` — reasons: `Gate 1 FAIL`, `OOS hard condition FAIL` —
+   `can_proceed_to_app=false`.
+10. Strategy V2.1.5 validation = **FAILED**.
+
+## Decision
+
+**A. Thời điểm.** `T-06` đã được thực thi TRƯỚC KHI governance phát hiện rằng `T-06` không có
+task-level Ready Gate / Completion Gate riêng (phát hiện tại `docs/sessions/S018-post-t06-evidence-closure.md`
+§4). Đây là một khoảng trống governance lịch sử, không phải một vi phạm của lần thực thi.
+
+**B. Không tạo gate hậu nghiệm.** Owner **KHÔNG cho phép** tạo Ready Gate hoặc Completion Gate
+hậu nghiệm cho `T-06`, và **KHÔNG cho phép** viết acceptance criteria mới sau khi đã biết kết
+quả official run. Lý do: retrospective freeze sau khi đã biết kết quả sẽ làm suy yếu nguyên
+tắc pre-commit/freeze của validation framework (chính nguyên tắc mà `TASK_READY_GATE_STANDARD.md`
+— "Completion Gate is frozen **before** implementation" — và `TASK_COMPLETION_GATE_STANDARD.md`
+— "the agent must not remove or weaken REQUIRED checks simply to make the task pass" — tồn tại
+để bảo vệ). Đây là lựa chọn PHƯƠNG ÁN (B) trong hai đường đã nêu tại
+`docs/sessions/S018-post-t06-evidence-closure.md` §13 mục `OD-T06-03`; PHƯƠNG ÁN (A) (tạo
+`docs/tasks/T-06-*.md` với Completion Gate viết từ tiêu chí đã đóng băng ở `T-04`/BT §7–§10)
+bị từ chối.
+
+**C. Cơ sở chấp nhận.** Owner chấp nhận official execution `T-06` như một **historical
+execution**, dựa trên:
+- Strategy/Backtest criteria (BT §7–§10, ngưỡng gate) đã tồn tại và được `T-04`/`RCP-002`
+  đóng băng TRƯỚC khi execution xảy ra — bản thân ngưỡng đánh giá kết quả không phải hậu
+  nghiệm, dù task-level gate wrapper thì có;
+- official code commit `5228130677e9e9875335eef890b6ed748a384603`, xác nhận bằng git tag
+  annotated + peel đúng;
+- frozen Gate 2 / Gate 3 manifest (tái lập REPOSITORY-VERIFIED tại S018/S019, khớp tuyệt đối
+  cả 10 giá trị và 2 hash — chỉ phụ thuộc mã + seed, không phụ thuộc dataset);
+- canonical evidence record `docs/T06_OFFICIAL_EVIDENCE_RECORD.md`;
+- immutable Git tag `v2.1.5-official-T06`;
+- raw artifact được bảo toàn độc lập bên ngoài repository + bản kê SHA-256 (16/16, Owner
+  verify PASS);
+- các phép đối chiếu nhất quán độc lập từ S018/S019 (code_commit, dependency_lock_hash,
+  dataset_hash tái tính từ đúng thuật toán, FS-12 arithmetic, ngưỡng bốn gate) — không phát
+  hiện mâu thuẫn nào.
+
+**D. Đây là GOVERNANCE DISPOSITION, không phải validation PASS.** Quyết định này KHÔNG có
+nghĩa: strategy PASS; gates PASS; V2.1.5 validated; recommendation engine được phép
+productionize; `can_proceed_to_app=true`.
+
+**E. Semantic state bắt buộc phải giữ** (không đổi, ghi lại tường minh để không ai đọc nhầm
+`DONE` thành thắng lợi):
+
+    T-06 task lifecycle       = DONE
+    T-06 experiment verdict   = DO_NOT_BUILD
+    V2.1.5 validation         = FAILED
+    can_proceed_to_app        = false
+
+**F. Ý nghĩa hẹp của `DONE`.** Ở đây `DONE` chỉ có nghĩa: official execution lifecycle đã
+hoàn tất và evidence đã được disposition/canonicalized (§C). `DONE` **tuyệt đối không** được
+dùng đồng nghĩa với validation PASS. Bất kỳ đọc `T-06 = DONE` như "chiến lược thắng"/"gate
+PASS" là đọc sai quyết định này.
+
+**G. Phạm vi — historical exception, không tạo precedent.** Ngoại lệ này có phạm vi ĐÚNG
+`T-06`. Nó **KHÔNG** tạo precedent cho task tương lai. Mọi task tương lai vẫn phải tuân thủ
+Ready Gate / frozen Completion Gate TRƯỚC khi execution, theo `TASK_READY_GATE_STANDARD.md`
+và `TASK_MODE_STANDARD.md` Mode 2 hiện hành — không đổi.
+
+**H. `BLK-001: ACTIVE → RESOLVED`.** Căn cứ theo kết luận `docs/sessions/S018-post-t06-evidence-closure.md`:
+production-realistic Mac environment của Owner có kết nối Binance
+(`api.binance.com`/`data.binance.vision` → HTTP 200); official fetch đã thực hiện thành công;
+official real Binance dataset đã được tạo (`dataset_hash` tái tính REPOSITORY-VERIFIED khớp
+tuyệt đối tại S019); `T-06` đã thực thi trên dữ liệu thật; đường đối chiếu hai máy của
+`DEC-003` là **biện pháp đối trọng** cho tình huống copy dữ liệu/IP bị chặn, **không phải**
+acceptance criterion bắt buộc khi fetch và run cùng một máy (§6 phân tích tại S018); không
+finding nào từ S018/S019 invalidate official execution. **Phải giữ lại lịch sử blocker** —
+không xoá mô tả gốc của `BLK-001` trong `PROJECT_PROGRESS.md`, chỉ đánh dấu RESOLVED bên
+trên nó.
+
+## Reason
+
+Governance của repo này (`governance/v4/CORE/GOVERNANCE_V4.md` § II.10 Conditions For
+Convergence) ghi rõ điều kiện hội tụ đầu tiên: *"its Completion Gate PASSes, **or the Owner
+has dispositioned it**."* `T-06` không có Completion Gate để PASS — Owner dispositioning nó
+qua chính quyết định này là con đường hội tụ CANONICAL, không phải một ngoại lệ ngoài
+governance. `STATE_AUTHORITY.md` § "The State Machine And Who May Write It" ghi rõ `DONE` =
+"Owner, hoặc một completion authority được chỉ định" — thẩm quyền này thuộc về Owner, và
+Owner đang thực hiện đúng thẩm quyền đó ở đây, không phải agent tự ý ghi.
+
+Không có canonical rule nào cấm chính disposition này. Đã đọc đầy đủ
+`governance/v4/CORE/{CAPABILITY_MODEL,GOVERNANCE_V4,DELIVERY_LOOP,REVIEW_PROTOCOL,RISK_MODEL,
+PRODUCTION_PATH_RULE}.md` trước khi ghi quyết định này (AGENTS.md §1 hàng 1–6) — không phát
+hiện xung đột. `GOVERNANCE_V4.md` §"Legacy Gate Compatibility" cung cấp đúng khuôn mẫu cho
+tình huống này (một gate không áp dụng được hậu nghiệm khi frozen contract vắng mặt; Owner
+dispositions nó), dù cơ chế đó viết cho gate ĐÃ có mà không áp V4.3 hậu nghiệm được — ở đây
+áp dụng cùng tinh thần cho một gate CHƯA TỪNG được tạo.
+
+## Consequence
+
+**T-06**: `PLANNED → DONE`. Verdict giữ nguyên `DO_NOT_BUILD`. `can_proceed_to_app=false`
+giữ nguyên. `V2.1.5` validation = FAILED, ghi nhận tường minh.
+
+**BLK-001**: `ACTIVE → RESOLVED`. Lịch sử blocker được giữ nguyên trong
+`PROJECT/PROJECT_PROGRESS.md` § Active Blockers, chỉ thêm trạng thái RESOLVED phía trên.
+
+**Dependency re-evaluation** (chỉ cập nhật readiness theo dependency thật, KHÔNG tự thực thi,
+KHÔNG tự đánh dấu DONE cho bất kỳ gói nào dưới đây):
+
+- `WP-B1`: Ready Gate — cả hai điều kiện dependency (`Dependency T-06 DONE`,
+  `WP-A5 DONE`) nay đều đúng (`WP-A5 DONE` là fact đã có từ `DEC-025`/S015, không phải quyết
+  định mới — checkbox trong file task chỉ đơn thuần chưa được đồng bộ trước đây). Toàn bộ mục
+  còn lại trong Ready Gate của `WP-B1` đã `[x]` từ trước. `PLANNED → READY`. Mục
+  "Xác nhận lại toàn bộ Ready Gate khi mở task" giữ `[ ]` — đây là bước thủ tục thực hiện bởi
+  phiên thực sự mở `IN_PROGRESS`, không phải bởi quyết định này.
+- `WP-B2`: Ready Gate — điều kiện dependency duy nhất (`Dependency T-06 DONE`) nay đúng, mọi
+  mục khác đã `[x]` từ trước. `PLANNED → READY`.
+- `WP-B3`: Ready Gate có HAI điều kiện dependency: `Dependency T-06 DONE` (nay đúng) VÀ
+  `Dependency WP-C2 DONE` (`WP-C2` hiện `BLOCKED`, KHÔNG đổi bởi quyết định này). `WP-B3`
+  **VẪN BLOCKED**, đổi từ `PLANNED → BLOCKED` để phản ánh đúng: lý do chặn DUY NHẤT còn lại là
+  `WP-C2`, không còn là `T-06`.
+- `GATE-B` (= `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`): CHƯA MỞ. `READY` không phải `DONE` — không
+  work package nào trong ba gói trên đã hoàn thành implementation/Completion Gate.
+- `T-07`: điều kiện là `T-06 ∧ GATE-B`. `T-06` nay `DONE`, nhưng `GATE-B` chưa mở ⇒ `T-07`
+  **VẪN `PLANNED`, KHÔNG READY**, không được thực thi.
+- `T-11`: điều kiện là `T-07 ∧ WP-C2 ∧ WP-C3 ∧ WP-C4 ∧ verdict=BUILD`. Verdict là
+  `DO_NOT_BUILD`, không phải `BUILD` — `T-11` không chỉ bị chặn bởi chuỗi dependency mà còn
+  **không áp dụng được** theo chính điều kiện verdict của roadmap, trừ khi hoàn cảnh đổi
+  (ngoài phạm vi quyết định này — không mở V2.2, không chọn Objective A/C).
+
+**Disposition `OD-T06-01`…`OD-T06-10`** (từ `docs/sessions/S018-post-t06-evidence-closure.md`
+§13 — không tự động đóng tất cả chỉ vì quyết định này; phân loại từng mục):
+
+| Mục | Phân loại | Rationale |
+|---|---|---|
+| `OD-T06-01` (bảo toàn artifact) | **RESOLVED_BY_S019** | Owner backup 16/16 file, SHA-256 verify PASS, ghi tại `docs/T06_OFFICIAL_EVIDENCE_RECORD.md` §4 |
+| `OD-T06-02` (cơ chế đưa evidence vào repo) | **RESOLVED_BY_S019** | Chọn nhánh (b): evidence record `docs/T06_OFFICIAL_EVIDENCE_RECORD.md` mang hash + record ID + số liệu tóm tắt đã biết; KHÔNG copy raw payload/bulk data vào git (giữ tối thiểu có chủ đích) |
+| `OD-T06-03` (hợp thức hoá gate) | **RESOLVED_BY_THIS_DECISION** | Owner chọn PHƯƠNG ÁN (B) — chính là quyết định này (mục A/B/C/D/E/F/G ở trên) |
+| `OD-T06-04` (`H-13` — công bố giới hạn `row_count`) | **STILL_OPEN** | Owner chỉ thị KHÔNG sửa `H-13` trong session này ngoài cập nhật reference bắt buộc; phần thi hành disposition (b) (`docs/CONVENTIONS.md`) vẫn để nguyên, chờ phiên riêng |
+| `OD-T06-05` (`H-06`/`DEC-003` hai máy) | **RESOLVED_BY_THIS_DECISION** | Owner Findings + mục H ở trên xác nhận: hai máy là countermeasure cho kịch bản copy, không phải acceptance criterion khi fetch+run cùng máy — `ACCEPT_AS_IS`, ghi chú thêm vào `H-06` (không đổi phân loại HARDENING, không đổi `RE_TRIGGER_CONDITION`) |
+| `OD-T06-06` (`H-16` — ULP dữ liệu thiếu) | **STILL_OPEN** | Cần đọc dataset official thật (ngoài repository) để biết có ngày daily thiếu hay không; Owner Findings phiên này không cung cấp dữ kiện đó |
+| `OD-T06-07` (`H-01` — worktree bẩn lúc chạy) | **ROUTED_HARDENING** | Đã phân loại và ghi nhận đầy đủ tại S018 (`H-01`, vế 1 ĐÃ THOẢ, giữ HARDENING); không có input mới từ Owner phiên này để đóng thêm |
+| `OD-T06-08` (`H-24`/`H-25` — zone Opportunity/Crash) | **STILL_OPEN** | Cần đọc artifact official thật (ngoài repository) để biết hai trường hợp có xảy ra và ảnh hưởng đáng kể hay không |
+| `OD-T06-09` (`H-27`/`H-04`/`H-14`/`H-28` — quy trình vận hành T-06 chưa thành văn) | **STILL_OPEN** | Owner chưa quyết định viết quy trình hay ghi `ACCEPT_AS_IS`; không phải phạm vi quyết định này |
+| `OD-T06-10` (sai lệch Python patch 3.11.15 vs 3.11.16) | **RESOLVED_BY_THIS_DECISION** | Routed `CAP-PROV`, cùng lớp `H-02`. Theo `governance/v4/CORE/GOVERNANCE_V4.md` § II.8: version mismatch tự nó là `ENVIRONMENT_REVERIFY_REQUIRED`, KHÔNG phải BLOCKING trừ khi một invariant thực sự fail — chưa có bằng chứng semantics bị ảnh hưởng (`dependency_lock_hash` vẫn khớp, xem S018/S019). KHÔNG sửa lockfile. Ghi chú thêm vào `H-02` |
+
+**Hardening — chỉ cập nhật reference bắt buộc do quyết định này, KHÔNG reclassify, KHÔNG mở
+repair cycle:**
+- `H-06`: thêm ghi chú Owner disposition (`ACCEPT_AS_IS`, dẫn `DEC-031`) cho câu hỏi "hai máy
+  có được thực hiện cho T-06 hay không" — phân loại HARDENING và `RE_TRIGGER_CONDITION` giữ
+  nguyên.
+- `H-02`: thêm ghi chú routing cho sai lệch Python patch version, dẫn `DEC-031` và
+  `GOVERNANCE_V4.md` § II.8 (`ENVIRONMENT_REVERIFY_REQUIRED`) — phân loại HARDENING và
+  `RE_TRIGGER_CONDITION` giữ nguyên.
+- `H-13`, `H-01`, `H-16`, `H-24`, `H-25`, `H-27`, `H-28` và mọi hardening khác: **KHÔNG sửa**
+  trong quyết định này.
+
+**DEC-029 integration trigger.** `DEC-029` (`OD-INT-01`, ACCEPT DIVERGENCE) đặt review
+deadline "2026-09-04, HOẶC sớm hơn ngay khi BLK-001 được gỡ và T-06 chuẩn bị chạy — tuỳ điều
+kiện nào xảy ra trước". Sau state transition của quyết định này (`BLK-001 = RESOLVED`,
+`T-06 = DONE`/đã thực thi), điều kiện đó **đã thoả rõ ràng**. Ghi nhận:
+`INTEGRATION_REVIEW_REQUIRED`. Quyết định này **KHÔNG** tự thực hiện merge/rebase/squash/
+reset — đó là quyết định integration riêng, thuộc thẩm quyền Owner, theo đúng `DEC-029`
+("Nếu tại review deadline T-06 vẫn chưa thể chạy: quay lại Owner để đánh giá lại integration
+disposition" — điều kiện đối xứng áp dụng khi T-06 ĐÃ chạy: quay lại Owner để đánh giá
+integration, không tự động tiếp tục divergence).
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: sửa algorithm/threshold/Gate 1-2-3/Failure
+Signal; đổi official verdict hay official dataset; thiết kế V2.2; chọn Objective A/C; thực
+hiện AE audit hay Control F investigation; merge/rebase/reset/squash; genericize chiến lược
+ETH; productionize khuyến nghị V2.1.5; tạo task ID mới. Production diff = 0.

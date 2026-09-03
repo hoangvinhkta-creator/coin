@@ -2,7 +2,9 @@
 
 ## Metadata
 Status:
-PLANNED
+READY — cập nhật tại `DEC-031` (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` nay đều
+thoả. Mục "Xác nhận lại toàn bộ Ready Gate khi mở task" còn `[ ]` — thực hiện bởi phiên mở
+`IN_PROGRESS`, không phải bởi `DEC-031`.
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -193,10 +195,10 @@ Do not touch without Scope Expansion:
 - [x] Objective rõ ràng
 - [x] Scope được định nghĩa, và **ranh giới chính sách / đo lường được nêu tường minh**
 - [x] Out-of-scope được định nghĩa
-- [ ] **Dependency T-06 DONE** — phải có official run thật; không được chạy gói này trên dữ liệu tổng hợp
-      để tạo verdict (DEC-003)
-- [ ] **WP-A5 DONE** — nếu ba đại lượng FS chưa từng được đo trong official run thì chính sách không
-      có gì để áp; khi đó gói này BLOCKED, không được "xử lý" bằng giá trị mặc định
+- [x] **Dependency T-06 DONE** — `DEC-031` (2026-09-03): official run thật đã chạy, verdict
+      `DO_NOT_BUILD`. Đây là dữ liệu để áp chính sách, KHÔNG phải dữ liệu tổng hợp (DEC-003)
+- [x] **WP-A5 DONE** — DONE từ S015/`DEC-025`; ba đại lượng FS (bao gồm FS-02/FS-12) THỰC SỰ
+      đã được đo trong official run (`docs/T06_OFFICIAL_EVIDENCE_RECORD.md` §6–§7)
 - [x] Expected touch area được xác định
 - [x] Requirement liên quan được hiểu — BT §12, §16, §17; IM §5, §6, §7; Master Index §6; DEC-009
 - [x] Data impact được biết — đổi cách diễn giải kết quả đã lưu, không đổi dữ liệu đã chạy

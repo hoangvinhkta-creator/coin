@@ -29,16 +29,26 @@ Capability được **dẫn xuất** từ các work package đã tồn tại tro
 Đây là lát cắt mà `T-06` (official run) hiện thực hoá. Nó cắt ngang mọi module — đúng định
 nghĩa Vertical Slice: không module nào tự chứng minh được nó.
 
-Trạng thái lát cắt: **CHƯA CHẠY LẦN NÀO.** Bị chặn bởi hai nhóm điều kiện ĐỘC LẬP:
+Trạng thái lát cắt: **ĐÃ CHẠY ĐÚNG MỘT LẦN — `T-06`, DONE tại `DEC-031` (2026-09-03).** Kết
+quả đầu-cuối = verdict **`DO_NOT_BUILD`** (Gate 1 FAIL, OOS hard condition FAIL),
+`can_proceed_to_app=false`. Đây là historical governance disposition (Owner chấp nhận
+execution như một historical exception, KHÔNG tạo Ready/Completion Gate hậu nghiệm) — KHÔNG
+có nghĩa capability nào PASS hay production-ready. Chi tiết:
+`docs/T06_OFFICIAL_EVIDENCE_RECORD.md`, `PROJECT/PROJECT_DECISIONS.md` `DEC-031`.
 
-- (A) nội tại — `GATE-A` = WP-A1 ∧ WP-A2 ∧ WP-A3 ∧ WP-A4 ∧ WP-A5 ∧ WP-A6 ∧ WP-A7 đều DONE,
-  và `T-05`;
-- (B) hạ tầng — `BLK-001` (không có đường tới `data.binance.vision` / `api.binance.com`).
+Hai nhóm điều kiện ĐỘC LẬP từng chặn lát cắt nay ĐỀU đã thoả:
+- (A) nội tại — `GATE-A` = WP-A1 ∧ WP-A2 ∧ WP-A3 ∧ WP-A4 ∧ WP-A5 ∧ WP-A6 ∧ WP-A7 đều DONE —
+  CLOSED tại `DEC-028` (`T-05` KHÔNG phải điều kiện, xác nhận `DEC-029`/`DEC-030`);
+- (B) hạ tầng — `BLK-001` — RESOLVED tại `DEC-031`.
 
-Hệ quả cho Production Reachability: **chưa có Golden trace nào chứng minh reachability cho
-bất kỳ capability nào**. Mọi bằng chứng reachability hiện tại đều dừng ở mức
-"đường thực thi ngoài ranh giới module" trong môi trường synthetic/stub, chứ không phải
-Golden. Đây là giới hạn thật, phải được nói rõ, không được coi là đã thoả.
+Vì `T-06` bị cấm chạy lại (Master Index §6), lát cắt này **KHÔNG** trở thành một Golden trace
+tái lập được cho mục đích giảm Blast Radius trong tương lai (`RISK_MODEL.md` § Golden
+Reduction đòi một test tái chạy được). Hệ quả cho Production Reachability: reachability đã
+được chứng minh MỘT LẦN trên dữ liệu thật cho lát cắt end-to-end, nhưng **chưa có Golden
+trace tái lập được** cho bất kỳ capability riêng lẻ nào. Mọi bằng chứng reachability cấp
+module hiện tại vẫn dừng ở mức "đường thực thi ngoài ranh giới module" trong môi trường
+synthetic/stub, chứ không phải Golden. Đây là giới hạn thật, phải được nói rõ, không được
+coi là đã thoả.
 
 ---
 
@@ -52,7 +62,7 @@ Golden. Đây là giới hạn thật, phải được nói rõ, không được
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | DONE tại S015 — 9/9 REQUIRED PASS (E1), chủ dự án phê chuẩn | CÓ |
 | `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
-| `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | PLANNED (sau T-06) | CÓ (sau lát cắt) |
+| `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | READY một phần (`DEC-031`) — WP-B1/WP-B2 READY, WP-B3 BLOCKED (chờ WP-C2) | CÓ (lát cắt đã chạy — T-06 DONE) |
 | `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | READY / BLOCKED | KHÔNG (song song) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
 | `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | READY | KHÔNG |
