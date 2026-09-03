@@ -1781,3 +1781,126 @@ Consequence:
 theo `DEC-026` đã PASS cho phần pre-T06 (full `WP-B1` vẫn `PLANNED`, không phải điều kiện của
 `T-06`). Gỡ `BLK-001` KHÔNG cho phép chạy `T-06` nếu (A) hoặc phần còn lại của (C) chưa thoả.
 Không tạo unit công việc mới từ finding của E2 vòng BỐN. Không mở repair cycle nào.
+
+---
+
+## DEC-029 — `OD-INT-01`: Integration Decision — ACCEPT DIVERGENCE cho `claude/coindca-data-stream-vv0vwv`
+
+Date:
+2026-09-03 (Owner Checkpoint — Pre-T06 Path Simplification)
+
+Task:
+Không thuộc task nào. Hard-stop `INTEGRATION_DECISION_REQUIRED` do
+`governance/scripts/governance/branch_authority_check.sh` báo trên nhánh hiện tại.
+
+Số đo tại thời điểm quyết định (đo bằng git, không suy đoán):
+
+    branch             = claude/coindca-data-stream-vv0vwv
+    default branch     = main (resolved, not assumed)
+    behind upstream    = 0
+    ahead of default   = 14 commit(s)
+    divergence age     = 0 ngày            <- KHÔNG vượt ngưỡng (AGE_DAYS_MAX=3)
+    divergence LOC     = 6331              <- vượt ngưỡng (LOC_MAX=5000)
+    TRIGGERED          = ahead>10 loc>5000
+    production diff    = EMPTY
+    tracked worktree   = CLEAN (trước phiên bookkeeping này)
+
+Decision:
+
+    ACCEPT DIVERGENCE.
+
+Không merge `main` lúc này. Không rebase. Không squash. Không reset. Không tạo branch mới.
+
+Review deadline:
+
+    2026-09-04, HOẶC sớm hơn ngay khi BLK-001 được gỡ và T-06 chuẩn bị chạy —
+    tuỳ điều kiện nào xảy ra trước.
+
+Nếu tại review deadline `T-06` vẫn chưa thể chạy: quay lại Owner để đánh giá lại integration
+disposition. KHÔNG tự động tiếp tục divergence vô hạn — một quyết định `ACCEPT DIVERGENCE`
+không tái diễn tự động, phải được Owner xác nhận lại hoặc thay bằng một trong hai lựa chọn
+còn lại (integrate/merge, cắt scope).
+
+Reason:
+- branch hiện tại giữ continuity/evidence chain của luồng WP-A1/GATE-A/E2 (SHA `990a6bb` và
+  các review artifact neo trực tiếp trên nhánh này);
+- `GATE-A` vừa đóng (`DEC-028`), `T-06` đang ở rất gần trên đường găng;
+- production diff hiện tại = EMPTY, không có rủi ro nội dung code xung đột;
+- `divergence age = 0` — phân kỳ không phải một nhánh sống lâu bị bỏ quên, mà mới đo lại gần
+  thời điểm `main` cập nhật;
+- ngưỡng vượt chủ yếu ở số commit/LOC (tài liệu governance/decision tích luỹ), không phải
+  logic code mới chưa qua kiểm chứng;
+- merge ngay bây giờ — trước khi giải quyết execution environment cho `T-06` (BLK-001) — không
+  tạo giá trị đủ lớn để bù chi phí/rủi ro làm nhiễu provenance chain đang neo vào nhánh này
+  (rủi ro cùng họ với `N-01`, `E2-WP-A1-CHECK-A1-11-round4.md`: `code_commit` của một official
+  run phải khớp đúng nhánh đã qua E2, một merge/rebase giữa chừng làm phức tạp việc đối chiếu).
+
+Precedent tham chiếu: `DEC-013` (Integration Decision trước, 28 commit / 9 ngày / 23.870 LOC)
+đã chọn integrate/merge — phân kỳ tại đây nhỏ hơn nhiều (14/0/6.331) và không có tín hiệu mất
+evidence, nên KHÔNG cùng disposition là hợp lý, không phải một ngoại lệ tuỳ tiện.
+
+Consequence:
+`INTEGRATION_DECISION_REQUIRED` chuyển trạng thái ACKNOWLEDGED (không phải CLOSED — nó tái mở
+tại review deadline nếu điều kiện trên chưa xảy ra). Không có hành động git nào được thực hiện
+trong quyết định này. Công việc tiếp tục bình thường trên
+`claude/coindca-data-stream-vv0vwv`.
+
+---
+
+## DEC-030 — `OD-DOC-01`: Xác nhận canonical interpretation — `T-05` KHÔNG phải prerequisite của `T-06`; sửa state/documentation inconsistency
+
+Date:
+2026-09-03 (Owner Checkpoint — Pre-T06 Path Simplification)
+
+Task:
+`PROJECT/PROJECT_PROGRESS.md` (canonical roadmap state). Không thuộc WP nào; docs/governance
+state only, KHÔNG sửa production code.
+
+Vấn đề (ghi lại CONFLICT DETECTED đã báo ở checkpoint trước):
+`PROJECT_PROGRESS.md` mang hai mô tả tự mâu thuẫn — dòng `T-05` nói "KHÔNG nằm trên đường
+găng tới verdict — chỉ chặn T-08 và WP-C2", trong khi dòng `T-06` (và §"Critical path sau
+RCP-002") lại liệt kê `T-05` như một điều kiện nội tại của `T-06` (`T-06 = GATE-A ∧ T-05 ∧
+BLK-001`).
+
+Decision:
+
+    Canonical interpretation = T-05 KHÔNG phải prerequisite của T-06.
+
+Authority: `RCP-002` (Trạng thái: **APPROVED WITH CONDITIONS — ĐÃ ÁP DỤNG**, 2026-08-24)
+điểm 9 định nghĩa tường minh dependency của `T-06`:
+
+    T-06 ghi rõ hai loại prerequisite ĐỘC LẬP: (A) internal correctness = GATE-A gồm WP-A7;
+    (B) external infrastructure = BLK-001.
+
+Không nhắc `T-05`. `RCP-001` (đề xuất gốc rút `T-05` khỏi đường găng tới `T-06`) có trạng thái
+"CHƯA ÁP DỤNG — CHỜ PHÊ DUYỆT", nhưng nội dung dependency đó đã được `RCP-002` — VĂN BẢN ĐÃ ÁP
+DỤNG — kế thừa nguyên vẹn mà không đảo ngược. Do đó dòng mô tả "`T-06` phụ thuộc `T-05`" còn
+sót lại trong `PROJECT_PROGRESS.md` là **state/documentation inconsistency**, không phải một
+dependency thực đang có hiệu lực.
+
+Phạm vi sửa: **DOCS/GOVERNANCE STATE ONLY**. Đã sửa trong `PROJECT/PROJECT_PROGRESS.md`:
+- dòng bảng roadmap của `T-05` (khoản "Thứ tự/phụ thuộc"): dẫn `RCP-002` điểm 9 thay vì
+  `RCP-001` chưa áp dụng, giữ nguyên "chỉ chặn T-08 và WP-C2";
+- dòng bảng roadmap của `T-06`: `T-06 = GATE-A ∧ BLK-001`, bỏ `T-05` khỏi điều kiện, giữ
+  NOT READY chỉ vì `BLK-001`;
+- `## Current Phase` (đầu file) và `### Critical path sau RCP-002` (biểu đồ phụ thuộc):
+  đồng bộ theo cùng kết luận, ghi rõ `T-06 = GATE-A ∧ (BLK-001 đã gỡ)`.
+
+Đã kiểm KHÔNG còn tài liệu active/canonical nào khác mô tả `T-05` là prerequisite của `T-06`
+(`grep -rn "T-05" PROJECT/PROJECT_PROGRESS.md` sau sửa — mọi dòng còn lại đều nói `T-05` chặn
+`T-08`/`WP-C2`, đúng theo quyết định này). `PROJECT/LO_TRINH_DE_HIEU.md` sinh lại bằng
+`sync_easy_roadmap.py` nên tự động đồng bộ. `PROJECT/PROJECT_DECISIONS.md` (mục này và các
+mục lịch sử `DEC-005`/`DEC-027`/`DEC-028` nhắc "T-05 được duyệt" trong phần Consequence) là
+append-only — KHÔNG sửa lại các mục lịch sử; các câu đó phản ánh hiểu biết TẠI THỜI ĐIỂM ghi,
+và mục này là bản ghi làm rõ hiện hành, có hiệu lực từ đây trở đi.
+
+Reason:
+`RCP-002` là văn bản roadmap change đã được chủ dự án phê duyệt và áp dụng — thẩm quyền cao
+hơn một dòng mô tả còn sót lại chưa được đồng bộ sau khi áp dụng. Việc không đồng bộ này là
+lỗi tài liệu (không cập nhật hết mọi chỗ khi RCP-002 được áp dụng), không phải một quyết định
+dependency mới.
+
+Consequence:
+`T-06` chỉ còn phụ thuộc `GATE-A` (đã CLOSED, `DEC-028`) và `BLK-001` (hạ tầng, chưa gỡ).
+Trạng thái PENDING của `T-05`/`DEC-005` KHÔNG chặn `T-06`. `T-05` vẫn PENDING, vẫn là
+prerequisite của `T-08` và `WP-C2` — KHÔNG tự động approve `DEC-005` trong quyết định này.
