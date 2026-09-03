@@ -55,13 +55,22 @@ Con số có thẩm quyền là con số ĐO TÍCH LUỸ ở trên, không phả
 
 ### Trạng thái budget
 
-    ALLOWED BUDGET            = 2 repair cycle        <- DEC-012 (chủ dự án, 2026-09-01)
-    CURRENT BUDGET USED       = 2 repair cycle
+    ALLOWED BUDGET            = 3 repair cycle        <- DEC-012 (2) + DEC-027 (+1)
+    CURRENT BUDGET USED       = 3 repair cycle
     CURRENT BUDGET REMAINING  = 0
-    OWNER_EXTENSION           = NOT GRANTED
+    OWNER_EXTENSION           = GRANTED +1 (DEC-027, 2026-09-03) — ĐÃ TIÊU tại S017
 
     Ngoài ra đã tiêu: 3 vòng E2 (E2-WP-A1-001, -002, -003 — cả ba FAIL);
-    340 insertion / 45 deletion trên production path, tính tích luỹ từ baseline 666de14.
+    340 insertion / 45 deletion trên production path, tính tích luỹ từ baseline 666de14,
+    CỘNG chu kỳ S017 (+2 file: reporting.py, pipeline.py).
+
+**Chu kỳ #3 (S017, `DEC-027`)** — mục tiêu DUY NHẤT do chủ dự án đặt: `F-E2A1-03` và
+`F-E2A1R3-03` phải xử lý trong CÙNG MỘT chu kỳ; cả hai đã đóng trong đúng một chu kỳ đó.
+`F-E2A1R3-06`/`F-E2A1-08` đóng bằng docs-only, **production diff = 0 → KHÔNG tiêu chu kỳ
+riêng** (tiền lệ: Decision pack PRE-S008, `2f20e6c..bd7c5ff`).
+Budget nay lại `REMAINING = 0`: mọi hạng mục cần production code trong `CAP-PROV` từ đây trở
+đi lại cần một `OWNER_EXTENSION` mới. `CHECK-A1-11` còn chờ E2 — rà soát độc lập KHÔNG tiêu
+repair cycle, nhưng nếu E2 phát hiện defect mới cần sửa mã thì cần extension.
 
 `MIGRATION_UNCERTAINTY` trước đây ở mục này **ĐÃ ĐƯỢC GIẢI QUYẾT** bởi `DEC-012`. Lý do
 ghi lại để không ai đọc nhầm rằng hạn mức từng tồn tại: bộ governance V3.2 của repo chưa
@@ -103,6 +112,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-MEASURE` | `WP-A5` | `b095874` | 0 | 0 | DONE tại S015 — implementation ban đầu (không phải repair cycle); 9/9 REQUIRED PASS (E1), gói không có check nào đòi E2 (chủ dự án xác nhận không yêu cầu E2 bổ sung) |
 | `CAP-ORDER` | `WP-A6` | `b717634` | 0 | 1 (PASS) | DONE tại S014 — implementation ban đầu (không phải repair cycle), 8/8 REQUIRED PASS, CHECK-A6-08 E2 PASS (`docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`) |
 | `CAP-WEBAPP` | `WP-C1` | `cb75f9d` | 0 | 0 | `WP-C1` DONE 2026-09-02; `T-09A` DONE 2026-09-02 (`DEC-018`) — xem §2.2 |
+| `CAP-VERDICT` | `WP-B1` | `28b0255` | 0 | 0 | Lát cắt pre-T06 tại S016 (`DEC-026`) — implementation ban đầu, KHÔNG tiêu repair cycle. `WP-B1` vẫn `PLANNED` |
 | `CAP-SPEC` | `WP-D2` | chưa bắt đầu | 0 | 0 | READY |
 | `CAP-GOVTOOL` | `MICRO-GOVDEF-001` | `4fab2e9` | 0 | 0 | Phần glob validator chưa có owner |
 

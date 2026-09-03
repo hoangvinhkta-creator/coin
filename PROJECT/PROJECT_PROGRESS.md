@@ -182,7 +182,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | VERIFYING | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. **CHECK-03-01 PASS tại WP-C1 (2026-09-02)** — gỡ BLOCKED; tất cả REQUIRED/RECOMMENDED check đều PASS. Chuyển DONE cần phiên riêng xác nhận Exit Criteria đầy đủ |
 | DONE | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. HOÀN TẤT tại S002 — 15 file task đã đóng băng gate |
 | PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới verdict (RCP-001) — chỉ chặn T-08 và WP-C2 |
-| IN_PROGRESS | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S008: CHECK-A1-01..A1-10 PASS (E2 xác nhận), CHECK-A1-11 E2 **FAIL** vòng ba — hai finding chặn F-E2A1-01/02 đã đóng nhưng F-E2A1-03 còn mở và nay ở mức CAO, cộng sai lệch contract F-E2A1R3-03. KHÔNG mở vòng patch thứ tư (ESCALATION_PROTOCOL) |
+| IN_PROGRESS | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S008: CHECK-A1-01..A1-10 PASS (E2 xác nhận), CHECK-A1-11 E2 **FAIL** vòng ba — hai finding chặn F-E2A1-01/02 đã đóng nhưng F-E2A1-03 còn mở và nay ở mức CAO, cộng sai lệch contract F-E2A1R3-03. KHÔNG mở vòng patch thứ tư (ESCALATION_PROTOCOL). **Cập nhật S017 (2026-09-03) — repair cycle CUỐI theo `DEC-027` (`OWNER_EXTENSION` +1):** ba hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED` đã ĐÓNG — `F-E2A1-03` (official run nay bị TỪ CHỐI khi không phân giải được provenance, chưa artifact nào được ghi; run non-official ghi `provenance_resolved`/`provenance_unresolved` tường minh), `F-E2A1R3-03` (contract case 13: `dev_limit` → `official_reason='dev_limit_set'` tại cả `run_gate1/2/3`), `F-E2A1R3-06`+`F-E2A1-08` (docs-only, production diff = 0). Test-first: 9 đỏ → 13/13 xanh; suite 377/377; 50/50 test provenance/contract/CLI cũ vẫn xanh; pipeline trước/sau giống hệt (không đổi giá trị tính toán nào); diff 2 file, KHÔNG đụng engine/regime/ladders/capital/score/gates/verdict/metrics. `CAP-PROV` budget: allowed 3 / used 3 / **remaining 0**. **CÒN LẠI: `CHECK-A1-11` là E2** — cần phiên reviewer độc lập xác nhận trước khi chủ dự án xét `WP-A1 → DONE`; S017 KHÔNG tự đánh PASS. Ràng buộc vận hành mới cho T-06: official run phải chạy từ git checkout có lockfile. Biên bản: `docs/sessions/S017-wp-a1-repair-cycle-cuoi.md` |
 | DONE | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | **DONE tại S006** (10/10 REQUIRED PASS; đấu nối thuần tuý — 4 module chỉ-đọc 0 dòng đổi; chiến lược + Benchmark A không đổi 159/159 trường) (đóng F-003, F-004, F-012, F-013, F-014). Tier C route tự nhiên sau MICRO-GOVDEF-001, xác nhận lại tại S006 |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
 | DONE | WP-A4 | Xử lý đúng khi dữ liệu thiếu hoặc hỏng | Dữ liệu Binance thật có lỗ hổng; xử lý sai sẽ làm sai kết quả mô phỏng | C | xhigh | **DONE lại tại S010** sau CAP-DATA REPAIR CYCLE #1 (`DEC-016`): 10/10 REQUIRED PASS (CHECK-A4-01…08 FROZEN + CHECK-A4-10 do `DEC-014` + **CHECK-A4-11** do `DEC-016`). Đóng F-023, F-025, F-032, **F-E2A1R3-05**, **F-S009-01**. Hết chặn WP-A6/WP-C4 về phía A4. Budget CAP-DATA: allowed 2 / used 1 / remaining 1. Batch review S010 PASS, 0 BLOCKING; sinh H-16, H-17 (hardening) và F-S010-03 (`OUT_OF_SCOPE` → WP-C4) |
@@ -662,6 +662,18 @@ Giảm thiểu: **WP-A1** (RCP-001) — thay thế T-06A, đóng đủ cả 8 tr
 (Python version, dependency/lock hash, git commit SHA, dataset hash, strategy config hash,
 execution config hash, manifest hash, seed), không chỉ ghim thư viện.
 
+**Cập nhật S017 (2026-09-03) — mức: cao → trung bình.** Tám trường provenance đã được ghi và
+khoá bằng test từ S007/S008 (`CHECK-A1-01` PASS, có assertion CỨNG bác hai giá trị suy biến).
+Repair cycle cuối của WP-A1 (`DEC-027`, đóng `F-E2A1-03`) bổ sung vế còn thiếu: một run được
+ghi `official` mà KHÔNG phân giải được `code_commit` hoặc `dependency_lock_hash` nay **bị từ
+chối ngay, chưa file nào được tạo** (`ProvenanceUnresolvedError`), thay vì ghi im lặng. Run
+không official vẫn chạy được nhưng mang `provenance_resolved: false` và danh sách
+`provenance_unresolved` tường minh trên record.
+**Phần dư:** ghi được phiên bản thư viện KHÔNG đồng nghĩa với việc kết quả bất biến theo thời
+gian — trôi phiên bản vẫn có thể đổi số ở mức dấu phẩy động. Điều đã đạt là trôi phiên bản nay
+**phát hiện được** (`GOVERNANCE_V4.md` §II.8: lệch phiên bản ⇒ `ENVIRONMENT_REVERIFY_REQUIRED`),
+chứ không phải bị loại trừ.
+
 ### RSK-007 — Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run (mức: cao → **trung bình**) — **ĐÃ GIẢM THIỂU: S006 (WP-A2 DONE) + S015 (WP-A5 DONE)**; phần dư = giá trị official chờ T-06, chính sách chờ WP-B1
 **Cập nhật S006 (2026-08-24):** WP-A2 (DONE) đã đấu nối **toàn bộ** phần thuộc quyền sở hữu của
 nó: Benchmark B/C/D (F-003), ablation §2.3 + volume z-score §2.4 kèm bảng chênh lệch (F-004),
@@ -719,6 +731,18 @@ cả dữ liệu thật lẫn dữ liệu tổng hợp. Chạy `ethdca synth && 
 `official: true` trên dữ liệu nhân tạo, không có trường nào cho phép phát hiện về sau.
 Đây là rủi ro thẳng vào tính toàn vẹn của verdict — tức vào chính cổng mở đường cho app.
 Xem finding F-005. Giảm thiểu: **WP-A1** (RCP-001).
+
+**Cập nhật S017 (2026-09-03) — mức: cao → thấp.** Cờ `official` nay là **hàm dẫn xuất** từ
+lineage đã verify checksum, không còn phụ thuộc `--dev-limit`: `official_eligibility` kiểm
+nguồn **trên từng series** với `REAL_SOURCES = {binance_bulk_archive, binance_rest}`, nên
+`synthetic` và `unknown` không bao giờ đủ tư cách (`CHECK-A1-07`, và
+`test_a1_07_no_cli_or_env_surface_can_force_official` khẳng định không có flag CLI/biến môi
+trường nào ép được). Chuỗi cố định `'see fetch/synth'` đã bị loại bỏ và có test cấm nó quay
+lại. Repair cycle cuối (`DEC-027`, đóng `F-E2A1R3-03`) bịt nốt khe **diễn giải**: khi
+`dev_limit` là thứ hạ cờ official, `official_reason` nay ghi đúng `dev_limit_set` theo contract
+case 13 thay vì để `'verified'` che nguyên nhân.
+**Phần dư:** vận hành viên sửa TAY `lineage.json` vẫn nằm ngoài tầm của mã — đối trọng là
+`ethdca freeze` hai máy theo `DEC-003`, đã công bố tại `docs/CONVENTIONS.md` và `H-06`/`H-13`.
 
 ### RSK-009 — Vòng đời Crash ladder hở, vốn có thể bị khoá vĩnh viễn (mức: cao) — ĐÃ REMEDIATE tại S003 (WP-A3)
 S001 phát hiện và kiểm chứng bằng chạy thật (E1): khi giai đoạn RECOVERY kết thúc lúc thị trường

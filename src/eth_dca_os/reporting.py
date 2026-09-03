@@ -66,6 +66,28 @@ def _get_dependency_lock_hash() -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest() if path else "no-lockfile"
 
 
+#: Giá trị suy biến của hai trường provenance: chúng nói "không phân giải được", KHÔNG phải
+#: một giá trị hợp lệ. Trước WP-A1 repair cycle cuối, chúng được ghi IM LẶNG (F-E2A1-03).
+UNRESOLVED_PROVENANCE = {"code_commit": "unknown", "dependency_lock_hash": "no-lockfile"}
+
+
+class ProvenanceUnresolvedError(RuntimeError):
+    """Không phân giải được provenance cho một run được ghi là `official`.
+
+    Vì sao FAIL LOUD chứ không ghi rồi cảnh báo (WP-A1/`F-E2A1-03`, `DEC-027`): Master Index
+    §6 CẤM chạy lại official run. Một official run ghi xong với `code_commit='unknown'` là
+    mất khả năng chứng minh mã nào sinh ra con số đó **VĨNH VIỄN** — không có đường vá về
+    sau. Chi phí của việc nổ ở đây là chạy lại một lần trong môi trường đúng; chi phí của
+    việc ghi im lặng là một official run không tự chứng minh được, không sửa được.
+    """
+
+
+def _provenance_state(code_commit: str, lock_hash: str) -> list[str]:
+    """Tên các trường provenance KHÔNG phân giải được, theo thứ tự ổn định."""
+    actual = {"code_commit": code_commit, "dependency_lock_hash": lock_hash}
+    return [k for k, bad in UNRESOLVED_PROVENANCE.items() if actual[k] == bad]
+
+
 def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
              strategy_config_hash: str, execution_config_hash: str,
              dataset_hash: str, manifest_hash: str | None = None,
@@ -81,6 +103,22 @@ def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
     (`data.dataset.official_eligibility`) rồi truyền xuống đây để ghi. `save_run` chỉ ghi
     lại, không tự suy luận và cũng không nhận giá trị từ CLI/env (WP-A1/A1.2, CHECK-A1-07).
     """
+    # WP-A1 repair cycle cuối (`DEC-027`, đóng `F-E2A1-03`): phân giải provenance TRƯỚC khi
+    # ghi bất cứ thứ gì. Nếu không phân giải được mà run này được ghi `official`, từ chối
+    # ngay — chưa file nào được tạo, nên không để lại một official run thiếu provenance trên
+    # đĩa (Master Index §6 cấm chạy lại để sửa). Đường KHÔNG official vẫn chạy bình thường
+    # trong môi trường thiếu git/lockfile, nhưng trạng thái suy biến được ghi TƯỜNG MINH ra
+    # record thay vì im lặng — đó chính là nội dung của finding.
+    code_commit = _get_code_commit()
+    lock_hash = _get_dependency_lock_hash()
+    unresolved = _provenance_state(code_commit, lock_hash)
+    if official and unresolved:
+        raise ProvenanceUnresolvedError(
+            "Không phân giải được provenance cho một run official: "
+            f"{', '.join(unresolved)}. Official run phải chứng minh được mã và dependency "
+            "đã sinh ra nó (WP-A1/F-E2A1-03); Master Index §6 cấm chạy lại official run để "
+            "sửa sau. Chạy lại trong môi trường có git repo và lockfile."
+        )
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     run_id = f"{run_type.lower()}_{uuid.uuid4().hex[:12]}"
@@ -102,8 +140,14 @@ def save_run(out_dir: str | Path, run_type: str, payload: dict, *,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         # WP-A1 provenance fields (A1.4–A1.6)
         "python_version": _get_python_version(),
-        "code_commit": _get_code_commit(),
-        "dependency_lock_hash": _get_dependency_lock_hash(),
+        # Dùng lại đúng giá trị đã phân giải và đã kiểm ở trên — gọi lại lần nữa sẽ mở khe
+        # cho record mang giá trị KHÁC với giá trị vừa được cổng provenance chấp nhận.
+        "code_commit": code_commit,
+        "dependency_lock_hash": lock_hash,
+        # WP-A1/`F-E2A1-03`: trạng thái provenance được ghi TƯỜNG MINH. Trước đây người đọc
+        # phải tự biết rằng "unknown"/"no-lockfile" là giá trị suy biến; nay record tự nói.
+        "provenance_resolved": not unresolved,
+        "provenance_unresolved": unresolved,
         "simulation_seed": simulation_seed if simulation_seed is not None else MASTER_SEED,
         # WP-A1/A1.1–A1.2: record tự trả lời "dữ liệu đến từ đâu" và "có official không"
         "data_source": data_source,

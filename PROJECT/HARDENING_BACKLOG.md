@@ -797,3 +797,41 @@ lệch.
       hoặc tới số liệu báo cáo BT §16; HOẶC
     - một task chạm `ladders.py`/lifecycle Crash (ngoài Scope Lock `WP-A6`) nhận việc này qua
       Capability Model (không tự hấp thụ, cần Owner routing).
+
+---
+
+## H-26 — `gates.py` trả cờ `pass` kiểu `numpy.bool` — cùng họ `F-S015-01`, hiện chưa hoạt động
+
+Capability: `CAP-VERDICT` (`gates.py` → `verdict.py`) · Owner: chưa gán (ứng viên tự nhiên là
+`WP-B1`, đang sở hữu đường verdict) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-03 (S016 — quan sát ngoài frozen slice của `DEC-026`, không sửa trong
+lát cắt)
+
+`evaluate_gate1`/`evaluate_oos` dựng cờ `pass` từ phép so trên giá trị đầu vào. Trong pipeline
+thật, các giá trị đó là `numpy.float64` (AE tính từ tổng ETH), nên `pass` ra `numpy.bool` chứ
+không phải `bool` thuần Python:
+
+    evaluate_oos({'ae': np.float64(105.0), ...})['pass']
+      -> type = numpy.bool ;  x is True  ->  False
+
+Đây **cùng một họ khiếm khuyết** với `F-S015-01` (đã đóng tại lát cắt `DEC-026` cho
+`failure_signals.py`).
+
+Vì sao KHÔNG BLOCKING: người tiêu thụ hiện tại đọc cờ này bằng **truthiness**, không bằng
+phép so danh tính — `verdict.py:14` dùng `if not gate1["pass"] or not oos["pass"]`, và
+`not np.True_` cho `False` đúng như mong đợi. Không có hậu quả nghiệp vụ nào ở hiện trạng,
+nên theo `PRODUCTION_PATH_RULE.md` mặc định là HARDENING chứ không phải BLOCKING.
+
+Vì sao vẫn phải ghi: khiếm khuyết là **tiềm ẩn, không phải không tồn tại**. Nó trở thành lỗi
+thật ngay khi một người tiêu thụ chuyển sang `is True` / `is False` — đúng con đường mà
+`F-S015-01` đã đi qua một lần ở `failure_signals.py`, và lần đó hậu quả là verdict có thể ra
+`BUILD` khi một Failure Signal đang TRUE.
+
+    RE_TRIGGER_CONDITION:
+    - bất kỳ mã nào bắt đầu so cờ `pass` của gate bằng `is True`/`is False` thay vì
+      truthiness; HOẶC
+    - `WP-B1` đầy đủ mở đường verdict (B1.1/B1.5) — khi đó chuẩn hoá kiểu ở `gates.py` là
+      việc rẻ và cùng phạm vi, nên đóng luôn; HOẶC
+    - cờ `pass` được tuần tự hoá ra artifact và bị đọc lại bởi một hệ khác (JSON hoá
+      `numpy.bool` qua `default=str` cho chuỗi `"True"`/`"False"` — đúng dấu vết đã giúp
+      phát hiện `F-S015-01`).

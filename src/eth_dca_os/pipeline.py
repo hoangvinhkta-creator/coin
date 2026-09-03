@@ -87,6 +87,24 @@ class Prepared:
         return pd.Timestamp(last).tz_localize(None).normalize()
 
 
+def _official_reason(prep: "Prepared", dev_limit: int | None) -> str:
+    """Lý do đi kèm cờ `official`, theo contract case 13 (PRE-S008, FROZEN 2026-08-25).
+
+    Hợp đồng: `dev_limit != None` -> `official = False`, `official_reason = 'dev_limit_set'`,
+    enforcement point là `pipeline.run_gate1/2/3` (không phải `official_eligibility` — mã này
+    thuộc TẦNG PIPELINE, dataset tự nó vẫn hợp lệ). Trước WP-A1 repair cycle cuối, cờ
+    `official` đã đúng nhưng lý do vẫn là lý do của dataset, nên nguyên nhân `dev_limit` bị
+    `'verified'` che hoàn toàn (`F-E2A1R3-03`, đóng theo `DEC-027`).
+
+    Khi dataset TỰ NÓ đã không đủ tư cách, giữ lý do GỐC của dataset: hợp đồng chỉ định nghĩa
+    case 13 trên nền ca (12) hợp lệ, và che một nguyên nhân sâu hơn bằng `dev_limit_set` sẽ
+    lặp lại đúng khiếm khuyết đang được sửa, chỉ đổi chiều.
+    """
+    if dev_limit is not None and prep.official_eligible:
+        return "dev_limit_set"
+    return prep.official_reason
+
+
 def _bootstrap_sims(dev_limit: int | None) -> int:
     """Backtest §13: official run = 1000 mô phỏng MỖI block length; chỉ dev/smoke mới hạ 200.
 
@@ -221,7 +239,7 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
         "counters_w5": rep["result"].counters,
         "benchmarks": _benchmark_comparison(prep, exec_cfg, wm),
         "official": prep.official_eligible and dev_limit is None,
-        "official_reason": prep.official_reason,
+        "official_reason": _official_reason(prep, dev_limit),
         "lineage": prep.lineage,
         "dev_limit": dev_limit,
     }
@@ -273,7 +291,7 @@ def run_gate2(prep: Prepared, out_dir, limit: int | None = None) -> dict:
     g2["dev_limit"] = limit
     payload = {"gate2": g2, "per_config": results,
                "official": prep.official_eligible and limit is None,
-               "official_reason": prep.official_reason,
+               "official_reason": _official_reason(prep, limit),
                "expected_denominator": man["denominator"]}
     # WP-A1/A1.3: hash ĐÚNG manifest đã chạy (đã cắt nếu dev), dựng bằng cùng hàm với
     # `freeze_manifests` nên record đối chiếu được với manifest đóng băng (CHECK-A1-02).
@@ -321,7 +339,7 @@ def run_gate3(prep: Prepared, out_dir, limit: int | None = None) -> dict:
                    "oos_ae": realistic_payload["oos"]["ae"]},
                "shortfall_attribution": attr,
                "official": prep.official_eligible and limit is None,
-               "official_reason": prep.official_reason, "dev_limit": limit,
+               "official_reason": _official_reason(prep, limit), "dev_limit": limit,
                "expected_manifest_size": man["size"]}
     # WP-A1/A1.3: xem ghi chú ở `run_gate2` — cùng hàm hash với `freeze_manifests`.
     mh = manifest_hash([_cfg_row(c) for c in exec_cfgs])

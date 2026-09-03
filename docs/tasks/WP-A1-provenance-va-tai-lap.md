@@ -771,3 +771,84 @@ CHECK-A1-07 yêu cầu liệt kê bề mặt CLI/env, không chỉ thêm một t
 
 Ràng buộc DEC-003 là tuyệt đối: dữ liệu tổng hợp dùng để phát triển và kiểm chứng thì hợp lệ; dùng
 để tạo verdict thì không, trong mọi hoàn cảnh.
+
+---
+
+## REPAIR CYCLE CUỐI — S017 (2026-09-03), `OWNER_EXTENSION` theo `DEC-027`
+
+Chủ dự án cấp `CAP-PROV` **+1 repair cycle** (`allowed 2 → 3`, `used 2 → 3`, `remaining 0`) với
+mục tiêu DUY NHẤT: đóng `F-E2A1-03` và `F-E2A1R3-03` trong **cùng một** chu kỳ. Hạng mục thứ ba
+(`F-E2A1R3-06` + `F-E2A1-08`) đóng bằng **docs-only, production diff = 0**, không tiêu chu kỳ
+riêng — đúng tiền lệ ledger (Decision pack PRE-S008, `2f20e6c..bd7c5ff`).
+
+### (1) `F-E2A1-03` — ĐÓNG. Provenance không còn suy biến im lặng
+
+Bản sửa ở `reporting.py`: phân giải `code_commit` và `dependency_lock_hash` **TRƯỚC** khi ghi
+bất cứ file nào. Nếu run được ghi `official` mà một trong hai không phân giải được →
+`ProvenanceUnresolvedError`, và **chưa artifact nào được tạo**. Đây là điểm cốt lõi: Master
+Index §6 cấm chạy lại official run, nên một official record thiếu provenance đã ghi ra đĩa là
+mất vĩnh viễn; từ chối TRƯỚC khi ghi thì chi phí chỉ là chạy lại trong môi trường đúng.
+
+Đường KHÔNG official vẫn chạy được trong môi trường thiếu git/lockfile — nhưng record nay mang
+`provenance_resolved: false` và `provenance_unresolved: [...]` tường minh, thay vì để người đọc
+tự biết rằng `"unknown"` / `"no-lockfile"` là giá trị suy biến.
+
+Bằng chứng E1 (`tests/test_wp_a1_legacy_gate_repair.py`), tất cả ĐỎ trước khi sửa:
+`test_a1r_b1_official_run_refuses_unresolved_code_commit`;
+`test_a1r_b1_official_run_refuses_missing_lockfile`;
+`test_a1r_b1_nothing_is_written_when_provenance_unresolved` (khẳng định KHÔNG có
+`backtest_runs.jsonl` và KHÔNG có `*_metrics.json` sau khi từ chối);
+`test_a1r_b1_non_official_run_still_records_degraded_state`;
+`test_a1r_b1_official_run_with_resolvable_provenance_still_works` — đối chứng dương, thiếu ca
+này thì một bản sửa "luôn luôn nổ" cũng làm các ca kia xanh.
+
+**Hệ quả vận hành phải biết TRƯỚC khi chạy `T-06`:** official run bắt buộc chạy từ một git
+checkout có lockfile, không phải từ một bản sao mã trần. `BLK-001` dự kiến chạy trên máy chủ dự
+án hoặc VPS nước ngoài — điều kiện này phải được thoả ở đó, nếu không `save_run` sẽ từ chối.
+
+### (2) `F-E2A1R3-03` — ĐÓNG. Contract case 13 được thi hành
+
+Bản sửa ở `pipeline.py`: hàm `_official_reason(prep, dev_limit)` áp tại **cả ba** enforcement
+point mà hợp đồng nêu tên (`run_gate1`, `run_gate2`, `run_gate3`). `dev_limit != None` trên nền
+dataset hợp lệ → `official_reason = "dev_limit_set"`. `run_controls` KHÔNG có tham số
+`dev_limit` nên không nằm trong hợp đồng và không bị đụng.
+
+Khi dataset **tự nó** đã không đủ tư cách, lý do GỐC của dataset được giữ: hợp đồng chỉ định
+nghĩa case 13 trên nền ca (12) hợp lệ, và che một nguyên nhân sâu hơn bằng `dev_limit_set` sẽ
+lặp lại đúng khiếm khuyết đang được sửa, chỉ đổi chiều.
+
+Bằng chứng E1, ĐỎ trước khi sửa với chữ ký `assert 'verified' == 'dev_limit_set'`:
+`test_a1r_b2_gate1/gate2/gate3_dev_limit_sets_canonical_reason`;
+`test_a1r_b2_reason_written_into_run_record` (lý do phải tới ARTIFACT, không chỉ nằm trong
+payload trong bộ nhớ). Ba ca đối chứng chặn bản sửa lười:
+`..._no_dev_limit_keeps_dataset_reason` (không dev_limit thì vẫn `verified`);
+`..._ineligible_dataset_keeps_its_own_reason`;
+`..._dev_limit_set_is_not_a_valid_source_or_eligibility_code` — sai TẦNG: nếu ai cài mã này vào
+`official_eligibility` thì dataset bị coi là không hợp lệ ngay cả khi không chạy dev.
+
+### (3) `F-E2A1R3-06` + `F-E2A1-08` — ĐÓNG bằng tài liệu, production diff = 0
+
+`docs/CONVENTIONS.md` nay ghi **hai TẦNG** nhãn nguồn: bảng bốn giá trị là nhãn **series** và là
+thứ quyết định tư cách official; `mixed` là nhãn **dataset-level, chỉ mô tả**, sinh khi các
+series không cùng nguồn, và KHÔNG phải lối tắt qua cổng official vì `official_eligibility` kiểm
+per-series với `REAL_SOURCES`. Bổ sung hai mã lý do chưa từng được ghi ở đâu: `empty_series` và
+`source_not_real`. Coverage invariant đã được WP-A4/S010 ghi từ trước.
+
+Kiểm lại mục mà bản disposition nêu là "mã lý do lỗi thời trong Evidence `CHECK-A1-06`":
+Evidence đó đang ghi `source_not_real:BTCUSDT_1d='synthetic'` — **đúng hiện trạng mã**, không có
+gì lỗi thời để sửa. Không sửa thừa.
+
+### Phạm vi đã giữ
+
+Production diff của chu kỳ này: **2 file** — `reporting.py`, `pipeline.py`. `git diff` trên
+`engine.py`, `regime.py`, `ladders.py`, `capital.py`, `score.py`, `gates.py`, `verdict.py`,
+`metrics.py` = **rỗng** ⇒ không đụng logic financial/algorithm, đúng `DEC-027` điểm 3.
+
+`RSK-006` (cao → trung bình) và `RSK-008` (cao → thấp) đã cập nhật tại
+`PROJECT/PROJECT_PROGRESS.md`, kèm phần dư ghi rõ chứ không tuyên bố đóng hoàn toàn.
+
+### Còn lại của `CHECK-A1-11`
+
+Ba hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED` nay đã đóng. `CHECK-A1-11` là **E2** — cần một
+phiên reviewer độc lập theo "Solo Independent Review Procedure" xác nhận, và đó là bước kế
+tiếp trước khi chủ dự án xét `WP-A1 → DONE`. Phiên S017 KHÔNG tự đánh `CHECK-A1-11` = PASS.
