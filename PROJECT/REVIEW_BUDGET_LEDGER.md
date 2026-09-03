@@ -359,6 +359,19 @@ Delivery change budget tích luỹ từ baseline `cb75f9d` của `CAP-WEBAPP`, �
 `T-09B` = `IMPLEMENTED`, chưa `DONE` (thẩm quyền chủ dự án; production reachability trên project
 Firebase thật chưa kiểm). Số task ID mới = **0**.
 
+#### 2.2.5 `T-09B`: `IMPLEMENTED → DONE` (`DEC-024`, 2026-09-03) — budget KHÔNG đổi
+
+Production reachability đóng bằng evidence E1 trên `https://tinphatcontent.web.app` thật
+(CHECK-T09B-01/02/03/04/14, Owner tự báo cáo — `docs/reviews/T-09B-production-verification.md`).
+Chủ dự án xác nhận `DEC-024`: `T-09B: IMPLEMENTED → DONE`. Toàn bộ chuỗi phiên từ S014 tới đây
+(rules merge với project dùng chung, xác minh Owner UID, production verification) vẫn là
+**INITIAL IMPLEMENTATION** — không phát sinh finding CONFIRMED BLOCKING nào cần sửa sau lần
+16/16 PASS đầu tiên, nên không mở repair cycle.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+
 ## 3. Golden cumulative change budget
 
     GOLDEN_BASELINE_SHA = PENDING_OWNER_DATA / MIGRATION_REQUIRED

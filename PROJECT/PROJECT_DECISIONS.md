@@ -1708,3 +1708,81 @@ Khi rules Content thật đổi (Owner tự deploy thay đổi phía Content, ng
 đó `webapp/test_shared_rules_merge.js` cần chạy lại với bản BEFORE mới trước khi tái xác nhận
 merge an toàn. Hoặc khi Owner tách CoinDCA sang project Firebase riêng (không còn lý do giữ
 merge phức tạp này).
+
+---
+
+## DEC-024 — `OD-WEBAPP-07`: phê chuẩn hoàn thành `T-09B` (`DONE`)
+
+Date:
+2026-09-03 (phiên Owner Confirmation — tiếp nối production verification)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Đóng khe thẩm quyền `STATE_AUTHORITY.md`: chuyển một task
+`IMPLEMENTED` + evidence đủ sang `DONE` là hành vi của chủ dự án — cùng cơ chế `DEC-018` đã dùng
+cho `T-09A`.
+
+Decision:
+
+    (1) T-09B: IMPLEMENTED -> DONE.
+
+        Completion Gate GIỮ NGUYÊN: 16/16 REQUIRED PASS. Không sửa câu chữ hay ngữ nghĩa của
+        gate. Evidence hai tầng, cả hai đều E1, không tầng nào thay thế tầng kia:
+          - Firebase Emulator Suite (S014, 2026-09-02) — toàn bộ 16 check, đường sản phẩm thật
+            qua SDK/wire-protocol thật, chỉ khác backend (emulator thay vì project thật).
+          - Production thật (2026-09-03) — CHECK-T09B-01/02/03/04/14 lặp lại trên
+            `https://tinphatcontent.web.app`, Owner UID thật, rules đã merge và deploy. Evidence
+            do chính chủ dự án trực tiếp thao tác và báo cáo lại (agent không tới được
+            `*.web.app` từ môi trường sandbox — đã xác nhận nhiều lần, chặn ở tầng proxy tổ
+            chức). Chủ dự án xác nhận tường minh CHẤP NHẬN mức evidence này (E1, không phải E2
+            độc lập) là đủ cho các check đó.
+
+        Không có CHECK nào trong 16 REQUIRED bị hạ evidence level hay bị coi PASS mà chưa chạy
+        thật — CHECK-T09B-05..09, 11, 12, 15, 16 giữ nguyên ở E1 emulator (không cần lặp lại
+        production, không phụ thuộc riêng vào hạ tầng thật khác với 01/02/03/04/14); CHECK-10
+        (write failure) giữ nguyên ở E1 emulator theo đúng quyết định không dựng lỗi ghi trên hạ
+        tầng đang giữ dữ liệu thật của Owner.
+
+    (2) `CAP-WEBAPP` BUDGET GIỮ NGUYÊN — KHÔNG reset, KHÔNG cấp thêm, KHÔNG tiêu thêm.
+
+            ALLOWED = 2 repair cycle · USED = 0 · REMAINING = 2   (không đổi từ `DEC-018`)
+
+        Toàn bộ chuỗi phiên từ S014 tới đây (implementation, rules merge với project dùng chung,
+        xác minh Owner UID, production verification) là **INITIAL IMPLEMENTATION** của T-09B,
+        không phải repair cycle — không finding CONFIRMED BLOCKING nào phát sinh cần sửa sau
+        khi 16/16 đã PASS lần đầu.
+
+    (3) `RSK-001` — GHI NHẬN, KHÔNG ĐÓNG HẲN.
+
+        Chủ dự án xác nhận: phần V1 durable persistence (ghi/đọc Firestore, phục hồi sau mất
+        `localStorage`/`sessionStorage`, phục hồi sau đóng/mở lại cùng browser profile) đã được
+        kiểm chứng trên production — rủi ro cho đúng phạm vi này coi như đã giảm thiểu bằng
+        T-09B. `H-23` (mất Anonymous identity khi đổi máy/đổi trình duyệt/cửa sổ riêng tư) VẪN
+        là HARDENING / OUT OF SCOPE V1 theo `DEC-021` — không đổi bởi quyết định này, không mở
+        task mới từ risk này. Đóng hẳn (`CLOSED`) `RSK-001` như một mục risk register không nằm
+        trong quyết định này — chủ dự án chỉ xác nhận disposition đã ghi, không tuyên bố risk
+        không còn tồn tại ở bất kỳ kịch bản nào.
+
+    (4) INTEGRATION — KHÔNG ĐỔI.
+
+        `ELIGIBLE_FOR_INTEGRATION = NO`, giữ nguyên theo `DEC-022` (ACCEPT THE DIVERGENCE,
+        không merge `main`). Quyết định này không mở lại câu hỏi integration.
+
+Reason:
+16/16 REQUIRED check đã PASS ở E1 từ S014; khoảng trống evidence duy nhất còn lại
+("production reachability trên project Firebase THẬT") đã được đóng ở phiên trước bằng chính
+chủ dự án tự thao tác trên hạ tầng thật. Theo đúng tiền lệ `DEC-018` (T-09A), việc còn lại chỉ
+là hành vi ghi nhận của chủ dự án — không phải một phát hiện kỹ thuật mới nào agent có thẩm
+quyền tự quyết.
+
+Impact:
+- `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`: Status `IMPLEMENTED` → `DONE`.
+- `PROJECT/PROJECT_PROGRESS.md`: roadmap row T-09B → `DONE`; Last Updated; Session History.
+- `PROJECT/CAPABILITY_REGISTRY.md` §11 (mới): ghi nhận DONE, budget không đổi.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2: ghi nhận DONE, ba con số budget không đổi.
+- `PROJECT/PROJECT_PROGRESS.md` § Active Risks — `RSK-001`: cập nhật theo điểm (3), KHÔNG đóng.
+- Số task ID mới = **0**. Số production file bị sửa bởi CHÍNH quyết định này = **0**.
+
+Can Revisit After:
+Khi `H-23` được chủ dự án tự yêu cầu lại (đổi máy/browser cần phục hồi), hoặc khi có người dùng
+thứ hai (cùng điều kiện `DEC-011`/`DEC-019`/`DEC-021` đã ghi) — khi đó `RSK-001` và `H-23` được
+định tuyến lại toàn bộ.

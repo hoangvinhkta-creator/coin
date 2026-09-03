@@ -3,15 +3,17 @@
 ## Metadata
 
 Status:
-IMPLEMENTED (phiên thực thi S014, 2026-09-02, branch `claude/t09b-firebase-implementation-nz50is`:
+DONE (phiên thực thi S014, 2026-09-02, branch `claude/t09b-firebase-implementation-nz50is`:
 `READY → IN_PROGRESS` khi bắt đầu code, `IN_PROGRESS → IMPLEMENTED` khi 16/16 REQUIRED check
-PASS ở mức E1 trên Firebase Emulator Suite và batch review PASS. **Cập nhật 2026-09-03**: chủ dự
-án đã tạo project Firebase thật, deploy Hosting + rules (đã merge an toàn với rules Content —
-`DEC-023`), và tự tay lặp lại CHECK-T09B-01/02/03/04/14 trên `https://tinphatcontent.web.app`
-thật — **PASS cả 5, E1** (`docs/reviews/T-09B-production-verification.md`). Production
-reachability không còn `NOT_TESTED`. **Vẫn chưa `DONE`**: chuyển `DONE` là hành vi của chủ dự án
-(`STATE_AUTHORITY.md`, cùng tiền lệ `DEC-018`/T-09A) — task này ghi nhận `ELIGIBLE_FOR_COMPLETION`
-làm khuyến nghị, chờ xác nhận tường minh của chủ dự án để ghi `DONE`.)
+PASS ở mức E1 trên Firebase Emulator Suite và batch review PASS. 2026-09-03: chủ dự án tạo
+project Firebase thật, deploy Hosting + rules (đã merge an toàn với rules Content — `DEC-023`),
+tự tay lặp lại CHECK-T09B-01/02/03/04/14 trên `https://tinphatcontent.web.app` thật — PASS cả 5,
+E1 (`docs/reviews/T-09B-production-verification.md`). **`IMPLEMENTED → DONE`: OWNER DECISION
+`DEC-024` (`OD-WEBAPP-07`), 2026-09-03** — chủ dự án xác nhận tường minh chấp nhận Completion
+Gate 16/16 REQUIRED PASS + evidence hai tầng (emulator E1 toàn bộ, production E1 cho 01/02/03/
+04/14, Owner tự báo cáo — không phải E2 độc lập, đã chấp nhận rõ mức này). Cùng tiền lệ `DEC-018`
+(T-09A). `CAP-WEBAPP` budget không đổi: 2/0/2 — toàn bộ chuỗi phiên là INITIAL IMPLEMENTATION,
+không tiêu repair cycle.)
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật
@@ -697,6 +699,9 @@ thật theo đúng hướng dẫn. Kết quả: **PASS cả 5 check**, evidence 
 agent không tự tới được `*.web.app` từ môi trường này để tái xác nhận độc lập). Chi tiết đầy đủ
 kèm log từng bước: `docs/reviews/T-09B-production-verification.md`. **Production reachability
 trên project thật/Hosting thật = PASS (E1)**, không còn `NOT_TESTED`.
+
+**Cập nhật 2026-09-03 (Owner Confirmation):** chủ dự án xác nhận tường minh chấp nhận evidence
+trên và ra quyết định `DEC-024` (`OD-WEBAPP-07`): **`T-09B: IMPLEMENTED → DONE`.**
 
 ## Completion Gate — FROZEN (2026-09-02, `DEC-021`)
 

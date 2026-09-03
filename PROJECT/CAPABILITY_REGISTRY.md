@@ -390,3 +390,18 @@ commit implementation → cùng lượt, không mở chu kỳ (`REVIEW_PROTOCOL.
 `H-27` (ba file runtime mới `webapp/firebase_config.js`, `firestore.rules`, `firebase.json` chưa
 được khai trong `PROJECT/PRODUCTION_PATHS.md` §1) thuộc `CAP-GOVTOOL` — cùng khe owner với `H-08`,
 `H-09`, `H-21`, `H-22`; phiên này không tự khai production path (giá trị PROJECT do chủ dự án đặt).
+
+## 11. Cập nhật tại phiên Owner Confirmation `DEC-024` (2026-09-03): `T-09B` → `DONE`
+
+Bảng §2 **KHÔNG đổi**. Số task ID mới = **0**.
+
+Production reachability trên project Firebase thật đóng bằng evidence E1
+(CHECK-T09B-01/02/03/04/14 trên `https://tinphatcontent.web.app`, Owner tự báo cáo —
+`docs/reviews/T-09B-production-verification.md`). Chủ dự án xác nhận `DEC-024`:
+
+    T-09B: IMPLEMENTED -> DONE   (STATE_AUTHORITY.md: DONE do Owner/completion authority viết)
+    Completion Gate: 16/16 REQUIRED PASS — câu chữ gate KHÔNG đổi
+    CAP-WEBAPP budget: 2/0/2 KHÔNG đổi — toàn chuỗi phiên vẫn là INITIAL IMPLEMENTATION
+
+`RSK-001`: chủ dự án ghi nhận phần V1 durable persistence đã kiểm chứng trên production;
+`H-23` (cross-device/lost-identity) vẫn HARDENING/OUT OF SCOPE V1 theo `DEC-021`, không đổi.
