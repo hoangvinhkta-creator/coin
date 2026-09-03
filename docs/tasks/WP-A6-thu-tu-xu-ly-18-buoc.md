@@ -2,9 +2,11 @@
 
 ## Metadata
 Status:
-VERIFYING — 6/8 REQUIRED PASS (E1) tại S014 (2026-09-03): CHECK-A6-01..06. CHECK-A6-07 (toàn
-bộ test suite) đang chạy, còn NOT_TESTED tại thời điểm ghi dòng này — không tự đánh PASS trước
-khi có output thật. CHECK-A6-08 (E2 độc lập) còn NOT_TESTED, chờ phiên reviewer riêng.
+**DONE — 8/8 REQUIRED PASS tại S014 (2026-09-03)**. CHECK-A6-01..07 PASS (E1); CHECK-A6-08 PASS
+(E2, rà soát độc lập) tại `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`. Đóng F-018, F-019. Không hạ
+REQUIRED check nào. Ba finding non-blocking phát sinh từ E2 (R-01/R-02) đã route sang
+`PROJECT/HARDENING_BACKLOG.md` H-24/H-25 + `docs/CONVENTIONS.md` D2-A6-5/D2-A6-6 — không mở lại
+Scope Lock của gói này.
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -296,6 +298,12 @@ config; mỗi sai lệch được sửa RIÊNG trong một bản sao engine (scr
 | V_D2 — tạo ladder sau 13 | 21,64865871993361 | **+0,0537 %** | 541 | Smart zone 153→152, Opp 17→16; nominal BASE 4450 / SMART 4270,21 / CRASH 139,57 KHÔNG đổi, Opp 5,823→5,743; triggered 193→191; ladder 67/14/17 không đổi; phân kỳ đầu 2019-01-04 07:30→07:45 (fill S0 lùi một nến) |
 | V_ALL (= src cuối) | 21,64865871993361 | +0,0537 % | 541 | 0 vi phạm; FINAL trên `src` trùng bit V_ALL |
 gate3: BASE 21,622354119695885 → V_ALL 21,636121265847837 (+0,0637 %), 543 → 541; V_D1/V_D18 trùng bit.
+**Phạm vi của "trùng bit" (D1/D18): kết quả đo được TRÊN DATASET SYNTH 7,5 năm hiện có, không
+phải bất biến toán học.** Rà soát độc lập E2 (`docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` mục
+A.5.2/A.5.6, finding M-01) dựng được kịch bản tay nơi D18 đổi hành vi thật so với baseline
+(Opportunity zone confirm+fill trong khi hysteresis SUSPENDED; Crash zone "hit" rồi vẫn bị huỷ ở
+nến kết thúc Recovery) — xem `PROJECT/HARDENING_BACKLOG.md` H-24, H-25. Không đổi verdict thứ tự
+(đúng chữ §19, tác động synth = 0), chỉ sửa phạm vi câu tuyên bố.
 H-15 (`--drop-daily 2020-06-15`, cửa sổ INVALID 31 ngày = 1,14 % nến): 0 zone TRIGGERED trong chu kỳ
 INVALID ở cả BASE, V_ALL lẫn V_H15 (biến thể huỷ trigger khi INVALID); V_ALL == V_H15 hoàn toàn (528
 purchase, ETH 21,634883289142703). Kết luận "vô hại" cho D1/D18 và "nhỏ, giải thích được" cho D2 đều
@@ -324,7 +332,8 @@ thì phải mở mục cho **WP-D2** (đề xuất V2.2), vì Master Index §6 c
 im lặng chấp nhận.
 
 Kết quả: **SỬA** cả ba nhóm sai lệch theo chữ §19 (F-018a: 15–17 sau 14; F-018b: tạo ladder — kể cả
-Crash — ở bước 14 sau 13; mục 18 gom về cuối). Căn cứ: D1 và D18 không đổi kết quả (trùng bit); D2 đổi
+Crash — ở bước 14 sau 13; mục 18 gom về cuối). Căn cứ: D1 và D18 không đổi kết quả trên dataset synth
+(trùng bit — xem giới hạn phạm vi của tuyên bố này ở CHECK-A6-03 và H-24/H-25); D2 đổi
 +0,054 % / +0,064 % ETH, −2/543 fill, không đổi nominal BASE/SMART/CRASH, mọi phân kỳ truy về đúng
 bước 13→14 — dưới tiêu chí "đáng kể" mà phiên đặt ra và ghi ở S014 (|ΔETH| < 0,1 %, nominal
 Base/Smart/Crash không đổi, phân kỳ đầu tiên giải thích được bằng bước đã đổi); Escalation Trigger
@@ -452,7 +461,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E2
@@ -462,20 +471,40 @@ Yêu cầu: phiên reviewer độc lập đọc BT §19 từ spec, đối chiế
 luận thứ tự có khớp hay không — **không đọc kết luận của người cài đặt trước**. Lưu tại
 `docs/reviews/`.
 
+Kết quả: `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` (review ID `E2-WP-A6-001`). Reviewer độc lập
+với S014, tuân thủ đúng "Solo Independent Review Procedure": tự chép 18 bước từ BT §19, tự đối
+chiếu với `run_engine()`, tự chạy test trên engine baseline `b717634` (đỏ đúng chữ ký F-018 + 2
+sai lệch bổ sung), tự chạy full suite trên HEAD `a2fa9a5` (**308/308 PASS**, độc lập với con số
+implementer báo), tự chạy `wp_a6_impact_tool.py` qua `git archive` (tái lập ΔETH +0,054 %/+0,064 %
+tới 9 chữ số) — TẤT CẢ TRƯỚC KHI đọc CONVENTIONS #18/#19 và Evidence của CHECK-A6-01..07. Kết luận
+độc lập của reviewer (Phần A của file review) trùng với implementer về: thứ tự khớp §19, quyết định
+SỬA cả ba nhóm sai lệch, quyết định GIỮ NGUYÊN H-15 — reviewer tự đi tới các kết luận này trước khi
+đối chiếu (Phần B). Verdict: **PASS**.
+
+Ba mismatch về phạm vi tuyên bố (M-01…M-03, không đổi verdict thứ tự) đã được xử lý: M-01 → sửa câu
+chữ CONVENTIONS #18(e) + Evidence CHECK-A6-03/04 (thêm phạm vi "trên dataset synth"). M-02/M-03 →
+hai finding non-blocking `R-01`/`R-02` được route thành `PROJECT/HARDENING_BACKLOG.md` **H-24**,
+**H-25** + ghi chú `D2-A6-5`/`D2-A6-6` cho WP-D2 (routing theo `REVIEW_PROTOCOL.md`, không mở lại
+Scope Lock WP-A6 vì cả hai thuộc `ladders.py`/lifecycle, ngoài Expected Touch Area). `R-03` (ngưỡng
+"đáng kể" 0,1% do phiên tự đặt) và `R-04` (Opportunity ladder mới có thể tạo trong CRASH, có từ
+baseline) ghi lại cho chủ dự án, không chặn. `R-05` (đồng bộ artefact ngoài touch area) đã xử lý:
+`HARDENING_BACKLOG.md` H-15 cập nhật, `CAPABILITY_REGISTRY.md`/`REVIEW_BUDGET_LEDGER.md` CAP-ORDER
+cập nhật, `sync_easy_roadmap.py` đã chạy lại.
+
 Executed By:
-...
+Reviewer agent E2-WP-A6-001 (phiên độc lập, không cùng agent với S014 implementer)
 
 Timestamp:
-...
+2026-09-03T04:20Z
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS — **7/8** (CHECK-A6-08 E2 độc lập còn NOT_TESTED, chờ phiên reviewer riêng)
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-A6-08) — E1 đủ cho 01…07; E2 chưa
-- [x] Câu hỏi "official run đại diện cho thuật toán nào" có câu trả lời dứt khoát, có bằng chứng — **thuật toán theo đúng 18 bước BT §19 (chữ) cộng quy ước #18/#19 cho các điểm §19 để ngỏ**; khoá bằng test quan sát side-effect, đo trên dataset tổng hợp (E1; E2 chờ CHECK-A6-08 xác nhận độc lập)
-- [x] Nếu ghi nhận sai lệch: quy ước được ghi và (nếu trái spec) mục đề xuất V2.2 được mở ở WP-D2 — không giữ điểm nào trái chữ §19; CONVENTIONS #18/#19 + mục "Ghi chú cho WP-D2 từ WP-A6" (D2-A6-1…4)
-- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật — dòng WP-A6 (S014); `sync_easy_roadmap.py` chưa chạy (file sinh ngoài vùng cho phép của phiên — orchestrator chạy)
+- [x] 100% REQUIRED checks PASS — **8/8** (CHECK-A6-08 PASS/E2 tại `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`)
+- [x] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-A6-08) — E1 cho 01…07; E2 cho 08, đạt
+- [x] Câu hỏi "official run đại diện cho thuật toán nào" có câu trả lời dứt khoát, có bằng chứng — **thuật toán theo đúng 18 bước BT §19 (chữ) cộng quy ước #18/#19 cho các điểm §19 để ngỏ**; khoá bằng test quan sát side-effect, đo trên dataset tổng hợp, xác nhận độc lập E2
+- [x] Nếu ghi nhận sai lệch: quy ước được ghi và (nếu trái spec) mục đề xuất V2.2 được mở ở WP-D2 — không giữ điểm nào trái chữ §19; CONVENTIONS #18/#19 + mục "Ghi chú cho WP-D2 từ WP-A6" (D2-A6-1…6)
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật — dòng WP-A6 (S014); `sync_easy_roadmap.py` đã chạy lại (orchestrator)
 - [x] Session handoff được viết — `docs/sessions/S014-wp-a6-thu-tu-18-buoc.md`
-- [x] Không hạ REQUIRED check nào để đạt DONE — 8 check giữ nguyên câu chữ; CHECK-A6-08 để NOT_TESTED, không tự đánh PASS
+- [x] Không hạ REQUIRED check nào để đạt DONE — 8/8 check giữ nguyên câu chữ, PASS bằng bằng chứng thật
 
 ## Escalation Triggers
 

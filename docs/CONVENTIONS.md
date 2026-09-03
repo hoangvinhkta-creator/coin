@@ -130,9 +130,17 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     (suspend/reactivate/cancel sau 7 ngày, ST §5), suspension khi vào RECOVERY và cancel khi
     hết Recovery (ST §18.3), expiry Opportunity 90 ngày, completion. Zone đã thành
     ACTION_PENDING ở bước 14 cùng nến không bị suspension (chỉ ACTIVE → SUSPENDED) nhưng vẫn
-    bị cancel bởi invalidation/recovery-end (`cancel_open_zones`). Trước WP-A6 các mục này
-    chạy ở bước 8/10 (trước 13); đo: dời xuống 18 không đổi một bản ghi nào (543/543 trùng
-    khớp, cả hai exec config).
+    bị cancel bởi invalidation/recovery-end (`cancel_open_zones`); zone còn ở TRIGGERED (giữ
+    bởi cooldown/max_zones/INVALID — #6/#19) cũng không bị suspend theo (18b chỉ xét ACTIVE)
+    và có thể thành action nhiều nến sau khi hysteresis đã tắt. Trước WP-A6 các mục này chạy
+    ở bước 8/10 (trước 13); đo **trên dataset synth 7,5 năm hiện có**: dời xuống 18 không đổi
+    một bản ghi nào (543/543 trùng khớp, cả hai exec config) — đây là kết quả ĐO ĐƯỢC trên
+    dataset này, KHÔNG phải bất biến toán học: rà soát độc lập E2 dựng được kịch bản tay nơi
+    hành vi khác baseline (Opportunity zone confirm và fill trong khi hysteresis đang
+    SUSPENDED; Crash zone "hit" rồi vẫn bị huỷ ở nến kết thúc Recovery) — xem
+    `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` mục A.5.2, và `PROJECT/HARDENING_BACKLOG.md`
+    **H-24**, **H-25** (ghi nhận HARDENING, không chặn CHECK-A6-08 vì đúng chữ §19 và tác
+    động đo được trên dataset production-realistic hiện có = 0).
     (f) **Month-End**: Day 25 và Day 28 12:00 là sự kiện theo lịch nằm trong khe bước 9 (cùng
     đồng hồ với Base schedule; #7). Bước 3 tại rollover là đường đóng sổ còn lại: fallback
     khi nến 12:00 Day 28 nằm trong gap, và cho vốn Smart được release sau Day 28 (ví dụ crash
@@ -333,3 +341,18 @@ mục nào là task mới; không mục nào sửa spec.
   chặn zone đầu của Smart ladder mới (đo trong `test_a6_month_end_two_paths_settle_once`:
   kịch bản B không có fill S0 ngày 01/04, kịch bản A có). Spec không nói Month-End settle có
   phải "execution" theo nghĩa cooldown hay không.
+- **D2-A6-5 — Zone TRIGGERED/ACTION_PENDING có bị hysteresis suspension đụng tới không?**
+  (phát hiện bởi rà soát độc lập E2, `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` mục A.5.2
+  SC5 — xem `PROJECT/HARDENING_BACKLOG.md` **H-24**.) Với thứ tự đúng chữ §19, một
+  Opportunity zone có thể confirm đúng nến score tụt xuống ngưỡng suspend rồi thực thi
+  trong khi hysteresis đã SUSPENDED (bước 18b chỉ suspend zone `ACTIVE`). Strategy §5 không
+  nói zone đã trigger có phải suspend theo không. Đo trên dataset synth: 0 lần xảy ra —
+  không đổi verdict thứ tự, chỉ là điểm spec để ngỏ.
+- **D2-A6-6 — Crash/Opportunity zone "hit" ở nến kết thúc Recovery/expiry có nên bị huỷ
+  không?** (phát hiện bởi rà soát độc lập E2, mục A.5.2 SC6 — xem `PROJECT/HARDENING_BACKLOG.md`
+  **H-25**.) ST §18.3 nói "nếu **vẫn chưa hit** thì CANCEL", nhưng với thứ tự đúng chữ §19
+  (trigger ở bước 13 trước xử lý cuối-chu-kỳ ở bước 18), một zone có thể đã "hit" trong
+  chính nến kết thúc Recovery và vẫn bị `cancel_open_zones` huỷ ở bước 18. Nếu Owner chọn
+  giữ hành vi "huỷ", cân nhắc đổi `counters["triggered_actions"]` để không đếm action bị
+  huỷ cùng nến (ảnh hưởng số liệu báo cáo BT §16). Đo trên dataset synth: 0 lần xảy ra; ETH
+  không đổi so với baseline ở kịch bản dựng tay.

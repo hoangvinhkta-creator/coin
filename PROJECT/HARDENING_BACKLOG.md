@@ -375,8 +375,9 @@ H-04 được đóng, ba trường này phải được đóng CÙNG LÚC.
 
 ## H-15 — Zone TRIGGERED trong lúc dữ liệu INVALID vẫn thành action sau khi dữ liệu phục hồi
 
-Capability: `CAP-ORDER` · Owner: `WP-A6` · Phân loại: **CONFIRMED HARDENING**
-Ngày ghi nhận: 2026-09-01 (S009)
+Capability: `CAP-ORDER` · Owner: `WP-A6` · Phân loại: **CONFIRMED HARDENING — quyết định đã
+chốt, một vế RE_TRIGGER_CONDITION còn mở**
+Ngày ghi nhận: 2026-09-01 (S009) · Cập nhật: 2026-09-03 (S014, WP-A6 DONE)
 
 Strategy §3 nói INVALID "chặn mọi action Smart và Opportunity **mới**". Engine thi hành
 đúng câu đó: trong chu kỳ INVALID không action nào được tạo. Nhưng bước phát hiện trigger
@@ -394,12 +395,26 @@ sống sót không" là câu hỏi về **thứ tự xử lý 18 bước**, thu�
 thuộc ngữ nghĩa dữ liệu xấu. Không có điều khoản spec nào hiện nói zone TRIGGERED phải bị
 huỷ khi dữ liệu INVALID.
 
-    RE_TRIGGER_CONDITION:
-    - `WP-A6` chốt thứ tự 18 bước và phải quyết định số phận của zone TRIGGERED trong chu kỳ
-      INVALID (re-trigger BẮT BUỘC — không được bỏ qua khi mở WP-A6); HOẶC
-    - `WP-D2` xác định đây là khiếm khuyết đặc tả của V2.1.5 cần V2.2 làm rõ; HOẶC
-    - official run cho thấy có action được thực thi trên zone trigger trong cửa sổ INVALID
-      và con số bị ảnh hưởng đáng kể.
+**Quyết định (S014, `WP-A6`, DONE):** **GIỮ NGUYÊN.** Zone TRIGGERED giữ trạng thái qua
+chu kỳ INVALID, thành action ở chu kỳ hợp lệ đầu tiên — cùng cơ chế giữ-TRIGGERED của
+max_zones (ST §15.1) và cooldown (`docs/CONVENTIONS.md` #6). Căn cứ đo: dataset tổng hợp
+7,5 năm với một hàng daily bị xoá (cửa sổ INVALID 31 ngày, ~1,14 % số nến) — **0** zone
+trigger trong chu kỳ INVALID ở cả engine hiện tại lẫn biến thể "huỷ trigger khi INVALID";
+hai biến thể cho kết quả trùng khớp hoàn toàn (`docs/CONVENTIONS.md` #19). Quyết định đã
+qua rà soát độc lập E2 — `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` mục A.6: reviewer tự đi
+tới cùng kết luận trước khi đọc của implementer, verdict CHECK-A6-08 = PASS. Ghi chú V2.2
+cho phương án thay thế: `docs/CONVENTIONS.md` D2-A6-3.
+
+    RE_TRIGGER_CONDITION (hai vế đầu ĐÃ ĐÓNG tại S014; vế thứ ba CÒN MỞ):
+    - ~~`WP-A6` chốt thứ tự 18 bước và phải quyết định số phận của zone TRIGGERED trong chu
+      kỳ INVALID~~ — ĐÃ CHỐT, xem "Quyết định" ở trên.
+    - ~~`WP-D2` xác định đây là khiếm khuyết đặc tả của V2.1.5 cần V2.2 làm rõ~~ — đã ghi
+      thành ghi chú D2-A6-3 cho WP-D2 (chưa cần WP-D2 tự mở phiên để vế này coi là đóng;
+      chỉ đóng thật khi WP-D2 ra quyết định).
+    - **CÒN MỞ:** official run (`T-06`) cho thấy có action được thực thi trên zone trigger
+      trong cửa sổ INVALID và con số bị ảnh hưởng đáng kể. `tests/wp_a6_impact_tool.py` đã
+      đếm sẵn chỉ số `invalid_cycle_triggers_actioned` cho lần official run đầu tiên dùng.
+      Vế này không đóng được bằng dữ liệu synthetic (DEC-003) — chỉ đóng được sau `T-06`.
 
 ---
 
@@ -707,3 +722,78 @@ visible) đã FINALIZED, không phải một REQUIRED check mới.
     - chủ dự án tự yêu cầu lại cross-device recovery sau khi trải nghiệm thực tế việc đổi máy;
       HOẶC
     - Firebase thay đổi cách Anonymous Auth persist khiến bằng chứng ở `DEC-020` không còn đúng.
+
+---
+
+## H-24 — Zone Opportunity TRIGGERED/ACTION_PENDING không chịu hysteresis suspension
+
+Capability: `CAP-ENGINE` (`ladders.py`/lifecycle) · Owner: chưa có (ngoài Scope Lock `WP-A6`,
+`WP-A3` đã DONE/FROZEN) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-03 (S014, phát hiện bởi rà soát độc lập E2 của `WP-A6`, finding R-01)
+
+Với thứ tự 18 bước đúng chữ BT §19 (bước 13 trigger/confirm trước bước 18 hysteresis
+suspend), một Opportunity zone có thể **confirm đúng tại nến score tụt xuống ≤ 62** (ngưỡng
+suspend hysteresis) và được thực thi trong khi hysteresis đã chuyển SUSPENDED — vì bước 18b
+chỉ suspend zone đang `ACTIVE`, không đụng zone đã `TRIGGERED`/`ACTION_PENDING`. Cùng cơ chế
+áp cho zone `TRIGGERED` bị giữ nhiều nến bởi cooldown/max_zones/INVALID (`docs/CONVENTIONS.md`
+#6, #19): zone đó cũng thoát suspension và có thể thành action nhiều nến sau khi hysteresis
+đã tắt.
+
+Bằng chứng: `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` mục A.5.2 (kịch bản SC5) — engine hiện
+tại tạo purchase `OPPORTUNITY_ZONE_1` lúc hysteresis đang SUSPENDED; engine baseline (trước
+WP-A6) không có purchase đó ở cùng kịch bản. Đo trên dataset synth 7,5 năm: **0 lần xảy ra**
+(mục A.5.6, trùng bit với biến thể đưa bước 18b về vị trí cũ) — cơ chế "zone đã trigger
+không bị suspend" có TỪ TRƯỚC WP-A6 (khối hysteresis cũ cũng chỉ xét `ACTIVE`); WP-A6 chỉ mở
+rộng cửa sổ xảy ra (thêm ca confirm cùng nến với suspend) bằng cách đặt đúng chữ thứ tự §19.
+
+Vì sao KHÔNG BLOCKING: Strategy §5 chỉ nói "SUSPEND trạng thái Opportunity" và "Suspended
+zone giữ reserve tối đa 7 ngày" — không có điều khoản nào nói zone đã trigger phải bị
+suspend/huỷ theo. Hành vi hiện tại đúng chữ thứ tự BT §19 (đã qua E2, `CHECK-A6-08` PASS).
+Tác động đo được trên dataset production-realistic hiện có = 0.
+
+    RE_TRIGGER_CONDITION:
+    - `WP-D2` xác định đây là khiếm khuyết đặc tả V2.1.5 cần V2.2 làm rõ (ghi chú
+      `D2-A6-5` tại `docs/CONVENTIONS.md`); HOẶC
+    - official run (`T-06`) cho thấy trường hợp này xảy ra và ảnh hưởng đáng kể tới kết quả;
+      HOẶC
+    - một task chạm `ladders.py`/lifecycle Opportunity (ngoài Scope Lock `WP-A6`) nhận việc
+      này qua Capability Model (không tự hấp thụ, cần Owner routing).
+
+---
+
+## H-25 — Crash zone "hit" ở nến kết thúc Recovery vẫn bị huỷ, trái chữ "nếu vẫn chưa hit" (ST §18.3)
+
+Capability: `CAP-ENGINE` (`ladders.py`/lifecycle) · Owner: chưa có (ngoài Scope Lock `WP-A6`,
+`WP-A3` đã DONE/FROZEN) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-03 (S014, phát hiện bởi rà soát độc lập E2 của `WP-A6`, finding R-02)
+
+Strategy §18.3: "Sau 72h Recovery nếu vẫn **chưa hit** thì CANCEL crash zone chưa hit + release
+reserve." Với thứ tự đúng chữ BT §19 (bước 13 trigger trước bước 18 xử lý cuối-Recovery), một
+Crash zone có thể bị xuyên (`TRIGGERED`, rồi `ACTION_PENDING`) **ở chính nến** Recovery kết
+thúc (chuyển RECOVERY → NORMAL) trước khi `cancel_open_zones` (bước 18c) chạy — và bị huỷ dù
+đã "hit" trong cùng nến đó, trái nghĩa đen "nếu vẫn chưa hit". Hệ quả phụ:
+`counters["triggered_actions"]` (dùng cho báo cáo BT §16) đếm luôn action đã bị huỷ cùng nến,
+làm bộ đếm cao hơn số action thật sự tồn tại.
+
+Bằng chứng: `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md` mục A.5.2 (kịch bản SC6) — zone Crash
+`C2` đi qua `TRIGGERED → ACTION_PENDING → CANCELLED` trong cùng nến; `triggered_actions` = 6
+so với 5 ở baseline (baseline huỷ zone TRƯỚC khi nó kịp trigger, nên never "hit"). ETH không
+đổi so với baseline ở kịch bản này. Trên dataset synth 7,5 năm: ca này **không xảy ra** (mục
+A.5.6, biến thể đưa bước 18c về vị trí cũ trùng bit hoàn toàn với engine hiện tại). Cùng mẫu
+áp dụng cho expiry Opportunity 90 ngày (bước 18d).
+
+Vì sao KHÔNG BLOCKING: BT §19 đặt trigger (bước 13) trước xử lý cuối-chu-kỳ (bước 18) một
+cách tường minh — thứ tự hiện tại đúng chữ đó (đã qua E2, `CHECK-A6-08` PASS). Mâu thuẫn là
+giữa hai điều khoản spec khác nhau (BT §19 vs ST §18.3), không phải một defect implementation.
+Tác động đo được trên dataset production-realistic hiện có = 0 ETH; chỉ bộ đếm chẩn đoán bị
+lệch.
+
+    RE_TRIGGER_CONDITION:
+    - `WP-D2` xác định đây là mâu thuẫn spec cần V2.2 giải quyết — chọn zone hit trong nến
+      expiry được thực thi hay bị huỷ (ghi chú `D2-A6-6` tại `docs/CONVENTIONS.md`); nếu
+      Owner chọn giữ "huỷ", cân nhắc đổi `counters["triggered_actions"]` để không đếm action
+      bị huỷ cùng nến; HOẶC
+    - official run (`T-06`) cho thấy trường hợp này xảy ra và ảnh hưởng đáng kể tới kết quả
+      hoặc tới số liệu báo cáo BT §16; HOẶC
+    - một task chạm `ladders.py`/lifecycle Crash (ngoài Scope Lock `WP-A6`) nhận việc này qua
+      Capability Model (không tự hấp thụ, cần Owner routing).

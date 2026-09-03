@@ -51,7 +51,7 @@ Golden. Đây là giới hạn thật, phải được nói rõ, không được
 | `CAP-ENGINE` | Vòng đời regime & ladder, kế toán vốn | `WP-A3` | `WP-A3` (DONE), `WP-A7` (DONE) | DONE | CÓ |
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | READY | CÓ |
-| `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | VERIFYING — 7/8 REQUIRED PASS (S014), chờ CHECK-A6-08 (E2 độc lập) | CÓ |
+| `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
 | `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | PLANNED (sau T-06) | CÓ (sau lát cắt) |
 | `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | READY / BLOCKED | KHÔNG (song song) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
