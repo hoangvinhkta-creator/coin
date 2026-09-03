@@ -662,15 +662,23 @@ Giảm thiểu: **WP-A1** (RCP-001) — thay thế T-06A, đóng đủ cả 8 tr
 (Python version, dependency/lock hash, git commit SHA, dataset hash, strategy config hash,
 execution config hash, manifest hash, seed), không chỉ ghim thư viện.
 
-### RSK-007 — Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run (mức: cao) — **GIẢM THIỂU MỘT PHẦN tại S006 (WP-A2 DONE); còn mở phần WP-A5**
+### RSK-007 — Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run (mức: cao → **trung bình**) — **ĐÃ GIẢM THIỂU: S006 (WP-A2 DONE) + S015 (WP-A5 DONE)**; phần dư = giá trị official chờ T-06, chính sách chờ WP-B1
 **Cập nhật S006 (2026-08-24):** WP-A2 (DONE) đã đấu nối **toàn bộ** phần thuộc quyền sở hữu của
 nó: Benchmark B/C/D (F-003), ablation §2.3 + volume z-score §2.4 kèm bảng chênh lệch (F-004),
 bảng coverage §4 (F-012), XIRR §16 (F-013), bootstrap 1000/block length cho official (F-014).
 Bằng chứng E1: 9 test wiring chạy `run_gate1` thật (8 FAIL trước fix → 9/9 PASS sau fix), spy
 đo trực tiếp `n_sims` 200→1000; đấu nối KHÔNG đổi kết quả chiến lược/Benchmark A (159 trường
 metric, 0 khác biệt). Nguyên tắc BT §22 nay áp dụng được.
-**Phần CÒN MỞ:** ba Failure Signal (FS-02, FS-06, FS-12) vẫn không được truyền input nên luôn
-UNKNOWN — thuộc **WP-A5** (chưa bắt đầu). Risk chỉ đóng hoàn toàn khi WP-A5 DONE.
+**Cập nhật S015 (2026-09-03) — WP-A5 DONE, RSK-007 ĐÓNG phần đo lường:** ba Failure Signal
+FS-02, FS-06, FS-12 nay được sinh và truyền thật (`opportunity_cap_hit_share`,
+`adjacent_config_flip`, `regime_advantage_share`), và phạm vi tính của FS-03/FS-07 đã mở từ
+một window đại diện (W5) ra cả chín window bằng PrimaryMedian (đóng **F-016**). Quy ước đo
+lường của cả năm đại lượng: `docs/CONVENTIONS.md` #20. Sau một run đủ phase không còn Failure
+Signal nào UNKNOWN vì thiếu đo lường; mọi trường hợp không tính được đều mang `reason` ghi
+trong run record (`failure_signal_inputs_wp_a5`).
+**Phần CÒN LẠI của risk (không thuộc WP-A5):** giá trị số của các signal chỉ mới đo trên dữ
+liệu tổng hợp — số official phải chờ `T-06` (BLK-001). Việc *dùng* các signal này (ngưỡng,
+chính sách UNKNOWN, quy tắc chặn BUILD) thuộc **WP-B1**.
 
 Nội dung gốc S001 (giữ nguyên để audit) — S001 phát hiện (E1): Benchmark B/C/D, ablation §2.3, volume z-score §2.4, bảng coverage §4 và
 XIRR §16 đều đã được cài đặt đúng nhưng **không nơi nào trong pipeline gọi chúng**. Hệ quả: một

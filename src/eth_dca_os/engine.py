@@ -67,6 +67,14 @@ class RunResult:
     monthly_deployments: dict = field(default_factory=dict)  # "YYYY-MM" -> nominal deployed
     cash_samples: list = field(default_factory=list)          # (ts, cash, eth)
     decision_log: list = field(default_factory=list)
+    # WP-A5 (đo lường, KHÔNG đổi hành vi): hai chuỗi số liệu mà ba Failure Signal cần.
+    # FS-02 (BT §17 "Opportunity reserve thường xuyên chạm cap và nằm im"): mẫu THEO NGÀY
+    #   {ts, total, cap, available, at_cap, idle} — cùng nhịp với `cash_samples`.
+    # FS-12 (BT §17 "lợi thế tập trung vào một crash/regime duy nhất"): mốc ĐỔI NHÃN regime
+    #   (ts, label) theo BT §15 (regime labeling for analysis), để quy purchase của
+    #   benchmark — vốn không mang nhãn regime — về đúng regime đang hiệu lực.
+    opp_cap_samples: list = field(default_factory=list)
+    regime_timeline: list = field(default_factory=list)        # (ts, label), chỉ ghi khi đổi
 
     @property
     def eth_total(self) -> float:
@@ -418,6 +426,11 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         regime.update(ts, r7 if not np.isnan(r7) else None,
                       c["r24"][i] if not np.isnan(c["r24"][i]) else None,
                       None if np.isnan(oscore) else oscore)
+        # WP-A5/A5.2 — ĐO LƯỜNG: mốc đổi nhãn regime cho FS-12. Chỉ ĐỌC `regime.regime`
+        # (nhãn báo cáo BT §15/§17.3 [F1]) và append vào list; không nhánh execution nào
+        # đọc `regime_timeline`, nên điểm thu thập này không đổi hành vi.
+        if not res.regime_timeline or res.regime_timeline[-1][1] != regime.regime:
+            res.regime_timeline.append((ts, regime.regime))
         crash_snapshot = None                        # (snapshot, opp_avail, smart_avail)
         if regime.state == "CRASH" and prev_state != "CRASH":
             for lad in ladders:
@@ -677,6 +690,18 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             cash = base_pool.total - base_pool.deployed + smart_pool.total \
                 - smart_pool.deployed + opp_fund.total - opp_fund.deployed
             res.cash_samples.append((ts, cash, eth_total, o))
+            # WP-A5/A5.1 — ĐO LƯỜNG cho FS-02, cùng nhịp và cùng vị trí với cash sample.
+            # Chỉ ĐỌC property của pool và của MonthlyCapital; không gọi phương thức nào
+            # có tác dụng phụ, nên không đổi hành vi. Ngữ nghĩa hai vế xem CONVENTIONS #20.
+            cap = mc.opportunity_cap
+            res.opp_cap_samples.append({
+                "ts": ts,
+                "total": opp_fund.total,
+                "cap": cap,
+                "available": opp_fund.available,
+                "at_cap": cap > 0 and opp_fund.total >= cap - 1e-9,
+                "idle": opp_fund.available > 1e-9,
+            })
 
     res.counters = counters
     return res

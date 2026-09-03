@@ -100,7 +100,7 @@ Hai quyết định vẫn ĐANG MỞ, `DEC-012` KHÔNG quyết thay:
 | `CAP-ENGINE` | `WP-A3` | `5645a74` | 0 | 1 (PASS) | DONE tại S003; `WP-A7` DONE tại S004 (E2 PASS WITH FOLLOW-UPS) |
 | `CAP-DEBT` | `WP-D1` | `1f4c2b7` | 0 | 0 | DONE tại S005, E1 |
 | `CAP-DATA` | `WP-A4` | `06b381c` | **1** | 0 | DONE lại tại S010 sau CAP-DATA REPAIR CYCLE #1 (10/10 REQUIRED PASS) — xem §2.1 và §4.2 |
-| `CAP-MEASURE` | `WP-A5` | chưa bắt đầu | 0 | 0 | READY |
+| `CAP-MEASURE` | `WP-A5` | `b095874` | 0 | 0 | IN_PROGRESS tại S015 — implementation ban đầu (không phải repair cycle) |
 | `CAP-ORDER` | `WP-A6` | `b717634` | 0 | 1 (PASS) | DONE tại S014 — implementation ban đầu (không phải repair cycle), 8/8 REQUIRED PASS, CHECK-A6-08 E2 PASS (`docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`) |
 | `CAP-WEBAPP` | `WP-C1` | `cb75f9d` | 0 | 0 | `WP-C1` DONE 2026-09-02; `T-09A` DONE 2026-09-02 (`DEC-018`) — xem §2.2 |
 | `CAP-SPEC` | `WP-D2` | chưa bắt đầu | 0 | 0 | READY |

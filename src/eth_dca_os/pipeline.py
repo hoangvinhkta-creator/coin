@@ -39,10 +39,14 @@ from .manifests import (
     manifest_hash,
 )
 from .metrics import (
+    adjacent_config_flip,
+    aggregate_over_windows,
     cash_ratio_stats,
     concentration,
     net_edge,
     oos_metrics,
+    opportunity_cap_hit_share,
+    regime_advantage_pooled,
     shortfall_attribution,
     window_metrics,
     xirr,
@@ -157,17 +161,63 @@ def run_gate1(prep: Prepared, out_dir, cfg: StrategyConfig = BASELINE_STRATEGY,
     oos = oos_metrics(prep.dataset, scores, cfg, exec_cfg, prep.oos_end())
     oos_eval = evaluate_oos(oos)
     diag = run_diagnostics(prep.indicators, cfg.score_weights)
-    # bootstrap + concentration + cash trên window giữa (W5) làm đại diện chẩn đoán
+    # bootstrap trên window giữa (W5) làm đại diện chẩn đoán — bootstrap KHÔNG phải input
+    # của Failure Signal nào nên giữ nguyên phạm vi (ngoài scope WP-A5).
     rep = wm["windows"]["W5"]
     boot = block_bootstrap_ae(rep["result"].purchases, rep["bench"]["purchases"],
                               n_sims=_bootstrap_sims(dev_limit), master_seed=MASTER_SEED)
-    conc = concentration(rep)
-    cash = cash_ratio_stats(rep["result"])
+    # WP-A5/A5.5 (đóng F-016): FS-03 (concentration) và FS-07 (cash ratio) TRƯỚC ĐÂY chỉ
+    # tính trên W5 rồi được dùng như thể đại diện cho cả mẫu. Nay tính TỪNG window rồi gộp
+    # bằng PrimaryMedian — đúng phép gộp chống thiên vị của BT §4.1 (CONVENTIONS #20).
+    # Chín window đã được `window_metrics` chạy xong ở trên, nên việc mở rộng này KHÔNG
+    # thêm một lần chạy engine nào.
+    conc_by_w = {w: concentration(r) for w, r in wm["windows"].items()}
+    cash_by_w = {w: cash_ratio_stats(r["result"]) for w, r in wm["windows"].items()}
+    conc_m = aggregate_over_windows({w: d["ae_ex_month"] for w, d in conc_by_w.items()})
+    conc_q = aggregate_over_windows({w: d["ae_ex_quarter"] for w, d in conc_by_w.items()})
+    # Giữ NGUYÊN hai khoá `ae_ex_month`/`ae_ex_quarter` mà `failure_signals.py` đang đọc:
+    # WP-A5 chỉ đổi PHẠM VI TÍNH của số, không đổi hợp đồng đọc số (chính sách = WP-B1).
+    conc_detail = {"ae_ex_month": conc_m["value"], "ae_ex_quarter": conc_q["value"],
+                   "scope": "9_windows_primary_median",
+                   "per_window_ex_month": conc_m["per_window"],
+                   "per_window_ex_quarter": conc_q["per_window"],
+                   "reason": conc_m["reason"] or conc_q["reason"],
+                   "w5_only_legacy": conc_by_w["W5"]}
+    # Khoá `concentration` là HỢP ĐỒNG với `failure_signals.py`: `None` = UNKNOWN. Nhưng
+    # chi tiết vì sao UNKNOWN phải sống sót trong run record, nếu không `CHECK-A5-04`
+    # ("lý do phải được ghi rõ") sẽ không thoả — nên detail luôn được ghi ở khoá riêng.
+    conc = None if conc_detail["reason"] else conc_detail
+    cash_pw = {w: d["avg"] for w, d in cash_by_w.items()}
+    cash_agg = aggregate_over_windows(cash_pw)
+    cash = {"avg": cash_agg["value"], "scope": "9_windows_primary_median",
+            "per_window_avg": cash_pw, "reason": cash_agg["reason"],
+            "max": max((d["max"] for d in cash_by_w.values()
+                        if d["max"] is not None and not np.isnan(d["max"])),
+                       default=float("nan")),
+            "w5_only_legacy": cash_by_w["W5"]}
+    # WP-A5/A5.1 + A5.2 (đóng phần đo lường của F-002): hai đại lượng chưa từng được sinh.
+    caphit_pw = {w: opportunity_cap_hit_share(r["result"])["share"]
+                 for w, r in wm["windows"].items()}
+    caphit = aggregate_over_windows(caphit_pw)
+    regadv = regime_advantage_pooled(wm["windows"])
     payload = {
         "window_metrics": {k: v for k, v in wm.items() if k != "windows"},
         "gate1": g1, "oos": oos_eval,
         "diagnostics": diag, "bootstrap_descriptive": boot,
         "concentration": conc, "cash_ratio": cash,
+        "opportunity_cap_hit": {
+            "share": caphit["value"], "scope": "9_windows_primary_median",
+            "per_window": caphit_pw, "reason": caphit["reason"]},
+        "regime_advantage": {
+            "share": regadv["share"], "scope": "9_windows_pooled_advantage",
+            "by_regime_pooled": regadv["by_regime"],
+            "top_regime": regadv.get("top_regime"),
+            "positive_mass": regadv["positive_mass"],
+            "net_advantage": regadv["net_advantage"],
+            "per_window": regadv["per_window"],
+            "per_window_share_primary_median":
+                regadv["per_window_share_primary_median"],
+            "reason": regadv["reason"]},
         "counters_w5": rep["result"].counters,
         "benchmarks": _benchmark_comparison(prep, exec_cfg, wm),
         "official": prep.official_eligible and dev_limit is None,
@@ -304,9 +354,17 @@ def run_controls(prep: Prepared, out_dir, monthly_deployments: dict, v2_eth: flo
 def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
                 dataset_hash: str, data_source: str = SOURCE_UNKNOWN) -> dict:
     diag = g1["diagnostics"]
+    # WP-A5/A5.3 + A5.4 (đóng phần đo lường của F-002): ba đại lượng dưới đây trước WP-A5
+    # KHÔNG BAO GIỜ được truyền, nên FS-02/FS-06/FS-12 luôn UNKNOWN dù pipeline chạy đủ.
+    # FS-06 dựng từ chính manifest Gate 2 đã chạy (config OFAT = config kề nhau), nên
+    # không cần thêm lần chạy engine nào.
+    flip = adjacent_config_flip(g2.get("per_config", []))
     fs = evaluate_failure_signals(
         gate1_windows=g1["window_metrics"]["ae_by_window"],
         concentration=g1["concentration"],
+        opportunity_cap_hit_share=g1.get("opportunity_cap_hit", {}).get("share"),
+        regime_advantage_share=g1.get("regime_advantage", {}).get("share"),
+        adjacent_config_flip=flip["flip"],
         vif_any_severe=diag["vif"]["any_severe"],
         corr_high_redundancy=any(v for k, v in diag["redundancy_flags"].items()
                                  if k.endswith("high_redundancy")),
@@ -325,7 +383,28 @@ def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
     # WP-A1/A1.2: verdict chỉ official khi CẢ Gate 2 và Gate 3 official — mà mỗi cờ đó đã
     # gồm điều kiện lineage đủ tư cách. Không tính lại eligibility ở đây (một nguồn sự thật).
     official = g2.get("official", False) and g3.get("official", False)
-    payload = {"verdict": v, "failure_signals": fs, "official": official,
+    # WP-A5: PHẠM VI và LÝ DO của từng đại lượng đo, ghi thẳng vào run record. Mục đích là
+    # để một FS còn UNKNOWN luôn nói được VÌ SAO nó UNKNOWN (CHECK-A5-04) — đây là siêu dữ
+    # liệu ĐO LƯỜNG, không phải chính sách verdict (chính sách = WP-B1).
+    fs_inputs = {
+        "FS-02": {"quantity": "opportunity_cap_hit_share",
+                  **{k: v for k, v in g1.get("opportunity_cap_hit", {}).items()
+                     if k != "per_window"}},
+        "FS-03": {"quantity": "concentration",
+                  "scope": (g1.get("concentration") or {}).get("scope"),
+                  "reason": (g1.get("concentration") or {}).get(
+                      "reason", "concentration_unavailable")},
+        "FS-06": {"quantity": "adjacent_config_flip",
+                  **{k: v for k, v in flip.items() if k != "flipped_configs"}},
+        "FS-07": {"quantity": "avg_cash_ratio",
+                  "scope": g1["cash_ratio"].get("scope"),
+                  "reason": g1["cash_ratio"].get("reason")},
+        "FS-12": {"quantity": "regime_advantage_share",
+                  **{k: v for k, v in g1.get("regime_advantage", {}).items()
+                     if k not in ("per_window", "by_regime_w5")}},
+    }
+    payload = {"verdict": v, "failure_signals": fs,
+               "failure_signal_inputs_wp_a5": fs_inputs, "official": official,
                "official_reason": g2.get("official_reason")}
     if not official:
         payload["warning"] = ("DEV RUN — Gate 2/Gate 3 chạy với dev_limit hoặc dữ liệu không "

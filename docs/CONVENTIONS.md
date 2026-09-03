@@ -162,6 +162,72 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     định điểm này → ghi chú WP-D2. Điều kiện xem lại (H-15, vế thứ ba): official run cho
     thấy action trên zone trigger trong cửa sổ INVALID với số lượng đáng kể — công cụ
     `tests/wp_a6_impact_tool.py` đếm sẵn (`invalid_cycle_triggers_actioned`).
+20. **Định nghĩa đo lường và PHẠM VI TÍNH của Failure Signal (WP-A5, đóng phần đo lường của
+    F-002 và toàn bộ F-016)** — Backtest §17 mô tả mười hai Failure Signal bằng **văn xuôi,
+    không kèm công thức**. Ba đại lượng dưới đây vì thế phải được chốt thành quy ước tường
+    minh (Escalation Trigger #1 của WP-A5: "không tự sáng tạo định nghĩa rồi im lặng").
+    **Đây là quy ước ĐO LƯỜNG. Ngưỡng số và chính sách UNKNOWN thuộc `WP-B1`** — WP-A5 không
+    đổi một dòng nào trong `verdict.py` / `failure_signals.py`.
+
+    (a) **FS-02 `opportunity_cap_hit_share`** — "Opportunity reserve thường xuyên chạm cap và
+    nằm im không được dùng". Đo trên mẫu THEO NGÀY (cùng nhịp, cùng vị trí với `cash_samples`
+    sẵn có): `at_cap` = `opp_fund.total >= MonthlyCapital.opportunity_cap` — dùng **đúng phép
+    so mà `apply_monthly_contribution` dùng để chặn contribution**, không phát minh phép so
+    mới; `idle` = `available > 0`, tức vốn chưa vào reservation nào và chưa deploy. Số đo =
+    tỷ lệ ngày thoả **cả hai** vế. *Giới hạn phải biết:* `Pool.total = available + reserved +
+    deployed` (DM §6) nên `total` **không giảm** khi vốn được giải ngân — vế `at_cap` bão hoà
+    TRUE vĩnh viễn sau khi quỹ đầy lần đầu, nên sức phân biệt thực tế nằm ở vế `idle`. Ngữ
+    nghĩa `Pool` là của WP-A7/DM §6, WP-A5 KHÔNG đổi. Để `WP-B1` tinh chỉnh được ngưỡng vật
+    chất mà **không phải chạy lại engine**, run record mang kèm `at_cap_share`,
+    `mean_idle_ratio`, `share_idle_ge_1pct_cap`, `share_idle_ge_10pct_cap` — các số này
+    KHÔNG phải input của FS-02.
+
+    (b) **FS-12 `regime_advantage_share`** — "Phần lớn lợi thế tập trung vào một crash hoặc
+    một regime duy nhất". Lợi thế theo regime = ETH của chiến lược trừ ETH của Benchmark A
+    trong cùng regime. Purchase của chiến lược đã mang nhãn `regime`; purchase của benchmark
+    thì không, nên engine ghi thêm `regime_timeline` (mốc ĐỔI NHÃN, BT §15 "regime labeling
+    for analysis") để quy đúng mỗi purchase benchmark về regime đang hiệu lực. Số đo =
+    `max(lợi_thế_regime) / TỔNG KHỐI LỢI THẾ DƯƠNG`. **Mẫu số là khối lợi thế dương, không
+    phải lợi thế ròng**: lợi thế ròng có thể âm hoặc gần 0 làm tỷ lệ vô nghĩa hoặc nổ, trong
+    khi câu hỏi của §17 là "trong phần lợi thế đã tạo ra, bao nhiêu đến từ một regime". Không
+    regime nào có lợi thế dương → đại lượng **không xác định**, trả `None` kèm lý do, **không
+    quy về 0.0** (0.0 đọc thành "không tập trung" — một khẳng định sai); trường hợp đó FS-01
+    đã bắt.
+
+    (c) **FS-06 `adjacent_config_flip`** — "Config tham số kề nhau đảo ngược kết luận". "Kề
+    nhau" = config **OFAT** của manifest Gate 2 (`ofat_<dim>=<level>`), tức đổi **đúng một**
+    chiều tham số khỏi baseline; config `lhs_*` đổi nhiều chiều cùng lúc nên KHÔNG kề nhau và
+    không được tính. "Đảo ngược kết luận" = `gate1.pass` khác baseline, **tính cả hai chiều**
+    PASS→FAIL và FAIL→PASS, vì spec nói "đảo ngược" chứ không nói riêng chiều xấu đi. Dựng từ
+    chính manifest Gate 2 đã chạy nên không tốn thêm lần chạy engine nào.
+
+    (d) **PHẠM VI TÍNH — FS-03 và FS-07 (đóng F-016).** Trước WP-A5, `concentration` (FS-03)
+    và `cash_ratio` (FS-07) chỉ được tính trên **một window đại diện (W5)** rồi dùng như thể
+    đại diện cả mẫu. Nay tính TỪNG window rồi gộp bằng **PrimaryMedian** — đúng phép gộp mà
+    BT §4.1 đặt ra để chống thiên vị do chín window chồng lấn; WP-A5 dùng lại phép gộp của
+    spec thay vì phát minh phép mới. Chín window đã được `window_metrics` chạy sẵn nên mở
+    rộng này **không thêm một lần chạy engine nào**. Giá trị W5 cũ vẫn được giữ trong run
+    record dưới khoá `w5_only_legacy` để đối chiếu lịch sử. Khoá `ae_ex_month`/
+    `ae_ex_quarter`/`avg` **giữ nguyên tên** — WP-A5 đổi PHẠM VI của số, không đổi hợp đồng
+    đọc số.
+
+    (e) **PHẠM VI TÍNH — FS-02 và FS-12.** FS-02 tính từng window rồi gộp PrimaryMedian như
+    (d). FS-12 thì **cộng khối lợi thế theo regime trên cả chín window rồi mới lấy tỷ lệ**,
+    KHÔNG gộp chín tỷ lệ: một window mà chiến lược không có lợi thế dương nào thì tỷ lệ tập
+    trung không xác định, và gộp-tỷ-lệ sẽ làm FS-12 thành UNKNOWN chỉ vì một window — tức
+    UNKNOWN vì lý do **không phải thiếu đo lường**, đúng thứ WP-A5 tồn tại để loại bỏ. FS-12
+    hỏi về chiến lược, không hỏi từng window, nên khối lợi thế là đơn vị gộp đúng; và thiên
+    lệch do chồng lấn tác động lên tử số và mẫu số cùng chiều nên với một TỶ LỆ nó chỉ còn
+    bậc hai (khác đại lượng MỨC như AE mà §4.1 buộc dùng PrimaryMedian). Tỷ lệ từng window và
+    PrimaryMedian của chúng vẫn được ghi
+    (`regime_advantage.per_window`, `per_window_share_primary_median`) để WP-B1 đổi input mà
+    không phải chạy lại engine.
+
+    (f) **Không đo được thì nói là không đo được.** Mọi đại lượng trên trả `None` kèm `reason`
+    khi không tính được, và `None` đi vào **đúng đường UNKNOWN sẵn có** của
+    `failure_signals.py` (`None` → signal `None`) — WP-A5 không thêm đường mới, không gán giá
+    trị mặc định. Run record mang khối `failure_signal_inputs_wp_a5` ghi phạm vi và lý do của
+    từng đại lượng, để một Failure Signal còn UNKNOWN luôn nói được **vì sao** (`CHECK-A5-04`).
 
 ## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
 

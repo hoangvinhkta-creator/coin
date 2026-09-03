@@ -163,22 +163,22 @@ Do not touch without Scope Expansion:
 - `webapp/`, `docs/spec/`
 
 ## Subtasks
-- [ ] A5.1 Sinh `opportunity_cap_hit_share` (FS-02) tại thời điểm chạy
-- [ ] A5.2 Sinh `regime_advantage_share` (FS-12) tại thời điểm chạy
-- [ ] A5.3 Sinh `adjacent_config_flip` (FS-06) tại thời điểm chạy
-- [ ] A5.4 Truyền cả ba vào `evaluate_failure_signals`
-- [ ] A5.5 Mở rộng tính FS-03 và FS-07 ra toàn bộ chín window
-- [ ] A5.6 Ghi rõ phạm vi tính của từng FS vào `docs/CONVENTIONS.md`
-- [ ] A5.7 Viết test khẳng định sau khi chạy đầy đủ, không FS nào còn UNKNOWN vì thiếu input
-- [ ] A5.8 Chứng minh gói không đụng chính sách verdict (scope guard)
+- [x] A5.1 Sinh `opportunity_cap_hit_share` (FS-02) tại thời điểm chạy — `RunResult.opp_cap_samples` (mẫu theo ngày, cùng nhịp `cash_samples`) + `metrics.opportunity_cap_hit_share`
+- [x] A5.2 Sinh `regime_advantage_share` (FS-12) tại thời điểm chạy — `RunResult.regime_timeline` (mốc đổi nhãn) + `metrics.regime_advantage` / `regime_advantage_pooled`
+- [x] A5.3 Sinh `adjacent_config_flip` (FS-06) tại thời điểm chạy — `metrics.adjacent_config_flip`, dựng từ manifest Gate 2 đã chạy (config OFAT = kề nhau)
+- [x] A5.4 Truyền cả ba vào `evaluate_failure_signals` — `pipeline.run_verdict`
+- [x] A5.5 Mở rộng tính FS-03 và FS-07 ra toàn bộ chín window — `pipeline.run_gate1`, gộp bằng PrimaryMedian (BT §4.1); giá trị W5 cũ giữ ở `w5_only_legacy`
+- [x] A5.6 Ghi rõ phạm vi tính của từng FS vào `docs/CONVENTIONS.md` — quy ước **#20 (a)–(f)**
+- [x] A5.7 Viết test khẳng định sau khi chạy đầy đủ, không FS nào còn UNKNOWN vì thiếu input — `tests/test_wp_a5_failure_signal_instrumentation.py` (22 test)
+- [x] A5.8 Chứng minh gói không đụng chính sách verdict (scope guard) — `git diff` rỗng trên `verdict.py`/`failure_signals.py` + test khoá hành vi ngưỡng tại biên
 
 ## Ready Gate
 
 - [x] Objective rõ ràng
 - [x] Scope được định nghĩa, và **ranh giới đo lường / chính sách được nêu tường minh**
 - [x] Out-of-scope được định nghĩa
-- [ ] **Dependency WP-A2 DONE**
-- [ ] **Dependency WP-A3 DONE** — bắt buộc, không miễn trừ
+- [x] **Dependency WP-A2 DONE** (S006)
+- [x] **Dependency WP-A3 DONE** — bắt buộc, không miễn trừ (S003; và `WP-A7` DONE tại S004 theo RCP-002)
 - [x] Expected touch area được xác định
 - [x] Requirement liên quan được hiểu — BT §16, §17; IM §7
 - [x] Data impact được biết — thêm trường đo lường vào `pipeline_state.json`
@@ -187,7 +187,7 @@ Do not touch without Scope Expansion:
 - [x] Escalation triggers được định nghĩa
 - [x] Completion Gate được finalize
 - [x] Completion Gate được đóng băng trước khi thực thi
-- [ ] Xác nhận lại toàn bộ Ready Gate khi mở task
+- [x] Xác nhận lại toàn bộ Ready Gate khi mở task — S015 (2026-09-03): `WP-A2` ✅, `WP-A3` ✅, `WP-A7` ✅ đều DONE trong `PROJECT_PROGRESS.md`; `branch_authority_check.sh` PASS trên nhánh `claude/coindca-data-stream-vv0vwv`; ràng buộc "không song song với WP-A2 trên `pipeline.py`" hết hiệu lực vì WP-A2 đã DONE
 
 ## Completion Gate
 
@@ -200,7 +200,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -209,18 +209,32 @@ Evidence:
 Yêu cầu: chạy pipeline đầy đủ, chứng minh FS-02 nhận giá trị số (không phải `None`). Kèm một ca có
 đáp số biết trước để chứng minh đại lượng được **tính đúng**, không chỉ được truyền.
 
+Kết quả (S015). **Đáp số biết trước** — `test_a5_01_cap_hit_share_known_answer`: 10 mẫu dựng tay
+trong đó đúng 3 mẫu thoả CẢ HAI vế (`at_cap` ∧ `idle`), gồm ba ca đối chứng dễ nhầm — at_cap nhưng
+hết idle, idle nhưng chưa chạm cap, và **sát cap mà chưa tới** (199/200) — khẳng định
+`share == 0.3` chính xác, `n_hit == 3`. Hai thống kê phụ trợ cũng khớp tay
+(`at_cap_share == 0.6`, `share_idle_ge_10pct_cap == 0.4`). **Sinh ra thật** —
+`test_a5_01_engine_emits_cap_samples`: engine chạy 2019→2021 sinh `opp_cap_samples` đúng bằng số
+`cash_samples` (cùng nhịp ngày), và `share` không phải `None`. **Truyền tới FS-02** — run đủ phase
+tại CHECK-A5-04. **Không đo được thì báo là không đo được** —
+`test_a5_01_cap_hit_share_no_samples_is_unknown_not_zero`: 0 mẫu → `None` +
+`reason="no_opp_cap_samples"`, không quy về 0.0.
+Số đo trên dữ liệu tổng hợp 2018-01→2026-06: **0,9063** (PrimaryMedian 9 window; từng window
+0,874–0,919). Giới hạn ngữ nghĩa của vế `at_cap` (bão hoà do `Pool.total` không giảm) được ghi
+tường minh ở `docs/CONVENTIONS.md` #20(a) kèm bốn thống kê phụ trợ cho WP-B1.
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-02 — `regime_advantage_share` được sinh và truyền vào FS-12
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -228,18 +242,33 @@ E1
 Evidence:
 Yêu cầu: như trên, cho FS-12.
 
+Kết quả (S015). **Đáp số biết trước** — `test_a5_02_regime_advantage_known_answer`: chiến lược mua
+CRASH 3,0 + NORMAL 1,0 ETH, benchmark CRASH 1,0 + NORMAL 2,0 → lợi thế CRASH +2,0, NORMAL −1,0;
+khối lợi thế dương = 2,0 → `share == 1.0` (trong khi mẫu số "lợi thế ròng" sẽ cho 2,0 — vượt 1 và
+vô nghĩa, đây chính là lý do chọn mẫu số ở CONVENTIONS #20(b)). Ca hai regime cùng dương
+(`test_a5_02_regime_advantage_two_regimes_share`): 6/(6+2) → `0.75` khớp tay. **Quy purchase của
+benchmark về regime** — `test_a5_02_benchmark_purchase_attributed_by_timeline` kiểm `_regime_at`
+tại sáu mốc, gồm biên trái (trước mốc đầu tiên) và đúng thời điểm đổi nhãn. **Sinh ra thật** —
+`test_a5_02_engine_emits_regime_timeline`: timeline không rỗng, tăng dần theo thời gian, KHÔNG có
+hai mốc liên tiếp trùng nhãn, và thưa hơn mẫu ngày. **Không đo được thì báo** —
+`test_a5_02_no_positive_advantage_is_unknown_not_zero`: `None` +
+`reason="no_positive_advantage_in_any_regime"`, KHÔNG quy về 0.0 (0.0 sẽ bị đọc thành "không tập
+trung" — khẳng định sai).
+Số đo trên dữ liệu tổng hợp: **1,0** — chỉ regime STRESSED có lợi thế dương (+3,179), còn NORMAL
+−3,893, CRASH −0,602, RECOVERY −0,238.
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-03 — `adjacent_config_flip` được sinh và truyền vào FS-06
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -247,11 +276,25 @@ E1
 Evidence:
 Yêu cầu: như trên, cho FS-06.
 
+Kết quả (S015). **Đáp số biết trước** — `test_a5_03_adjacent_config_flip_known_answer`: baseline
+PASS, hai config OFAT (một PASS một FAIL) và một config `lhs_*` FAIL → `flip is True`,
+`n_adjacent == 2` (config `lhs_*` đổi nhiều chiều cùng lúc nên KHÔNG kề nhau, không được tính),
+`flipped_configs == ["ofat_base_pct=0.5"]`. **Cả hai chiều** —
+`test_a5_03_flip_detected_in_both_directions`: FAIL→PASS cũng là "đảo ngược" theo đúng chữ §17.
+**Không có flip thì phải là False, không phải None** —
+`test_a5_03_no_flip_when_all_adjacent_agree`. **Không đo được thì báo** —
+`test_a5_03_lhs_config_alone_never_counts_as_adjacent`: manifest không có config kề nhau nào →
+`None` + `reason="no_adjacent_config_in_manifest"`. **Khoá vào manifest THẬT** —
+`test_a5_03_real_manifest_names_are_recognised_as_adjacent` gọi `generate_gate2_manifest()` thật và
+khẳng định mọi config OFAT được nhận diện; nếu quy ước đặt tên của manifest đổi, test đỏ thay vì âm
+thầm đếm 0 config kề nhau.
+Đại lượng dựng từ chính manifest Gate 2 đã chạy nên KHÔNG tốn thêm lần chạy engine nào.
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-04 — Sau một run đầy đủ, không Failure Signal nào còn UNKNOWN vì thiếu input
 Priority:
@@ -279,7 +322,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -288,18 +331,42 @@ Evidence:
 Yêu cầu: chứng minh phạm vi tính đã mở rộng khỏi W5, và phạm vi mới được ghi tường minh ở
 `docs/CONVENTIONS.md`. Đóng F-016 phần đo lường.
 
+Kết quả (S015). `test_a5_05_fs03_fs07_computed_over_nine_windows`: cả `concentration` và
+`cash_ratio_stats` được tính trên **9/9 window**, và phép gộp trùng khớp `primary_median` tính
+ĐỘC LẬP trong test (không gọi lại hàm của sản phẩm để tự xác nhận chính mình).
+`test_a5_05_fs12_pooled_scope_covers_nine_windows`: FS-12 phủ 9 window, `share` không `None`, và
+tổng khối lợi thế gộp bằng tổng lợi thế ròng từng window (phép CỘNG, không phải median).
+`test_a5_05_missing_window_is_unknown_not_silently_dropped`: thiếu window (`None` hoặc `NaN`) →
+`None` kèm TÊN window thiếu, không âm thầm bỏ window để "còn tính được".
+
+**Mở rộng phạm vi KHÔNG phải thay đổi hình thức — nó làm FS-03 LẬT.**
+`test_a5_05_nine_window_scope_differs_from_w5_only` khoá điều này lại. Số đo trên dữ liệu tổng hợp
+2018-01→2026-06:
+
+| Đại lượng | W5-only (trước) | 9 window PrimaryMedian (sau) | FS-03 |
+|---|---|---|---|
+| `ae_ex_month` | 100,637 | **96,046** | FALSE → **TRUE** |
+| `ae_ex_quarter` | 101,170 | **95,251** | FALSE → **TRUE** |
+| `cash_ratio.avg` (FS-07) | 0,16608 | **0,15347** | không đổi kết luận |
+
+Tức trước WP-A5, một window đại diện đã **che mất** một Failure Signal đang TRUE. Đây đúng là hại
+mà F-016 cảnh báo. Thay đổi này đến từ **DỮ LIỆU ĐO MỚI**, không từ chính sách mới — ngưỡng 100,0
+trong `failure_signals.py` không bị đụng (xem CHECK-A5-07). Giá trị W5 cũ được giữ trong run record
+dưới khoá `w5_only_legacy` để đối chiếu lịch sử. Phạm vi mới ghi tại `docs/CONVENTIONS.md` #20(d),
+(e).
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-06 — Số đo FS-02 và FS-07 không bị bóp méo bởi vốn bị khoá
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -309,11 +376,21 @@ Yêu cầu: chứng minh dependency WP-A3 đã thoả bằng một ca chạy k�
 CRASH → RECOVERY → STRESSED, khẳng định cap-hit share và cash ratio phản ánh vốn thực sự khả dụng,
 không phải vốn bị treo. Đây là lý do WP-A5 phụ thuộc WP-A3.
 
+Kết quả (S015). `test_a5_06_cap_hit_and_cash_see_released_capital` chạy một window thật
+2021-01→2023-01 và khẳng định ba điều trên chính mẫu đo:
+(1) không mẫu nào có `available` âm và `total >= available` — vốn không bị kế toán sai;
+(2) tồn tại ít nhất một lần `available` **TĂNG** so với mẫu ngày trước đó. Đây là phép kiểm cốt
+lõi: vốn được release sau recovery-end / huỷ zone phải QUAY LẠI số đo. Nếu F-001 chưa được WP-A3
+sửa và vốn bị khoá vĩnh viễn trong `reserved`, chuỗi `available` sẽ đơn điệu giảm và test đỏ —
+tức test này thực sự phụ thuộc vào WP-A3 đã DONE, đúng lý do dependency tồn tại;
+(3) window đi qua **nhiều hơn một** regime (khẳng định tường minh trước khi kết luận, chặn "pass
+rỗng" trên một ca không có chuyển regime nào), và `cash_ratio.avg` là số hữu hạn trong [0, 1].
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 ### Scope / Regression
 
@@ -322,7 +399,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -333,18 +410,33 @@ quy tắc UNKNOWN trong `verdict.py` / `failure_signals.py`. Nếu gói này vô
 quả trên cùng dữ liệu, phải giải thích được rằng nguyên nhân là **dữ liệu đo mới**, không phải chính
 sách mới.
 
+Kết quả (S015). `git diff --stat b095874..HEAD -- src/eth_dca_os/verdict.py
+src/eth_dca_os/failure_signals.py` → **output RỖNG**, hai file chính sách không đổi một dòng.
+`test_a5_07_no_diff_in_policy_files` chạy đúng lệnh này trong test nên guard không phụ thuộc trí
+nhớ người viết. Ngoài ra `test_a5_07_verdict_policy_thresholds_unchanged` khoá **HÀNH VI** ngưỡng
+bằng cách gọi `evaluate_failure_signals` tại biên chứ không đọc văn bản mã nguồn: FS-02 tại
+0,50/0,51; FS-12 tại 0,80/0,81; FS-03 tại 100,0/99,9; FS-07 tại cặp (0,30 & 102,0) với cả ba tổ
+hợp biên. `test_a5_07_unknown_policy_untouched` khẳng định gọi hàm KHÔNG tham số vẫn cho đủ 12
+signal và **tất cả** là `None` — tức WP-A5 không thêm giá trị mặc định nào vào đường UNKNOWN.
+
+**Verdict CÓ ĐỔI trên cùng dữ liệu, và nguyên nhân là dữ liệu đo mới, không phải chính sách mới.**
+Ba signal trước đây luôn UNKNOWN nay có giá trị (FS-02 = TRUE, FS-12 = TRUE trên dữ liệu tổng hợp),
+và FS-03 lật FALSE → TRUE do phạm vi tính mở từ W5 ra 9 window (CHECK-A5-05). Cả ba đều đi qua
+đúng ngưỡng cũ, không sửa. Đây chính là mục đích của gói: quy tắc chặn của BT §17 chỉ có hiệu lực
+khi signal có dữ liệu để bật.
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-08 — Hành vi thực thi của engine không đổi vì việc thêm điểm thu thập số liệu
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -353,11 +445,27 @@ Evidence:
 Yêu cầu: cùng seed và dataset, so metric của chiến lược trước–sau. Instrumentation không được làm
 đổi hành vi.
 
+Kết quả (S015). `test_a5_08_instrumentation_does_not_change_engine_behaviour` nạp `engine.py` tại
+`b095874` (commit WP-A6 DONE, ngay TRƯỚC WP-A5) trực tiếp từ git bằng `load_engine_from_source` —
+tiện ích do WP-A6 để lại — rồi chạy song song với engine hiện tại trên cùng dataset, cùng cửa sổ
+2019-01-01 → 2022-01-01, cùng config. So sánh **bit-for-bit**: `eth_total` bằng nhau tuyệt đối,
+`len(purchases)` bằng nhau, **từng bản ghi purchase** so bằng `==` trên cả dict (giá, ETH, tag,
+regime, shortfall…), `counters` bằng nhau, `cash_samples` bằng nhau, `monthly_deployments` bằng
+nhau. Test cũng khẳng định bản cũ **đúng là bản chưa có instrumentation**
+(`opp_cap_samples`/`regime_timeline` rỗng) và bản mới có — nếu không, phép so sẽ vô nghĩa vì có thể
+đang so hai bản giống hệt nhau.
+
+Cơ chế bảo đảm: hai điểm thu thập chỉ ĐỌC property (`opp_fund.total/available`,
+`mc.opportunity_cap`, `regime.regime`) và append vào list trên `RunResult`; không nhánh execution
+nào đọc hai list đó. Chúng cũng không lọt vào harness thứ tự của WP-A6 (harness bọc phương thức
+`Pool`/`Zone`/`Ladder`/`apply_fill`/`RegimeTracker.update`, không bọc phép đọc property), nên thứ
+tự 18 bước đã khoá tại WP-A6 giữ nguyên — xác nhận thêm bằng CHECK-A5-09.
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-A5-09 — Toàn bộ test suite Python PASS
 Priority:
