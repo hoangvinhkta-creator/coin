@@ -912,6 +912,50 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S019 — T-06 EVIDENCE PRESERVATION / CANONICALIZATION — 2026-09-03 — branch
+  `claude/coindca-data-stream-vv0vwv` @ `f7f98a9` → thêm evidence-only commit. **KHÔNG state
+  nào bị đổi**: `T-06` giữ `PLANNED`, `BLK-001` giữ ACTIVE trong sổ, không Owner Decision nào
+  được ban hành, không task ID mới, `production diff = EMPTY`. Tiếp nối trực tiếp S018.
+
+  Owner đã thực hiện bảo toàn evidence bên ngoài container: backup 16/16 raw artifact (3
+  parquet + `lineage.json` + toàn bộ `results/`) ra vị trí độc lập trên máy đã chạy `T-06`,
+  tự verify SHA-256 khớp, và tạo + push **annotated git tag `v2.1.5-official-T06`**.
+
+  (1) **Xác nhận tag** — `git ls-remote --tags origin` + `git cat-file -p` xác nhận tag là
+  annotated (object riêng) và peel **đúng** về `5228130677e9e9875335eef890b6ed748a384603`
+  (= `code_commit` của official run). Message tag mang `dataset_hash`/verdict khớp khai báo.
+
+  (2) **Canonical evidence package** — tạo `docs/T06_OFFICIAL_EVIDENCE_RECORD.md` (một file,
+  không tạo subsystem `docs/evidence/` mới, đặt cạnh `CONVENTIONS.md`/`DATA_SOURCES.md`,
+  tham chiếu thêm vào `docs/INDEX.md`). Package phân biệt tường minh
+  **REPOSITORY-VERIFIED** / **OWNER-REPORTED / EXTERNALLY-VERIFIED** / **NOT PRESENT IN
+  REPOSITORY** cho từng khẳng định, không nâng nhãn.
+
+  (3) **Phát hiện mới** (nâng chất lượng evidence so với S018): `dataset_hash` khai báo
+  (`3150860cb379…`) được **tái tính REPOSITORY-VERIFIED** — đưa ba `file_hash` Owner-reported
+  vào ĐÚNG thuật toán `_dataset_hash()` (`src/eth_dca_os/data/dataset.py`, thứ tự
+  `sorted(glob("*.parquet"))`: `BTCUSDT_1d`, `ETHUSDT_15m`, `ETHUSDT_1d`) cho kết quả khớp
+  tuyệt đối với khai báo. Đây là bằng chứng NHẤT QUÁN THUẬT TOÁN — bốn con số (3 file_hash +
+  1 dataset_hash) tự OK với nhau theo đúng mã đang chạy — **không** phải xác thực byte gốc:
+  vẫn cần Owner-reported cho việc ba `file_hash` đó có thật là sha256 của dữ liệu Binance
+  thật (repository không có byte để đối chiếu độc lập).
+
+  (4) Pre-T06 manifest freeze và phép toán FS-12 (đã tái lập tại S018) được **dẫn chiếu lại**,
+  không tính lại. 16/16 raw artifact SHA-256 Owner khai được ghi làm bảng trong evidence
+  record — **không copy raw data vào git**, không bypass `.gitignore`.
+
+  Validator: `branch_authority_check.sh` **PASS** (`production diff = EMPTY`),
+  `validate_governance`/`validate_project_state`/`validate_structure`/`validate_routing`/
+  `validate_evidence`/`validate_task_completion`/`validate_easy_roadmap` **PASS** (7/7).
+  `sync_easy_roadmap.py` regenerate `LO_TRINH_DE_HIEU.md` **KHÔNG có diff** — xác nhận không
+  roadmap/state nào bị đổi bởi phiên này.
+
+  Không xử lý `H-13` hay hardening khác. Không tạo `docs/tasks/T-06-*.md`. Không ban hành
+  Owner Decision — Owner đã báo dự kiến chọn hướng (B) mô tả trong prompt (ghi nhận T-06 thực
+  thi trước khi phát hiện thiếu gate; không retrospective-freeze acceptance criteria; verdict
+  giữ `DO_NOT_BUILD`) trong một phiên riêng, **chưa** ban hành ở đây. `OD-T06-01`…`OD-T06-10`
+  từ S018 vẫn treo, chờ Owner. Biên bản đầy đủ:
+  `docs/sessions/S019-t06-evidence-preservation.md`.
 - S018 — POST-T06 EVIDENCE CLOSURE / GOVERNANCE BOOKKEEPING — 2026-09-03 — branch
   `claude/coindca-data-stream-vv0vwv` @ `5228130`. **Kết thúc ở `OWNER_DECISION_REQUIRED`**
   (hard-stop hợp lệ theo `AGENTS.md` §3). **KHÔNG state nào bị đổi**: `T-06` giữ `PLANNED`,

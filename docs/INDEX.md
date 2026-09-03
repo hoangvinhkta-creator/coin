@@ -30,6 +30,9 @@ Tài liệu bổ trợ (không thuộc spec pack, nhưng bắt buộc đọc tr�
 
 - [CONVENTIONS.md](CONVENTIONS.md) — quy ước cho những điểm spec cố ý để ngỏ
 - [DATA_SOURCES.md](DATA_SOURCES.md) — nguồn dữ liệu, kênh API, giới hạn rate
+- [T06_OFFICIAL_EVIDENCE_RECORD.md](T06_OFFICIAL_EVIDENCE_RECORD.md) — bảo toàn evidence
+  official run T-06 (code/dataset/manifest/record ID/verdict), phân nhãn REPOSITORY-VERIFIED
+  / OWNER-REPORTED / NOT PRESENT IN REPOSITORY. KHÔNG phải Completion Gate.
 
 ## 2. Sửa đổi V2.1.4 → V2.1.5
 
