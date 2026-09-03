@@ -912,6 +912,101 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 
 ## Session History
+- S018 — POST-T06 EVIDENCE CLOSURE / GOVERNANCE BOOKKEEPING — 2026-09-03 — branch
+  `claude/coindca-data-stream-vv0vwv` @ `5228130`. **Kết thúc ở `OWNER_DECISION_REQUIRED`**
+  (hard-stop hợp lệ theo `AGENTS.md` §3). **KHÔNG state nào bị đổi**: `T-06` giữ `PLANNED`,
+  `BLK-001` giữ ACTIVE trong sổ, không task ID mới, không work package mới, không repair cycle
+  bị tiêu, `production diff = EMPTY`, không sửa `src/`/`tests/`.
+
+  (1) **Kiểm chứng độc lập được (E1, tái lập tại HEAD `5228130`)** — `code_commit` khớp HEAD
+  canonical và `origin`; `dependency_lock_hash` tái tính `sha256(pyproject.lock)` khớp
+  `9ea0150fcf27…`; **pre-T06 manifest freeze tái lập CHÍNH XÁC cả 10 giá trị và cả 2 hash**
+  (Gate 2: 19/1/18/200/219 + `e34f92ae…`; Gate 3: 14/100/114 + `ef30f657…`) — kiểm được vì
+  manifest chỉ phụ thuộc mã + seed, không cần dataset và **không cần chạy lại `T-06`**; FS-12
+  `net_advantage` tái tính khớp tới bit cuối (`-1.0935215802236702`, `share = 0.5806…` ⇒ FALSE).
+  Bốn kết quả gate, FS-02/FS-10/FS-11, verdict `DO_NOT_BUILD` cùng đúng hai reason và
+  `can_proceed_to_app=false` đều **nhất quán** với ngưỡng đã đóng băng trong
+  `gates.py`/`verdict.py`/`failure_signals.py`.
+
+  (2) **KHÔNG có finding nào làm mất hiệu lực official run.** Thêm một quan sát làm GIẢM rủi ro:
+  `decide_verdict` vào nhánh `not gate1["pass"] or not oos["pass"]` **trước** khi đọc
+  `fs["any_true"]`, nên khiếm khuyết `F-S015-01` (`numpy.bool_` vô hình với `v is True`)
+  **không thể** đã ảnh hưởng verdict này — cờ FS chưa từng được hỏi tới, và chiều sai của nó là
+  "để BUILD lọt qua" trong khi verdict thực tế là `DO_NOT_BUILD`. Thu hẹp phần dư `RSK-007` cho
+  riêng run này, KHÔNG đóng `RSK-007`.
+
+  (3) **Ba vật cản ĐỘC LẬP khiến `T-06` → `DONE` không thực hiện được ở phiên này** — đều là
+  *thiếu gate / thiếu evidence trong repo*, KHÔNG phải *bằng chứng sai*:
+  **(a)** `T-06` **không có file định nghĩa** ⇒ không Ready Gate, không frozen Completion Gate,
+  không REQUIRED check nào (`task_registry_snapshot.sh`: 22 task file / 28 roadmap ID;
+  `CHECK-T06*` → 0 kết quả). `TASK_MODE_STANDARD` Mode 2 đòi cả ba; `TASK_READY_GATE_STANDARD`
+  cấm `PLANNED` → `IN_PROGRESS` và đòi Completion Gate **đóng băng trước khi thực thi** — official
+  run đã chạy trước khi có gate để đóng băng. Viết acceptance criteria bây giờ, sau khi đã biết
+  kết quả, đúng là thứ cơ chế freeze tồn tại để ngăn.
+  **(b)** Artifact và evidence official **không nằm trong repository**: 5/5 record ID → 0 file,
+  `dataset_hash` → 0 file, không `data/`/`results/`/`evidence/`. `results/` bị `.gitignore` nên
+  artifact thô vắng mặt là hợp lệ, nhưng **không** có evidence record ở `docs/` hay `PROJECT/`.
+  `EVIDENCE_STANDARD` cấm ghi PASS từ narrative; `STATE_AUTHORITY`: *"narrative does not move
+  state"*.
+  **(c)** Thẩm quyền: `STATE_AUTHORITY` ghi `DONE` = **Owner hoặc completion authority được chỉ
+  định**; tiền lệ `WP-A1` → `DONE` đi qua `DEC-028`. Session prompt không phải Owner Decision và
+  agent không được tự mint một cái.
+
+  (4) **`DEC-003` / đối chiếu hai máy — KHÔNG làm invalid `T-06`.** Cái `DEC-003` bắt buộc là
+  *chạy trên dữ liệu Binance thật*; phần hai máy là đường đi **được chấp nhận khi IP bị chặn**,
+  tức quy trình cho tình huống **copy** dữ liệu (`docs/DATA_SOURCES.md` xác nhận khung đó). Owner
+  khai fetch và run cùng trên máy production-realistic ⇒ không có bước copy để đối chiếu. Nó là
+  **biện pháp đối trọng**, không phải acceptance criterion — và ở vai trò đó nó kích hoạt `H-06`.
+
+  (5) **Hardening retrigger** (rà đủ 28 mục / 32 khối `RE_TRIGGER_CONDITION`; 15 mục có vế chạm
+  `T-06`/official/dữ liệu thật/môi trường): **KÍCH HOẠT** — `H-13` vế 1 (**re-trigger BẮT BUỘC**:
+  giới hạn `row_count` vẫn CHƯA công bố ở `docs/CONVENTIONS.md`, kiểm trực tiếp — file công bố
+  giới hạn `source` và giới hạn độ phủ nhưng không công bố `row_count`; disposition (b) diff = 0
+  nên KHÔNG tiêu repair cycle), `H-06` vế 1, `H-01` vế 1 (worktree có `?? data/` lúc chạy ⇒
+  `git status --porcelain` không rỗng). **ĐIỀU KIỆN THOẢ, phép kiểm chứng ĐẾN HẠN nhưng chưa chạy
+  được vì thiếu dataset/artifact** — `H-16` (nếu có ngày daily thiếu và một lệch ULP lật được
+  ngưỡng ⇒ thành **BLOCKING**, về `CAP-DATA`), `H-24`, `H-25`, `H-27` vế 1, và vế "thao tác tay
+  `lineage.json`" của `H-04`/`H-14` (quy trình vận hành `T-06` chưa bao giờ thành văn — `H-28`
+  vế 2). **GIỮ HARDENING, không kích hoạt** — `H-02`, `H-03` (vế 2 không thoả vì
+  `official_reason=verified`; vế 3 đã disposition tại `DEC-028`), `H-05`, `H-07`. Năm mục
+  `H-01`/`H-06`/`H-13`/`H-16`/`H-27` được **ghi nhận** trong `HARDENING_BACKLOG.md` với **phân
+  loại KHÔNG đổi**, chờ Owner disposition. **Không finding nào bị biến thành task.**
+
+  (6) **Quan sát mới, KHÔNG phải task** — `pyproject.lock` chú thích `# Python: 3.11.15` trong khi
+  official run khai Python `3.11.16`; `test_a1_08_*` bỏ qua dòng `#` nên không test nào bắt được.
+  Không làm `dependency_lock_hash` sai (hash của chính file, đã kiểm khớp). Đề xuất route
+  `CAP-PROV`, cùng lớp `H-02`. Và: `validate_evidence.py`/`validate_task_completion.py` báo
+  `Checked 0` (`H-08`) — theo `STATE_AUTHORITY` § Vacuous Validation, **PASS của hai validator này
+  không được đọc là xác nhận** evidence `T-06` đầy đủ.
+
+  (7) **Trạng thái sau `T-06`**, đọc từ Ready Gate đã đóng băng: `WP-B1` **BLOCKED**
+  (`Dependency T-06 DONE` chưa tick; `WP-A5 DONE` đã thoả), `WP-B2` **BLOCKED**, `WP-B3`
+  **BLOCKED** (thêm `Dependency WP-C2 DONE`, mà `WP-C2` đang `BLOCKED` ⇒ `CHECK-B3-02` sẽ
+  `BLOCKED`), **`GATE-B` CHƯA MỞ** (đòi cả ba `DONE`), `T-07` `PLANNED` bị chặn (đòi `T-06` ∧
+  `GATE-B`), chặn tiếp `T-11`. Cả ba gói B bị chặn bởi **đúng một** mắt xích: `T-06`. Phiên này
+  KHÔNG thực thi `WP-B1/B2/B3`.
+
+  (8) **CẤP BÁCH** — `Master Index §6` **cấm chạy lại official run**, nên artifact official trên
+  máy Owner (`data/` untracked + `results/` gitignored + `stash@{0} pre-T06-local-artifacts`) là
+  **không thể thay thế**: mất chúng trước khi ghi vào repo thì `T-06` không bao giờ hợp thức hoá
+  được, và cũng không được phép chạy lại để tạo lại. Phiên này không delete/stash/commit/drop bất
+  cứ thứ gì.
+
+  Validator: `branch_authority_check.sh` **PASS** (`INTEGRATION_DECISION_REQUIRED` đã xử lý tại
+  `DEC-029`), `validate_governance` **PASS** (28 hardening, 22 task file), `validate_project_state`
+  **PASS**, `validate_structure` **PASS** (27 path), `validate_routing` **PASS** (19 MAJOR, 0
+  override), `validate_easy_roadmap` **PASS**, `validate_evidence`/`validate_task_completion`
+  **PASS nhưng RỖNG**. Test suite `NOT_TESTED` (container thiếu `pandas`/`pyarrow`/`pytest`; chỉ
+  cài `numpy==2.4.6` đúng pin lockfile để tái lập manifest hash).
+
+  Mười quyết định chờ Owner (`OD-T06-01`…`OD-T06-10`), ưu tiên: **`OD-T06-01`** bảo toàn
+  artifact ngay; **`OD-T06-02`** cơ chế đưa evidence vào repo (`results/` đang bị gitignore);
+  **`OD-T06-03`** hợp thức hoá gate cho `T-06` — đường (A) tạo file task + Completion Gate viết
+  **từ tiêu chí đã đóng băng ở `T-04`/BT §7–§10** rồi Owner đóng băng, hoặc đường (B) Owner ghi
+  `DEC-0xx` dispositioning tường minh sự vắng mặt của gate (kiểu
+  `LEGACY_GATE_COMPATIBILITY_REQUIRED`); **`OD-T06-04`** thi hành `H-13` (docs-only, diff = 0).
+  Agent KHÔNG được tự chọn giữa (A) và (B).
+  Biên bản đầy đủ: `docs/sessions/S018-post-t06-evidence-closure.md`.
 - T-09A (REPAIR V-01/V-02) — 2026-09-02 — branch `claude/t09a-accounting-repair-v4ewhq` từ
   `origin/main` @ `814d185`. **IMPLEMENTED** — 12/12 REQUIRED check PASS (E1), toàn bộ bằng
   chứng chạy thật qua đường sản phẩm (UI → `app_logic` → `engine` → state), không gọi trực

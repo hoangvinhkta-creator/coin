@@ -37,6 +37,14 @@ ghim phiên bản thư viện, không nói về trạng thái cây làm việc.
     - ngữ nghĩa CHECK-A1-03 được siết lại qua COMPLETION GATE CHANGE PROPOSAL; HOẶC
     - một lần tái lập official run thất bại và `code_commit` là nghi phạm.
 
+
+**Ghi nhận S018 (2026-09-03) — vế 1 ĐÃ THOẢ, phân loại KHÔNG đổi.** Official run `T-06` chạy
+trên worktree có file untracked (`?? data/`, theo chính khai báo của chủ dự án), nên
+`git status --porcelain` KHÔNG rỗng tại thời điểm chạy. `code_commit` vì thế ghi một SHA sạch
+cho một cây không sạch. Không đổi con số nào của run; cái mất là khả năng tái lập bit-chính-xác.
+Phân loại giữ **HARDENING**, chờ Owner disposition (`OD-T06-07`). Biên bản:
+`docs/sessions/S018-post-t06-evidence-closure.md` §7.
+
 ---
 
 ## H-02 — `F-E2A1-06` — Lockfile không ghim `tzdata` của hệ điều hành
@@ -154,6 +162,17 @@ Ghi để không ai đọc nhầm: kết luận "CHECK-A1-07 PASS" KHÔNG có ng
     - `lineage.json` trở nên ghi được bởi một tiến trình không tin cậy; HOẶC
     - chủ dự án quyết định thêm `lineage_hash` phủ `source` (câu hỏi disposition đã nêu
       trong decision pack) — khi đó H-05 phải được đóng cùng.
+
+
+**Ghi nhận S018 (2026-09-03) — vế 1 ĐÃ THOẢ (chờ Owner xác nhận), phân loại KHÔNG đổi.** Không
+có evidence nào trong repository cho thấy phép đối chiếu `ethdca freeze` hai máy theo `DEC-003`
+đã được thực hiện cho `T-06`. Vế này KHÔNG điều kiện hoá theo kịch bản copy dữ liệu, nên nó
+thoả bất kể official run chạy một máy hay hai máy. Hệ quả: giới hạn nhãn `source` (mục này) và
+giới hạn độ phủ — cả hai đã công bố ở `docs/CONVENTIONS.md` và cả hai chỉ đúng MỘT biện pháp
+đối trọng này — đứng nguyên không có đối trọng trên chính run đã phát verdict. Hệ quả nghiệp vụ
+thấp vì verdict là `DO_NOT_BUILD` (chiều bảo thủ, không dẫn tới xuống tiền), nhưng đây là
+quyết định của chủ dự án. Phân loại giữ **HARDENING**, chờ `OD-T06-05`. Biên bản:
+`docs/sessions/S018-post-t06-evidence-closure.md` §6 và §7.
 
 ---
 
@@ -342,6 +361,21 @@ về `source`. Disposition (b) có diff production path = 0 nên **không tiêu 
     - H-05 hoặc H-06 được đóng bằng một cơ chế hash mở rộng — khi đó `row_count` phải được
       đưa vào cùng phạm vi bảo vệ.
 
+
+**Ghi nhận S018 (2026-09-03) — vế 1 (re-trigger BẮT BUỘC) ĐÃ KÍCH HOẠT, phân loại KHÔNG đổi.**
+Kiểm trực tiếp `docs/CONVENTIONS.md`: file này công bố giới hạn nhãn `source` (`F-PRE008-01`)
+và giới hạn độ phủ (`missing_count`/`expected_count`), nhưng **KHÔNG** công bố giới hạn
+`row_count` (rằng `row_count` nằm ngoài mọi checksum và không bao giờ được đối chiếu với file).
+Các lần `row_count` xuất hiện trong file đó đều thuộc ngữ cảnh khác (`row_count > 0`,
+`empty_series`, `missing_count`). Nghĩa là official run `T-06` **đã chạy khi nghĩa vụ công bố
+kế thừa từ phân loại BLOCKING trước đây vẫn chưa được thi hành**.
+
+Disposition (b) — công bố giới hạn trong `docs/CONVENTIONS.md` cạnh giới hạn `source` — đã được
+xác định hợp lệ từ Adoption §5.1 và có diff production path = 0, nên **KHÔNG tiêu repair cycle**
+(`DEC-012`). Đây là hạng mục sạch nhất để đóng. Phân loại giữ **HARDENING** (agent không tự
+phân loại lại), chờ `OD-T06-04`. Biên bản:
+`docs/sessions/S018-post-t06-evidence-closure.md` §7.
+
 ---
 
 ## H-14 — Trường độ phủ trong `lineage.json` nằm ngoài mọi checksum
@@ -462,6 +496,17 @@ lớn so với chính `F-S009-01` (14,29% và 295% đổi dấu).
     daily thiếu: đối chiếu `ma200` / `ma_ratio` / `rsi14` quanh mọi ngưỡng quyết định. Nếu
     tồn tại một ngày mà lệch ULP đủ để lật một so sánh ngưỡng, mục này thành BLOCKING và
     quay lại `CAP-DATA`.
+
+
+**Ghi nhận S018 (2026-09-03) — nửa đầu điều kiện ĐÃ THOẢ, phép kiểm chứng ĐẾN HẠN, chưa chạy
+được.** `T-06` đã chạy trên dữ liệu Binance THẬT, nên vế "khi `T-06` chạy trên dữ liệu Binance
+THẬT" thoả. Nửa sau — dataset official có chứa ít nhất một ngày daily thiếu hay không — chưa xác
+định được: dataset official không nằm trong repository và không có trong checkout canonical.
+Phép đối chiếu `ma200`/`ma_ratio`/`rsi14` quanh mọi ngưỡng quyết định vì thế **đang đến hạn mà
+chưa thực hiện**. Nhắc lại điều kiện leo cấp đã ghi ở trên: nếu tồn tại một ngày mà lệch ULP đủ
+để lật một so sánh ngưỡng thì mục này thành **BLOCKING** và quay lại `CAP-DATA`. Phân loại giữ
+nguyên tới khi phép kiểm chứng chạy được, chờ `OD-T06-06`. Biên bản:
+`docs/sessions/S018-post-t06-evidence-closure.md` §7.
 
 ---
 
@@ -879,6 +924,17 @@ quả cũng KHÁC `'unknown'` im lặng: SHA sai vẫn phát hiện được v�
     Sửa tối thiểu nếu Owner muốn đóng: đối chiếu `git rev-parse --show-toplevel` (hoặc
     `git remote get-url origin`) với `_REPO_ROOT`/tên repo dự án; lệch thì coi `code_commit`
     là KHÔNG phân giải được. Ước lượng ~3 dòng trong `reporting.py`.
+
+
+**Ghi nhận S018 (2026-09-03) — vế 1 ĐÃ THOẢ, phân loại KHÔNG đổi.** Không tồn tại quy trình vận
+hành `T-06` dạng văn bản nào trong repository (chính `H-28` vế 2 xác nhận điều đó chưa được
+viết). Không có văn bản thì không thể đã kiểm được rằng máy chạy official run là một git
+checkout của CHÍNH repo dự án. Giảm nhẹ, kiểm chứng được tại S018: run record khai
+`provenance_resolved=true`, và `code_commit` khai (`5228130…`) khớp đúng HEAD canonical thật của
+repo này — nên trên thực tế không có dấu hiệu SHA lạ. Cùng lý do, vế "quy trình vận hành `T-06`
+cho phép thao tác tay trên `lineage.json`" của `H-04` và `H-14` cũng chưa xác định được. Phân
+loại giữ **HARDENING**, chờ `OD-T06-09`. Biên bản:
+`docs/sessions/S018-post-t06-evidence-closure.md` §7.
 
 ---
 
