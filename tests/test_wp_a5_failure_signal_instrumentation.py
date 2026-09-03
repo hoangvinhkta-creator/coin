@@ -300,6 +300,65 @@ def test_a5_05_fs12_pooled_scope_covers_nine_windows(wm):
     assert pooled_net == pytest.approx(per_win_net)
 
 
+# =========================================================== CHECK-A5-04
+
+
+def test_a5_04_wp_a5_quantities_are_plain_python_floats(wm):
+    """Đại lượng WP-A5 giao đi phải là `float` THUẦN PYTHON, không phải `numpy.float64`.
+
+    Không phải chuyện thẩm mỹ. `failure_signals.py` gộp cờ chặn bằng
+    `any(v is True for v in ...)`, mà `numpy.bool_(True) is True` cho **False**. Một
+    `numpy.float64` đi vào so sánh ngưỡng sẽ sinh `numpy.bool_`, khiến một Failure Signal
+    TRUE trở nên VÔ HÌNH với quy tắc chặn của BT §17 — verdict sẽ ra BUILD trong khi spec
+    nói BUILD là không thể. WP-A5 không được sửa `failure_signals.py`, nên nó phải giao
+    đúng kiểu.
+    """
+    caphit = {w: opportunity_cap_hit_share(r["result"])["share"]
+              for w, r in wm["windows"].items()}
+    assert all(type(v) is float for v in caphit.values())
+    assert type(aggregate_over_windows(caphit)["value"]) is float
+    pooled = regime_advantage_pooled(wm["windows"])
+    assert type(pooled["share"]) is float
+    assert all(type(v) is float for v in pooled["by_regime"].values())
+    assert type(pooled["positive_mass"]) is float
+    assert type(pooled["net_advantage"]) is float
+
+
+def test_a5_04_wp_a5_signals_visible_to_bt17_blocking_rule(wm):
+    """Signal do WP-A5 cấp input phải BẬT ĐƯỢC cờ chặn `any_true` của BT §17.
+
+    Đây là phép kiểm end-to-end của "được TRUYỀN": một giá trị mà quy tắc chặn không nhìn
+    thấy thì chưa phải là đã truyền tới nơi.
+    """
+    caphit = aggregate_over_windows(
+        {w: opportunity_cap_hit_share(r["result"])["share"]
+         for w, r in wm["windows"].items()})["value"]
+    share = regime_advantage_pooled(wm["windows"])["share"]
+
+    fs02 = evaluate_failure_signals(opportunity_cap_hit_share=caphit)
+    fs12 = evaluate_failure_signals(regime_advantage_share=share)
+    for out, key in ((fs02, "FS-02"), (fs12, "FS-12")):
+        assert type(out["signals"][key]) is bool, (
+            f"{key} không phải bool thuần Python -> vô hình với `any_true`")
+    # trên dữ liệu tổng hợp cả hai đều TRUE; cờ chặn phải thấy được
+    assert fs02["signals"]["FS-02"] is True and fs02["any_true"] is True
+    assert fs12["signals"]["FS-12"] is True and fs12["any_true"] is True
+
+
+def test_a5_04_numpy_typed_signal_would_be_invisible():
+    """Ghi lại CƠ CHẾ của khiếm khuyết F-S015-01, để nó không bị quên.
+
+    Test này KHÔNG khẳng định hành vi hiện tại là đúng — nó chứng minh vì sao kiểu dữ liệu
+    quan trọng, và sẽ đỏ nếu `failure_signals.py` sau này được làm bền với numpy (khi đó
+    xoá test này và đóng F-S015-01).
+    """
+    out = evaluate_failure_signals(regime_advantage_share=np.float64(0.95))
+    assert out["signals"]["FS-12"], "giá trị vẫn TRUE về mặt logic"
+    assert out["any_true"] is False, (
+        "nếu dòng này đỏ nghĩa là `any_true` đã được làm bền với numpy.bool_ — "
+        "đóng F-S015-01 và xoá test này")
+
+
 # =========================================================== CHECK-A5-06
 
 

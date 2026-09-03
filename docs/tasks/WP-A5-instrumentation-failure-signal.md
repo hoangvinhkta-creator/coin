@@ -472,7 +472,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -480,11 +480,27 @@ E1
 Evidence:
 Yêu cầu: output test suite đầy đủ; không test nào bị skip hoặc nới lỏng.
 
+Kết quả (S015). `python -m pytest tests/ -q -p no:cacheprovider --durations=10`:
+**330 test collected · 330 PASS · 0 FAIL · 0 ERROR · 0 skip/xfail · exit code 0.**
+Đếm độc lập: `--collect-only` = 330 = **308 (nền trước WP-A5) + 22 (test mới của WP-A5)**;
+`grep -cE "^(FAILED|ERROR)"` = 0.
+
+Không test cũ nào bị sửa, nới lỏng hay skip — `git diff --stat b095874..HEAD -- tests/` chỉ có
+**một file MỚI** (`test_wp_a5_failure_signal_instrumentation.py`). Các bộ test khoá hành vi engine
+(`test_engine.py`, `test_wp_a3_lifecycle.py`, `test_wp_a4_*`, `test_wp_a6_processing_order.py`,
+`test_wp_a7_*`, `test_e2e.py`, `test_cli.py`) PASS nguyên trạng — đặc biệt **22 test thứ tự 18
+bước của WP-A6 vẫn xanh**, xác nhận hai điểm thu thập số liệu không lọt vào chuỗi side-effect mà
+harness thứ tự quan sát.
+
+`test_a1_09_reproducibility_same_seed_same_metrics` PASS (73,37 s) dù phiên có một commit
+checkpoint (`75c79e5`) trong lúc suite chạy — lần này không tái hiện artefact `code_commit` đổi
+giữa chừng đã gặp ở S014.
+
 Executed By:
-...
+S015 (Opus 5, Tier C / xhigh)
 
 Timestamp:
-...
+2026-09-03
 
 ## Exit Criteria
 - [ ] 100% REQUIRED checks PASS

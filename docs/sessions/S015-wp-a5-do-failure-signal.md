@@ -119,7 +119,54 @@ dương ở bất kỳ regime nào — bằng chứng thực nghiệm cho lựa 
 
 ## 6. Kết quả run đủ phase (CHECK-A5-04)
 
-<!-- điền sau khi run đủ phase kết thúc -->
+Run đủ phase trên dữ liệu tổng hợp (gate1 + gate2 + gate3 + controls + verdict, dev_limit 25):
+
+    UNKNOWN: []
+
+**Không còn Failure Signal nào UNKNOWN.** Đây là mục tiêu chính của gói, và nó đạt được ở
+nghĩa mạnh: không phải "UNKNOWN được che bằng giá trị mặc định", mà là mọi đại lượng đều có
+đường sinh ra thật. FS-06 nhận `n_adjacent = 18` config OFAT từ manifest Gate 2 (đúng số OFAT
+mà manifest sinh ra), `flip = false`.
+
+## 6b. Khiếm khuyết phát hiện NGAY TRONG run này — `F-S015-01`
+
+Run đủ phase lần đầu ghi ra `"FS-11": "False"` và `"FS-12": "True"` — **dạng chuỗi**, trong
+khi mười signal còn lại ra bool JSON thường. Dấu vết đó là `numpy.bool_` đi qua
+`json.dumps(default=str)`. Truy tiếp thì đây không phải chuyện thẩm mỹ:
+
+```
+failure_signals.py:  any_true = any(v is True for v in fs.values())
+verdict.py:27:       if fs["any_true"]:  -> BUILD_WITH_MODIFICATIONS   else: -> BUILD
+python:              np.bool_(True) is True   ==>   False
+```
+
+Nghĩa là một Failure Signal TRUE mang kiểu `numpy.bool_` **vô hình** với quy tắc chặn của
+BT §17 (*"BUILD là không thể khi còn bất kỳ Failure Signal nào TRUE"*). Nếu Gate 1/2/3 đều
+PASS và signal TRUE duy nhất mang kiểu numpy, verdict sẽ ra **BUILD** kèm đúng câu "không
+Failure Signal nào TRUE" — mở đường sang phase app một cách sai.
+
+Phân loại theo `PRODUCTION_PATH_RULE.md` (cần đủ CẢ BA): production path — CÓ
+(`src/eth_dca_os/**`, chuỗi engine → metrics → `evaluate_failure_signals` → `any_true` →
+`decide_verdict`); hậu quả nghiệp vụ trong Completion Gate/risk register — CÓ (quy tắc chặn
+BT §17, cổng verdict quyết định T-07/T-11); bằng chứng tái lập — CÓ. ⇒ **BLOCKING**, không
+phải HARDENING.
+
+**Phần WP-A5 tự sửa (trong Expected Touch Area):** hai đại lượng do gói này cấp được ép về
+`float` thuần Python tại `metrics.py`, kèm hai test kiểu và một test end-to-end khẳng định
+cờ chặn `any_true` **nhìn thấy được** FS-02/FS-12 khi chúng TRUE. Không phải sửa một dòng
+nào trong `failure_signals.py`.
+
+**Phần CÒN MỞ, định tuyến sang `WP-B1`:** `FS-11` vẫn nhận `numpy.bool_` từ `oos_ae`, và
+`any_true` vẫn mong manh với mọi đầu vào numpy về sau. Sửa gốc nằm trong `failure_signals.py`
+— file mà `CHECK-A5-07` (FROZEN) bắt buộc WP-A5 chứng minh là KHÔNG đổi, và Out of Scope của
+gói ghi rõ "mọi thay đổi trong `verdict.py`" là của WP-B1. Vì vậy phiên này **không** tự sửa,
+không tạo task mới, không đổi roadmap. Test `test_a5_04_numpy_typed_signal_would_be_invisible`
+ghi lại cơ chế và sẽ **đỏ** khi WP-B1 đóng khiếm khuyết — lúc đó xoá test và đóng F-S015-01.
+
+**Điểm cần chủ dự án quyết (trình tự, không phải kỹ thuật):** roadmap đặt `WP-B1` SAU `T-06`,
+nhưng chính `T-06` mới phát ra verdict official. Nếu giữ nguyên trình tự, verdict official
+đầu tiên sẽ được tạo bởi mã còn mang khiếm khuyết này. Phiên S015 nêu ra chứ không tự đổi
+trình tự.
 
 ## 7. Ranh giới ĐO LƯỜNG / CHÍNH SÁCH được giữ (CHECK-A5-07)
 

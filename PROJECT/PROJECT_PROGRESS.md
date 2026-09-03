@@ -190,7 +190,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | **DONE tại S014 (2026-09-03)** — 8/8 REQUIRED PASS: test thứ tự viết từ chữ BT §19 đỏ trên engine cũ (F-019 đóng, F-018 nâng lên E1: cả ba quan sát XÁC NHẬN về thứ tự, quan sát 3 BÁC BỎ về hệ quả), tác động đo từng sai lệch trên dataset synth 7,5 năm (chỉ "tạo ladder sau bước 13" đổi kết quả: +0,054 %/+0,064 % ETH, −2/543 fill, nominal Base/Smart/Crash không đổi), quyết định SỬA `engine.py` theo chữ §19 (chỉ thứ tự), 22/22 test A6 PASS, thử phá có chủ đích bị bắt, no-lookahead 15m XÁC NHẬN (Impl Plan §7 mệnh đề 1). H-15 trả lời: GIỮ NGUYÊN (CONVENTIONS #19, 0 lần xảy ra trên dataset có cửa sổ INVALID 31 ngày; vế thứ ba của RE_TRIGGER_CONDITION còn mở, chờ T-06). **CHECK-A6-08 PASS (E2 độc lập)** — `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`, reviewer tự tái lập mọi con số trước khi đọc kết luận implementer, đồng ý toàn bộ quyết định. Hai finding non-blocking phát sinh từ E2 route sang `HARDENING_BACKLOG.md` H-24/H-25 (không mở lại Scope Lock — thuộc `ladders.py`/lifecycle, ngoài touch area). Đóng F-018, F-019. GATE-A vẫn CHƯA đóng: WP-A1 còn IN_PROGRESS (budget CAP-PROV hết, chờ Owner), WP-A5 còn READY (chưa chạy). Biên bản: `docs/sessions/S014-wp-a6-thu-tu-18-buoc.md` |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
 | PLANNED | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | Hai nhóm điều kiện ĐỘC LẬP, phải thoả CẢ HAI: (A) nội tại — T-05 và **GATE-A** (WP-A1…**WP-A7** đều DONE); (B) hạ tầng — BLK-001 (mạng Binance). Gỡ BLK-001 KHÔNG cho phép chạy T-06 khi GATE-A chưa PASS |
-| PLANNED | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | Sau T-06. QUY TẮC BẮT BUỘC: nếu remediation của F-017 (Control F) ảnh hưởng Gate 1 → Gate 1 phải chạy lại trước khi coi kết quả hợp lệ (DEC-009) — đóng phần chính sách của F-002, F-015, F-017, F-026 |
+| PLANNED | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | Sau T-06. QUY TẮC BẮT BUỘC: nếu remediation của F-017 (Control F) ảnh hưởng Gate 1 → Gate 1 phải chạy lại trước khi coi kết quả hợp lệ (DEC-009) — đóng phần chính sách của F-002, F-015, F-017, F-026. **Nhận thêm `F-S015-01` (BLOCKING, từ S015)**: `any_true` dùng `v is True` nên signal mang `numpy.bool_` vô hình với quy tắc chặn BT §17 → verdict có thể ra BUILD khi một Failure Signal đang TRUE. WP-A5 đã xử lý phần của nó (FS-02/FS-12 ép về `float` thuần Python); phần gốc trong `failure_signals.py` thuộc gói này. **Trình tự cần chủ dự án quyết**: gói này đứng SAU T-06 nhưng T-06 mới là nơi phát verdict official — xem mục RSK-007 |
 | PLANNED | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | Sau T-06. Song song với WP-B1, WP-B3 |
 | PLANNED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Sau T-06. Song song với WP-B1, WP-B2. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | Sau T-06 và **GATE-B** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE). Chặn T-11 |
@@ -679,6 +679,30 @@ trong run record (`failure_signal_inputs_wp_a5`).
 **Phần CÒN LẠI của risk (không thuộc WP-A5):** giá trị số của các signal chỉ mới đo trên dữ
 liệu tổng hợp — số official phải chờ `T-06` (BLK-001). Việc *dùng* các signal này (ngưỡng,
 chính sách UNKNOWN, quy tắc chặn BUILD) thuộc **WP-B1**.
+
+**`F-S015-01` — quy tắc chặn BT §17 không nhìn thấy signal mang kiểu `numpy.bool_`
+(BLOCKING, owner = `WP-B1`, phát hiện tại S015).** `failure_signals.py` gộp cờ chặn bằng
+`any_true = any(v is True for v in fs.values())`, và `verdict.py:27` đọc đúng cờ đó. Nhưng
+`numpy.bool_(True) is True` cho **False**, nên một Failure Signal TRUE mang kiểu numpy sẽ
+**vô hình** với quy tắc chặn — trong khi BT §17 nói dứt khoát *"BUILD là không thể khi còn
+bất kỳ Failure Signal nào TRUE"*. Hệ quả nghiệp vụ: nếu Gate 1/2/3 đều PASS và signal TRUE
+duy nhất mang kiểu numpy, verdict sẽ ra **BUILD** kèm lý do "không Failure Signal nào TRUE",
+mở đường sang phase app (T-07 → T-11) sai.
+Bằng chứng E1 tại S015: (a) `np.bool_(True) is True` → `False`; (b) run đủ phase TRƯỚC khi
+WP-A5 sửa kiểu ghi ra `"FS-11": "False"`, `"FS-12": "True"` dạng **chuỗi** — dấu vết của
+`numpy.bool_` đi qua `json.dumps(default=str)`; (c) test
+`test_a5_04_numpy_typed_signal_would_be_invisible` tái lập cơ chế và sẽ ĐỎ khi khiếm khuyết
+được đóng.
+Phạm vi đã xử lý trong WP-A5: hai đại lượng do gói này cấp (FS-02, FS-12) nay được ép về
+`float` thuần Python tại `metrics.py`, có test kiểu và test "cờ chặn nhìn thấy được".
+**Phần CÒN MỞ (ngoài Expected Touch Area của WP-A5):** `FS-11` vẫn nhận `numpy.bool_` từ
+`oos_ae`, và bản thân `any_true` vẫn mong manh với mọi đầu vào numpy trong tương lai. Sửa
+gốc nằm ở `failure_signals.py` — file mà WP-A5 bị cấm chạm và `CHECK-A5-07` bắt buộc chứng
+minh là KHÔNG đổi. Định tuyến: **`WP-B1`** (sở hữu chính sách verdict, đóng phần chính sách
+của F-002). **Lưu ý trình tự cần chủ dự án quyết:** roadmap đặt `WP-B1` SAU `T-06`, nhưng
+chính `T-06` mới là nơi phát ra verdict official — nên khiếm khuyết này phải được đóng
+TRƯỚC khi verdict của `T-06` được coi là có thẩm quyền. Đây là quyết định trình tự của chủ
+dự án; phiên S015 KHÔNG tự đổi roadmap và KHÔNG tạo task mới.
 
 Nội dung gốc S001 (giữ nguyên để audit) — S001 phát hiện (E1): Benchmark B/C/D, ablation §2.3, volume z-score §2.4, bảng coverage §4 và
 XIRR §16 đều đã được cài đặt đúng nhưng **không nơi nào trong pipeline gọi chúng**. Hệ quả: một

@@ -146,9 +146,11 @@ def opportunity_cap_hit_share(result) -> dict:
                 "reason": "no_opp_cap_samples"}
     n = len(samples)
     n_hit = sum(1 for s in samples if s["at_cap"] and s["idle"])
-    idle_ratios = [(s["available"] / s["cap"]) if s["cap"] > 0 else 0.0 for s in samples]
+    idle_ratios = [float(s["available"] / s["cap"]) if s["cap"] > 0 else 0.0
+                   for s in samples]
+    # `float(...)` thuần Python là bắt buộc, không phải thẩm mỹ — xem `_advantage_share`.
     return {
-        "share": n_hit / n, "n_samples": n, "n_hit": n_hit, "reason": None,
+        "share": float(n_hit / n), "n_samples": n, "n_hit": n_hit, "reason": None,
         # Thống kê phụ trợ (KHÔNG phải input của FS-02): độ lớn của phần nằm im, để
         # WP-B1 chọn được ngưỡng vật chất mà không cần chạy lại engine.
         "at_cap_share": sum(1 for s in samples if s["at_cap"]) / n,
@@ -200,15 +202,25 @@ def regime_advantage(win_result: dict) -> dict:
 
 
 def _advantage_share(adv: dict[str, float]) -> dict:
-    """Tỷ lệ tập trung của lợi thế theo regime, dùng chung cho một window và cho gộp."""
-    positive_mass = sum(a for a in adv.values() if a > 0)
+    """Tỷ lệ tập trung của lợi thế theo regime, dùng chung cho một window và cho gộp.
+
+    Mọi số trả về được ép về `float` THUẦN PYTHON. Đây KHÔNG phải chuyện thẩm mỹ JSON:
+    `failure_signals.py` gộp cờ chặn bằng `any(v is True for v in ...)`, và
+    `numpy.bool_(True) is True` cho **False**. Một `numpy.float64` đi vào so sánh ngưỡng
+    sẽ sinh ra `numpy.bool_`, khiến signal TRUE trở nên VÔ HÌNH với quy tắc chặn của
+    BT §17 ("BUILD là không thể khi còn bất kỳ Failure Signal nào TRUE"). WP-A5 không được
+    sửa `failure_signals.py` (ngoài Expected Touch Area), nên nó phải giao đúng kiểu.
+    Xem `PROJECT/PROJECT_PROGRESS.md` finding **F-S015-01** cho phần dư của khiếm khuyết này.
+    """
+    adv = {r: float(a) for r, a in adv.items()}
+    positive_mass = float(sum(a for a in adv.values() if a > 0))
     if positive_mass <= 0:
         return {"share": None, "by_regime": adv, "positive_mass": positive_mass,
-                "net_advantage": sum(adv.values()),
+                "net_advantage": float(sum(adv.values())),
                 "reason": "no_positive_advantage_in_any_regime"}
-    return {"share": max(adv.values()) / positive_mass, "by_regime": adv,
+    return {"share": float(max(adv.values()) / positive_mass), "by_regime": adv,
             "top_regime": max(adv, key=adv.get), "positive_mass": positive_mass,
-            "net_advantage": sum(adv.values()), "reason": None}
+            "net_advantage": float(sum(adv.values())), "reason": None}
 
 
 def regime_advantage_pooled(windows: dict) -> dict:
@@ -277,7 +289,9 @@ def aggregate_over_windows(per_window: dict[str, float | None]) -> dict:
         return {"value": None, "per_window": per_window,
                 "reason": f"undefined_in_windows:{','.join(sorted(missing))}"
                           if missing else "no_window"}
-    return {"value": primary_median(per_window), "per_window": per_window, "reason": None}
+    # `float(...)` thuần Python là bắt buộc, không phải thẩm mỹ — xem `_advantage_share`.
+    return {"value": float(primary_median(per_window)),
+            "per_window": {w: float(v) for w, v in per_window.items()}, "reason": None}
 
 
 def concentration(win_result: dict) -> dict:
