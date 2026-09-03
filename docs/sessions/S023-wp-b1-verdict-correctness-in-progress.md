@@ -116,9 +116,99 @@ official — số liệu official cần CHECK-B1-08 (BLOCKED).
 `5228130`. Không mở WP-B2/WP-B3/GATE-B/T-07. Không merge `main`. Không tạo task ID mới (0 task
 mới — chỉ cập nhật check/subtask có sẵn trong `WP-B1`).
 
-## 7. Khuyến nghị
+## 7. Khuyến nghị (tại thời điểm phần 1-6 ở trên)
 
 **WP-B1 REMAINS IN PROGRESS.** 7/10 REQUIRED PASS (01, 02, 03, 05, 06, 07, 10) trong phạm vi agent
 có thể tự thực hiện. 2 check `BLOCKED` cần input/quyết định của chủ dự án (CHECK-B1-04: phê chuẩn
 ngưỡng; CHECK-B1-08: cung cấp `pipeline_state.json` official hoặc tự chạy `ethdca verdict`). 1
 check `NOT_TESTED` cần một phiên E2 độc lập riêng (CHECK-B1-09). Không đề xuất DONE.
+
+---
+
+## Addendum — Owner Decision `DEC-033` + CHECK-B1-08 Owner-supplied evidence (cùng phiên, tiếp nối)
+
+### A. CHECK-B1-04 — Owner Decision `DEC-033` (`OD-B1-02`)
+
+Chủ dự án APPROVE AS-IS toàn bộ ba ngưỡng, không đổi giá trị nào:
+
+    FS-02: opportunity_cap_hit_share > 0.5
+    FS-07: avg_cash_ratio > 0.30 AND gate1_primary_ae < 102.0
+    FS-12: regime_advantage_share > 0.80
+
+Lý do (nguyên văn Owner): "Giữ nguyên các threshold đã được sử dụng trong V2.1.5 vì đây là
+semantics implementation ban đầu và hiện chưa có evidence độc lập đủ mạnh để biện minh cho
+threshold thay thế." Không tuyên bố ngưỡng là tối ưu thực nghiệm; không tự động cho phép mang
+sang V2.2. Canonical hóa tại `docs/CONVENTIONS.md` #21(e) và `PROJECT/PROJECT_DECISIONS.md`
+`DEC-033`. **Production diff của phần này = 0** (đúng chỉ thị "Không sửa threshold trong
+production code" — giá trị số y hệt từ trước). Vì verdict T-06 quyết ở nhánh Gate 1/OOS FAIL,
+trước khi FS cap được xét (CHECK-B1-02), quyết định này không đổi semantics đã dùng ở T-06.
+`CHECK-B1-04: BLOCKED → PASS`. `F-015` ĐÓNG.
+
+### B. CHECK-B1-08 — Owner-supplied official evidence
+
+Owner thực hiện read-only verification trên COPY của frozen official T-06 backup
+(`/Users/hoangvinh/Documents/CoinDCA_T06_OFFICIAL_BACKUP_2026-09-03`), chạy
+`ethdca verdict --out-dir results`. Kết quả:
+
+- `pipeline_state.json`: `verdict=DO_NOT_BUILD`, `can_proceed_to_app=false`, `reasons` hiển thị
+  dưới dạng chuỗi literal `"[2 items]"`.
+- Xác nhận bằng đọc code: đây là hành vi THIẾT KẾ có sẵn (`cli.py::_strip()` nén MỌI list thành
+  `"[N items]"` khi ghi state "gọn"; `reporting.py::write_report()` tự ghi rõ trong docstring:
+  "Khác `pipeline_state.json` ở chỗ KHÔNG rút gọn list... còn file này giữ nguyên số liệu
+  (reasons...)") — không phải lỗi mới, không phải mất dữ liệu.
+- Full reasons cross-verified từ hai artifact KHÁC cùng gói frozen official evidence, cả hai đã
+  canonical hoá SHA-256 tại `docs/T06_OFFICIAL_EVIDENCE_RECORD.md` §4:
+  `results/baseline_808b61fa5ffe_metrics.json` và `results/report.json` — cả hai đều
+  `verdict=DO_NOT_BUILD`, `reasons=["Gate 1 FAIL", "OOS hard condition FAIL"]`,
+  `can_proceed_to_app=false`. `backtest_runs.jsonl` (`run_id=baseline_808b61fa5ffe`) corroborate:
+  `code_commit=5228130677e9e9875335eef890b6ed748a384603` (khớp official commit), `official=true`.
+- Đánh giá acceptance criteria: `report.json`/`baseline_*_metrics.json` không phải "nguồn khác"
+  hay dữ liệu suy diễn — chúng là companion file được CHÍNH THIẾT KẾ HỆ THỐNG (`save_run()`/
+  `write_report()`, không qua `_strip()`) chỉ định là bản đầy đủ, sinh cùng lúc, từ cùng phép
+  tính, thuộc cùng gói official evidence đã canonical hoá. Kết luận: **CHO PHÉP** cross-artifact
+  evidence trong trường hợp cụ thể này.
+- Không rerun T-06. Không sửa artifact nào (Owner thao tác trên bản copy; `ethdca verdict` xác
+  nhận read-only qua đọc code ở phiên trước).
+
+`CHECK-B1-08: BLOCKED → PASS`, ghi rõ cả bốn điểm trên trong evidence (không tuyên bố
+`pipeline_state.json` tự nó chứa full reasons).
+
+### C. H-26
+
+Giữ nguyên `HARDENING`. Không Scope Expansion, không sửa `gates.py` trong lượt này.
+
+### D. Test/validator chạy trong lượt này
+
+Lượt này KHÔNG sửa bất kỳ file production nào (`git status` xác nhận: chỉ
+`PROJECT/PROJECT_DECISIONS.md`, `docs/CONVENTIONS.md`, `docs/tasks/WP-B1-*.md` thay đổi — 0 file
+dưới `src/`/`tests/`). Không cần chạy lại test suite vì không có code nào để hỏng. Không rerun
+official T-06. Không chạy CHECK-B1-09.
+
+### E. Production diff của lượt này
+
+`git diff --shortstat -- src/eth_dca_os tests` = rỗng (0 file). Toàn bộ thay đổi là docs/state:
+`PROJECT/PROJECT_DECISIONS.md` (+`DEC-033`), `docs/CONVENTIONS.md` (+#21(e)),
+`docs/tasks/WP-B1-*.md` (evidence CHECK-B1-04/08, subtask B1.4/B1.8, Exit Criteria),
+`PROJECT/PROJECT_PROGRESS.md`, `docs/sessions/S023-*.md` (addendum này).
+
+### F. WP-B1 REQUIRED checks sau lượt này
+
+9/10 PASS (01, 02, 03, 04, 05, 06, 07, 08, 10). 1/10 `NOT_TESTED`: CHECK-B1-09 (E2 độc lập) — check
+REQUIRED DUY NHẤT còn lại trước khi WP-B1 có thể đạt Completion Gate 100%.
+
+### G. WP-B1 technical/lifecycle state
+
+Technical: 9/10 REQUIRED PASS, 1 NOT_TESTED. Lifecycle: `IN_PROGRESS` (không đổi, chưa DONE —
+CHECK-B1-09 chưa PASS).
+
+### H. Requirement còn lại trước Completion Gate
+
+Duy nhất: một phiên "Solo Independent Review Procedure" độc lập cho `CHECK-B1-09`, rà soát đặc
+biệt CHECK-B1-01/02/07 (và nay có thể mở rộng xem xét CHECK-B1-04/08 vì đây là hai check vừa
+đóng), lưu tại `docs/reviews/E2-WP-B1-*.md`.
+
+### Khuyến nghị cập nhật
+
+**WP-B1 REMAINS IN PROGRESS.** 9/10 REQUIRED PASS — tiến bộ đáng kể so với phần 1-6 (7/10).
+Không còn `BLOCKED` nào. Chỉ còn một việc duy nhất chặn Completion Gate: phiên E2 độc lập
+(`CHECK-B1-09`). Không đề xuất DONE.

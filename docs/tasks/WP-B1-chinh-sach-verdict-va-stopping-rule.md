@@ -5,10 +5,11 @@ Status:
 IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
 (mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
 (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
-**Kết quả phiên IN_PROGRESS:** 7/10 REQUIRED PASS (CHECK-B1-01, 02, 03, 05, 06, 07, 10), 2/10
-`BLOCKED` chờ Owner input (CHECK-B1-04 ngưỡng FS, CHECK-B1-08 artifact official
-`pipeline_state.json`), 1/10 `NOT_TESTED` chờ phiên E2 độc lập (CHECK-B1-09). WP-B1 **CHƯA DONE**
-— xem báo cáo hoàn thành phiên (`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md`).
+**Kết quả phiên IN_PROGRESS (cập nhật sau Owner Decision `DEC-033` + Owner-supplied CHECK-B1-08
+evidence):** 9/10 REQUIRED PASS (CHECK-B1-01, 02, 03, 04, 05, 06, 07, 08, 10), 1/10 `NOT_TESTED`
+chờ phiên E2 độc lập (CHECK-B1-09) — check REQUIRED DUY NHẤT còn lại. WP-B1 **CHƯA DONE** — xem
+báo cáo hoàn thành phiên (`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` +
+addendum).
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -188,15 +189,19 @@ Do not touch without Scope Expansion:
       KẾT LUẬN: KHÔNG. Bằng chứng đường mã tại CHECK-B1-02.
 - [x] B1.3 Sửa Control F giữ đúng kích thước tranche và profile giải ngân theo tháng (F-017) —
       xem CHECK-B1-03
-- [ ] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại —
-      BLOCKED, cần quyết định chủ dự án (xem CHECK-B1-04)
+- [x] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại —
+      APPROVE AS-IS (Owner Decision `DEC-033`), ghi tại `docs/CONVENTIONS.md` #21(e) (xem
+      CHECK-B1-04)
 - [x] B1.5 Ghi ánh xạ gate-fail → verdict vào `docs/CONVENTIONS.md` — mục #21(a)
 - [x] B1.6 Ghi các quy ước còn lại: phạm vi window của FS-03/FS-07 (đã có ở #20(d) từ WP-A5),
       `shift_days=10` của Control G — mục #21(c)
-- [ ] B1.7 Viết test chính sách verdict, gồm ca "đúng một FS là None"
-      *(lát cắt DEC-026/S016: ca "đúng một FS là None" cho cả 12 vị trí và ca numpy TRUE đã có
-      trong `tests/test_wp_b1_slice_failure_signal_cap.py`; test cho các subtask còn lại chưa có)*
-- [ ] B1.8 Tính lại verdict từ `pipeline_state.json` đã lưu và ghi nhận kết quả
+- [x] B1.7 Viết test chính sách verdict, gồm ca "đúng một FS là None" — 12 test mới
+      `tests/test_wp_b1_verdict_policy.py` (precedence, can_proceed_to_app, numpy/bool,
+      determinism), cộng 33 test có sẵn từ lát cắt DEC-026/S016 (`test_wp_b1_slice_failure_
+      signal_cap.py`, ca "đúng một FS là None" cho cả 12 vị trí + ca numpy TRUE) — xem CHECK-B1-07
+- [x] B1.8 Tính lại verdict từ `pipeline_state.json` đã lưu và ghi nhận kết quả — Owner-supplied
+      evidence chain (pipeline_state.json + baseline_metrics.json + report.json cùng gói
+      official), xem CHECK-B1-08
 
 ## Ready Gate
 
@@ -447,7 +452,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -475,8 +480,20 @@ trong phiên này. Status = **`BLOCKED`**. Không đổi giá trị hằng số 
 hoặc (b) thay thế kèm lý do (lưu ý: nếu thay đổi bản chất ngưỡng thì đó là thay đổi hypothesis,
 phải qua V2.2 theo Master Index §6, không vá tại chỗ ở WP-B1).
 
+**Kết quả — ĐÃ GIẢI QUYẾT (Owner Decision `DEC-033`, `OD-B1-02`, cùng phiên):** chủ dự án
+APPROVE AS-IS cả ba ngưỡng, không đổi giá trị nào — lý do nguyên văn: "Giữ nguyên các threshold
+đã được sử dụng trong V2.1.5 vì đây là semantics implementation ban đầu và hiện chưa có evidence
+độc lập đủ mạnh để biện minh cho threshold thay thế." Ghi rõ: approval KHÔNG tuyên bố ba ngưỡng
+là tối ưu thực nghiệm; KHÔNG tự động cho phép mang sang V2.2; mục đích là cố định semantics và
+tránh post-hoc tuning. Canonical hóa tại `docs/CONVENTIONS.md` #21(e) và `PROJECT/
+PROJECT_DECISIONS.md` `DEC-033`. **Production diff = 0** — `git diff` trên `failure_signals.py`
+(mọi dòng chứa `0.5|0.80|0.30|102.0`) vẫn rỗng, đúng chữ "Không sửa threshold trong production
+code" của quyết định. Vì giá trị giữ nguyên, verdict T-06 không bị ảnh hưởng (xem CHECK-B1-02).
+`F-015` ĐÓNG. Status: `BLOCKED → PASS`.
+
 Executed By:
-Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — xác nhận BLOCKED, không tự quyết định thay
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — canonicalize Owner Decision `DEC-033`,
+không tự phê chuẩn thay
 
 Timestamp:
 2026-09-03
@@ -582,6 +599,13 @@ nhiều gate fail đồng thời, `can_proceed_to_app` đúng nghĩa `verdict=="
 tham số hoá, numpy.bool_/bool equivalence ở tầng `gates.py` (họ H-26) không làm verdict sai,
 determinism (cùng input → cùng output, kể cả input mang numpy type). 12/12 PASS.
 
+**Addendum (cùng phiên, sau Owner Decision `DEC-033` + Owner-supplied CHECK-B1-08 evidence):**
+gạch đầu dòng "Thiếu bằng chứng không được coi là PASS" ở trên mô tả đúng trạng thái TẠI THỜI
+ĐIỂM viết (CHECK-B1-04/08 khi đó `BLOCKED`/thiếu input) — không phải một sự nới lỏng. Cả hai nay
+đã PASS bằng bằng chứng thật (Owner Decision có thẩm quyền cho CHECK-B1-04; artifact official do
+Owner cung cấp cho CHECK-B1-08), không phải bằng cách hạ tiêu chí. Xem evidence chi tiết tại
+chính hai check đó.
+
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
@@ -593,7 +617,7 @@ Priority:
 REQUIRED
 
 Status:
-BLOCKED — MISSING_INPUT
+PASS
 
 Evidence Level:
 E1
@@ -625,9 +649,69 @@ trên dữ liệu OFFICIAL thật mà check này đòi hỏi.
 
 WP-B1 **không được DONE** khi check này chưa PASS.
 
+**Kết quả — ĐÃ THOẢ (Owner-supplied evidence, cùng phiên, read-only trên bản backup):**
+
+Owner thực hiện read-only verification trên COPY của frozen official T-06 backup
+(`/Users/hoangvinh/Documents/CoinDCA_T06_OFFICIAL_BACKUP_2026-09-03`), chạy
+`ethdca verdict --out-dir results` (đọc `results/pipeline_state.json`). Không rerun T-06. Không
+sửa artifact nào.
+
+1. **`pipeline_state.json` xác nhận verdict/can_proceed_to_app**: `ethdca verdict` in ra
+   `verdict = DO_NOT_BUILD`, `can_proceed_to_app = false`. Trường `reasons` hiển thị dưới dạng
+   chuỗi literal `"[2 items]"` thay vì mảng đầy đủ.
+
+2. **`reasons` bị compact trong `pipeline_state.json` — HÀNH VI THIẾT KẾ, không phải lỗi mới
+   phát sinh**: đọc `src/eth_dca_os/cli.py::_strip()` xác nhận MỌI list/tuple trong payload bị
+   thay bằng `f"[{len(d)} items]"` trước khi ghi `pipeline_state.json` ("lưu state gọn để
+   `verdict` đọc lại" — comment tại chỗ gọi, `cli.py` dòng ~116). `reasons` là một list nên bị
+   compact. Xác nhận thêm bằng chính docstring `reporting.py::write_report()`: "Khác
+   `pipeline_state.json` ở chỗ KHÔNG rút gọn list: state file chỉ để CLI đọc lại nhanh, còn
+   file này giữ nguyên số liệu (reasons, per-window AE, failure signals...)." — tức là
+   `pipeline_state.json` **CHƯA TỪNG được thiết kế** để là nguồn full-fidelity cho `reasons`;
+   `report.json` và mỗi `*_metrics.json` (ghi bởi `save_run()`, KHÔNG qua `_strip()`) mới là
+   file "đầy đủ, không rút gọn" — ghi ra từ CÙNG một lần gọi `run all`, CÙNG một object
+   `verdict_payload` trong bộ nhớ, trước khi bản copy ghi vào `pipeline_state.json` bị nén.
+
+3. **Full reasons cross-verified từ hai artifact khác CÙNG gói frozen official evidence** (cả
+   hai đã được canonical hoá với SHA-256 độc lập tại `docs/T06_OFFICIAL_EVIDENCE_RECORD.md`
+   §4 — không phải dữ liệu mới/chưa kiểm chứng):
+   - `results/baseline_808b61fa5ffe_metrics.json` — ghi bởi `save_run(out_dir, "BASELINE",
+     payload, ...)` bên trong `pipeline.py::run_verdict()`, payload KHÔNG qua `_strip()`:
+     `verdict = DO_NOT_BUILD`, `reasons = ["Gate 1 FAIL", "OOS hard condition FAIL"]`,
+     `can_proceed_to_app = false`.
+   - `results/report.json` — ghi bởi `write_report()` (theo đúng docstring trên): cùng
+     `verdict = DO_NOT_BUILD`, cùng hai reasons, cùng `can_proceed_to_app = false`.
+   - `backtest_runs.jsonl` (dòng `run_id = baseline_808b61fa5ffe`) corroborate:
+     `code_commit = 5228130677e9e9875335eef890b6ed748a384603` (khớp official commit tại
+     `docs/T06_OFFICIAL_EVIDENCE_RECORD.md`/`DEC-031`), `dataset_hash =
+     3150860cb3799403ff40620b6834e4826681893e2e5cd2af3ca815d2a652d2c5`,
+     `python_version = 3.11.16`, `official = true` — buộc chặt bản ghi verdict này vào đúng
+     official run T-06, không phải một run nào khác.
+
+4. **Đánh giá acceptance criteria — CÓ cho phép cross-artifact evidence trong trường hợp
+   này**: chữ CHECK-B1-08 ("chạy `ethdca verdict` trên `pipeline_state.json` ... ghi lại
+   verdict cuối cùng cùng toàn bộ lý do") không đòi "toàn bộ lý do" phải nằm ở ĐÚNG BYTE mà
+   lệnh CLI in ra — nó đòi bằng chứng verdict + lý do đầy đủ, chính xác, từ official run, làm
+   đầu vào T-07. `report.json`/`baseline_*_metrics.json` không phải "nguồn khác" hay "suy diễn
+   mới": chúng là companion file ĐƯỢC CHÍNH THIẾT KẾ HỆ THỐNG (`write_report()` docstring) chỉ
+   định là bản đầy đủ, sinh ra cùng lúc, từ cùng phép tính, thuộc cùng gói official evidence đã
+   canonical hoá. Không có suy đoán, không có tính toán mới, không có dữ liệu ngoài gói
+   official. Vì vậy: **PASS**, với điều kiện ghi rõ đầy đủ bốn điểm ở trên (không được tuyên bố
+   "pipeline_state.json tự nó chứa full reasons").
+
+5. **Không rerun official experiment.** Không artifact nào bị sửa (Owner thao tác trên bản
+   copy, `ethdca verdict` xác nhận read-only qua đọc code — xem đánh giá phiên trước).
+
+**Verdict chính thức được ghi nhận làm đầu vào T-07** (nguyên văn, từ `baseline_808b61fa5ffe_
+metrics.json`/`report.json`, cùng khớp `pipeline_state.json`):
+
+    verdict            = DO_NOT_BUILD
+    reasons            = ["Gate 1 FAIL", "OOS hard condition FAIL"]
+    can_proceed_to_app = false
+
 Executed By:
-Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — đánh giá tính khả thi, không tính được vì
-thiếu input
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — đánh giá evidence chain do chủ dự án
+cung cấp, không tự tính toán/suy diễn số liệu mới
 
 Timestamp:
 2026-09-03
@@ -696,21 +780,22 @@ Timestamp:
 2026-09-03
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS — **7/10 PASS** (01,02,03,05,06,07,10); CHECK-B1-04/08 `BLOCKED`
-      (Owner input), CHECK-B1-09 `NOT_TESTED` (cần phiên E2 độc lập) — xem báo cáo phiên
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 7 check PASS;
+- [ ] 100% REQUIRED checks PASS — **9/10 PASS** (01,02,03,04,05,06,07,08,10); CHECK-B1-09
+      `NOT_TESTED` (cần phiên E2 độc lập) — check REQUIRED duy nhất còn lại
+- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 9 check PASS;
       E2 của CHECK-B1-09 CHƯA thực hiện
 - [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
       chứng đường mã kiểm lại được độc lập
 - [x] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md` — #20(d) (WP-A5) +
-      #21(a)-(d) (phiên này); ngoại lệ DUY NHẤT: giá trị NGƯỠNG SỐ vẫn chưa được phê chuẩn
-      (CHECK-B1-04, BLOCKED)
-- [ ] Verdict cuối cùng được ghi nhận kèm toàn bộ lý do — CHƯA (CHECK-B1-08 BLOCKED, thiếu
-      `pipeline_state.json` official)
+      #21(a)-(e) (phiên này, gồm phê chuẩn ngưỡng tại #21(e)/`DEC-033`)
+- [x] Verdict cuối cùng được ghi nhận kèm toàn bộ lý do — CHECK-B1-08 PASS: `DO_NOT_BUILD` /
+      `["Gate 1 FAIL", "OOS hard condition FAIL"]` / `can_proceed_to_app=false`, cross-verified
+      từ `baseline_808b61fa5ffe_metrics.json` + `report.json` cùng gói official (Owner-supplied)
 - [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-005 được cập nhật
 - [x] Session handoff được viết
-- [x] Không hạ REQUIRED check nào để đạt DONE — CHECK-B1-04/08/09 giữ nguyên `BLOCKED`/
-      `NOT_TESTED`, KHÔNG bị gán PASS để né
+- [x] Không hạ REQUIRED check nào để đạt DONE — CHECK-B1-04/08 PASS bằng bằng chứng thật (Owner
+      Decision có thẩm quyền; artifact official do Owner cung cấp), không phải bằng cách hạ tiêu
+      chí; CHECK-B1-09 giữ nguyên `NOT_TESTED`, KHÔNG tự cấp E2
 
 ## Escalation Triggers
 
@@ -741,8 +826,6 @@ Created:
 - `tests/test_wp_b1_verdict_policy.py` (phiên hiện tại — CHECK-B1-07: precedence, can_proceed,
   numpy/bool equivalence, determinism)
 - (dự kiến, cần phiên riêng) `docs/reviews/E2-WP-B1-*.md`
-- (dự kiến, cần Owner input) bản ghi verdict tính lại từ `pipeline_state.json` official
-  (CHECK-B1-08)
 
 Modified:
 - `src/eth_dca_os/failure_signals.py` (lát cắt DEC-026, S016 — chỉ chuẩn hoá kiểu + cờ chặn)
@@ -758,10 +841,12 @@ Modified:
 - `tests/test_benchmarks.py` (phiên hiện tại — cập nhật fixture theo định dạng tranche-list;
   thêm 2 test F-017)
 - `tests/test_e2e.py` (phiên hiện tại — cập nhật call site theo khoá payload mới)
-- `docs/CONVENTIONS.md` (phiên hiện tại — mục #21(a)-(d): ánh xạ gate-fail→verdict, chính sách
-  UNKNOWN, `shift_days=10`, Control F/G per-tranche)
+- `docs/CONVENTIONS.md` (phiên hiện tại — mục #21(a)-(e): ánh xạ gate-fail→verdict, chính sách
+  UNKNOWN, `shift_days=10`, Control F/G per-tranche, phê chuẩn ngưỡng FS-02/FS-07/FS-12)
 - `docs/tasks/WP-B1-chinh-sach-verdict-va-stopping-rule.md` (phiên hiện tại — evidence
-  CHECK-B1-02/03/05/06/07/08/04/09, subtask B1.2/B1.3/B1.5/B1.6)
+  CHECK-B1-02/03/04/05/06/07/08/10, subtask B1.2-B1.8)
+- `PROJECT/PROJECT_DECISIONS.md` (phiên hiện tại — `DEC-033`, Owner Decision APPROVE AS-IS ba
+  ngưỡng FS-02/FS-07/FS-12, đóng CHECK-B1-04)
 
 Deleted:
 - Không
@@ -777,6 +862,12 @@ Migration Impact:
   notebook nào bên ngoài `src/`/`tests/` đọc trực tiếp khoá cũ từ `GATE1` run record cần cập nhật
   theo — không có script như vậy trong repo tại thời điểm sửa (đã grep toàn `src/`, `tests/`,
   `docs/`).
+- Không có migration code nào cho CHECK-B1-08: `pipeline_state.json` compact `reasons` thành
+  chuỗi `"[N items]"` là hành vi THIẾT KẾ có sẵn từ trước phiên này (`cli.py::_strip()`,
+  `reporting.py::write_report()` docstring) — không sửa, không cần migrate. Ghi nhận vào evidence
+  CHECK-B1-08 để phiên/reviewer sau không hiểu nhầm `pipeline_state.json` là nguồn full-fidelity
+  cho `reasons`.
+- `DEC-033` không đổi giá trị ngưỡng nào — không có migration nào cho `failure_signals.py`.
 
 ## Notes
 

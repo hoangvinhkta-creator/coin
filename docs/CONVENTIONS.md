@@ -279,6 +279,22 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     `test_random_timing_many_small_tranches_lower_variance_than_one_lump` (hệ quả thống kê tất
     yếu của việc rút độc lập N lần so với gộp một lần, với cùng seed/n_sims).
 
+    (e) **Ba ngưỡng FS-02/FS-07/FS-12 — PHÊ CHUẨN GIỮ NGUYÊN** (đóng `F-015`,
+    `CHECK-B1-04`, Owner Decision `DEC-033`): `opportunity_cap_hit_share > 0.5` (FS-02),
+    `avg_cash_ratio > 0.30 AND gate1_primary_ae < 102.0` (FS-07),
+    `regime_advantage_share > 0.80` (FS-12) — chủ dự án phê chuẩn giữ nguyên nguyên văn ba
+    con số đã dùng từ commit implementation gốc (`a582ea5`, 2026-08-22), **không đổi giá trị
+    nào**. Lý do (nguyên văn Owner, `DEC-033`): "Giữ nguyên các threshold đã được sử dụng
+    trong V2.1.5 vì đây là semantics implementation ban đầu và hiện chưa có evidence độc lập
+    đủ mạnh để biện minh cho threshold thay thế." Tường minh: phê chuẩn này **không** tuyên bố
+    ba ngưỡng là tối ưu về mặt thực nghiệm (empirically optimal) — mục đích chỉ là cố định
+    semantics của V2.1.5 và tránh post-hoc tuning sau khi đã biết kết quả T-06. Phê chuẩn này
+    **không** tự động cho phép mang nguyên ba ngưỡng sang V2.2; một thiết kế lại ngưỡng thực
+    chất trong tương lai phải được đánh giá prospectively trong đúng strategy/version của nó
+    (Master Index §6), không thừa kế mặc định từ đây. Vì giá trị số không đổi, verdict T-06
+    (đã quyết ở nhánh Gate 1/OOS FAIL, trước khi Failure Signal cap được xét — xem mục #21(a)
+    và `CHECK-B1-02`) không bị ảnh hưởng bởi quyết định này.
+
 ## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
 
 Nguồn dữ liệu được khai báo **tại nơi dataset được tạo** — đó là nơi duy nhất biết dữ liệu

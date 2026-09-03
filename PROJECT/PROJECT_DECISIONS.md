@@ -2413,3 +2413,57 @@ INTEGRATED`** (quyết định này). Không còn Integration Decision nào đan
 sửa strategy/algorithm/threshold/verdict/dataset; move/recreate official tag; thêm merge/
 rebase/reset/squash/cherry-pick; push `main` (Owner đã tự thực hiện trước phiên này). Production
 diff = 0. Không tạo task ID mới.
+
+---
+
+## DEC-033 — `OD-B1-02`: APPROVE AS-IS ba ngưỡng FS-02/FS-07/FS-12 — đóng `CHECK-B1-04`
+
+Date:
+2026-09-03 (phiên WP-B1 IN_PROGRESS, nhánh `claude/wp-b1-verdict-correctness-j9d390`)
+
+Task:
+`WP-B1` / capability `CAP-VERDICT`. Đóng `CHECK-B1-04` (FROZEN 2026-08-23) và phần ngưỡng còn
+lại của `F-015`.
+
+Decision:
+
+    Chủ dự án APPROVE AS-IS toàn bộ threshold hiện tại của V2.1.5 (không đổi giá trị nào):
+
+        FS-02: opportunity_cap_hit_share > 0.5
+        FS-07: avg_cash_ratio > 0.30 AND gate1_primary_ae < 102.0
+        FS-12: regime_advantage_share > 0.80
+
+    Canonical rationale (nguyên văn Owner): "Giữ nguyên các threshold đã được sử dụng trong
+    V2.1.5 vì đây là semantics implementation ban đầu và hiện chưa có evidence độc lập đủ
+    mạnh để biện minh cho threshold thay thế."
+
+    Tường minh: approval này KHÔNG tuyên bố các threshold là empirically optimal. Mục đích
+    là (a) cố định semantics của V2.1.5, (b) tránh post-hoc tuning, (c) không đổi
+    implementation, (d) không đổi historical T-06 evidence, (e) không đổi T-06 verdict.
+    Approval này KHÔNG tự động authorize mang nguyên ba ngưỡng sang V2.2 — bất kỳ redesign
+    ngưỡng thực chất trong tương lai phải được đánh giá prospectively trong strategy/version
+    phù hợp (Master Index §6), không thừa kế mặc định.
+
+Reason:
+`F-015` xác định ba ngưỡng này do implementer tự đặt tại commit gốc `a582ea5` (2026-08-22,
+trước cả T-04 freeze 2026-08-23), không có căn cứ canonical (BT §17 chỉ mô tả định tính, không
+cho số cụ thể). `CHECK-B1-04` (FROZEN) đòi hỏi (a) phê chuẩn kèm lý do hoặc (b) thay thế kèm lý
+do; agent không có thẩm quyền tự phê chuẩn thay chủ dự án (Escalation Trigger của chính
+`WP-B1`). Chủ dự án chọn (a).
+
+**Không đổi semantics T-06.** Verdict T-06 (`DO_NOT_BUILD`) được quyết định ở nhánh Gate 1/OOS
+FAIL trong `verdict.py::decide_verdict`, xảy ra TRƯỚC khi Failure Signal cap (nơi ba ngưỡng này
+được đọc) được xét tới — xác nhận tại `CHECK-B1-02` (đã PASS, DEC-009 KHÔNG kích hoạt). Vì giá
+trị số giữ y hệt (APPROVE AS-IS, không phải thay thế), không có bất kỳ verdict/run nào — kể cả
+phi-official — bị đổi kết quả bởi quyết định này.
+
+Consequence:
+`CHECK-B1-04: BLOCKED → PASS`. Ghi vào `docs/CONVENTIONS.md` mục #21(e) (quy ước đã phê chuẩn,
+truy được về quyết định này). Không sửa `src/eth_dca_os/failure_signals.py` — production diff
+của quyết định này = 0 (giá trị số không đổi). `F-015` ĐÓNG hoàn toàn (trước đó chỉ phần "ghi
+nhận là quy ước triển khai" đã đóng qua #20/#21; phần "phê chuẩn/thay thế" nay đóng qua quyết
+định này).
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: đổi giá trị ngưỡng nào; sửa `gates.py` (H-26);
+authorize mang ngưỡng sang V2.2; chạy WP-B2/WP-B3; mở GATE-B; chạy T-07; rerun T-06. Không tạo
+task ID mới.
