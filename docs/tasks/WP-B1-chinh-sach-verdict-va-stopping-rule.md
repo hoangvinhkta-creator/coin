@@ -87,6 +87,26 @@ ngưỡng số nào là hợp lệ, và điều kiện nào bắt buộc phải 
 Gói này là **người gác cổng cuối cùng** trước T-07. Nó tồn tại để một verdict thuận lợi không được
 phát ra trên nền bằng chứng chưa đủ.
 
+## Lát cắt pre-T06 theo `DEC-026` (S016, 2026-09-03) — trạng thái gói VẪN `PLANNED`
+
+Chủ dự án cho phép (ROADMAP EXCEPTION, `PROJECT/PROJECT_DECISIONS.md` DEC-026) triển khai **một
+lát cắt giới hạn** của gói này TRƯỚC `T-06`, chỉ để đóng `F-S015-01` và phần tương ứng của
+`CHECK-B1-01`. Phạm vi thật sự đã chạm:
+
+- `src/eth_dca_os/failure_signals.py` — chuẩn hoá mỗi signal về `bool` thuần Python / `None`
+  ngay tại nơi dựng dict; cờ chặn `any_true` bật khi có signal TRUE **hoặc** còn signal UNKNOWN;
+  thêm hai khoá máy đọc được `true` và `cap_cause`. **Không đổi ngưỡng nào.**
+- `tests/test_wp_b1_slice_failure_signal_cap.py` — 33 test (đỏ 25/33 trên bản trước lát cắt).
+- `tests/test_wp_a5_failure_signal_instrumentation.py` — xoá test đánh dấu
+  `test_a5_04_numpy_typed_signal_would_be_invisible` (đã hoàn thành vai trò); khoá
+  `test_a5_07_no_diff_in_policy_files` vào đúng khoảng lịch sử của WP-A5.
+- **`verdict.py` KHÔNG đổi** (không có authority mới): `git diff b095874..HEAD -- verdict.py` rỗng.
+
+KHÔNG thuộc lát cắt (vẫn mở, theo DEC-026 mục OUT): B1.3 (Control F / F-017), B1.4 (ngưỡng),
+B1.5/B1.6 (`docs/CONVENTIONS.md`), B1.8, `CHECK-B1-02…10`, E2 (`CHECK-B1-09`). Gói **không**
+chuyển trạng thái; Completion Gate giữ nguyên câu chữ. Biên bản:
+`docs/sessions/S016-wp-b1-lat-cat-dec026.md`.
+
 ## Ranh giới trách nhiệm
 
 Gói này chịu trách nhiệm **CHÍNH SÁCH VERDICT (verdict policy)**. Việc **ĐO LƯỜNG** ba đại lượng
@@ -155,12 +175,17 @@ Do not touch without Scope Expansion:
 
 ## Subtasks
 - [ ] B1.1 Chốt và cài đặt quy tắc: REQUIRED Failure Signal còn UNKNOWN thì không được BUILD
+      *(lát cắt DEC-026/S016: CƠ CHẾ đã cài — UNKNOWN kích hoạt cap trong `failure_signals.py`,
+      verdict không thể là BUILD; phần CHỐT CHÍNH SÁCH — UNKNOWN nên cho `BUILD_WITH_MODIFICATIONS`
+      như hiện nay hay `INCONCLUSIVE` — còn mở vì cần chạm `verdict.py`)*
 - [ ] B1.2 Xác định remediation nào ảnh hưởng Gate 1 và áp DEC-009 (xem CHECK-B1-02)
 - [ ] B1.3 Sửa Control F giữ đúng kích thước tranche và profile giải ngân theo tháng (F-017)
 - [ ] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại
 - [ ] B1.5 Ghi ánh xạ gate-fail → verdict vào `docs/CONVENTIONS.md`
 - [ ] B1.6 Ghi các quy ước còn lại: phạm vi window của FS-03/FS-07, `shift_days=10` của Control G
 - [ ] B1.7 Viết test chính sách verdict, gồm ca "đúng một FS là None"
+      *(lát cắt DEC-026/S016: ca "đúng một FS là None" cho cả 12 vị trí và ca numpy TRUE đã có
+      trong `tests/test_wp_b1_slice_failure_signal_cap.py`; test cho các subtask còn lại chưa có)*
 - [ ] B1.8 Tính lại verdict từ `pipeline_state.json` đã lưu và ghi nhận kết quả
 
 ## Ready Gate
@@ -194,7 +219,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -208,11 +233,53 @@ về **không phải** `BUILD`, đồng thời `can_proceed_to_app` là `false`.
 Hôm nay `any_true = any(v is True ...)` khiến `None` không kích hoạt cap và verdict BUILD vẫn phát
 ra — đây là ca phải thất bại trước khi sửa. Đóng F-002 phần chính sách.
 
+**Kết quả (S016, 2026-09-03) — PARTIAL: pre-T06 slice theo `DEC-026`.** Phần PASS dưới đây là
+đúng chữ của check này (E1, test tự động); nó CHƯA qua E2 độc lập (`CHECK-B1-09` vẫn thuộc WP-B1
+đầy đủ theo DEC-026 (5)) và chưa được tính lại trên official run (`CHECK-B1-08`). Chín check còn
+lại giữ `NOT_TESTED`.
+
+- Test: `tests/test_wp_b1_slice_failure_signal_cap.py` (33 test).
+  `test_b1_01_exactly_one_unknown_signal_blocks_build[FS-01…FS-12]` dựng bộ input đủ 12 signal
+  đều FALSE (cùng số với `test_verdict_mapping`), rồi xoá đúng input của **từng** vị trí để chỉ
+  signal đó là `None`; khẳng định `unknown == [k]`, 11 signal còn lại `is False`, verdict
+  `!= "BUILD"`, `can_proceed_to_app is False`, và lý do có tên signal. Thêm ca 12/12 UNKNOWN.
+- **ĐỎ TRƯỚC KHI SỬA** (chạy trên `failure_signals.py` tại `28b0255`, bản trước lát cắt):
+  `25 failed, 8 passed` — đỏ đủ 12/12 vị trí UNKNOWN (`AssertionError: FS-xx UNKNOWN nhưng cap
+  không bật — BUILD sẽ lọt`), đỏ 9/12 vị trí numpy TRUE (FS-02/03/05/06/07/09/10/11/12; FS-01/04/08
+  vốn đã ra bool thuần vì đi qua `sum`/`bool()`/`not`), đỏ ca "toàn numpy FALSE phải là bool thuần".
+  Log: `tests_RED_before_fix_verbose.log` (scratchpad S016; trích trong biên bản).
+- **XANH SAU KHI SỬA**: `33 passed in 0.12s`. Test đánh dấu
+  `test_a5_04_numpy_typed_signal_would_be_invisible` (WP-A5) chuyển ĐỎ đúng như nó tự tiên đoán
+  (`assert True is False`) → xoá theo hướng dẫn ghi trong chính test đó. F-S015-01 ĐÓNG.
+- Sửa production DUY NHẤT: `src/eth_dca_os/failure_signals.py` (+45/−15, phần lớn là docstring
+  hợp đồng): hàm `_flag()` ép `bool()`/giữ `None` tại nơi dựng dict; `any_true = bool(trues) or
+  bool(unknown)`; thêm `true` (danh sách TRUE) và `cap_cause` ∈ {`TRUE`, `UNKNOWN`,
+  `TRUE_AND_UNKNOWN`, `None`}. Ngưỡng 0.5/0.80/0.30/102.0/3.0/0.50/100.0 không đổi
+  (`test_a5_07_verdict_policy_thresholds_unchanged` vẫn xanh).
+- **`verdict.py` không đổi**: `git diff --stat b095874..HEAD -- src/eth_dca_os/verdict.py` = rỗng;
+  working tree = HEAD (md5 `c44f6982…`). Vì vậy ca UNKNOWN đi ra `BUILD_WITH_MODIFICATIONS` (nhánh
+  duy nhất không-BUILD khi ba gate PASS) — đủ cho chữ của check; việc UNKNOWN có nên là
+  `INCONCLUSIVE` thay vì BWM là quyết định của WP-B1 đầy đủ (B1.1/B1.5).
+- Chỉ blocking semantics đổi: `test_b1_01_only_blocking_semantics_changed_vs_pre_slice` nạp
+  `failure_signals.py` tại `28b0255` từ git, chạy 35 vector input trên cả hai bản: giá trị logic
+  12 signal và danh sách `unknown` trùng khớp từng vector; `any_true` chỉ khác ở đúng hai ca của
+  F-S015-01/CHECK-B1-01. Ánh xạ gate-fail → verdict giữ nguyên
+  (`test_b1_01_gate_fail_mapping_unchanged_regardless_of_cap`).
+- Full suite: `python -m pytest tests/ -q -p no:cacheprovider` → `365 tests collected`, 365 kết quả `.` (0 `F`/`E`/`s`/`x`), `EXIT=0`, real 14m04s (pyproject `addopts="-q"` nên không in dòng tổng kết; đếm từ log). Trước lát cắt tại `28b0255`: 333 collected (orchestrator ghi 330 PASS); 333 − 1 (test đánh dấu xoá) + 33 (test lát cắt) = 365 ✓ (trước lát cắt: 330 PASS;
+  −1 test đánh dấu, +33 test lát cắt).
+- Run đủ phase TRƯỚC/SAU (synthetic 2018-01-01→2026-06-30, `dev_limit=25`, `n_sims=50`, KHÔNG phải
+  official — DEC-003/BLK-001): `FS-11` từ chuỗi `"False"` (dấu vết `numpy.bool_`) thành bool JSON `false`; 11 signal còn lại, `UNKNOWN: []`, khối `failure_signal_inputs_wp_a5`, kết quả bốn gate và verdict `DO_NOT_BUILD` (`Gate 1 FAIL`) **y hệt** giữa hai run — nhánh cap không được chạm tới ở dataset này. Khoá mới: `true = ['FS-02','FS-03','FS-04','FS-08','FS-12']`, `cap_cause = 'TRUE'`. Bảng đầy đủ: biên bản S016 §7.
+- Phần dư mỹ thuật (KHÔNG sửa vì `verdict.py` ngoài authority của lát cắt): khi cap bật CHỈ vì
+  UNKNOWN, `verdict.py:30` in `"Failure-signal cap:  TRUE"` với danh sách rỗng; dòng lý do kế
+  tiếp (`FS chưa đánh giá được: …`) và khoá `cap_cause = "UNKNOWN"` trong `failure_signals` mới là
+  nguồn đúng. Ghi nhận cho B1.5 của WP-B1 đầy đủ.
+
 Executed By:
-...
+Fable 5.1 (Tier D / max — đúng canonical routing của gói), phiên S016; lát cắt do chủ dự án cho
+phép tại DEC-026
 
 Timestamp:
-...
+2026-09-03
 
 #### CHECK-B1-02 — DEC-009: quy tắc Gate 1 staleness được cưỡng chế
 Priority:
@@ -480,11 +547,16 @@ có thể hỏng.
 ## Changed Files Registry
 
 Created:
+- `tests/test_wp_b1_slice_failure_signal_cap.py` (lát cắt DEC-026, S016)
+- `docs/sessions/S016-wp-b1-lat-cat-dec026.md` (lát cắt DEC-026, S016)
 - (dự kiến) `docs/reviews/E2-WP-B1-*.md`
 - (dự kiến) bản ghi Gate 1 chạy lại, nếu DEC-009 kích hoạt
 
 Modified:
-- (dự kiến) `src/eth_dca_os/verdict.py`, `failure_signals.py`, `benchmarks.py`
+- `src/eth_dca_os/failure_signals.py` (lát cắt DEC-026, S016 — chỉ chuẩn hoá kiểu + cờ chặn)
+- `tests/test_wp_a5_failure_signal_instrumentation.py` (lát cắt DEC-026, S016 — xoá test đánh dấu
+  F-S015-01; khoá CHECK-A5-07 vào khoảng `b095874..d4586b8`)
+- (dự kiến) `src/eth_dca_os/verdict.py`, `benchmarks.py`
 - (dự kiến) `docs/CONVENTIONS.md`, `tests/`
 
 Deleted:

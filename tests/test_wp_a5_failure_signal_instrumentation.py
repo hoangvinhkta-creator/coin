@@ -40,8 +40,13 @@ from eth_dca_os.metrics import (
 )
 from eth_dca_os.windows import primary_median
 
-# SHA của commit ngay TRƯỚC WP-A5 (WP-A6 DONE). Dùng cho CHECK-A5-08.
+# SHA của commit ngay TRƯỚC WP-A5 (WP-A6 DONE). Dùng cho CHECK-A5-08 và CHECK-A5-07.
 PRE_A5_SHA = "b095874"
+# SHA khi WP-A5 DONE (Owner Checkpoint S015). CHECK-A5-07 khẳng định WP-A5 KHÔNG đụng hai file
+# chính sách — một mệnh đề về khoảng lịch sử của WP-A5, nên khoá vào đúng khoảng đó chứ không
+# vào HEAD: từ lát cắt WP-B1 (DEC-026) trở đi, `failure_signals.py` được phép đổi bởi chủ sở
+# hữu chính sách (CAP-VERDICT), và điều đó không làm mệnh đề của WP-A5 sai đi.
+A5_DONE_SHA = "d4586b8"
 
 
 # ------------------------------------------------------------------ tiện ích
@@ -306,12 +311,17 @@ def test_a5_05_fs12_pooled_scope_covers_nine_windows(wm):
 def test_a5_04_wp_a5_quantities_are_plain_python_floats(wm):
     """Đại lượng WP-A5 giao đi phải là `float` THUẦN PYTHON, không phải `numpy.float64`.
 
-    Không phải chuyện thẩm mỹ. `failure_signals.py` gộp cờ chặn bằng
+    Không phải chuyện thẩm mỹ. Tại thời điểm WP-A5, `failure_signals.py` gộp cờ chặn bằng
     `any(v is True for v in ...)`, mà `numpy.bool_(True) is True` cho **False**. Một
     `numpy.float64` đi vào so sánh ngưỡng sẽ sinh `numpy.bool_`, khiến một Failure Signal
     TRUE trở nên VÔ HÌNH với quy tắc chặn của BT §17 — verdict sẽ ra BUILD trong khi spec
     nói BUILD là không thể. WP-A5 không được sửa `failure_signals.py`, nên nó phải giao
     đúng kiểu.
+
+    Lát cắt WP-B1 theo DEC-026 đã chuẩn hoá kiểu ngay trong `failure_signals.py` (đóng
+    F-S015-01; test đánh dấu `test_a5_04_numpy_typed_signal_would_be_invisible` đã xoá vì
+    hoàn thành vai trò). Test này vẫn giữ: hợp đồng "WP-A5 giao float thuần Python" là một
+    lớp phòng thủ độc lập, không phụ thuộc vào lớp chuẩn hoá phía sau.
     """
     caphit = {w: opportunity_cap_hit_share(r["result"])["share"]
               for w, r in wm["windows"].items()}
@@ -343,20 +353,6 @@ def test_a5_04_wp_a5_signals_visible_to_bt17_blocking_rule(wm):
     # trên dữ liệu tổng hợp cả hai đều TRUE; cờ chặn phải thấy được
     assert fs02["signals"]["FS-02"] is True and fs02["any_true"] is True
     assert fs12["signals"]["FS-12"] is True and fs12["any_true"] is True
-
-
-def test_a5_04_numpy_typed_signal_would_be_invisible():
-    """Ghi lại CƠ CHẾ của khiếm khuyết F-S015-01, để nó không bị quên.
-
-    Test này KHÔNG khẳng định hành vi hiện tại là đúng — nó chứng minh vì sao kiểu dữ liệu
-    quan trọng, và sẽ đỏ nếu `failure_signals.py` sau này được làm bền với numpy (khi đó
-    xoá test này và đóng F-S015-01).
-    """
-    out = evaluate_failure_signals(regime_advantage_share=np.float64(0.95))
-    assert out["signals"]["FS-12"], "giá trị vẫn TRUE về mặt logic"
-    assert out["any_true"] is False, (
-        "nếu dòng này đỏ nghĩa là `any_true` đã được làm bền với numpy.bool_ — "
-        "đóng F-S015-01 và xoá test này")
 
 
 # =========================================================== CHECK-A5-06
@@ -431,9 +427,10 @@ def test_a5_07_unknown_policy_untouched():
 
 
 def test_a5_07_no_diff_in_policy_files():
-    """`git diff` đúng như chữ CHECK-A5-07: hai file chính sách không đổi kể từ trước WP-A5."""
+    """`git diff` đúng như chữ CHECK-A5-07: hai file chính sách không đổi trong suốt WP-A5
+    (`PRE_A5_SHA..A5_DONE_SHA`)."""
     diff = subprocess.run(
-        ["git", "diff", "--stat", f"{PRE_A5_SHA}..HEAD", "--",
+        ["git", "diff", "--stat", f"{PRE_A5_SHA}..{A5_DONE_SHA}", "--",
          "src/eth_dca_os/verdict.py", "src/eth_dca_os/failure_signals.py"],
         capture_output=True, text=True, check=True).stdout.strip()
     assert diff == "", f"WP-A5 đã đụng vào file chính sách:\n{diff}"

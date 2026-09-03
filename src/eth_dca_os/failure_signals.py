@@ -1,6 +1,19 @@
 """Failure Signals FS-01..FS-12 và verdict cap — Backtest §17, Impl Plan §6.
 
 Mỗi signal đánh giá từ artifact đã tính; thiếu input -> None (UNKNOWN), không đoán.
+
+Hợp đồng đầu ra với `verdict.py` (WP-B1 lát cắt DEC-026, đóng F-S015-01 / CHECK-B1-01):
+
+* `signals[k]` chỉ nhận ba giá trị: `True` / `False` (bool THUẦN Python) hoặc `None`.
+  `verdict.py` và chính file này kiểm bằng `x is True` — phép so danh tính với singleton
+  của Python — mà `numpy.bool_(True) is True` cho False. Nên mọi signal được chuẩn hoá
+  kiểu NGAY TẠI nơi dựng dict, không để kiểu của input (`numpy.float64` từ `oos_ae`,
+  `numpy.bool_` từ diagnostics…) quyết định một signal TRUE có "được nhìn thấy" hay không.
+* `any_true` là CỜ CHẶN mà `verdict.py` đọc để giới hạn verdict ở BUILD_WITH_MODIFICATIONS.
+  Nó bật khi có signal TRUE — HOẶC khi còn signal UNKNOWN: BT §17 liệt kê FS-01…FS-12 mà
+  không đánh dấu mục nào tuỳ chọn, nên "chưa đánh giá được" không phải bằng chứng "không
+  TRUE"; verdict BUILD không được phát ra trên bằng chứng chưa đủ (fail-closed). Tên khoá
+  giữ nguyên vì là hợp đồng với `verdict.py`; `cap_cause` nói rõ vì sao cờ bật.
 """
 from __future__ import annotations
 
@@ -18,6 +31,16 @@ FS_DESCRIPTIONS = {
     "FS-11": "OOS AccumulationEfficiency < 100%",
     "FS-12": "Lợi thế tập trung vào một crash/regime duy nhất",
 }
+
+
+def _flag(value) -> bool | None:
+    """Chuẩn hoá một signal về `bool` thuần Python; `None` (UNKNOWN) giữ nguyên là `None`.
+
+    Đây là điểm sửa gốc của F-S015-01: ép kiểu tại nguồn để cả `any_true` ở đây lẫn danh
+    sách tên trong `verdict.py` (cùng dùng `is True`) đều thấy được signal TRUE, không đổi
+    một ngưỡng nào.
+    """
+    return None if value is None else bool(value)
 
 
 def evaluate_failure_signals(*, gate1_windows: dict | None = None,
@@ -40,15 +63,15 @@ def evaluate_failure_signals(*, gate1_windows: dict | None = None,
 
     if gate1_windows is not None:
         below = sum(1 for v in gate1_windows.values() if v < 100.0)
-        fs["FS-01"] = below > len(gate1_windows) / 2
+        fs["FS-01"] = _flag(below > len(gate1_windows) / 2)
     else:
         fs["FS-01"] = None
 
-    fs["FS-02"] = (opportunity_cap_hit_share > 0.5) if opportunity_cap_hit_share is not None else None
+    fs["FS-02"] = _flag(opportunity_cap_hit_share > 0.5) if opportunity_cap_hit_share is not None else None
 
     if concentration is not None:
-        fs["FS-03"] = (concentration.get("ae_ex_month", 100.0) < 100.0
-                       or concentration.get("ae_ex_quarter", 100.0) < 100.0)
+        fs["FS-03"] = _flag(concentration.get("ae_ex_month", 100.0) < 100.0
+                            or concentration.get("ae_ex_quarter", 100.0) < 100.0)
     else:
         fs["FS-03"] = None
 
@@ -57,26 +80,33 @@ def evaluate_failure_signals(*, gate1_windows: dict | None = None,
     else:
         fs["FS-04"] = None
 
-    fs["FS-05"] = score_bimodal
-    fs["FS-06"] = adjacent_config_flip
+    fs["FS-05"] = _flag(score_bimodal)
+    fs["FS-06"] = _flag(adjacent_config_flip)
 
     if avg_cash_ratio is not None and gate1_primary_ae is not None:
-        fs["FS-07"] = avg_cash_ratio > 0.30 and gate1_primary_ae < 102.0
+        fs["FS-07"] = _flag(avg_cash_ratio > 0.30 and gate1_primary_ae < 102.0)
     else:
         fs["FS-07"] = None
 
     if v2_eth is not None and (random_timing_p95 is not None or random_anchor_p95 is not None):
         beats_f = (random_timing_p95 is None) or (v2_eth > random_timing_p95)
         beats_g = (random_anchor_p95 is None) or (v2_eth > random_anchor_p95)
-        fs["FS-08"] = not (beats_f and beats_g)
+        fs["FS-08"] = _flag(not (beats_f and beats_g))
     else:
         fs["FS-08"] = None
 
-    fs["FS-09"] = (shortfall_pp > 3.0) if shortfall_pp is not None else None
-    fs["FS-10"] = (gate2_oos_pass_share < 0.50) if gate2_oos_pass_share is not None else None
-    fs["FS-11"] = (oos_ae < 100.0) if oos_ae is not None else None
-    fs["FS-12"] = (regime_advantage_share > 0.80) if regime_advantage_share is not None else None
+    fs["FS-09"] = _flag(shortfall_pp > 3.0) if shortfall_pp is not None else None
+    fs["FS-10"] = _flag(gate2_oos_pass_share < 0.50) if gate2_oos_pass_share is not None else None
+    fs["FS-11"] = _flag(oos_ae < 100.0) if oos_ae is not None else None
+    fs["FS-12"] = _flag(regime_advantage_share > 0.80) if regime_advantage_share is not None else None
 
-    any_true = any(v is True for v in fs.values())
-    return {"signals": fs, "any_true": any_true,
-            "unknown": [k for k, v in fs.items() if v is None]}
+    trues = [k for k, v in fs.items() if v is True]
+    unknown = [k for k, v in fs.items() if v is None]
+    # Cờ chặn BT §17: TRUE hoặc UNKNOWN đều chặn BUILD (xem docstring module). `cap_cause`
+    # tồn tại vì `verdict.py` chỉ in được tên các signal TRUE — khi cờ bật do UNKNOWN, nguồn
+    # sự thật máy đọc được về nguyên nhân phải nằm ở đây.
+    any_true = bool(trues) or bool(unknown)
+    cap_cause = ("TRUE_AND_UNKNOWN" if trues and unknown
+                 else "TRUE" if trues else "UNKNOWN" if unknown else None)
+    return {"signals": fs, "any_true": any_true, "true": trues, "unknown": unknown,
+            "cap_cause": cap_cause}
