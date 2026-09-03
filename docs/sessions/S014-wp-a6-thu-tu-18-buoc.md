@@ -228,7 +228,22 @@ loại khi so sánh.
 
 ### 9.1 Full suite trên `src` cuối
 
-(bổ sung khi lệnh `python -m pytest -p no:cacheprovider -rf` kết thúc — xem dòng cuối mục này)
+```
+python -m pytest -p no:cacheprovider -rf        (286 test cũ + 22 test A6)
+  -> 1 failed, 307 passed in 744.22s (0:12:24)
+  FAILED tests/test_wp_a1_provenance.py::test_a1_09_reproducibility_same_seed_same_metrics
+         code_commit không tái lập: 'b717634…' != '1af38f3…'
+```
+
+Nguyên nhân failure duy nhất: phiên orchestrator commit checkpoint `1af38f3` ("WP-A6: khoá lại thứ
+tự xử lý 18 bước theo BT §19 (checkpoint, VERIFYING)", 03:51:03 UTC) ĐÚNG lúc suite đang chạy, giữa
+hai lần gọi pipeline của test A1-09 (test so `code_commit` của hai run) — artefact HEAD đổi giữa
+chừng, không liên quan `engine.py`. Chạy lại riêng test đó trên HEAD ổn định `1af38f3`:
+**`1 passed in 75.25s`** → **308/308 PASS**. Không test cũ nào bị sửa/nới/skip.
+
+Ghi chú về commit: `1af38f3` chứa đúng 8 file của phiên này (working tree sạch sau đó). Hai chỉnh
+sửa SAU commit đó — evidence CHECK-A6-07 trong file task và chính mục §9.1 này — đang ở working
+tree, chưa commit (đúng chỉ thị "không commit").
 
 ---
 

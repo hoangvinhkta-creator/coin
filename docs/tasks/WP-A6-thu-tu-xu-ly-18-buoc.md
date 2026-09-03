@@ -416,7 +416,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -425,11 +425,25 @@ Evidence:
 Yêu cầu: output test suite đầy đủ; nếu quyết định là sửa thứ tự thì so metric trước–sau và quy sai
 lệch về đúng bước đã đổi.
 
+Kết quả: baseline HEAD `b717634` (trước thay đổi): `286 passed / 0 failed`. Full suite trên code cuối
+(`python -m pytest -p no:cacheprovider -rf`, 286 test cũ + 22 test A6): **`1 failed, 307 passed in
+744.22s`** — failure duy nhất `test_wp_a1_provenance.py::test_a1_09_reproducibility_same_seed_same_metrics`
+với `code_commit` `b717634…` ≠ `1af38f3…`: phiên orchestrator đã commit checkpoint `1af38f3` lúc
+03:51:03 UTC GIỮA hai lần gọi pipeline của test đó (test so `code_commit` của hai run), nên HEAD đổi
+trong lúc suite chạy — artefact môi trường, không liên quan `engine.py`. Chạy lại riêng test đó trên
+HEAD ổn định `1af38f3`: **`1 passed in 75.25s`** → toàn bộ 308/308 PASS. Không test cũ nào bị sửa,
+nới lỏng hay skip (`grep -rn "skip\|xfail" tests/` rỗng cho file A6); các test cũ của engine
+(`test_engine.py`, `test_wp_a3_lifecycle.py`, `test_wp_a4_*`, `test_wp_a7_*`, `test_e2e.py`) PASS nguyên
+trạng với thứ tự mới. Thay đổi kết quả mô phỏng: đúng bảng CHECK-A6-03 — chỉ nhóm "tạo ladder sau
+bước 13" đổi (+0,054 % / +0,064 % ETH, 543 → 541 fill, nominal BASE/SMART/CRASH không đổi), phân kỳ
+đầu tiên 2019-01-04 07:30 → 07:45 = fill S0 của ladder đầu tiên lùi một nến (bước 13→14); hai nhóm
+còn lại trùng bit.
+
 Executed By:
-...
+S014 agent (Claude, Tier D / max)
 
 Timestamp:
-...
+2026-09-03
 
 ### Audit độc lập
 
