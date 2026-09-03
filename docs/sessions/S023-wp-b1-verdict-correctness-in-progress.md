@@ -86,8 +86,13 @@ Không có finding BLOCKING mới nào khác phát sinh trong phạm vi capabili
 Targeted: `pytest tests/test_benchmarks.py tests/test_e2e.py tests/test_gates_verdict.py
 tests/test_wp_b1_verdict_policy.py -v` → **26/26 PASS**.
 
-Full suite: xem `EXIT`/tổng kết cuối file này (chạy `pytest tests/ -q -p no:cacheprovider`,
-tương tự lệnh dùng ở lát cắt S016).
+Full suite (`pytest tests/ -q -p no:cacheprovider`): **391 collected, 391 PASS, 0 FAIL/ERROR/SKIP,
+`EXIT=0`.** (Lần chạy đầu tiên trong phiên phát hiện 1 FAIL không liên quan đến WP-B1:
+`test_a1_08_lockfile_matches_installed_environment` — venv sạch dựng trong phiên này lệch phiên
+bản transitive dependency của `requests` so với `pyproject.lock` do PyPI có bản patch mới hơn từ
+lúc lockfile được sinh. Đây là artifact môi trường của phiên, không phải regression code — xác
+nhận bằng cách ghim lại đúng phiên bản theo `pyproject.lock` [không sửa file production/lockfile
+nào] rồi chạy lại full suite sạch, PASS 391/391.) → **CHECK-B1-10 PASS**.
 
 Production diff phiên này (đo bằng lệnh, không suy diễn):
 `git diff --shortstat fa6422c -- src/eth_dca_os` → 3 file (`benchmarks.py`, `cli.py`,
@@ -113,7 +118,7 @@ mới — chỉ cập nhật check/subtask có sẵn trong `WP-B1`).
 
 ## 7. Khuyến nghị
 
-**WP-B1 REMAINS IN PROGRESS.** 7/10 REQUIRED PASS trong phạm vi agent có thể tự thực hiện. 2 check
-`BLOCKED` cần input/quyết định của chủ dự án (CHECK-B1-04: phê chuẩn ngưỡng; CHECK-B1-08: cung cấp
-`pipeline_state.json` official hoặc tự chạy `ethdca verdict`). 1 check `NOT_TESTED` cần một phiên
-E2 độc lập riêng (CHECK-B1-09). Không đề xuất DONE.
+**WP-B1 REMAINS IN PROGRESS.** 7/10 REQUIRED PASS (01, 02, 03, 05, 06, 07, 10) trong phạm vi agent
+có thể tự thực hiện. 2 check `BLOCKED` cần input/quyết định của chủ dự án (CHECK-B1-04: phê chuẩn
+ngưỡng; CHECK-B1-08: cung cấp `pipeline_state.json` official hoặc tự chạy `ethdca verdict`). 1
+check `NOT_TESTED` cần một phiên E2 độc lập riêng (CHECK-B1-09). Không đề xuất DONE.

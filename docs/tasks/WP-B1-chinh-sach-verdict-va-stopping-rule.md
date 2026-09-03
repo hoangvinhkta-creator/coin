@@ -5,10 +5,10 @@ Status:
 IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
 (mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
 (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
-**Kết quả phiên IN_PROGRESS:** 7/10 REQUIRED PASS (CHECK-B1-01/02/03/05/06/07 + CHECK-B1-10 chờ
-full suite), 2/10 `BLOCKED` chờ Owner input (CHECK-B1-04 ngưỡng, CHECK-B1-08 artifact official),
-1/10 `NOT_TESTED` chờ phiên E2 độc lập (CHECK-B1-09). WP-B1 **CHƯA DONE** — xem báo cáo hoàn thành
-phiên (`docs/sessions/`).
+**Kết quả phiên IN_PROGRESS:** 7/10 REQUIRED PASS (CHECK-B1-01, 02, 03, 05, 06, 07, 10), 2/10
+`BLOCKED` chờ Owner input (CHECK-B1-04 ngưỡng FS, CHECK-B1-08 artifact official
+`pipeline_state.json`), 1/10 `NOT_TESTED` chờ phiên E2 độc lập (CHECK-B1-09). WP-B1 **CHƯA DONE**
+— xem báo cáo hoàn thành phiên (`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md`).
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -669,23 +669,35 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
 
 Evidence:
-Yêu cầu: output test suite đầy đủ.
+`python -m pytest tests/ -q -p no:cacheprovider` (venv sạch, `pip install -e ".[dev]"`, sau đó
+ghim lại đúng phiên bản transitive dependency của `requests` theo `pyproject.lock` — venv ban đầu
+lệch do PyPI có bản patch mới hơn kể từ khi lockfile được sinh; đây là artifact môi trường phiên
+này, KHÔNG phải regression code, xác nhận bằng `test_a1_08_lockfile_matches_installed_environment`
+PASS trở lại sau khi ghim đúng phiên bản, không sửa `pyproject.lock` hay bất kỳ file production
+nào để né check).
+
+**Kết quả: 391 tests collected, 391 PASS, 0 FAIL, 0 ERROR, 0 SKIP, 0 XFAIL. `EXIT=0`.** (addopts
+`-q` trong `pyproject.toml` không in dòng tổng kết dạng "N passed" — đếm bằng số `.` trong log,
+đối chiếu `EXIT=$?`). Không test nào bị skip/xfail/deselect. Không sửa/xoá/nới lỏng test nào có
+sẵn trong phiên này — chỉ SỬA 2 test hiện có cho khớp chữ ký hàm mới (`test_random_controls_
+reproducible` trong `test_benchmarks.py`, call site trong `test_e2e.py`) và THÊM test mới (không
+bớt assertion nào của hai test được sửa — số lượng assertion tăng, phạm vi kiểm không giảm).
 
 Executed By:
-...
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
 Timestamp:
-...
+2026-09-03
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS — **7/10 PASS**; CHECK-B1-04/08 `BLOCKED` (Owner input), CHECK-B1-09
-      `NOT_TESTED` (cần phiên E2 độc lập) — xem báo cáo phiên
+- [ ] 100% REQUIRED checks PASS — **7/10 PASS** (01,02,03,05,06,07,10); CHECK-B1-04/08 `BLOCKED`
+      (Owner input), CHECK-B1-09 `NOT_TESTED` (cần phiên E2 độc lập) — xem báo cáo phiên
 - [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 7 check PASS;
       E2 của CHECK-B1-09 CHƯA thực hiện
 - [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
