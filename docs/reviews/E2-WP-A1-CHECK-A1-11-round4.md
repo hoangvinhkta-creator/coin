@@ -216,6 +216,14 @@ nghiệm thu một cổng chỉ biết từ chối.
 
     `--collect-only -q` xác nhận độc lập: **377 tests collected**. Khớp phép cộng trong biên
     bản S017 (365 + 12 test mới = 377).
+
+    LẦN CHẠY XÁC NHẬN (lần hai, `-o addopts=` để pytest in dòng tóm tắt, `-p no:cacheprovider`):
+
+        377 passed in 1101.43s (0:18:21)
+        EXIT=0
+
+    Hai lần chạy độc lập trong cùng venv sạch cho cùng kết quả: 377/377 PASS, 0 FAILED,
+    0 ERROR, 0 skip/xfail.
 ---
 
 ## 6. Đối chiếu docs ↔ implementation
