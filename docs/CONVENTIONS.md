@@ -93,6 +93,67 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     (BASE/OPPORTUNITY — `month_opened_at is None`) các trường `month_*` tích luỹ không
     ngữ nghĩa; mã tương lai KHÔNG được đọc bộ đếm tháng của pool chưa từng mở sổ
     (follow-up F-E2A7-02, phiên E2 WP-A7).
+18. **Thứ tự xử lý trong một nến 15m — các điểm BT §19 để ngỏ** (quyết định WP-A6, đóng
+    F-018/F-019): engine thi hành đúng 18 bước theo CHỮ của BT §19 và
+    `tests/test_wp_a6_processing_order.py` khoá thứ tự đó bằng quan sát side-effect thật
+    (`tests/wp_a6_order_harness.py`: ledger pool, chuyển trạng thái zone/ladder, fill, regime;
+    dãy số bước trong mỗi nến không được giảm). Những điểm §19 không nói rõ, engine chốt:
+    (a) **Bước 16 và 17 là một giao dịch nguyên tử cho từng fill** (deploy ledger rồi ghi
+    purchase kèm fee/slippage, cập nhật cooldown và `last_exec_price`); test không phán xét
+    thứ tự bên trong nhóm 16/17. Cooldown do fill của nến N chỉ có hiệu lực từ bước 11 của
+    nến N+1 (bước 11 đọc trước bước 14 và 17 trong cùng nến) — action mới của nến N không
+    bị fill cùng nến chặn.
+    (b) **Bước 15** ("execution priority Base → Smart → Opportunity") sắp các fill tới hạn
+    theo cùng khoá `zone_order_key` của bước 14. Mỗi zone tiêu đúng phần reserve của nó nên
+    ưu tiên chỉ quyết định thứ tự ghi sổ trong nến, không quyết định lượng vốn (đo: chỉ khác
+    ở mức ULP do đổi thứ tự phép cộng dấu phẩy động trong ledger — 11/543 bản ghi lệch
+    ≤ 3e-16 tương đối, ETH tổng trùng bit).
+    (c) **Tạo ladder mới là "tạo reservation" của bước 14, SAU bước 13** (Smart/Opportunity
+    theo #1, #2; Crash theo ST §14). Zone của ladder tạo ở nến N chỉ được xét trigger từ
+    nến N+1. Trước WP-A6 ladder được tạo TRƯỚC bước 13, và vì zone đầu (S0/C0/O0) có
+    target = anchor = OPEN nến tạo mà LOW ≤ OPEN luôn đúng, zone đầu của MỌI ladder trigger
+    ngay trong nến tạo (đo: 88/88 ladder trên dataset tổng hợp 7,5 năm). Với Crash: cancel/
+    release Opportunity zone xung đột và đo snapshot [F5] vẫn ở bước 10 ("tại thời điểm vào
+    CRASH", ST §14); chỉ việc tạo ladder và reserve dời xuống bước 14a, trước 14b (Smart/
+    Opportunity) và 14c (TRIGGERED → ACTION_PENDING). Tác động đo được của riêng điểm này
+    (cùng seed/dataset/config, cửa sổ 2019-01-01 → 2026-06-01): ETH 21,6370346 → 21,6486587
+    (+0,054 %) với `gate1_low_friction`, +0,064 % với `gate3_realistic`; purchase 543 → 541
+    (Smart zone 153 → 152, Opportunity 17 → 16); nominal BASE 4450 / SMART 4270,21 / CRASH
+    139,57 KHÔNG đổi, Opportunity 5,823 → 5,743; số ladder tạo 67/14/17 không đổi; phân kỳ
+    đầu tiên đúng tại fill S0 của ladder đầu tiên (2019-01-04 07:30 → 07:45, lùi một nến).
+    (d) **Bước 12** chỉ xác định action tới hạn và áp TTL/MISSED — kể cả dịch chuyển
+    RESERVED → AVAILABLE của ST §8 cho MISSED (spec đặt "đánh dấu MISSED" ở bước 12); vốn
+    được release ở bước 12 có thể được reserve lại ở bước 14 cùng nến.
+    (e) **Bước 18 gom**: bullish invalidation trên daily close vừa kích hoạt ở bước 8 (ladder
+    tạo ở bước 14 của cùng nến chưa tồn tại khi daily close đó hoàn tất nên không bị đếm —
+    giữ đúng "hai daily close hoàn chỉnh liên tiếp" ST §18.2), hysteresis Opportunity
+    (suspend/reactivate/cancel sau 7 ngày, ST §5), suspension khi vào RECOVERY và cancel khi
+    hết Recovery (ST §18.3), expiry Opportunity 90 ngày, completion. Zone đã thành
+    ACTION_PENDING ở bước 14 cùng nến không bị suspension (chỉ ACTIVE → SUSPENDED) nhưng vẫn
+    bị cancel bởi invalidation/recovery-end (`cancel_open_zones`). Trước WP-A6 các mục này
+    chạy ở bước 8/10 (trước 13); đo: dời xuống 18 không đổi một bản ghi nào (543/543 trùng
+    khớp, cả hai exec config).
+    (f) **Month-End**: Day 25 và Day 28 12:00 là sự kiện theo lịch nằm trong khe bước 9 (cùng
+    đồng hồ với Base schedule; #7). Bước 3 tại rollover là đường đóng sổ còn lại: fallback
+    khi nến 12:00 Day 28 nằm trong gap, và cho vốn Smart được release sau Day 28 (ví dụ crash
+    zone bị cancel). Hai đường không settle đúp và không mất vốn
+    (`test_a6_month_end_two_paths_settle_once`). BT §19 không có khe cho Day 25/28 → ghi
+    chú WP-D2 bên dưới.
+19. **Zone TRIGGERED trong chu kỳ dữ liệu INVALID (H-15)** — quyết định WP-A6: **GIỮ
+    NGUYÊN**. Bước 13 đọc giá 15m, không đọc chất lượng daily; INVALID chặn ở bước 14 (ST §3:
+    "chặn mọi action Smart và Opportunity **mới**"). Zone TRIGGERED giữ trạng thái qua chu kỳ
+    INVALID và thành action ở chu kỳ hợp lệ đầu tiên — cùng cơ chế giữ-TRIGGERED của
+    max_zones (ST §15.1) và cooldown (#6), và khớp `CHECK-A4-02` (FROZEN). Căn cứ đo: dataset
+    tổng hợp 7,5 năm với một hàng daily bị xoá (2020-06-15 → cửa sổ INVALID 31 ngày theo
+    adr30, 1,14 % số nến): **0** zone trigger trong chu kỳ INVALID ở cả engine hiện tại lẫn
+    biến thể "huỷ trigger khi INVALID"; hai biến thể cho kết quả trùng khớp hoàn toàn (528
+    purchase, ETH 21,634883…). Ở mức kịch bản
+    (`test_h15_trigger_in_invalid_cycle_persists_until_first_valid_cycle`): trigger trong
+    ngày INVALID được thực thi ở giá của chu kỳ hợp lệ đầu tiên (100) dù target zone là
+    94,6 / 89,2 — đó là cái giá của quy ước; phương án ngược lại sẽ không mua. Spec không quy
+    định điểm này → ghi chú WP-D2. Điều kiện xem lại (H-15, vế thứ ba): official run cho
+    thấy action trên zone trigger trong cửa sổ INVALID với số lượng đáng kể — công cụ
+    `tests/wp_a6_impact_tool.py` đếm sẵn (`invalid_cycle_triggers_actioned`).
 
 ## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
 
@@ -243,3 +304,32 @@ dữ liệu **khớp với nguồn đã khai và không bị sửa sau khi khai*
 người vận hành cố ý dán nhãn `binance_*` lên dữ liệu không phải của Binance — chống điều đó
 cần đối chiếu với sàn (`ethdca freeze` hai máy theo DEC-003), nằm ngoài phạm vi WP-A1
 (`F-PRE008-01`). Giới hạn về độ phủ nêu ngay trên là **cùng một lớp** với nó.
+
+## Ghi chú cho WP-D2 từ WP-A6 (đề xuất V2.2 — KHÔNG vá V2.1.5, Master Index §6)
+
+Các điểm dưới đây là chỗ BT §19 / ST **không nói** hoặc nói chưa đủ; WP-A6 đã chốt bằng quy ước
+#18/#19 (có số đo) để engine chạy được, và ghi lại đây để WP-D2 đưa vào đề xuất V2.2. Không
+mục nào là task mới; không mục nào sửa spec.
+
+- **D2-A6-1 — Khe cho sự kiện Month-End Day 25/28.** BT §19 bước 3 chỉ nói "đóng sổ cuối
+  tháng" tại rollover; ST §10 lại định nghĩa Day 25–27 và Day 28 12:00. Engine đặt hai sự
+  kiện này trong khe bước 9 (#18f). Đề nghị V2.2 ghi tường minh vị trí của chúng trong §19.
+- **D2-A6-2 — Vị trí "tạo ladder mới" trong 18 bước.** §19 không có bước "tạo ladder"; WP-A6
+  đọc "tạo reservation" của bước 14 là nơi đó (theo F-018), nên zone đầu S0/C0/O0 (= anchor =
+  OPEN nến tạo, #1) không trigger trong nến tạo mà từ nến kế tiếp (#18c, tác động đã đo:
+  +0,054 %/+0,064 % ETH, −2/543 fill). Đề nghị V2.2 ghi tường minh, kèm ngữ nghĩa của S0
+  ("mua ngay tại anchor" hay "limit tại anchor từ nến kế tiếp") vì hai cách đọc cho kết quả
+  khác nhau.
+- **D2-A6-3 — Số phận trigger phát hiện trong chu kỳ INVALID (H-15).** ST §3 chỉ chặn
+  "action mới"; không điều khoản nào nói trigger phát hiện lúc INVALID có sống sót không.
+  WP-A6 giữ nguyên (#19) với căn cứ đo là 0 lần xảy ra trên dataset tổng hợp có cửa sổ
+  INVALID 31 ngày. Đề nghị V2.2 quyết định tường minh, cân nhắc rằng một hàng daily thiếu
+  tạo cửa sổ INVALID dài (31 ngày do `adr30`, WP-A4/S010) mà vẫn đủ tư cách official
+  (`MAX_MISSING_RATIO` = 1 %), nên action trên trigger cũ có thể thực thi ở giá rất xa target.
+- **D2-A6-4 — Month-End Smart settle có tính là "execution" cho cooldown?** (quan sát ngoài
+  phạm vi thứ tự, WP-A6 KHÔNG quyết định.) `record_purchase` ghi settle Month-End với nguồn
+  SMART nên đặt cooldown 48h (ST §15: "cooldown sau execution Smart/Opportunity/Crash"). Khi
+  settle rơi vào đường fallback tại rollover (#18f), cooldown tràn sang 48h đầu tháng mới và
+  chặn zone đầu của Smart ladder mới (đo trong `test_a6_month_end_two_paths_settle_once`:
+  kịch bản B không có fill S0 ngày 01/04, kịch bản A có). Spec không nói Month-End settle có
+  phải "execution" theo nghĩa cooldown hay không.

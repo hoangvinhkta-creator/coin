@@ -352,23 +352,19 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             opp_used_today = 0.0
             day_flags[day_ord] = {"noon": False, "score_advanced": False}
 
-        # 8. daily score mới nếu nến daily nguồn đã đóng
+        # 8. daily score mới nếu nến daily nguồn đã đóng (chỉ KÍCH HOẠT snapshot; bullish
+        # invalidation trên daily close mới là việc của bước 18 — WP-A6/F-018)
         new_score = False
+        daily_close = np.nan
         ndi = int(np.searchsorted(day_end, ts, side="right")) - 1
         if ndi > daily_idx and ndi >= 0:
             daily_idx = ndi
-            prev_dq = dq
             oscore = d["oscore"][ndi]
             dq = d["dq"][ndi]
             r7 = d["return7"][ndi]
             adr30 = d["adr30"][ndi]
-            new_score = True
-            # 18(một phần). bullish invalidation trên daily close mới
             daily_close = d["close"][ndi]
-            for lad in ladders:
-                if lad.status == "ACTIVE" and update_bullish_invalidation(lad, daily_close):
-                    cancel_open_zones(lad, ts, "BULLISH_INVALIDATION")
-                    log(ts, "BULLISH_INVALIDATION", ladder=lad.ladder_id)
+            new_score = True
 
         # unlocks hiện hành (DEGRADED không được đẩy Opp unlock lên — CONVENTIONS #9)
         s_unl = float(smart_unlock(oscore)) if not np.isnan(oscore) else 0.0
@@ -381,21 +377,6 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             s_unl, o_unl = 0.0, 0.0
         eff_smart_unlock = su.effective_unlock(s_unl, ts)
         opp_active = hyst.update(oscore) if not np.isnan(oscore) else hyst.active
-
-        # hysteresis chuyển trạng thái zone Opportunity
-        for lad in ladders:
-            if lad.type == "OPPORTUNITY" and lad.status == "ACTIVE":
-                for z in lad.zones:
-                    if not opp_active and z.status == "ACTIVE":
-                        z.status = "SUSPENDED"
-                        z.suspended_at = ts
-                    elif opp_active and z.status == "SUSPENDED":
-                        z.status = "ACTIVE"
-                        z.suspended_at = None
-                    elif z.status == "SUSPENDED" and z.suspended_at is not None and \
-                            ts - z.suspended_at > cfg.suspended_zone_hold_days * DAY:
-                        release_zone(z, ts, "OPPORTUNITY_SUSPENDED")
-                        z.status = "CANCELLED"
 
         # 9. Base schedule (12:00 local Day 3/13/23) + Base execute sớm + Month-End
         flags = day_flags.setdefault(day_ord, {"noon": False, "score_advanced": False})
@@ -429,12 +410,16 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
 
         # 10. Market Regime + nhãn STRESSED. Mọi nhánh execution dưới đây so trên
         # regime.state (trạng thái nền); nhãn STRESSED chỉ dùng reporting ([F1] §17.3).
+        # Tại crash entry: cancel Opportunity zone xung đột -> release -> snapshot [F5]
+        # ngay ở đây (ST §14: "tại thời điểm vào CRASH", đo NGAY SAU cancel/release);
+        # còn TẠO Crash ladder (reservation mới) là việc của bước 14 — WP-A6/F-018.
+        # Suspension khi vào RECOVERY và cancel khi hết Recovery là việc của bước 18.
         prev_state = regime.state
         regime.update(ts, r7 if not np.isnan(r7) else None,
                       c["r24"][i] if not np.isnan(c["r24"][i]) else None,
                       None if np.isnan(oscore) else oscore)
+        crash_snapshot = None                        # (snapshot, opp_avail, smart_avail)
         if regime.state == "CRASH" and prev_state != "CRASH":
-            # cancel Opportunity zone xung đột -> release -> snapshot -> crash ladder [F5]
             for lad in ladders:
                 if lad.type == "OPPORTUNITY" and lad.status == "ACTIVE":
                     cancel_open_zones(lad, ts, "CRASH_ENTRY")
@@ -451,80 +436,23 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             smart_avail = smart_reservable(smart_pool, month_smart_budget, eff_smart_unlock)
             snapshot = opp_avail + smart_avail
             if snapshot > 1e-9 and not np.isnan(adr30):
-                ssp = smart_spacing(adr30, oscore, cfg)
-                osp = opportunity_spacing(ssp, cfg)
-                lad = create_crash_ladder(o, osp, snapshot, oscore, ts)
-                # reserve Opportunity trước, Smart sau (CONVENTIONS #5)
-                for z in lad.zones:
-                    want = z.target_vnd
-                    parts = []
-                    take_opp = min(want, opp_avail)
-                    if take_opp > 0 and opp_fund.reserve(take_opp, "CRASH_ZONE", ts):
-                        parts.append(("OPPORTUNITY", take_opp))
-                        opp_avail -= take_opp
-                        want -= take_opp
-                    take_smart = min(want, smart_avail)
-                    if take_smart > 0 and smart_pool.reserve(take_smart, "CRASH_ZONE", ts):
-                        parts.append(("SMART", take_smart))
-                        smart_avail -= take_smart
-                        want -= take_smart
-                    z.reserved_vnd = sum(a for _, a in parts)
-                    z.target_vnd = z.reserved_vnd
-                    reserve_map[z.zone_id] = parts
-                # F-030: pool label của Crash ladder = pool cấp ĐA SỐ tổng reserve
-                # (tie-break §15.1 [F2] xếp theo pool nguồn vốn; hoà -> OPPORTUNITY,
-                # xem CONVENTIONS #16). Label thống nhất cả ladder để zone_index giữ
-                # đúng thứ tự trong cùng ladder.
-                smart_funded = sum(a for z in lad.zones
-                                   for p, a in reserve_map.get(z.zone_id, [])
-                                   if p == "SMART")
-                opp_funded = sum(a for z in lad.zones
-                                 for p, a in reserve_map.get(z.zone_id, [])
-                                 if p == "OPPORTUNITY")
-                src_pool = "SMART" if smart_funded > opp_funded else "OPPORTUNITY"
-                for z in lad.zones:
-                    z.pool = src_pool
-                ladders.append(lad)
-                log(ts, regime.last_entry_reason, ladder=lad.ladder_id)
-        if regime.state == "RECOVERY" and prev_state == "CRASH":
-            for lad in ladders:
-                if lad.type == "CRASH" and lad.status == "ACTIVE":
-                    lad.status = "SUSPENDED"
-                    for z in lad.zones:
-                        if z.status == "ACTIVE":
-                            z.status = "SUSPENDED"
-                            z.suspended_at = ts
-        if regime.state == "NORMAL" and prev_state == "RECOVERY":
-            # ST §18.3: hết 72h Recovery -> CANCEL crash zone chưa hit + release reserve.
-            # So trên TRẠNG THÁI NỀN nên chạy cho MỌI kết cục recovery-end, kể cả khi
-            # nhãn báo cáo là STRESSED (F-001). Quét mọi crash ladder còn mở để các
-            # ladder tồn đọng từ episode trước (re-entry) cũng được đóng.
-            for lad in ladders:
-                if lad.type == "CRASH" and lad.status in ("ACTIVE", "SUSPENDED"):
-                    cancel_open_zones(lad, ts, "RECOVERY_END")
-                    lad.status = "CANCELLED"
+                crash_snapshot = (snapshot, opp_avail, smart_avail)
 
         # 11. cooldown & override
         in_cooldown = ts < cooldown_until
         override_ok = (not np.isnan(last_exec_price)) and \
             (o <= last_exec_price * (1 - cfg.cooldown_override_pct))
 
-        # 12. pending action tới hạn / TTL / MISSED
+        # 12. pending action tới hạn / TTL / MISSED — chỉ XÁC ĐỊNH action đủ điều kiện fill
+        # và đánh dấu MISSED; fill/ledger/cooldown là các bước 15–17 (WP-A6/F-018)
+        due_fills = []
         for lad in ladders:
             for z in lad.zones:
                 if z.status != "ACTION_PENDING":
                     continue
                 if z.execute_at is not None and ts >= z.execute_at:
                     if z.execute_at <= z.action_expires_at:
-                        nominal = z.reserved_vnd
-                        deploy_zone(z, ts, f"{lad.type}_ZONE")
-                        z.status = "EXECUTED"
-                        z.executed_at = ts
-                        counters["executed_actions"] += 1
-                        src = "CRASH" if lad.type == "CRASH" else lad.type
-                        record_purchase(ts, src, nominal, o,
-                                        f"{lad.type}_ZONE_{z.zone_index}",
-                                        recommended=zone_meta.get(z.zone_id, {}).get("recommended"))
+                        due_fills.append((z, lad))
                     else:
                         release_zone(z, ts, "ACTION_TTL_EXPIRED")
                         z.status = "MISSED"
@@ -534,7 +462,65 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     z.status = "MISSED"
                     counters["missed_actions"] += 1
 
-        # tạo ladder mới (CONVENTIONS #1, #2) — trước bước kiểm tra trigger
+        # 13. trigger Smart (LOW) / confirmation Opportunity (CLOSE) — sắp thứ tự §15.1 [F2].
+        # Ladder tạo ở bước 14 của nến này KHÔNG tham gia trigger cùng nến (§19: 13 trước 14).
+        candidates = []
+        for lad in ladders:
+            if lad.status not in ("ACTIVE", "SUSPENDED"):
+                continue
+            for z in lad.zones:
+                trig_ok = z.status == "ACTIVE" or (
+                    lad.type == "CRASH" and z.status == "SUSPENDED")
+                if not trig_ok or z.reserved_vnd <= 1e-12:
+                    continue
+                if lad.type == "SMART" or lad.type == "CRASH":
+                    hit = lo <= z.target_price
+                else:  # OPPORTUNITY: confirmation bằng CLOSE
+                    hit = cl <= z.target_price
+                if hit:
+                    z.status = "TRIGGERED"
+            candidates.extend([z for z in lad.zones if z.status == "TRIGGERED"])
+
+        # 14a. tạo reservation mới: Crash ladder từ snapshot bước 10 (ST §14 [F5])
+        if crash_snapshot is not None:
+            snapshot, opp_avail, smart_avail = crash_snapshot
+            ssp = smart_spacing(adr30, oscore, cfg)
+            osp = opportunity_spacing(ssp, cfg)
+            lad = create_crash_ladder(o, osp, snapshot, oscore, ts)
+            # reserve Opportunity trước, Smart sau (CONVENTIONS #5)
+            for z in lad.zones:
+                want = z.target_vnd
+                parts = []
+                take_opp = min(want, opp_avail)
+                if take_opp > 0 and opp_fund.reserve(take_opp, "CRASH_ZONE", ts):
+                    parts.append(("OPPORTUNITY", take_opp))
+                    opp_avail -= take_opp
+                    want -= take_opp
+                take_smart = min(want, smart_avail)
+                if take_smart > 0 and smart_pool.reserve(take_smart, "CRASH_ZONE", ts):
+                    parts.append(("SMART", take_smart))
+                    smart_avail -= take_smart
+                    want -= take_smart
+                z.reserved_vnd = sum(a for _, a in parts)
+                z.target_vnd = z.reserved_vnd
+                reserve_map[z.zone_id] = parts
+            # F-030: pool label của Crash ladder = pool cấp ĐA SỐ tổng reserve
+            # (tie-break §15.1 [F2] xếp theo pool nguồn vốn; hoà -> OPPORTUNITY,
+            # xem CONVENTIONS #16). Label thống nhất cả ladder để zone_index giữ
+            # đúng thứ tự trong cùng ladder.
+            smart_funded = sum(a for z in lad.zones
+                               for p, a in reserve_map.get(z.zone_id, [])
+                               if p == "SMART")
+            opp_funded = sum(a for z in lad.zones
+                             for p, a in reserve_map.get(z.zone_id, [])
+                             if p == "OPPORTUNITY")
+            src_pool = "SMART" if smart_funded > opp_funded else "OPPORTUNITY"
+            for z in lad.zones:
+                z.pool = src_pool
+            ladders.append(lad)
+            log(ts, regime.last_entry_reason, ladder=lad.ladder_id)
+
+        # 14b. tạo reservation mới: Smart / Opportunity ladder (CONVENTIONS #1, #2)
         if dq != "INVALID" and not np.isnan(oscore) and not np.isnan(adr30):
             ssp = smart_spacing(adr30, oscore, cfg)
             if (not smart_ladder_created_this_month and acct_day <= 24
@@ -574,26 +560,11 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                             z.status = "CANCELLED"
                     ladders.append(lad)
 
-        # 13. trigger Smart (LOW) / confirmation Opportunity (CLOSE) — sắp thứ tự §15.1 [F2]
-        candidates = []
-        for lad in ladders:
-            if lad.status not in ("ACTIVE", "SUSPENDED"):
-                continue
-            for z in lad.zones:
-                trig_ok = z.status == "ACTIVE" or (
-                    lad.type == "CRASH" and z.status == "SUSPENDED")
-                if not trig_ok or z.reserved_vnd <= 1e-12:
-                    continue
-                if lad.type == "SMART" or lad.type == "CRASH":
-                    hit = lo <= z.target_price
-                else:  # OPPORTUNITY: confirmation bằng CLOSE
-                    hit = cl <= z.target_price
-                if hit:
-                    z.status = "TRIGGERED"
-            candidates.extend([z for z in lad.zones if z.status == "TRIGGERED"])
-
-        # 14. chuyển TRIGGERED -> ACTION_PENDING: thứ tự §15.1 [F2] (zone_order_key),
-        # max_zones_per_cycle áp SAU khi sắp thứ tự; cooldown/override; INVALID chặn
+        # 14c. điều chỉnh reservation: TRIGGERED -> ACTION_PENDING theo thứ tự §15.1 [F2]
+        # (zone_order_key), max_zones_per_cycle áp SAU khi sắp thứ tự; cooldown/override;
+        # INVALID chặn action mới (ST §3). Zone TRIGGERED trong chu kỳ INVALID giữ trạng
+        # thái và được xét lại ở chu kỳ hợp lệ kế tiếp — cùng cơ chế giữ-TRIGGERED của
+        # max_zones (§15.1) và cooldown (CONVENTIONS #6); xem CONVENTIONS #19 (H-15).
         if candidates and dq != "INVALID":
             lad_by_id = {l.ladder_id: l for l in ladders}
             candidates.sort(key=lambda z: zone_order_key(z, lad_by_id[z.ladder_id]))
@@ -630,7 +601,67 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 create_action(z, lad_by_id[z.ladder_id], ts_close, cl, local_hour)
                 created += 1
 
-        # 18. ladder completion / expiry (Opportunity 90 ngày)
+        # 15. ưu tiên thực thi giữa các fill tới hạn: Base -> Smart -> Opportunity (§15.1
+        # [F2], cùng khoá với bước 14). Mỗi zone tiêu đúng phần reserve của nó nên ưu tiên
+        # chỉ quyết định THỨ TỰ ghi sổ/purchase trong nến, không quyết định lượng vốn.
+        due_fills.sort(key=lambda zl: zone_order_key(zl[0], zl[1]))
+
+        # 16–17. fill tại execution proxy (fee + slippage) rồi cập nhật ledger, portfolio và
+        # cooldown — SAU khi trigger/action mới của nến đã được xử lý (bước 13–14). Cooldown
+        # đọc ở bước 11 nên fill của nến này không chặn action tạo ở chính nến này (§19).
+        for z, lad in due_fills:
+            nominal = z.reserved_vnd
+            deploy_zone(z, ts, f"{lad.type}_ZONE")
+            z.status = "EXECUTED"
+            z.executed_at = ts
+            counters["executed_actions"] += 1
+            src = "CRASH" if lad.type == "CRASH" else lad.type
+            record_purchase(ts, src, nominal, o, f"{lad.type}_ZONE_{z.zone_index}",
+                            recommended=zone_meta.get(z.zone_id, {}).get("recommended"))
+
+        # 18. ladder completion / suspension / expiry / bullish invalidation
+        # 18a. bullish invalidation trên daily close vừa kích hoạt ở bước 8 (ST §18.2). Ladder
+        # tạo ở bước 14 của CHÍNH nến này chưa tồn tại khi daily close đó hoàn tất nên không
+        # bị đếm — giữ đúng ngữ nghĩa "hai daily close hoàn chỉnh liên tiếp" sau khi tạo.
+        if new_score:
+            for lad in ladders:
+                if lad.status == "ACTIVE" and lad.created_at < ts \
+                        and update_bullish_invalidation(lad, daily_close):
+                    cancel_open_zones(lad, ts, "BULLISH_INVALIDATION")
+                    log(ts, "BULLISH_INVALIDATION", ladder=lad.ladder_id)
+        # 18b. hysteresis Opportunity (ST §5): suspend / reactivate / cancel sau 7 ngày
+        for lad in ladders:
+            if lad.type == "OPPORTUNITY" and lad.status == "ACTIVE":
+                for z in lad.zones:
+                    if not opp_active and z.status == "ACTIVE":
+                        z.status = "SUSPENDED"
+                        z.suspended_at = ts
+                    elif opp_active and z.status == "SUSPENDED":
+                        z.status = "ACTIVE"
+                        z.suspended_at = None
+                    elif z.status == "SUSPENDED" and z.suspended_at is not None and \
+                            ts - z.suspended_at > cfg.suspended_zone_hold_days * DAY:
+                        release_zone(z, ts, "OPPORTUNITY_SUSPENDED")
+                        z.status = "CANCELLED"
+        # 18c. Crash ladder theo chuyển trạng thái nền của nến này (ST §18.3)
+        if regime.state == "RECOVERY" and prev_state == "CRASH":
+            for lad in ladders:
+                if lad.type == "CRASH" and lad.status == "ACTIVE":
+                    lad.status = "SUSPENDED"
+                    for z in lad.zones:
+                        if z.status == "ACTIVE":
+                            z.status = "SUSPENDED"
+                            z.suspended_at = ts
+        if regime.state == "NORMAL" and prev_state == "RECOVERY":
+            # ST §18.3: hết 72h Recovery -> CANCEL crash zone chưa hit + release reserve.
+            # So trên TRẠNG THÁI NỀN nên chạy cho MỌI kết cục recovery-end, kể cả khi
+            # nhãn báo cáo là STRESSED (F-001). Quét mọi crash ladder còn mở để các
+            # ladder tồn đọng từ episode trước (re-entry) cũng được đóng.
+            for lad in ladders:
+                if lad.type == "CRASH" and lad.status in ("ACTIVE", "SUSPENDED"):
+                    cancel_open_zones(lad, ts, "RECOVERY_END")
+                    lad.status = "CANCELLED"
+        # 18d. expiry Opportunity (90 ngày) và completion
         for lad in ladders:
             if lad.status == "ACTIVE" and lad.type == "OPPORTUNITY" and lad.expires_at \
                     and ts >= lad.expires_at:
