@@ -1,36 +1,30 @@
 /* T-09A — helper dùng chung cho các ca kiểm thử kế toán chạy trên app_final.html.
  * KHÔNG phải production path (PROJECT/PRODUCTION_PATHS.md §2).
+ *
+ * BẢO TRÌ T-09B (2026-09-02): trang nay chạy trên Firebase (Hosting + Anonymous Auth + Cloud
+ * Firestore) nên mọi ca kiểm thử đi qua `test_firebase_harness.js`: emulator thật, rules thật,
+ * SDK thật. `readState()` KHÔNG còn đọc localStorage làm sự thật — nó chờ máy chủ xác nhận,
+ * đọc bản DURABLE từ emulator qua REST (độc lập với SDK trong trang) và đối chiếu bit-exact
+ * với bản trong bộ nhớ trang. Nhờ vậy ba bộ test kế toán T-09A chạy nguyên văn trên state
+ * ĐÃ ĐI QUA Firebase (CHECK-T09B-09). Kịch bản và assertion kế toán GIỮ NGUYÊN.
  */
-const path = require('path');
+const FB = require('./test_firebase_harness.js');
 
-const DIR = __dirname;
-const APP_FINAL = path.join(DIR, 'app_final.html');
-const SEED_PATH = path.join(DIR, '..', 'demo', 'results3', 'live_seed.json');
-const CHROMIUM = process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium';
+const APP_FINAL = FB.APP_FINAL;
+const SEED_PATH = FB.SEED_PATH;
+const CHROMIUM = FB.CHROMIUM;
 
-async function newPage(b, opts) {
-  const ctx = await b.newContext({ viewport: { width: 1200, height: 1000 } });
-  const p = await ctx.newPage();
-  const errs = [];
-  p.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
-  p.on('console', m => {
-    if (m.type() === 'error' && !/ERR_CONNECTION|font/i.test(m.text())) errs.push(m.text());
-  });
-  await p.goto('file://' + APP_FINAL);
-  await p.waitForTimeout(300);
-  if (!opts || opts.seed !== false) {
-    await p.setInputFiles('#seedFile', SEED_PATH);
-    await p.waitForTimeout(900);
-  }
-  return { ctx, p, errs };
-}
+/** Trang mới = Owner mở app lần đầu trên trình duyệt mới (bootstrap rules với UID của trang),
+ *  rồi nạp seed (trừ khi opts.seed === false). Trả { ctx, p, errs, uid }. */
+async function newPage(b, opts) { return FB.newPage(b, opts); }
 
-const readState = (p) =>
-  p.evaluate(() => JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')));
+/** State đã round-trip qua Firestore, đã đối chiếu với bản trong bộ nhớ (ném lỗi nếu lệch). */
+const readState = FB.readState;
 
 /** Oracle độc lập với app_logic.js: tính lại unlock từ CHÍNH engine.js dùng chung, theo đúng
  *  lịch sử app đang thấy (seed + extraDays). Dùng để so hạn mức reserve mà không phải đọc
- *  con số đã làm tròn trên UI, và KHÔNG hard-code số. */
+ *  con số đã làm tròn trên UI, và KHÔNG hard-code số. Đọc bản mirror (JSON của state trong
+ *  bộ nhớ) — chỉ để tính oracle, không phải nguồn sự thật. */
 const readUnlock = (p) => p.evaluate(() => {
   const seed = JSON.parse(localStorage.getItem('ethdca-tracker-seed-v1'));
   const st = JSON.parse(localStorage.getItem('ethdca-tracker-state-v1')) || {};
@@ -72,6 +66,7 @@ async function pushDeclineDays(p, n, startDate) {
     await p.click('#pxAdd');
     await p.waitForTimeout(40);
   }
+  await FB.waitSaved(p);
   return readUnlock(p);
 }
 
@@ -109,4 +104,7 @@ module.exports = {
   APP_FINAL, SEED_PATH, CHROMIUM,
   newPage, readState, readUnlock, pushDeclineDays,
   contribute, makeLadder, cancelLadder, poolTotal,
+  // T-09B: harness Firebase (emulator, REST đối chứng, chờ xác nhận)
+  ensureEmulators: FB.ensureEmulators, waitSaved: FB.waitSaved, waitPhase: FB.waitPhase,
+  status: FB.status, getDoc: FB.getDoc,
 };

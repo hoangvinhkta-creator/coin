@@ -5,56 +5,39 @@ const path = require('path');
 // (`node build_app.js` trong webapp/, hay `node webapp/build_app.js` từ gốc repo) — F-027.
 const DIR = __dirname;
 const shell  = fs.readFileSync(path.join(DIR, 'app_shell.html'), 'utf8');
+const fbcfg  = fs.readFileSync(path.join(DIR, 'firebase_config.js'), 'utf8');
 const engine = fs.readFileSync(path.join(DIR, 'engine.js'), 'utf8');
 const logic  = fs.readFileSync(path.join(DIR, 'app_logic.js'), 'utf8');
 
-// BODY chứa 3 placeholder: __STATE__, __SEED__, __TEMPLATE__
+// T-09B (DEC-020 OD-A): app chạy trên Firebase Hosting, nguồn bền là Cloud Firestore.
+// Trang KHÔNG còn nhúng state/seed (`app-state`/`app-seed`) và KHÔNG còn nhúng base64 của
+// chính nó để tự publish — cả hai là cơ chế của host artifact cũ; nhúng state vào trang sẽ
+// tạo một "nguồn sự thật" thứ ba cạnh Firestore, trái CHECK-T09B-16.
 const BODY = shell
-  + '\n<script id="page-template" type="text/plain">__TEMPLATE__</script>\n'
+  + '\n<script>\n' + fbcfg + '\n</script>\n'
   + '<script>\n' + engine + '\n</script>\n'
   + '<script>\n' + logic + '\n</script>\n';
 
-// Tài liệu đầy đủ dùng khi trang tự publish
 const FULL = '<!doctype html><html lang="vi"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1">'
   + '</head><body>\n' + BODY + '\n</body></html>';
 
-const b64 = Buffer.from(FULL, 'utf8').toString('base64');
-
-const initialState = JSON.stringify({
-  schema: 'ethdca.tracker/1', rev: 0, months: {}, oppFund: {a:0,r:0,d:0},
-  treasury: {vnd:0, usdt:0}, eth: 0, costUsdt: 0, costVnd: 0,
-  ladders: [], trades: [], p2p: [], ledger: [], extraDays: [],
+// Kiểm tra: không placeholder nào còn sót, và ba mảnh bắt buộc đều có mặt.
+['__STATE__', '__SEED__', '__TEMPLATE__', 'id="app-state"', 'id="app-seed"'].forEach((t) => {
+  if (FULL.includes(t)) throw new Error('legacy placeholder left in page: ' + t);
+});
+['window.ETHDCA_FIREBASE_CONFIG', 'firebase-app-compat.js', 'firebase-auth-compat.js',
+ 'firebase-firestore-compat.js', 'const ENGINE', 'ethdca/state'].forEach((t) => {
+  if (!FULL.includes(t)) throw new Error('required fragment missing from page: ' + t);
 });
 
-// Trang khởi tạo: body-only (Artifact tool tự bọc doctype/head/body)
-const page = BODY
-  .replace('__TEMPLATE__', () => b64)
-  .replace('__STATE__', () => initialState)
-  .replace('__SEED__', () => 'null');
+// 1. webapp/app_final.html — bản dùng cho bộ test (mở qua HTTP server của harness).
+fs.writeFileSync(path.join(DIR, 'app_final.html'), FULL);
+// 2. webapp/public/index.html — thư mục `hosting.public` trong firebase.json (firebase deploy).
+const PUB = path.join(DIR, 'public');
+fs.mkdirSync(PUB, { recursive: true });
+fs.writeFileSync(path.join(PUB, 'index.html'), FULL);
 
-fs.writeFileSync(path.join(DIR, 'app_final.html'), page);
-console.log('BODY', BODY.length, 'FULL', FULL.length, 'b64', b64.length, 'page', page.length);
-
-// kiểm tra quine: giải mã b64 -> thay lại -> phải ra tài liệu hợp lệ
-const decoded = Buffer.from(b64, 'base64').toString('utf8');
-if (decoded !== FULL) throw new Error('base64 round-trip mismatch');
-const republished = decoded
-  .replace('__TEMPLATE__', () => b64)
-  .replace('__STATE__', () => '{"rev":7}')
-  .replace('__SEED__', () => 'null');
-if (!republished.startsWith('<!doctype html>')) throw new Error('republished missing doctype');
-// placeholder trong markup phải biến mất; các literal còn lại nằm trong mã JS
-// của pageHTML() — đó là cố ý, lần lưu sau cần chúng.
-if (!republished.includes('id="app-state" type="application/json">{"rev":7}')) {
-  throw new Error('state not injected into markup');
-}
-if (!republished.includes('id="app-seed" type="application/json">null')) {
-  throw new Error('seed not injected into markup');
-}
-if (republished.includes('>__TEMPLATE__<')) {
-  throw new Error('template placeholder left in markup');
-}
-// và bản republish vẫn chứa b64 để lần lưu sau còn dùng được
-if (!republished.includes(b64)) throw new Error('template lost on republish');
-console.log('quine ok; republished', republished.length);
+console.log('BODY', BODY.length, 'FULL', FULL.length,
+  '->', path.relative(process.cwd(), path.join(DIR, 'app_final.html')),
+  '+', path.relative(process.cwd(), path.join(PUB, 'index.html')));

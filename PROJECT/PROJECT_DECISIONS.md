@@ -1569,6 +1569,234 @@ số đó ở nhánh này sẽ tạo đụng ID khi T-09B được tích hợp. 
 nhánh hiện tại tiếp tục từ `DEC-025`. Không sửa lịch sử, không đổi tên quyết định nào đã có.
 
 ---
+## DEC-022 — `OD-WEBAPP-05`: Integration size disposition cho `T-09B` — ACCEPT THE DIVERGENCE
+
+Date:
+2026-09-02 (phiên tiếp nối S014 — REAL FIREBASE SETUP & PRODUCTION REACHABILITY)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Đóng hard-stop `INTEGRATION_DECISION_REQUIRED` mà
+`branch_authority_check.sh` báo trên branch `claude/t09b-firebase-implementation-nz50is`
+(divergence LOC = 12.272, ngưỡng cảnh báo > 5.000).
+
+Decision:
+
+    ACCEPT THE DIVERGENCE cho `T-09B` tại thời điểm này. KHÔNG "integrate now" (không merge
+    `main`), KHÔNG cut scope.
+
+Bằng chứng đo được — số đo LOC thô của script KHÔNG đại diện cho business/production
+complexity:
+
+    git diff --shortstat main..claude/t09b-firebase-implementation-nz50is
+      -> divergence LOC = 12.272
+
+    Phân rã theo declared production path (PRODUCTION_PATHS.md §1 bảng + §2 loại trừ):
+      webapp/app_logic.js + app_shell.html + build_app.js  -> +560 / -162  (implementation thật)
+
+    Phần còn lại (~11.550 dòng) là generated dependency metadata:
+      webapp/package-lock.json  -> +9.482 dòng (ghim `firebase@12.18.0` + `firebase-tools@15.28.2`
+                                    và toàn bộ transitive dependency của hai package đó)
+      webapp/test_firebase_harness.js, test_t09b_persistence.js (mới) và bảo trì 5 test cũ
+                                 -> ~892 + ~171 dòng test/harness (KHÔNG phải production path,
+                                    `PRODUCTION_PATHS.md` §2)
+
+    Kiểm tra tương ứng (sanity, KHÔNG cut/rewrite dependency tree chỉ để làm số này đẹp hơn):
+      723 package entry mới trong lockfile; 677/723 không chứa chuỗi "firebase" trong đường dẫn
+      nhưng TOÀN BỘ là transitive dependency trực tiếp của `firebase-tools` (CLI monolith bao
+      Cloud SQL connector, Pub/Sub, App Hosting, Data Connect/pglite — các sản phẩm Firebase
+      T-09B KHÔNG dùng) hoặc của package `firebase` (SDK modular — có mặt trong node_modules
+      cho MỌI sản phẩm Firebase, nhưng trang chỉ nạp 3 file compat qua CDN: app/auth/firestore;
+      không có byte nào của Analytics/Messaging/Storage/... được gửi tới trình duyệt). Không
+      phát hiện dependency nào ngoài `firebase`/`firebase-tools` — không cần scope-expand để dọn.
+
+Reason:
+`branch_authority_check.sh` đo LOC thô của toàn bộ diff, không phân biệt được production code với
+generated lockfile — đây là hạn mức của chính công cụ (`H-09`/`H-12`/`H-21` đã ghi các khiếm
+khuyết cùng lớp của bộ đo). Coi 9.482 dòng lockfile là "12.272 dòng thay đổi cần review" sẽ đánh
+giá sai độ phức tạp thật của T-09B: `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.4 đã đo delivery change
+budget CHUẨN (theo khai báo production path) là 3 file, +662/−188 — nằm trong mọi ngưỡng đã có.
+Không có lý do nghiệp vụ nào để cắt scope (rules/config/harness đều cần thiết cho architecture đã
+FROZEN ở `DEC-020`) hay viết lại cách quản lý dependency (vendor một `firebase-tools` tối giản là
+over-engineering, trái Personal Tool Simplification Principle `DEC-021`).
+
+Impact:
+- Hard-stop `INTEGRATION_DECISION_REQUIRED` trên branch `claude/t09b-firebase-implementation-nz50is`
+  **ĐÓNG** cho mục đích tiếp tục thực thi T-09B trên chính branch này. KHÔNG mở merge vào `main`.
+- `PROJECT/HARDENING_BACKLOG.md`: thêm `H-33` — dependency footprint của `firebase-tools`
+  (devDependency, không phải runtime browser) rộng hơn nhiều so với phạm vi dùng thật
+  (`emulators:start --only auth,firestore`, `deploy --only hosting,firestore:rules`) —
+  PROVISIONAL HARDENING, tầng tooling, không phải finding sản phẩm.
+- KHÔNG đổi `CAP-WEBAPP` budget (`REVIEW_BUDGET_LEDGER.md` §2.2/§2.2.4) — quyết định này không
+  phải repair cycle, không tiêu budget.
+- Số task ID mới = **0**. Số production file bị sửa bởi CHÍNH quyết định này = **0**.
+
+Can Revisit After:
+Khi branch `claude/t09b-firebase-implementation-nz50is` được đề xuất tích hợp vào `main` (một
+Owner Decision khác, theo đúng mẫu `DEC-013`) — khi đó đo lại divergence LOC tại thời điểm đó,
+không dùng lại con số của quyết định này. Hoặc khi `firebase-tools`/`firebase` phát hành phiên bản
+làm thay đổi đáng kể cỡ lockfile.
+
+---
+
+## DEC-023 — `OD-WEBAPP-06`: `T-09B` chạy trên Firebase project DÙNG CHUNG (`tinphatcontent`); merge rules an toàn; Hosting site mặc định
+
+Date:
+2026-09-02 (phiên tiếp nối — SHARED FIREBASE PROJECT / FIRESTORE RULES SAFE MERGE)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`.
+
+Decision:
+
+    (1) SHARED PROJECT LÀ THỰC TẾ ĐƯỢC CHẤP NHẬN, KHÔNG PHẢI ARCHITECTURE_CHANGE_REQUIRED.
+
+        Project Firebase thật Owner cấp cho T-09B (`tinphatcontent`, display name "CoinDCA")
+        trước đó phục vụ một ứng dụng khác ("Content — công cụ Zalo Group, Tín Phát"). Kiến
+        trúc T-09B (`DEC-020`) — Browser → Firebase Hosting → Anonymous Auth → Cloud Firestore
+        → `ethdca/state` + `ethdca/seed` — KHÔNG đổi. Điểm triển khai thực tế duy nhất: cùng
+        một Cloud Firestore database còn chứa namespace Content (`users`, `contents`,
+        `schedules`, `groups`, `config`, `fb_queue`, `audit_logs`). Không tạo Firebase project
+        mới, không đổi Firestore sang database khác, không đổi Authentication model, không thêm
+        backend/provider abstraction chỉ để cách ly Content.
+
+    (2) FIRESTORE RULES — MERGE AN TOÀN, KHÔNG THAY THẾ.
+
+        `firestore.rules` của repo nay là rules Content THẬT (giữ nguyên văn, không refactor/
+        format lại/đổi tên/thêm-bớt quyền) cộng thêm đúng hai khối `match /ethdca/state` và
+        `match /ethdca/seed` (hàm đổi tên `isCoinDcaOwner()` để không trùng hàm `isOwner(f)`
+        đã có sẵn của Content — trùng tên là lỗi biên dịch rules). Không thêm catch-all mới.
+
+        Kiểm chứng bằng Firestore Rules Emulator (`webapp/test_shared_rules_merge.js`, đăng ký
+        `npm run test:rules-merge`): battery 53 probe phủ toàn bộ 8 collection Content, so
+        ALLOW/DENY giữa rules Content nguyên văn (BEFORE) và rules đã merge (AFTER) —
+        **0 lệch**. Ma trận CoinDCA 12 ca (§8 chỉ thị) PASS 12/12 trên rules đã merge. Chi tiết
+        đầy đủ: `docs/reviews/T-09B-shared-rules-merge.md`.
+
+        `CONTENT_BEHAVIOR_PRESERVED = YES`. Chưa deploy — owner UID trong rules còn placeholder
+        `OWNER_UID_REQUIRED`; deploy thật cần UID Anonymous Auth thật của Owner (lấy từ trình
+        duyệt hằng ngày, chưa có tại phiên này) và do chính Owner chạy (agent không có Firebase
+        CLI authority trong môi trường này — không đổi từ checkpoint trước).
+
+    (3) HOSTING — RESOLVED = DÙNG SITE MẶC ĐỊNH CỦA `tinphatcontent`.
+
+        Owner tự kiểm tra Firebase Console: Hosting của project `tinphatcontent` **chưa được
+        setup** (còn màn hình "Get started"), không có site/deployment Content nào cần bảo
+        toàn. Owner quyết định CoinDCA dùng Hosting site mặc định — KHÔNG cần multi-site,
+        hosting target riêng, hay project Firebase mới chỉ để cách ly Content. `firebase.json`
+        của repo (`webapp/public` → Hosting) giữ nguyên, không cần sửa.
+
+    (4) OBSERVATION VỀ RULES CONTENT — KHÔNG SỬA.
+
+        Rules Content hiện tại cho `schedules` (update) và `fb_queue` (write) chỉ yêu cầu
+        `signedIn()` (bất kỳ ai đã xác thực, kể cả Anonymous, không cần role) — permissive hơn
+        các collection khác. Đây là thiết kế có sẵn của Content, không liên quan tới merge của
+        CoinDCA (xác nhận identical BEFORE/AFTER), không thuộc `DEC-021` Critical Product
+        Question A-F của ETH DCA OS. Không sửa trong T-09B. Không tạo `HARDENING_BACKLOG.md`
+        entry — đó là backlog của CAP-* thuộc dự án này, không phải nơi audit ứng dụng khác.
+
+Reason:
+Firestore chỉ có một rules document cho cả database; deploy nguyên văn `firestore.rules` cũ
+(chỉ có CoinDCA, catch-all deny) lên project dùng chung sẽ xoá quyền truy cập của Content —
+đúng loại hậu quả `CLAUDE.md` § Conflict Rule yêu cầu dừng lại và xử lý tường minh, KHÔNG được
+đoán. Owner đã tự xác nhận Hosting an toàn (chưa setup) nên không cần quyết định gì thêm ở đó;
+phần rules cần bằng chứng kỹ thuật (không chỉ lời hứa "sẽ không đổi hành vi Content"), nên dùng
+đúng cơ chế RISK_MODEL.md đã có sẵn cho HIGH Blast Radius: batch verification trước khi cho
+phép bước kế tiếp (deploy), không phải một hard-stop kiến trúc.
+
+Impact:
+- `firestore.rules`: merge hoàn tất, CHƯA deploy.
+- `webapp/test_shared_rules_merge.js` (mới), `webapp/package.json` (`test:rules-merge`).
+- `docs/reviews/T-09B-shared-rules-merge.md` (mới) — evidence đầy đủ.
+- `PROJECT/PROJECT_PROGRESS.md`: cập nhật Last Updated + Session History (tối thiểu).
+- KHÔNG đổi Completion Gate 16 REQUIRED check nào. KHÔNG đổi `DEC-019`/`DEC-020`/`DEC-021`/
+  `DEC-022`. KHÔNG tiêu `CAP-WEBAPP` budget (2/0/2 không đổi) — đây không phải repair cycle.
+- Số task ID mới = **0**. Số hàm/quyền Content bị đổi = **0** (đo được bằng 53 probe emulator).
+
+Can Revisit After:
+Khi rules Content thật đổi (Owner tự deploy thay đổi phía Content, ngoài phạm vi T-09B) — khi
+đó `webapp/test_shared_rules_merge.js` cần chạy lại với bản BEFORE mới trước khi tái xác nhận
+merge an toàn. Hoặc khi Owner tách CoinDCA sang project Firebase riêng (không còn lý do giữ
+merge phức tạp này).
+
+---
+
+## DEC-024 — `OD-WEBAPP-07`: phê chuẩn hoàn thành `T-09B` (`DONE`)
+
+Date:
+2026-09-03 (phiên Owner Confirmation — tiếp nối production verification)
+
+Task:
+`T-09B` / capability `CAP-WEBAPP`. Đóng khe thẩm quyền `STATE_AUTHORITY.md`: chuyển một task
+`IMPLEMENTED` + evidence đủ sang `DONE` là hành vi của chủ dự án — cùng cơ chế `DEC-018` đã dùng
+cho `T-09A`.
+
+Decision:
+
+    (1) T-09B: IMPLEMENTED -> DONE.
+
+        Completion Gate GIỮ NGUYÊN: 16/16 REQUIRED PASS. Không sửa câu chữ hay ngữ nghĩa của
+        gate. Evidence hai tầng, cả hai đều E1, không tầng nào thay thế tầng kia:
+          - Firebase Emulator Suite (S014, 2026-09-02) — toàn bộ 16 check, đường sản phẩm thật
+            qua SDK/wire-protocol thật, chỉ khác backend (emulator thay vì project thật).
+          - Production thật (2026-09-03) — CHECK-T09B-01/02/03/04/14 lặp lại trên
+            `https://tinphatcontent.web.app`, Owner UID thật, rules đã merge và deploy. Evidence
+            do chính chủ dự án trực tiếp thao tác và báo cáo lại (agent không tới được
+            `*.web.app` từ môi trường sandbox — đã xác nhận nhiều lần, chặn ở tầng proxy tổ
+            chức). Chủ dự án xác nhận tường minh CHẤP NHẬN mức evidence này (E1, không phải E2
+            độc lập) là đủ cho các check đó.
+
+        Không có CHECK nào trong 16 REQUIRED bị hạ evidence level hay bị coi PASS mà chưa chạy
+        thật — CHECK-T09B-05..09, 11, 12, 15, 16 giữ nguyên ở E1 emulator (không cần lặp lại
+        production, không phụ thuộc riêng vào hạ tầng thật khác với 01/02/03/04/14); CHECK-10
+        (write failure) giữ nguyên ở E1 emulator theo đúng quyết định không dựng lỗi ghi trên hạ
+        tầng đang giữ dữ liệu thật của Owner.
+
+    (2) `CAP-WEBAPP` BUDGET GIỮ NGUYÊN — KHÔNG reset, KHÔNG cấp thêm, KHÔNG tiêu thêm.
+
+            ALLOWED = 2 repair cycle · USED = 0 · REMAINING = 2   (không đổi từ `DEC-018`)
+
+        Toàn bộ chuỗi phiên từ S014 tới đây (implementation, rules merge với project dùng chung,
+        xác minh Owner UID, production verification) là **INITIAL IMPLEMENTATION** của T-09B,
+        không phải repair cycle — không finding CONFIRMED BLOCKING nào phát sinh cần sửa sau
+        khi 16/16 đã PASS lần đầu.
+
+    (3) `RSK-001` — GHI NHẬN, KHÔNG ĐÓNG HẲN.
+
+        Chủ dự án xác nhận: phần V1 durable persistence (ghi/đọc Firestore, phục hồi sau mất
+        `localStorage`/`sessionStorage`, phục hồi sau đóng/mở lại cùng browser profile) đã được
+        kiểm chứng trên production — rủi ro cho đúng phạm vi này coi như đã giảm thiểu bằng
+        T-09B. `H-23` (mất Anonymous identity khi đổi máy/đổi trình duyệt/cửa sổ riêng tư) VẪN
+        là HARDENING / OUT OF SCOPE V1 theo `DEC-021` — không đổi bởi quyết định này, không mở
+        task mới từ risk này. Đóng hẳn (`CLOSED`) `RSK-001` như một mục risk register không nằm
+        trong quyết định này — chủ dự án chỉ xác nhận disposition đã ghi, không tuyên bố risk
+        không còn tồn tại ở bất kỳ kịch bản nào.
+
+    (4) INTEGRATION — KHÔNG ĐỔI.
+
+        `ELIGIBLE_FOR_INTEGRATION = NO`, giữ nguyên theo `DEC-022` (ACCEPT THE DIVERGENCE,
+        không merge `main`). Quyết định này không mở lại câu hỏi integration.
+
+Reason:
+16/16 REQUIRED check đã PASS ở E1 từ S014; khoảng trống evidence duy nhất còn lại
+("production reachability trên project Firebase THẬT") đã được đóng ở phiên trước bằng chính
+chủ dự án tự thao tác trên hạ tầng thật. Theo đúng tiền lệ `DEC-018` (T-09A), việc còn lại chỉ
+là hành vi ghi nhận của chủ dự án — không phải một phát hiện kỹ thuật mới nào agent có thẩm
+quyền tự quyết.
+
+Impact:
+- `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md`: Status `IMPLEMENTED` → `DONE`.
+- `PROJECT/PROJECT_PROGRESS.md`: roadmap row T-09B → `DONE`; Last Updated; Session History.
+- `PROJECT/CAPABILITY_REGISTRY.md` §11 (mới): ghi nhận DONE, budget không đổi.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2: ghi nhận DONE, ba con số budget không đổi.
+- `PROJECT/PROJECT_PROGRESS.md` § Active Risks — `RSK-001`: cập nhật theo điểm (3), KHÔNG đóng.
+- Số task ID mới = **0**. Số production file bị sửa bởi CHÍNH quyết định này = **0**.
+
+Can Revisit After:
+Khi `H-23` được chủ dự án tự yêu cầu lại (đổi máy/browser cần phục hồi), hoặc khi có người dùng
+thứ hai (cùng điều kiện `DEC-011`/`DEC-019`/`DEC-021` đã ghi) — khi đó `RSK-001` và `H-23` được
+định tuyến lại toàn bộ.
+
+---
 
 ## DEC-025 — `OD-A5-01`: phê chuẩn hoàn thành `WP-A5` (`DONE`)
 

@@ -11,6 +11,11 @@
  *
  * Ca kiểm thử KHÔNG hard-code con số của counterexample WP-C1: mọi hạn mức được so với
  * oracle tính lại từ CHÍNH engine.js dùng chung (test_helpers.readUnlock).
+ *
+ * BẢO TRÌ T-09B (2026-09-02): trang chạy trên Firebase (harness emulator qua test_helpers);
+ * mọi H.readState() là bản DURABLE từ Firestore đã đối chiếu bit-exact với bộ nhớ trang —
+ * đây là phép kiểm CHECK-T09B-09 (bất biến T-09A trên state đã round-trip). Bốn ca và 68
+ * assertion GIỮ NGUYÊN.
  */
 const { chromium } = require('playwright');
 const H = require('./test_helpers.js');
@@ -320,6 +325,7 @@ async function caseSingleMonthUnchanged(b) {
 
 /* ------------------------------------------------------------------ */
 (async () => {
+  const stopEmu = await H.ensureEmulators();
   const b = await chromium.launch({ executablePath: H.CHROMIUM });
   try {
     await caseMultiMonthRelease(b);
@@ -327,7 +333,7 @@ async function caseSingleMonthUnchanged(b) {
     await caseUnlockBound(b);
     await caseSingleMonthUnchanged(b);
   } finally {
-    await b.close();
+    await b.close(); await stopEmu();
   }
   console.log('\n=== TỔNG KẾT T-09A ===');
   console.log('assertion đã chạy:', checks, '| FAIL:', failures);

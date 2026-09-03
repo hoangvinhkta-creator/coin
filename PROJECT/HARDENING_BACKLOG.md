@@ -982,3 +982,116 @@ khuyết mã.
       `ProvenanceUnresolvedError`.
 
 ---
+## H-29 — Trần 1 MiB/document của Firestore đối với `ethdca/state` (ledger tăng không giới hạn)
+
+Capability: `CAP-WEBAPP` · Owner: `T-09B` (ghi nhận tại batch review) · Phân loại: **PROVISIONAL HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09B batch review, `docs/reviews/T-09B-batch-review.md` `F-T09B-02`)
+
+Toàn bộ sổ kế toán nằm trong MỘT document `ethdca/state` (baseline `DEC-020`). `ledger[]` tăng
+~150 byte mỗi bút toán, `trades[]`/`extraDays[]` cũng tăng theo thời gian; Firestore từ chối ghi
+document > 1 MiB (`invalid-argument`). Với tần suất cá nhân (vài thao tác/tuần) ngưỡng này cách
+xa nhiều năm; sổ demo dựng trong test ~15 KB. Khi chạm trần, lệnh ghi bị từ chối và app hiện
+"CHƯA LƯU — invalid-argument" (fail visibly, không mất bản local) nhưng không thể ghi thêm cho tới
+khi tách document — đó là `ARCHITECTURE_CHANGE_REQUIRED` theo đúng điều kiện `DEC-020` (2) đã ghi
+trước.
+
+Vì sao KHÔNG BLOCKING: không có đường production hiện tại nào tạo ra document gần trần (nguồn
+canonical duy nhất là sổ demo + thao tác UI, cỡ KB); "sẽ xảy ra trong tương lai" không phải căn cứ
+BLOCKING (`PRODUCTION_PATH_RULE.md` § Forbidden Justification).
+
+    RE_TRIGGER_CONDITION:
+    - `ethdca/state` thật vượt 512 KiB (đo bằng Firebase Console hoặc `Tải về JSON`); HOẶC
+    - `ledger[]` thật vượt 3.000 bút toán; HOẶC
+    - chủ dự án thấy "CHƯA LƯU — invalid-argument" trên app thật.
+
+---
+
+## H-30 — Thay đổi bị từ chối vì `stale-durable` chỉ còn trong bộ nhớ tab, không được cất riêng
+
+Capability: `CAP-WEBAPP` · Owner: `T-09B` (ghi nhận tại batch review) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09B batch review, `F-T09B-03`)
+
+`persist()` ghi qua transaction có điều kiện `rev`: nếu Firestore đã đổi ở nơi khác (tab thứ hai
+cùng profile), lệnh ghi bị từ chối `stale-durable`, bản mới hơn trên máy chủ KHÔNG bị ghi đè, app
+hiện banner "NGUỒN BỀN ĐÃ ĐỔI Ở NƠI KHÁC" và hướng dẫn *Tải về JSON* trước khi tải lại
+(`CHECK-T09B-16`, kịch bản hai tab trong `test_t09b_persistence.js`). Thay đổi bị từ chối chỉ
+tồn tại trong bộ nhớ tab đó: nếu người dùng tải lại trang mà không export, thay đổi đó mất (mirror
+có cùng `rev` với bản bền nên `reconcileMirror()` không xem là lệch).
+
+Vì sao KHÔNG BLOCKING: không có mất mát ÂM THẦM — lệnh bị từ chối, chip "CHƯA LƯU", banner nêu rõ
+cách giữ; kịch bản đòi hỏi hai tab cùng ghi trong một phiên, hiếm với công cụ cá nhân dùng khi cần
+(`DEC-021`). Đóng hẳn cần một cơ chế "stash theo nội dung" — thuộc conflict-resolution mà `DEC-021`
+(9)-(10) đặt ngoài V1.
+
+    RE_TRIGGER_CONDITION:
+    - chủ dự án gặp banner "NGUỒN BỀN ĐÃ ĐỔI Ở NƠI KHÁC" trên sổ thật; HOẶC
+    - `H-23` được kích hoạt lại (thiết bị thứ hai trở thành yêu cầu V1).
+
+---
+
+## H-31 — `validateState()` giả định `base_pct + smart_pct + opportunity_pct = 1` khi kiểm TOTAL = A+R+D
+
+Capability: `CAP-WEBAPP` · Owner: `T-09B` (ghi nhận tại batch review) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-02 (T-09B batch review, `F-T09B-04`)
+
+Bất biến kế toán mà `validateState()` (`webapp/app_logic.js`) dùng để bác một bản durable/JSON
+nhập vào là `contribution = Σbase + Σsmart + oppAdded` cho từng tháng và `oppFund = Σ oppAdded`.
+Đẳng thức đúng vì `addContribution()` chia trọn contribution theo 50/30/20 (Strategy §8, cả
+`DEFAULT_CFG` lẫn `config` trong seed) và mọi thao tác sau đó chỉ dịch chuyển giữa a/r/d — kể cả
+dưới lỗi V-01/V-02 cũ (release/reserve nhầm tháng vẫn bảo toàn tổng từng tháng). Nếu một config
+tương lai có tổng tỷ lệ ≠ 1, mọi bản sổ hợp lệ sẽ bị bác (fail closed, không ghi đè) — app không
+dùng được cho tới khi sửa kiểm tra. Cùng lớp: nếu file JSON thật của chủ dự án (xuất từ bản
+artifact cũ) vi phạm đẳng thức vì lý do chưa biết, *Nạp lại từ JSON* sẽ từ chối và nêu tháng lệch —
+đây là hành vi đúng của gate L, nhưng chủ dự án cần biết trước để không tưởng là app hỏng.
+
+    RE_TRIGGER_CONDITION:
+    - config chiến lược đổi tổng `base_pct + smart_pct + opportunity_pct` khác 1; HOẶC
+    - *Nạp lại từ JSON* bản sổ thật của chủ dự án bị từ chối với lý do "TOTAL = A+R+D bị vi phạm".
+
+---
+
+## H-32 — `PRODUCTION_PATHS.md` §1 chưa khai `webapp/firebase_config.js`, `firestore.rules`, `firebase.json`
+
+Capability: `CAP-GOVTOOL` · Owner: **chưa có** (cùng khe với `H-08`, `H-09`, `H-21`, `H-22`) · Phân loại: **CONFIRMED HARDENING** (tầng governance)
+Ngày ghi nhận: 2026-09-02 (T-09B batch review, `F-T09B-05`)
+
+T-09B đưa ba file mới vào đường runtime thật: `webapp/firebase_config.js` được `build_app.js`
+nhúng vào trang (INPUT của mọi kết nối Firebase), `firestore.rules` quyết định mọi read/write sổ
+(BUSINESS STATE boundary), `firebase.json` định nghĩa Hosting + rules deploy. Bảng khai báo §1
+của `PROJECT/PRODUCTION_PATHS.md` (khai theo FILE, `H-12`) chưa có ba file này, nên phép đo
+Delivery Change Budget "theo khai báo" bỏ sót chúng, trong khi lệnh glob §1 lại đếm cả file test
+(`H-21`). Khai báo production path là giá trị PROJECT do chủ dự án đặt
+(`PRODUCTION_PATH_RULE.md` § Declared, Not Inferred) — phiên T-09B KHÔNG tự sửa, chỉ báo cả hai
+con số đo (`docs/reviews/T-09B-batch-review.md` §1).
+
+    RE_TRIGGER_CONDITION:
+    - chủ dự án cập nhật `PRODUCTION_PATHS.md` (cùng lúc với `H-12`/`H-21`); HOẶC
+    - một phiên dùng con số "theo khai báo" để tuyên bố diff production = 0 trong khi ba file này đổi.
+
+---
+
+## H-33 — Dependency footprint của `firebase-tools` (devDependency) rộng hơn nhiều phạm vi dùng thật
+
+Capability: `CAP-WEBAPP` · Owner: `T-09B` (ghi nhận tại phiên real-setup) · Phân loại: **PROVISIONAL HARDENING** (tầng tooling, không phải sản phẩm)
+Ngày ghi nhận: 2026-09-02 (phiên tiếp nối S014 — REAL FIREBASE SETUP; `DEC-022` §11 sanity check)
+
+`firebase-tools@15.28.2` là một CLI monolith: cài nó kéo theo transitive dependency cho MỌI sản
+phẩm Firebase (`@google-cloud/pubsub`, `@google-cloud/cloud-sql-connector`, `@apphosting/common`,
+`@electric-sql/pglite` cho Data Connect emulator, …) dù T-09B chỉ dùng đúng hai lệnh:
+`emulators:start --only auth,firestore` và `deploy --only hosting,firestore:rules`. Đo được: 723
+package entry mới trong `webapp/package-lock.json`, 677/723 không có chuỗi "firebase" trong đường
+dẫn nhưng đều là transitive dependency trực tiếp của `firebase-tools` hoặc của package `firebase`
+(SDK modular — mọi sản phẩm nằm sẵn trong npm package dù trang chỉ nạp 3 file compat qua CDN,
+không byte nào của phần không dùng tới trình duyệt).
+
+Vì sao KHÔNG BLOCKING: đây là devDependency (test/setup), không phải runtime browser — 0 ảnh hưởng
+tới người dùng cuối; không có đường production nào bị chạm; kích thước `node_modules/` (~440 MB)
+không nằm trong bất kỳ Completion Gate hay risk register nào. Vendor một `firebase-tools` tối giản
+là provider-abstraction/over-engineering, trái Personal Tool Simplification Principle (`DEC-021`
+§10 Over-engineering Guard) — không tự làm.
+
+    RE_TRIGGER_CONDITION:
+    - `webapp/node_modules` vượt hạn mức đĩa/thời gian cài đặt thực tế gây khó cho Owner; HOẶC
+    - `firebase-tools` phát hành bản CLI tách nhỏ theo sản phẩm (modular install) mà dự án muốn
+      chuyển sang; HOẶC
+    - một audit bảo mật dependency (không phải mục tiêu V1, `DEC-021` §3) yêu cầu giảm bề mặt.

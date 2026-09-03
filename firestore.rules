@@ -1,0 +1,111 @@
+rules_version = '2';
+// T-09B — DEC-020 OD-B2 / DEC-021 §4 Minimum Security Floor.
+//
+// ============================================================================
+// PROJECT `tinphatcontent` DÙNG CHUNG VỚI ỨNG DỤNG "Content" (Zalo Group — Tín Phát)
+// (phát hiện 2026-09-02, merge thực hiện cùng ngày — xem PROJECT_DECISIONS.md DEC-023)
+// ============================================================================
+// File này là ĐÚNG MỘT rules document cho toàn bộ project (Firestore chỉ có một ruleset).
+// Khối "CONTENT (giữ nguyên...)" bên dưới là rules Content THẬT do Owner cung cấp, chép
+// NGUYÊN VĂN — không refactor/format lại/đổi tên/thêm bớt quyền. Khối "COINDCA" ở cuối là
+// PHẦN DUY NHẤT thuộc T-09B, tự chứa (không gọi hàm nào của Content, không bị Content gọi),
+// chỉ match hai document `ethdca/state` và `ethdca/seed`.
+//
+// Đã kiểm bằng Firestore Rules Emulator (webapp/test_shared_rules_merge.js):
+// hành vi Content (users/contents/contents.versions/schedules/groups/config/fb_queue/
+// audit_logs, mọi role: no-auth/signedIn/manager/admin/resource-owner) BEFORE merge ==
+// AFTER merge, từng probe một. Xem docs/reviews/ cho evidence đầy đủ.
+//
+// CHƯA DEPLOY. Owner UID còn là placeholder `OWNER_UID_REQUIRED` — PHẢI thay bằng UID thật
+// (lấy từ app mở trên trình duyệt hằng ngày của Owner, xem webapp/README.md) trước khi Owner
+// tự deploy bằng `firebase deploy --only firestore:rules --project tinphatcontent`.
+//
+// Cross-device / mất identity: OUT OF SCOPE V1 (PROJECT/HARDENING_BACKLOG.md H-23) — một
+// trình duyệt/máy khác sinh UID CoinDCA mới và bị từ chối ở đây; lối thoát là export/import
+// JSON. Không liên quan gì tới Content.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==================== CONTENT (giữ nguyên nguyên văn từ Owner) ====================
+
+    function signedIn()  { return request.auth != null; }
+    function profile()   { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function hasProfile(){ return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function role()      { return hasProfile() ? profile().role : 'USER'; }
+    function isManager() { return signedIn() && role() in ['MANAGER', 'ADMIN']; }
+    function isAdmin()   { return signedIn() && role() == 'ADMIN'; }
+    function isOwner(f)  { return signedIn() && resource.data[f] == request.auth.uid; }
+
+    // Hồ sơ người dùng — ai cũng đọc được để hiển thị tên người phụ trách
+    match /users/{uid} {
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid;
+      allow update: if isAdmin()
+                    || (request.auth.uid == uid && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    // Content — nhân viên sửa bài của mình, quản lý sửa tất cả, không hard-delete
+    match /contents/{id} {
+      allow read:   if signedIn();
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isOwner('createdBy') || isManager();
+      allow delete: if isAdmin();
+
+      match /versions/{v} {
+        allow read:   if signedIn();
+        allow create: if signedIn();
+        allow update, delete: if false;   // lịch sử version là bất biến
+      }
+    }
+
+    // Lịch đăng — nhân viên được đánh dấu đã đăng, chỉ quản lý mới huỷ
+    match /schedules/{id} {
+      allow read:   if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if isManager();
+    }
+
+    match /groups/{id} {
+      allow read:  if signedIn();
+      allow write: if isManager();
+    }
+
+    match /config/{id} {
+      allow read:  if signedIn();
+      allow write: if isManager();
+    }
+
+    // Hàng đợi Facebook (tính năng dự phòng)
+    match /fb_queue/{id} {
+      allow read:  if signedIn();
+      allow write: if signedIn();
+    }
+
+    // Nhật ký thao tác — ghi được, không sửa được
+    match /audit_logs/{id} {
+      allow read:   if isManager();
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ==================== COINDCA / ETH DCA OS (T-09B) — namespace ethdca/* ====================
+    // Độc lập hoàn toàn với khối Content ở trên: không gọi signedIn()/isOwner()/... của Content,
+    // không bị bất kỳ match nào của Content chạm tới (không có collection nào tên "ethdca" ở
+    // Content). Chỉ hai document được allow-list tường minh; mọi document ethdca/* khác mặc
+    // định bị từ chối (Firestore default-deny), không cần catch-all riêng.
+
+    function isCoinDcaOwner() {
+      return request.auth != null && request.auth.uid == "OWNER_UID_REQUIRED";
+    }
+    // Không có `delete`: app không bao giờ xoá document; xoá nhầm sổ là mất tiền.
+    match /ethdca/state {
+      allow read, create, update: if isCoinDcaOwner();
+    }
+    match /ethdca/seed {
+      allow read, create, update: if isCoinDcaOwner();
+    }
+  }
+}

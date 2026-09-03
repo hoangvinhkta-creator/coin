@@ -3,8 +3,17 @@
 ## Metadata
 
 Status:
-READY (chuyển từ `PLANNED` tại phiên `DEC-021`, 2026-09-02 — Ready Gate 15/15, không còn Owner
-Decision nào chặn)
+DONE (phiên thực thi S014, 2026-09-02, branch `claude/t09b-firebase-implementation-nz50is`:
+`READY → IN_PROGRESS` khi bắt đầu code, `IN_PROGRESS → IMPLEMENTED` khi 16/16 REQUIRED check
+PASS ở mức E1 trên Firebase Emulator Suite và batch review PASS. 2026-09-03: chủ dự án tạo
+project Firebase thật, deploy Hosting + rules (đã merge an toàn với rules Content — `DEC-023`),
+tự tay lặp lại CHECK-T09B-01/02/03/04/14 trên `https://tinphatcontent.web.app` thật — PASS cả 5,
+E1 (`docs/reviews/T-09B-production-verification.md`). **`IMPLEMENTED → DONE`: OWNER DECISION
+`DEC-024` (`OD-WEBAPP-07`), 2026-09-03** — chủ dự án xác nhận tường minh chấp nhận Completion
+Gate 16/16 REQUIRED PASS + evidence hai tầng (emulator E1 toàn bộ, production E1 cho 01/02/03/
+04/14, Owner tự báo cáo — không phải E2 độc lập, đã chấp nhận rõ mức này). Cùng tiền lệ `DEC-018`
+(T-09A). `CAP-WEBAPP` budget không đổi: 2/0/2 — toàn bộ chuỗi phiên là INITIAL IMPLEMENTATION,
+không tiêu repair cycle.)
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật
@@ -646,6 +655,54 @@ Theo `TASK_READY_GATE_STANDARD.md` § MAJOR Ready Gate, cộng 14 điều kiện
 
 ---
 
+## Thực thi — S014 (2026-09-02) · `READY → IN_PROGRESS → IMPLEMENTED`
+
+Branch `claude/t09b-firebase-implementation-nz50is` từ `origin/main` @ `4502ea6`
+(BASE). Kiến trúc thực thi đúng baseline FROZEN — không đổi, không thêm thành phần:
+
+    Browser → Firebase Hosting (firebase.json: public = webapp/public)
+            → Firebase Authentication, Anonymous (signInAnonymously; session trong IndexedDB)
+            → Cloud Firestore: ethdca/state (sổ) + ethdca/seed (tham chiếu)
+              firestore.rules: chỉ MỘT owner UID đọc/tạo/sửa hai document; không delete; mặc định deny.
+    localStorage: mirror/cache (STORE_STATE, STORE_SEED) + stash bản lệch (STORE_STASH). Không còn
+    nhúng state vào trang, không còn quine/publish, export dùng <a download>.
+
+Production file đổi: `webapp/app_logic.js` (chỉ khối persistence/init/banner/handler guard/export-
+import-wipe), `webapp/app_shell.html`, `webapp/build_app.js`; mới: `webapp/firebase_config.js`,
+`firestore.rules`, `firebase.json`. `webapp/engine.js`, `src/eth_dca_os/**`, `pyproject.*` = 0 dòng.
+Test: `webapp/test_firebase_harness.js` (mới), `webapp/test_t09b_persistence.js` (mới), năm test cũ
+chuyển sang harness (kịch bản/assertion giữ nguyên). Chi tiết: `docs/sessions/S014-*.md`.
+
+**Bằng chứng và giới hạn của bằng chứng (phân loại trung thực theo chỉ thị §14):**
+
+- Mọi check chạy qua đường sản phẩm thật (trang build thật → Firebase SDK compat 12.18.0 thật →
+  Firebase **Emulator Suite** Auth + Firestore với đúng `firestore.rules` của repo). Emulator là
+  Firebase chạy cục bộ của Google (cùng rules engine, cùng giao thức) — không phải mock SDK, không
+  phải mock Firestore. Bằng chứng "phía Firebase" được đọc độc lập với app qua REST của emulator.
+- Môi trường agent chặn `www.gstatic.com` nên thẻ `<script>` SDK trong `app_shell.html` được harness
+  trả bằng file cùng version từ `node_modules/firebase`; trên Hosting thật trình duyệt tải thẳng từ
+  gstatic — chưa kiểm được ở đây.
+- **Project Firebase thật CHƯA tồn tại** (chủ dự án chưa tạo; `firebase_config.js` còn `REQUIRED`).
+  Do đó: *CODE IMPLEMENTATION COMPLETE*; *REAL FIREBASE SETUP REQUIRED* (tạo project, bật Anonymous,
+  tạo Firestore, điền config, `firebase deploy`, chép UID vào rules, deploy rules — `webapp/README.md`
+  § Thiết lập Firebase). **Production reachability trên project thật/Hosting thật = NOT_TESTED** và
+  KHÔNG được suy ra từ emulator. Sau khi thiết lập, chủ dự án lặp lại bằng tay chuỗi CHECK-01/02/03/
+  04/14 trên app thật (mở app → nhập giá → ghi giao dịch → đóng → mở lại; xoá site data → mở lại) để
+  đóng khoảng trống này trước khi chuyển `DONE`.
+- Real deploy: **KHÔNG** thực hiện trong phiên (không có project, không có credential).
+
+**Cập nhật 2026-09-03 (production reachability đóng khoảng trống trên):** chủ dự án đã tạo
+project Firebase thật (`tinphatcontent`, dùng chung với ứng dụng Content — xem `DEC-023`), deploy
+Hosting (`https://tinphatcontent.web.app`) và `firestore.rules` đã merge với Owner UID thật
+(`XWUo6IvUqhULI1v1EBrfndEDrE13`), rồi tự tay lặp lại chuỗi CHECK-T09B-01/02/03/04/14 trên app
+thật theo đúng hướng dẫn. Kết quả: **PASS cả 5 check**, evidence E1 (Owner báo cáo trực tiếp —
+agent không tự tới được `*.web.app` từ môi trường này để tái xác nhận độc lập). Chi tiết đầy đủ
+kèm log từng bước: `docs/reviews/T-09B-production-verification.md`. **Production reachability
+trên project thật/Hosting thật = PASS (E1)**, không còn `NOT_TESTED`.
+
+**Cập nhật 2026-09-03 (Owner Confirmation):** chủ dự án xác nhận tường minh chấp nhận evidence
+trên và ra quyết định `DEC-024` (`OD-WEBAPP-07`): **`T-09B: IMPLEMENTED → DONE`.**
+
 ## Completion Gate — FROZEN (2026-09-02, `DEC-021`)
 
 Effective Risk = HIGH → **E1 bắt buộc** cho mọi REQUIRED check kiểm chứng được, và **bắt buộc
@@ -655,31 +712,70 @@ batch review cuối phiên thực thi**. Mọi check chạy qua **đường sả
 `A`–`N` là 14 mục tối thiểu chủ dự án nêu ở §14 chỉ thị, ánh xạ 1-1 sang `CHECK-T09B-01..14`.
 `CHECK-T09B-15` và `-16` suy trực tiếp từ §9 và §3/§4 của cùng chỉ thị, không phải mục tự nghĩ ra.
 
-Toàn bộ 16 check hiện `NOT_TESTED` — chưa thực thi. `TASK_COMPLETION_GATE_STANDARD.md`: một
-check chưa chạy thật thì trạng thái là `NOT_TESTED`, không phải PASS.
+Trạng thái ban đầu (lúc freeze): 16 check `NOT_TESTED`. **Cập nhật S014 (2026-09-02): 16/16
+PASS, Evidence Level E1**, chạy trên Firebase Emulator Suite (Auth + Firestore, đúng
+`firestore.rules` của repo, Firebase SDK thật, trang build thật phục vụ qua HTTP) — xem mục
+"Thực thi — S014" cho phạm vi và giới hạn của bằng chứng. Câu chữ của từng check KHÔNG đổi; chỉ
+ô Status và khối Evidence được điền.
 
 ### Reliability — ghi và đọc bền
 
 #### CHECK-T09B-01 (§14.A) — Firebase durable write thành công
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: một thao tác làm đổi state ghi được lên Firebase và **được server xác nhận**. Bằng
 chứng phải cho thấy bản ghi tồn tại phía Firebase, không chỉ promise resolve trong app.
 
+Evidence (S014, E1 — emulator): `webapp/test_t09b_persistence.js` § CHECK-T09B-01 — thao tác nạp
+vốn qua UI → `rev` 22→23, chip "Đã lưu bền · rev 23" chỉ hiện sau khi promise transaction resolve;
+document `ethdca/state` (rev 23) và `ethdca/seed` (420 ngày) được đọc lại **độc lập với app** qua
+REST API của emulator từ Node (`test_firebase_harness.getDoc`), bit-exact với bản trong bộ nhớ.
+Kết quả: PASS (0 assert FAIL trong 10).
+
+Evidence (production, E1 — Owner báo cáo trực tiếp, 2026-09-03, `https://tinphatcontent.web.app`
+thật, project `tinphatcontent`, Owner UID `XWUo6IvUqhULI1v1EBrfndEDrE13`): chuỗi bốn thao tác qua
+UI (nhập giá đóng cửa synthetic → nạp vốn tháng → P2P → mua ETH), mỗi thao tác chip chuyển đúng
+"Đang lưu…" → "Đã lưu bền · rev N", rev tăng dần 1→2→3→4 — khớp chính xác con số tính trước từ
+quy trình kế toán (`addContribution`/`addP2P`/`addBuy`), không phải trùng hợp ngẫu nhiên. Giới
+hạn trung thực: agent không tự thực hiện được (mạng môi trường agent chặn `*.web.app`, đã xác
+nhận nhiều lần trong phiên) — quan sát do Owner trực tiếp báo lại, ghi nhận E1 theo
+`EVIDENCE_STANDARD.md` ("browser/devtool verification result"), không phải E2 độc lập.
+
 #### CHECK-T09B-02 (§14.B) — App load đúng state từ Firebase
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: mở app trên một phiên mới, state nạp lên **bằng đúng** bản đã ghi ở CHECK-01 — so từng
 trường MUST_PERSIST tầng 1, không so ảnh chụp màn hình.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-02 — mở trang mới (phiên mới, cùng profile), so
+`diff(canon(bản đã ghi), canon(bản nạp))` = 0 lệch, và so riêng từng trường `schema, rev, months,
+oppFund, treasury, eth, costUsdt, costVnd, ladders, trades, p2p, ledger, extraDays` (13/13 bằng
+nhau); seed nạp từ `ethdca/seed` (OSCORE hiển thị). PASS.
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03): đóng hẳn Chrome, mở lại
+`https://tinphatcontent.web.app` — phiên hoàn toàn mới; state nạp đúng bản đã ghi ở CHECK-01:
+chip "Đã lưu bền · rev 4", tab Lịch sử đúng 1 giao dịch ETH + 1 giao dịch P2P, ledger phục hồi
+đầy đủ. Cùng giới hạn trung thực về nguồn quan sát như CHECK-T09B-01.
+
 #### CHECK-T09B-03 (§14.C) — Xoá localStorage vẫn recover được state
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: xoá sạch `localStorage` + `sessionStorage`, mở lại app, state kế toán phục hồi đầy đủ
 từ Firebase. Đây là chứng minh trực tiếp rằng `RSK-001` đã được giảm thiểu.
 Ghi chú (`OD-C`, `DEC-020`): kịch bản này **không** đụng `IndexedDB` nên **không** bị ảnh hưởng
 bởi khe recovery của Anonymous Auth — acceptance criteria trên vẫn đứng nguyên, PASS được
 trung thực với thiết kế đã duyệt.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-03 — `localStorage.clear(); sessionStorage.clear()`
+(đo `length` = 0), tải lại: cùng Anonymous UID (IndexedDB còn), state phục hồi bit-exact từ
+Firestore (0 lệch), seed phục hồi, không banner lệch bản. PASS.
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03): chạy đúng
+`localStorage.clear(); sessionStorage.clear(); location.reload();` trong Console trên
+`https://tinphatcontent.web.app` thật (không đụng IndexedDB) — sau reload: không banner "KHÔNG
+NHẬN DIỆN ĐƯỢC THIẾT BỊ", durable state rev 4 còn nguyên, 1 giao dịch ETH + 1 giao dịch P2P còn
+nguyên. Xác nhận trực tiếp trên hạ tầng thật: Firestore, không phải localStorage, là nguồn bền.
+Cùng giới hạn trung thực về nguồn quan sát như CHECK-T09B-01.
+
 #### CHECK-T09B-04 (§14.D) — Đóng/mở lại môi trường sử dụng vẫn recover được state (đã tái phạm vi bởi Owner Scope Decision, `DEC-021`)
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 
 **Audit trail bắt buộc (`DEC-021` §6) — KHÔNG phải bug fix, KHÔNG phải evidence PASS:**
 
@@ -708,49 +804,94 @@ check mới, chỉ là một tình huống cụ thể mà check đó phải ph�
 
 Lối thoát V1 cho cross-device: export/import JSON thủ công (capability giữ nguyên qua `OD-A`).
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-04 — `launchPersistentContext(userDataDir)` →
+`ctx.close()` (đóng hẳn trình duyệt) → mở lại cùng user-data-dir: cùng UID, `rev` = rev bền, state
+bit-exact, bất biến T-09A (TOTAL = A+R+D theo contribution, không âm, reserved đủ backing ladder
+ACTIVE, oppFund = Σ oppAdded) giữ nguyên; tiếp tục ghi sổ được (rev +1 bền). Phạm vi đúng NEW V1
+REQUIREMENT (same-browser-profile); cross-device KHÔNG kiểm ở đây (H-23) — nhánh UID lạ được kiểm
+tại CHECK-T09B-11. PASS.
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03): đóng hẳn Chrome (cùng browser profile
+Owner dùng hằng ngày), mở lại `https://tinphatcontent.web.app` — Anonymous identity vẫn được
+nhận diện (IndexedDB còn), không banner "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ", state/lịch sử/ledger
+nguyên vẹn ở rev 4. Đúng phạm vi NEW V1 REQUIREMENT trên hạ tầng thật; cùng giới hạn trung thực
+về nguồn quan sát như CHECK-T09B-01.
+
 ### Data — bảo toàn sổ qua vòng lưu/nạp
 
 #### CHECK-T09B-05 (§14.E) — Purchase History bảo toàn
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: `trades[]` round-trip nguyên vẹn — đúng số phần tử, đúng thứ tự, và mọi trường
 (`ts`, `src`, `usdt`, `price`, `recPrice`, `eth`, `fee`, `vndRate`, `vndCost`, `shortfallBps`,
 `zone`) bằng nhau từng giá trị, kể cả `null`.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-05 — `trades[]` 3 phần tử (một có `recPrice`, một
+`recPrice: null`, một mua thủ công `zone: null`, `vndRate: null`), so 11 trường × 3 phần tử bằng
+`Object.is` (null giữ nguyên null), đúng thứ tự. PASS (35/35 assert).
+
 #### CHECK-T09B-06 (§14.F) — Holdings / average cost bảo toàn
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: `eth`, `costUsdt`, `costVnd` round-trip **bằng đúng bit** (so sánh đẳng thức, không so
 sánh có dung sai — chúng là số đã lưu, không phải số vừa tính).
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-06 — `eth`, `costUsdt`, `costVnd` so `Object.is`
+(không dung sai) giữa bản trong bộ nhớ và bản durable đọc qua REST; ba số đều > 0. PASS.
+
 #### CHECK-T09B-07 (§14.G) — Accounting pools / reserve / release / available bảo toàn
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: mọi `months[k].base{a,r,d}`, `months[k].smart{a,r,d}`, `months[k].contribution`,
 `oppAdded`, `oppOverflow`, `oppFund{a,r,d}`, `treasury{vnd,usdt}` round-trip bằng đúng bit. Bất
 biến `TOTAL = AVAILABLE + RESERVED + DEPLOYED` giữ nguyên trước và sau.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-07 — hai tháng (2026-05, 2026-06): `contribution`,
+`oppAdded`, `oppOverflow`, `base{a,r,d}`, `smart{a,r,d}`, `oppFund{a,r,d}`, `treasury{vnd,usdt}`
+bằng `Object.is`; bất biến TOTAL = A+R+D (theo contribution) và backing ladder ACTIVE đo TRƯỚC và
+SAU round-trip; ca có reserved > 0 và deployed > 0. PASS (40/40 assert).
+
 #### CHECK-T09B-08 (§14.H) — Active ladders + `ladder.month` bảo toàn
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: `ladders[]` round-trip nguyên vẹn, **đặc biệt là `ladders[].month`** và toàn bộ
 `zones[]` gồm `filled_vnd` và `released_vnd` — kể cả khi giá trị bằng `0`. Ca kiểm phải có ít
 nhất một zone `filled_vnd: 0` để bắt đúng lỗi "xoá khoá có giá trị rỗng".
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-08 — 2 ladder (một ACTIVE có `month = "2026-06"`,
+một CANCELLED có `released_vnd > 0`), mọi trường ladder và 7 trường × mọi zone bằng nhau, kể cả sự
+**tồn tại** của khoá (`(k in z) === (k in D)`); có zone `filled_vnd: 0` và giá trị 0 được giữ. PASS
+(66/66 assert).
+
 #### CHECK-T09B-09 (§14.I) — Bất biến kế toán T-09A không drift
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: chạy lại **toàn bộ** `webapp/test_t09a_accounting.js`,
 `webapp/test_multi_month_invariant.js`, `webapp/test_v01_v02_v03.js` trên state **đã đi qua
 Firebase** (ghi lên, nạp về), và cho kết quả **giống hệt** khi chạy trên state trong bộ nhớ.
 Phủ: pool ownership isolation, `ladder.month`, reserve, release, available, active backing.
 Serialize/deserialize không được làm đổi accounting semantics.
 
+Evidence (S014, E1 — emulator): `test_helpers.readState()` nay CHỜ máy chủ xác nhận, đọc bản
+DURABLE từ Firestore qua REST (Node, độc lập với SDK) và đối chiếu bit-exact với bản trong bộ nhớ
+(ném lỗi nếu lệch). Ba bộ test chạy NGUYÊN VĂN kịch bản/assertion trên state đã đi qua Firebase:
+`test_t09a_accounting.js` **68/68 assert, 0 FAIL** (A ownership · B backing · C upper bound · D
+conservation · E multi-month · F existing behavior); `test_multi_month_invariant.js` tất cả PASS;
+`test_v01_v02_v03.js` V-01 = BÁC BỎ, V-02 = BÁC BỎ, V-03 = BÁC BỎ — giống hệt kết quả T-09A trên
+state trong bộ nhớ (`docs/reviews/T-09A-batch-review.md` §2). PASS.
+
 ### Error Handling — failure phải nhìn thấy được
 
 #### CHECK-T09B-10 (§14.J) — Firebase write failure visible
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: dựng một lần ghi thất bại (mất mạng / rules từ chối). App **không** được hiển thị bất
 kỳ dấu hiệu nào hàm ý đã lưu bền. Trạng thái persistence hiện rõ là chưa lưu, và bản local vẫn
 còn để cứu.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-10 — (a) rules chỉ cho đọc: lệnh ghi bị từ chối
+`permission-denied`, chip "CHƯA LƯU — permission-denied", banner "GHI THẤT BẠI", `durableRev` giữ
+nguyên, bản local rev +1 vẫn trong localStorage, phía Firebase không đổi (REST); khôi phục rules →
+"Lưu lại" → bền. (b) `setOffline(true)`: sau `ackTimeoutMs` chip "CHƯA XÁC NHẬN", rồi SDK từ chối
+`unavailable` → "CHƯA LƯU"; không lúc nào chip hàm ý "Đã lưu"; bản local còn; có mạng lại → tự ghi
+lại thành công (sự kiện `online`). PASS.
+
 #### CHECK-T09B-11 (§14.K) — Firebase read failure visible
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: dựng một lần đọc thất bại. App **không** được im lặng khởi động với state rỗng như thể
 sổ trống là sự thật. Banner đỏ, và mọi hành động ghi sổ bị chặn.
 Ghi chú (`DEC-021`): "đọc thất bại" gồm cả trường hợp Firestore rules **từ chối** vì UID hiện
@@ -759,59 +900,118 @@ Nhánh đó phải hiện banner phân biệt rõ **"không nhận diện đư�
 không dùng chung thông điệp mơ hồ với lỗi mạng, để chủ dự án biết cần export/import JSON thay
 vì chờ tự phục hồi.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-11 — (a) context mới (UID mới) khi sổ đã tồn tại:
+phase UNRECOGNIZED, banner "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ/TRÌNH DUYỆT NÀY" (khác thông điệp lỗi
+mạng), không hiện sổ rỗng như sổ hợp lệ, ghi sổ bị chặn, phía Firebase không đổi. (b) Firestore
+không với tới được: phase OFFLINE, banner đỏ "KHÔNG ĐỌC ĐƯỢC NGUỒN BỀN", mirror hiển thị nhưng ĐÁNH
+DẤU "CHƯA xác nhận từ nguồn bền", ghi sổ bị chặn. (c) Auth không với tới được (context mới): phase
+AUTH_FAILED, banner "KHÔNG XÁC THỰC ĐƯỢC", ghi sổ bị chặn. (d) `firebase_config.js` còn REQUIRED:
+UNCONFIGURED, banner "CHƯA CẤU HÌNH FIREBASE", ghi sổ bị chặn. Mở lại bình thường sau đó: sổ nguyên
+vẹn. PASS (24/24 assert).
+
 #### CHECK-T09B-12 (§14.L) — Corrupt / malformed durable state không thành accounting state
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: ít nhất ba ca — (a) thiếu khoá `schema`; (b) `months` sai kiểu; (c) đủ khoá nhưng vi
 phạm `TOTAL = AVAILABLE + RESERVED + DEPLOYED`. Cả ba: **không** được nạp âm thầm thành official
 accounting state, và bản durable **không** bị ghi đè.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-12 — bốn ca ghi thẳng lên Firestore qua REST: (a)
+thiếu `schema`; (b) `months` là mảng; (c) đủ khoá nhưng `smart.a` tháng 2026-06 bị cộng thêm →
+TOTAL = A+R+D ≠ contribution; (d) `smart.r` âm. Cả bốn: phase CORRUPT, lý do nêu đúng lỗi, `rev`
+trong bộ nhớ = 0 (không thành accounting state), banner "NGUỒN BỀN KHÔNG HỢP LỆ … không ghi đè",
+ghi sổ bị chặn, bấm Lưu lại không làm gì, `canonJSON(durable)` trước/sau bằng nhau (KHÔNG ghi đè).
+Khôi phục bản hợp lệ → ONLINE lại. PASS (33/33 assert).
+
 ### Regression — không phá thứ đang chạy đúng
 
 #### CHECK-T09B-13 (§14.M) — Existing clean web behavior không regression
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: `npm --prefix webapp test` PASS toàn bộ (`test_app.js`, `test_zone.js`,
 `test_v01_v02_v03.js`, `test_multi_month_invariant.js`, `test_t09a_accounting.js`). `engine.js`
 đổi **0 dòng** — chứng minh bằng `git diff --stat`, không bằng lời.
 
+Evidence (S014, E1): `npm --prefix webapp test` → 6/6 file test exit 0 (`test_app.js`,
+`test_zone.js`, `test_v01_v02_v03.js`, `test_multi_month_invariant.js`, `test_t09a_accounting.js`,
+`test_t09b_persistence.js`), 0 page error. `git diff --stat 4502ea6 -- webapp/engine.js` → **rỗng
+(0 dòng đổi)**; `src/eth_dca_os/**`, `pyproject.*` 0 dòng đổi. Bảo trì test: các test cũ chỉ đổi
+cách mở trang (qua harness Firebase) và nguồn đọc state (durable), không đổi kịch bản/assertion;
+bước 10 của `test_app.js` (quine template) được thay bằng kiểm "trang không nhúng state" vì cơ chế
+quine không còn (OD-A). PASS.
+
 ### UI/UX — dùng được hằng ngày
 
 #### CHECK-T09B-14 (§14.N) — Workflow cá nhân đơn giản, không cần terminal / AI coding agent
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: mô tả và chạy thật đúng chuỗi thao tác hằng ngày — mở app, nhập giá đóng cửa, ghi một
 giao dịch, đóng, mở lại — mà **không** dùng terminal, không dùng AI coding agent, không thao tác
 thủ công ngoài trình duyệt. Ánh xạ `DEC-011` điểm 8.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-14 — trên profile bền, chỉ qua UI: nhập giá đóng
+cửa (tab Nhập số liệu) → ghi một giao dịch mua → hai rev bền → `ctx.close()` (đóng trình duyệt) →
+mở lại: giá và giao dịch còn nguyên, tab Lịch sử hiện đủ số lệnh. Không terminal, không AI agent,
+không thao tác ngoài trình duyệt. Thiết lập MỘT LẦN (tạo project, điền config, deploy, chép UID
+vào rules) có cần terminal — đúng ranh giới "Owner deploy khi setup" của chỉ thị §16 và
+`DEC-011` điểm 8 (hằng ngày). PASS. Ghi chú: chuỗi này chạy trên emulator; trên Hosting thật
+chủ dự án phải lặp lại một lần sau khi thiết lập (xem "Thực thi — S014").
+
+Evidence (production, E1 — Owner báo cáo, 2026-09-03, `https://tinphatcontent.web.app` thật —
+đóng nốt ghi chú "phải lặp lại trên Hosting thật" ở trên): chuỗi thao tác hằng ngày đầy đủ chạy
+thật trên trình duyệt Owner — mở app, nhập giá đóng cửa, ghi giao dịch (nạp vốn tháng → P2P →
+mua ETH qua UI), đóng hẳn trình duyệt, mở lại, xác nhận dữ liệu còn nguyên. Toàn bộ qua trình
+duyệt; agent chỉ đưa hướng dẫn bằng văn bản, không điều khiển hay truy cập được trình duyệt của
+Owner (không có quyền/khả năng đó). Không terminal, không AI coding agent thao tác thay. PASS —
+đóng dứt điểm phần production reachability còn treo của check này.
+
 ### Data — ranh giới historical (§9 chỉ thị)
 
 #### CHECK-T09B-15 — Không tuyên bố historical state là sạch
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: nạp một state có ladder **không** mang `month` (dạng trước T-09A), ghi lên Firebase,
 nạp lại. Ladder đó **vẫn** không có `month` (không bị backfill), và banner "THÁNG SỞ HỮU SUY
 LUẬN" của `renderBanners()` **vẫn** hiện. Đưa sổ lên Firebase không được làm cái sai trở thành
 cái đúng.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-15 — ghi qua REST một bản sổ hợp lệ mà mọi ladder
+đều bị xoá khoá `month` (dạng trước T-09A); tải lại: nạp được (không bị coi là corrupt), banner
+"THÁNG SỞ HỮU SUY LUẬN" hiện; thực hiện một thao tác → ghi lại lên Firestore → đọc lại qua REST:
+`ladders[]` vẫn KHÔNG có khoá `month` (không backfill); tải lại lần nữa: banner vẫn hiện, ladder
+nguyên vẹn. PASS.
+
 ### Data — vai trò của localStorage (§3, §4 chỉ thị)
 
 #### CHECK-T09B-16 — Mirror không bao giờ âm thầm thắng nguồn bền
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
 Yêu cầu: dựng ca `localStorage.rev > durable.rev`. App **không** được âm thầm lấy bản mirror làm
 official accounting state (hành vi hiện tại ở `app_logic.js:46-56`, đúng ở kiến trúc cũ, sai ở
 kiến trúc mới). Chênh lệch phải hiện ra và việc chọn bản nào là hành động **tường minh của người
 dùng**.
 
+Evidence (S014, E1 — emulator): § CHECK-T09B-16 — giả lập `localStorage.rev = durable.rev + 5`
+(kèm đổi `treasury.vnd`): tải lại → sổ chính thức = nguồn bền (rev cũ), mirror bị thay bằng bản
+bền, bản mới hơn cất riêng ở khoá `…local-diverged`, banner "BẢN TRÊN MÁY MỚI HƠN NGUỒN BỀN" với
+hai nút; chọn *Bỏ* → stash xoá, nguồn bền không đổi; dựng lại và chọn *Đẩy lên* → nguồn bền nhận
+nội dung bản trên máy với rev lớn hơn. Thêm: hai tab cùng profile — tab stale ghi sau bị từ chối
+`stale-durable` (transaction có điều kiện rev), phía Firebase giữ bản của tab mới hơn, tab stale
+hiện "NGUỒN BỀN ĐÃ ĐỔI Ở NƠI KHÁC"; mirror CŨ HƠN nguồn bền bị thay lặng lẽ, không banner. PASS.
+
 ### Exit Criteria
 
-1. 16/16 REQUIRED check PASS ở mức E1.
-2. Batch review cuối phiên PASS, 0 BLOCKING còn lại có production path.
-3. `npm --prefix webapp test` PASS.
-4. `webapp/engine.js` đổi 0 dòng.
-5. Không có hàm kế toán nào trong Out of Scope bị sửa.
+1. 16/16 REQUIRED check PASS ở mức E1. — **ĐẠT (S014)**, E1 trên Firebase Emulator Suite; project
+   thật: **ĐẠT bổ sung 2026-09-03** cho 5 check được chủ dự án tự lặp lại trên production
+   (CHECK-01/02/03/04/14, E1 Owner báo cáo) — xem `docs/reviews/T-09B-production-verification.md`.
+2. Batch review cuối phiên PASS, 0 BLOCKING còn lại có production path. — **ĐẠT**:
+   `docs/reviews/T-09B-batch-review.md`, CONFIRMED BLOCKING = 0, 4 HARDENING (H-29..H-32).
+3. `npm --prefix webapp test` PASS. — **ĐẠT** (6/6 file test).
+4. `webapp/engine.js` đổi 0 dòng. — **ĐẠT** (`git diff --stat` rỗng).
+5. Không có hàm kế toán nào trong Out of Scope bị sửa. — **ĐẠT** (diff `app_logic.js` không chạm
+   `addContribution/addP2P/addBuy/addDay/reserveFor/releaseLadder/createLadder/cancelLadder/
+   ladderMonth/smartReservable/oppReservable`; xem review §1).
 6. `PROJECT/PROJECT_PROGRESS.md` cập nhật; `PROJECT/LO_TRINH_DE_HIEU.md` sinh lại bằng
-   `sync_easy_roadmap.py`; `validate_easy_roadmap.py` PASS.
-7. `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2 ghi cặp BASE/HEAD SHA của lượt implementation.
-8. Session handoff được viết.
+   `sync_easy_roadmap.py`; `validate_easy_roadmap.py` PASS. — **ĐẠT**.
+7. `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2 ghi cặp BASE/HEAD SHA của lượt implementation. — **ĐẠT**.
+8. Session handoff được viết. — **ĐẠT**: `docs/sessions/S014-t09b-firebase-implementation.md`.
 9. `RSK-001` được cập nhật bằng bằng chứng, KHÔNG tự đóng — `DONE` và việc đóng risk thuộc thẩm
-   quyền chủ dự án (`STATE_AUTHORITY.md`).
+   quyền chủ dự án (`STATE_AUTHORITY.md`). — **ĐẠT** (cập nhật, không đóng).
 
 ### Gate Change Control
 
