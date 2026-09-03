@@ -102,8 +102,12 @@ hoàn tất và đã commit (`61cf54b`). Hệ quả có lợi: `pipeline_AFTER` 
 ## 5. Bằng chứng
 
 **Test-first.** Toàn bộ 9 ca ĐỎ trước khi sửa (`a1r_RED.log`, `EXIT=1`), chữ ký rõ ràng
-`AssertionError: assert 'verified' == 'dev_limit_set'`; 4 ca đối chứng xanh sẵn từ đầu. Sau khi
-sửa: **13/13 PASS** (`a1r_GREEN.log`, `EXIT=0`).
+`AssertionError: assert 'verified' == 'dev_limit_set'`; 3 ca đối chứng xanh sẵn từ đầu. Sau khi
+sửa: **12/12 PASS** (`a1r_GREEN.log`, `EXIT=0`).
+[Sửa 2026-09-03 theo `E2-WP-A1-CHECK-A1-11-round4.md` / `N-04`: bản gốc ghi "4 ca đối chứng" /
+"13/13" — sai số học, tự mâu thuẫn với §6 của chính biên bản này ("12 test mới"). Reviewer
+E2 đếm trực tiếp: `tests/test_wp_a1_legacy_gate_repair.py` có 12 hàm test, chạy 12/12 PASS.
+Không đổi kết luận nào.]
 
 **Không phá test cũ.** `test_wp_a1_provenance.py` + `test_wp_a1_eligibility_contract.py` +
 `test_cli.py`: **50/50 PASS**, exit 0.

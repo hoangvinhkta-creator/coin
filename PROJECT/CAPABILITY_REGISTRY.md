@@ -46,7 +46,7 @@ Golden. Đây là giới hạn thật, phải được nói rõ, không được
 
 | Capability | Tên | Lineage root | Owner task hiện hành | Trạng thái | Nằm trên Vertical Slice? |
 |---|---|---|---|---|---|
-| `CAP-PROV` | Nguồn gốc & khả năng tái lập của official run | `WP-A1` | `WP-A1` | IN_PROGRESS — E2 vòng ba FAIL | CÓ (bắt buộc cho GATE-A) |
+| `CAP-PROV` | Nguồn gốc & khả năng tái lập của official run | `WP-A1` | `WP-A1` | DONE — CHECK-A1-11 PASS/E2 vòng BỐN, Owner xác nhận `DEC-028` (2026-09-03) | Đã thoả (GATE-A CLOSED) |
 | `CAP-DATA` | Ngữ nghĩa dữ liệu thiếu/hỏng (gồm độ phủ theo khoảng được yêu cầu, và ngữ nghĩa cửa sổ indicator daily theo ngày lịch) | `WP-A4` | `WP-A4` | DONE — 10/10 REQUIRED check PASS tại S010 sau REPAIR CYCLE #1 | CÓ (đường găng) |
 | `CAP-ENGINE` | Vòng đời regime & ladder, kế toán vốn | `WP-A3` | `WP-A3` (DONE), `WP-A7` (DONE) | DONE | CÓ |
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |

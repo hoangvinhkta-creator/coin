@@ -2,7 +2,8 @@
 
 ## Metadata
 Status:
-IN_PROGRESS
+DONE — Owner xác nhận tại Owner Checkpoint (2026-09-03), sau `CHECK-A1-11 = PASS/E2`
+(vòng BỐN, `docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`, HEAD `990a6bb`). Xem `DEC-028`.
 
 Phase:
 Phase 2 — Lớp A: bắt buộc sửa trước official run
@@ -608,7 +609,8 @@ Priority:
 REQUIRED
 
 Status:
-FAIL — vòng ba (xem `docs/reviews/E2-WP-A1-provenance-round3.md`)
+PASS — vòng BỐN (xem `docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`, HEAD `990a6bb`).
+Owner chấp nhận tại Owner Checkpoint 2026-09-03 (`DEC-028`).
 
 Evidence Level:
 E2
@@ -619,7 +621,14 @@ Yêu cầu: một phiên reviewer độc lập theo "Solo Independent Review Pro
 CHECK-A1-06, A1-07, A1-09 và ghi bằng chứng riêng. Lưu tại `docs/reviews/` theo
 `governance/templates/E2_INDEPENDENT_REVIEW_TEMPLATE.md`.
 
-KẾT QUẢ: **E2 FAIL** (lần rà soát thứ hai, trên commit 2f20e6c).
+KẾT QUẢ VÒNG BỐN: **E2 PASS** (commit `990a6bb`, review artifact `d24db30`/`6ca82f7`).
+Báo cáo: `docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`. Ba hạng mục `LEGACY_GATE_DISPOSITION_
+REQUIRED` (`F-E2A1-03`, `F-E2A1R3-03`, `F-E2A1R3-06`+`F-E2A1-08`) đều tái xác nhận ĐÓNG bằng
+reproduction độc lập (clean/non-editable env, positive control, mutation testing). Bốn finding
+mới (N-01..N-04) không đạt đủ ba tiêu chí BLOCKING, định tuyến HARDENING/docs-only, không tiêu
+`CAP-PROV`. Full suite 377/377 PASS (hai lần chạy độc lập).
+
+KẾT QUẢ VÒNG BA (lịch sử — xem chi tiết bên dưới): **E2 FAIL** (trên commit 2f20e6c).
 Báo cáo: `docs/reviews/E2-WP-A1-provenance.md`.
 
 Điểm số reviewer tự chấm: 7 PASS / 2 FAIL / 1 NOT_TESTED trên CHECK-A1-01..A1-10.
@@ -649,13 +658,22 @@ Timestamp:
 2026-08-24
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS
-- [ ] Mức evidence yêu cầu được thoả (E1 cho toàn bộ; E2 cho CHECK-A1-11)
-- [ ] Không defect nghiêm trọng nào chưa xử lý
-- [ ] `docs/CONVENTIONS.md` ghi quy ước phân loại nguồn dữ liệu
-- [ ] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-006 và RSK-008 được cập nhật trạng thái
-- [ ] Session handoff được viết
-- [ ] Không hạ REQUIRED check nào để đạt DONE
+- [x] 100% REQUIRED checks PASS — CHECK-A1-01..A1-11 đều PASS (A1-11: E2 vòng BỐN)
+- [x] Mức evidence yêu cầu được thoả (E1 cho toàn bộ; E2 cho CHECK-A1-11)
+- [x] Không defect nghiêm trọng nào chưa xử lý — 4 finding mới (N-01..N-04) đều HARDENING/
+      docs-only, không finding nào đủ 3 tiêu chí BLOCKING
+- [x] `docs/CONVENTIONS.md` ghi quy ước phân loại nguồn dữ liệu
+- [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-006 và RSK-008 được cập nhật trạng thái
+- [x] Session handoff được viết (`docs/sessions/S017-wp-a1-repair-cycle-cuoi.md`; Owner
+      Checkpoint đóng gói tại `DEC-028`)
+- [x] Không hạ REQUIRED check nào để đạt DONE
+
+## Owner Completion (2026-09-03)
+
+Owner xác nhận `WP-A1: IN_PROGRESS → DONE` tại Owner Checkpoint sau khi chấp nhận
+`CHECK-A1-11 = PASS/E2` (vòng BỐN, HEAD `990a6bb`, review artifact `d24db30`/`6ca82f7`).
+Xem `PROJECT/PROJECT_DECISIONS.md` — `DEC-028`. `CAP-PROV`: allowed 3 / used 3 / remaining 0,
+không cấp thêm `OWNER_EXTENSION`.
 
 ## Trạng thái gate sau E2 lần BA (2026-09-01)
 

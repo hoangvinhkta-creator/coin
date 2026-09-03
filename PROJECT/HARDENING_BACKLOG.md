@@ -75,6 +75,17 @@ xếp mục này vào nhóm "nên làm, không chặn DONE".
     - `F-E2A1R3-03` được sửa (mã lý do `dev_limit_set`) — lúc đó bất nhất này trở nên
       nhìn thấy được và nên đóng cùng gói.
 
+**Cập nhật 2026-09-03 (E2-WP-A1-004 / `N-02`, xác nhận `DEC-028`).** Vế thứ ba của
+`RE_TRIGGER_CONDITION` **ĐÃ KÍCH HOẠT**: `F-E2A1R3-03` được sửa tại S017 (`_official_reason`
+áp tại `run_gate1/2/3`), và `run_controls` xác nhận vẫn KHÔNG tính đường dev — vẫn ghi
+`official = prep.official_eligible`, `official_reason = prep.official_reason` không phân
+biệt `n_sims`. Bất nhất nay **nhìn thấy được** đúng như dự đoán. Owner ghi nhận (`DEC-028`
+điểm 6) và giữ nguyên phân loại **HARDENING** — trên official run thật (`dev_limit=None`,
+`n_sims=1000`) mọi record vẫn `official=true` nhất quán; bất nhất chỉ hiện trên run dev, nên
+không có hậu quả nghiệp vụ trên đường official. KHÔNG mở repair cycle. Đóng mục này khi nào
+`WP-B3` bắt đầu tiêu thụ trường `official` của record `RANDOM_CONTROL`, hoặc khi có repair
+cycle khác chạm `run_controls`.
+
 ---
 
 ## H-04 — `F-E2A1R3-02` — `official_eligibility` raise `TypeError` thay vì `lineage_malformed`
@@ -835,3 +846,63 @@ thật ngay khi một người tiêu thụ chuyển sang `is True` / `is False` 
     - cờ `pass` được tuần tự hoá ra artifact và bị đọc lại bởi một hệ khác (JSON hoá
       `numpy.bool` qua `default=str` cho chuỗi `"True"`/`"False"` — đúng dấu vết đã giúp
       phát hiện `F-S015-01`).
+
+---
+
+## H-27 — `N-01` — `code_commit` có thể phân giải SHA của một git repo LẠ khi chạy từ bản sao mã trần nằm trong repo khác
+
+Capability: `CAP-PROV` (`WP-A1`, đã DONE) · Owner: chưa gán · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-03 (`docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`, `N-01`; xác nhận
+`DEC-028` điểm 6)
+
+`reporting._get_code_commit()` chạy `git rev-parse HEAD` với `cwd=_REPO_ROOT`. Nếu cây mã dự
+án được COPY (không kèm `.git` riêng) vào bên trong một git repo KHÁC, `git` đi ngược lên
+tìm `.git` gần nhất và trả về SHA của repo LẠ đó, không phải SHA của dự án. Reviewer tái lập
+được: `code_commit` = SHA của repo bao ngoài, `provenance_resolved = True`, official run
+ĐƯỢC GHI với provenance sai.
+
+Vì sao KHÔNG BLOCKING: kịch bản chỉ dựng được khi vận hành viên chạy official run từ một bản
+sao mã trần đặt bên trong một git repo khác — đã vi phạm ràng buộc vận hành mà `DEC-027`/
+`DEC-028` xác lập (official run phải chạy từ **canonical git checkout** của chính dự án). Từ
+đúng nguồn hợp lệ đó, `code_commit` giải đúng (đối chứng dương `R8` trong báo cáo E2). Hậu
+quả cũng KHÁC `'unknown'` im lặng: SHA sai vẫn phát hiện được về sau bằng đối chiếu
+`git log`/branch của dự án — không mất khả năng chứng minh hoàn toàn.
+
+    RE_TRIGGER_CONDITION:
+    - quy trình vận hành `T-06` KHÔNG kiểm được rằng máy chạy official run là một git
+      checkout của CHÍNH repo dự án; HOẶC
+    - official run được chạy từ artifact đóng gói (wheel/sdist/container) thay vì checkout;
+      HOẶC
+    - `WP-B3` (audit trail) bắt đầu dùng `code_commit` làm khoá tra cứu mà không đối chiếu
+      thêm với `git log` của dự án.
+
+    Sửa tối thiểu nếu Owner muốn đóng: đối chiếu `git rev-parse --show-toplevel` (hoặc
+    `git remote get-url origin`) với `_REPO_ROOT`/tên repo dự án; lệch thì coi `code_commit`
+    là KHÔNG phân giải được. Ước lượng ~3 dòng trong `reporting.py`.
+
+---
+
+## H-28 — `N-03` — hành vi fail-loud + hai trường record mới của provenance chưa vào `docs/CONVENTIONS.md`
+
+Capability: `CAP-PROV` (`WP-A1`, đã DONE) · Owner: chưa gán · Phân loại: **CONFIRMED HARDENING (docs-only)**
+Ngày ghi nhận: 2026-09-03 (`docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`, `N-03`; xác nhận
+`DEC-028` điểm 6)
+
+`ProvenanceUnresolvedError`, `provenance_resolved`, `provenance_unresolved` (đóng
+`F-E2A1-03` tại S017) được ghi trong docstring của `reporting.py`, biên bản `S017`,
+`PROJECT_PROGRESS.md` và task file `WP-A1` — nhưng KHÔNG có trong `docs/CONVENTIONS.md`, nơi
+quy ước triển khai được tra cứu khi vận hành `T-06`. `docs/spec/04_DATA_MODEL` là spec
+V2.1.5 ĐÓNG BĂNG nên không phải chỗ sửa (Master Index §6 → `WP-D2`).
+
+Hậu quả thực tế trên hành vi hệ thống: **0**. Đây là khe tra cứu vận hành, không phải khiếm
+khuyết mã.
+
+    RE_TRIGGER_CONDITION:
+    - lần cập nhật `docs/CONVENTIONS.md` kế tiếp thuộc `CAP-PROV`; HOẶC
+    - quy trình vận hành `T-06` được viết thành văn bản (khi đó ràng buộc "git checkout có
+      lockfile" và ngữ nghĩa `provenance_resolved`/`provenance_unresolved` nên vào cùng một
+      chỗ); HOẶC
+    - một người vận hành đọc `docs/CONVENTIONS.md` và không tìm thấy giải thích cho
+      `ProvenanceUnresolvedError`.
+
+---

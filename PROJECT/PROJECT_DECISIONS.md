@@ -1706,3 +1706,78 @@ Consequence:
 Sau khi (3)(4)(5) hoàn tất và các check tương ứng PASS, `WP-A1` đủ điều kiện để chủ dự án xét
 `DONE`, và `GATE-A` đóng được. `T-06` vẫn cần thêm: `T-05` được duyệt, lát cắt `DEC-026` PASS,
 và một production-realistic real-data execution path cho `BLK-001`.
+
+---
+
+## DEC-028 — `OD-A1-03`: Chấp nhận Independent E2 vòng BỐN; `WP-A1: IN_PROGRESS → DONE`; `GATE-A = CLOSED`
+
+Date:
+2026-09-03 (Owner Checkpoint)
+
+Task:
+`WP-A1` / capability `CAP-PROV`. `GATE-A` (roadmap gate `WP-A1 ∧ … ∧ WP-A7`).
+
+Decision:
+
+    (1) Owner CHẤP NHẬN Independent E2 Review vòng BỐN:
+
+            CHECK-A1-11 = PASS / Evidence E2
+            Reviewed HEAD = 990a6bbf675ba8daae5a4a22cedae5282cde8c4c
+            Review artifacts = d24db30, 6ca82f7
+            (`docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`)
+
+        Evidence được chấp nhận: independent reproduction; clean non-editable environment
+        (venv sạch, cài từ lockfile, non-editable install); positive control từ valid git
+        checkout + `pyproject.lock`; official eligibility adversarial probes (17 ca);
+        frozen contract case 13 tại cả ba enforcement point; mutation testing (oracle
+        validity — cả bản sửa lười và cổng luôn-từ-chối đều bị giết); targeted tests
+        12/12 PASS; full suite 377/377 PASS (hai lần chạy độc lập); algorithm/financial
+        payload KHÔNG đổi (sha256 payload gate1 giống hệt trước/sau, `diff -rq` đúng 2 file
+        production ngoài phạm vi thay đổi); docs ↔ implementation nhất quán đủ cho
+        Completion Gate.
+
+    (2) `WP-A1: IN_PROGRESS → DONE`.
+
+    (3) `CHECK-A1-11 = PASS / E2` (đã ghi vào task file).
+
+    (4) `CAP-PROV`: allowed = 3, used = 3, remaining = 0. KHÔNG cấp thêm
+        `OWNER_EXTENSION`. Ba hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED` (`F-E2A1-03`,
+        `F-E2A1R3-03`, `F-E2A1R3-06`+`F-E2A1-08`) đã đóng và được E2 vòng BỐN tái xác nhận.
+
+    (5) `GATE-A = CLOSED`. Xác nhận bằng kiểm tra trực tiếp `docs/tasks/WP-A{1..7}-*.md`:
+        WP-A1 DONE (mục này), WP-A2 DONE, WP-A3 DONE, WP-A4 DONE, WP-A5 DONE (S015),
+        WP-A6 DONE (S014), WP-A7 DONE. Không có REQUIRED component nào khác trong định nghĩa
+        canonical của `GATE-A` (`PROJECT_PROGRESS.md`: `GATE-A = WP-A1 ∧ … ∧ WP-A7 đều DONE`).
+        Không suy diễn thêm requirement ngoài định nghĩa này.
+
+    (6) E2 findings — giữ nguyên disposition, KHÔNG repair, KHÔNG tạo task mới:
+
+            N-01  = HARDENING — re-trigger CHỈ khi xuất hiện production-realistic official
+                    path có thể chạy CoinDCA từ source KHÔNG PHẢI canonical project git
+                    checkout.
+            N-02  = HARDENING — re-trigger đã ghi nhận đã kích hoạt (`H-03`).
+            N-03  = HARDENING docs-only.
+            N-04  = docs-only (sai số học trong biên bản S017 §5, không đổi kết luận).
+            H-26  = HARDENING — không có bằng chứng mới thoả đủ 3 tiêu chí BLOCKING.
+
+    (7) Ràng buộc vận hành CÓ CHỦ ĐÍCH cho mọi official run kể từ đây (áp dụng cho `T-06`):
+        official run PHẢI chạy từ canonical git checkout có provenance phân giải được và có
+        `pyproject.lock` hợp lệ. Nếu provenance không phân giải được, official artifact PHẢI
+        fail loudly / fail closed theo hành vi hiện hành (`ProvenanceUnresolvedError`,
+        `reporting.py`). KHÔNG workaround yêu cầu này cho `T-06`.
+
+Reason:
+E2 vòng BỐN là rà soát độc lập thứ tư và đầu tiên PASS trên `CHECK-A1-11`; ba vòng trước FAIL
+với finding CHẶN cụ thể, đều đã đóng bằng bằng chứng tái lập được, có đối chứng dương (không
+chỉ là cổng luôn từ chối) và mutation testing xác nhận oracle không phải con dấu cao su. Không
+finding mới nào chạm production/official path với hậu quả nghiệp vụ đủ để BLOCKING theo
+`REVIEW_PROTOCOL.md` § Finding Routing. `GATE-A` đóng đúng bằng phép kiểm trực tiếp trạng thái
+7 work package theo định nghĩa canonical đã có từ `ROADMAP_CHANGE_PROPOSAL_002`, không mở rộng
+tiêu chí.
+
+Consequence:
+`GATE-A = CLOSED`. `T-06` vẫn cần thêm — ĐỘC LẬP với `GATE-A` — (A) `T-05` được Owner duyệt;
+(B) `BLK-001` được gỡ (production-realistic real-data execution path); (C) lát cắt `WP-B1`
+theo `DEC-026` đã PASS cho phần pre-T06 (full `WP-B1` vẫn `PLANNED`, không phải điều kiện của
+`T-06`). Gỡ `BLK-001` KHÔNG cho phép chạy `T-06` nếu (A) hoặc phần còn lại của (C) chưa thoả.
+Không tạo unit công việc mới từ finding của E2 vòng BỐN. Không mở repair cycle nào.
