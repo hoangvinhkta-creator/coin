@@ -264,7 +264,7 @@ lập (2026-09-01), và các mục dưới đây là bản đính chính có ng�
 | `WP-C1` | DONE (2026-09-02) | Lineage root |
 | `T-09A` | DONE (2026-09-02, `DEC-018`) | Vá V-01/V-02 |
 | `T-09B` | **PLANNED** | Lưu trữ bền trên Firebase (`DEC-019`) — task này |
-| `WP-C2` | BLOCKED | Sau T-05 (`DEC-005` PENDING) |
+| `WP-C2` | READY (`DEC-035`, 2026-09-04) | Ready Gate thoả qua phân xử hẹp `DEC-035` (PA-A) + `ADR-001` Accepted; `DEC-005` nghĩa rộng vẫn PENDING |
 | `WP-C3` | PLANNED | Sau WP-C2 |
 | `WP-C4` | PLANNED | Sau WP-A3/A4/A6/A7 |
 

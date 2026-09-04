@@ -1,12 +1,13 @@
 # ADR-001 — Execution State Scope for the Backtest Engine (WP-C2)
 
 ## Status
-Proposed — pending Owner acceptance. Accepting this ADR is intended to satisfy the WP-C2
-Ready Gate item "ADR phạm vi Execution State tồn tại và được chủ dự án chấp nhận" and to give
-evidence for `CHECK-C2-01` and `CHECK-C2-03` in
-`docs/tasks/WP-C2-execution-state-machine.md`. This ADR does **not** implement WP-C2; it
-only answers the scope question WP-C2's own Ready Gate says must be answered before the
-package may start.
+Accepted — 2026-09-04, Owner approval ("APPROVE PA-A CHO DEC-035, VÀ CHẤP NHẬN ADR-001."),
+recorded in `PROJECT/PROJECT_DECISIONS.md` `DEC-035`. This satisfies the WP-C2 Ready Gate item
+"ADR phạm vi Execution State tồn tại và được chủ dự án chấp nhận" and gives evidence for
+`CHECK-C2-01` and `CHECK-C2-03` in `docs/tasks/WP-C2-execution-state-machine.md`. This ADR
+does **not** implement WP-C2; it only answers the scope question WP-C2's own Ready Gate says
+must be answered before the package may start. Implementation (subtasks C2.1–C2.6) still
+requires a separate execution session.
 
 ## Date
 2026-09-04

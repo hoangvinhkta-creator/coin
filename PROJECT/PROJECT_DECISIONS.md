@@ -2609,3 +2609,36 @@ Can Revisit After:
 Khi chủ dự án ra quyết định PA-A/PA-B và xác nhận `ADR-001`.
 
 ---
+
+### Quyết định của chủ dự án — DEC-035 RESOLVED / APPROVED (2026-09-04)
+
+Decision:
+
+    PHƯƠNG ÁN            = PA-A (phân xử HẸP chỉ cho WP-C2)
+    ADR-001               = CHẤP NHẬN (Accepted)
+    KÊNH                  = Chat, ngay sau khi đọc
+                            docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md
+
+Ghi nhận nguyên văn: *"APPROVE PA-A CHO DEC-035, VÀ CHẤP NHẬN ADR-001."*
+
+Thực thi:
+- `docs/adr/ADR-001-wp-c2-execution-state-scope.md`: `Status: Proposed → Accepted`.
+- `docs/tasks/WP-C2-execution-state-machine.md`: hai dòng Ready Gate còn `[ ]` (DEC-005 quyết
+  định tại T-05; ADR phạm vi Execution State) chuyển `[x]`, viện dẫn `DEC-035`/`ADR-001`.
+  `Status: BLOCKED → READY`. Không sửa Completion Gate (vẫn FROZEN 2026-08-23, 8/8 REQUIRED
+  giữ nguyên câu chữ), không sửa Subtasks ngoài việc cập nhật C2.1 để viện dẫn `ADR-001` thay vì
+  mô tả một ADR chưa tồn tại.
+- `PROJECT/PROJECT_PROGRESS.md`: bảng roadmap chuẩn — dòng `WP-C2`: `BLOCKED → READY`, cột phụ
+  thuộc cập nhật viện dẫn `DEC-035`.
+- `PROJECT/CAPABILITY_REGISTRY.md`: mục thành viên `CAP-WEBAPP` — dòng `WP-C2`: `BLOCKED → READY`.
+
+Consequence:
+`WP-C2: BLOCKED → READY`. **Chưa `IN_PROGRESS`, chưa `DONE`** — mở/thực thi task là việc của một
+phiên riêng, theo hợp đồng `docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md` §14. `DEC-005` (nghĩa
+rộng, phạm vi webapp/dashboard) **VẪN PENDING** — quyết định này KHÔNG đóng `DEC-005`, KHÔNG mở
+`T-08`. `WP-B3` không tự động đổi (vẫn `BLOCKED`, chờ `WP-C2` thật sự `DONE`, không chỉ `READY`).
+`GATE-B`, `T-07`, `T-11` không đổi. Không task ID mới. Không production code nào bị sửa
+(`docs/adr/`, `docs/tasks/`, `PROJECT/*.md` đều không phải production path —
+`PRODUCTION_PATHS.md` §2). Không tiêu review/repair budget nào.
+
+---

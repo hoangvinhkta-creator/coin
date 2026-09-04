@@ -2,7 +2,9 @@
 
 ## Metadata
 Status:
-BLOCKED
+READY — cập nhật 2026-09-04 (`DEC-035` RESOLVED, phương án PA-A; `ADR-001` Accepted). Chưa
+`IN_PROGRESS`; mở task cần một phiên thực thi riêng theo hợp đồng
+`docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md` §14.
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật
@@ -109,6 +111,13 @@ chỉ thuộc tầng app?
 Câu hỏi này cần một **ADR** và liên quan tới **DEC-005** (phạm vi công cụ trước verdict). Đó là lý
 do gói này BLOCKED cho tới khi T-05 chốt DEC-005.
 
+**Cập nhật 2026-09-04 — RESOLVED:** chủ dự án phê duyệt `DEC-035` (phương án PA-A — phân xử HẸP
+chỉ cho `WP-C2`, không chờ `DEC-005` chốt theo nghĩa rộng cho webapp) và chấp nhận
+`docs/adr/ADR-001-wp-c2-execution-state-scope.md` (`FUNDING_REQUIRED` = `NOT_APPLICABLE` ở tầng
+backtest). Cả hai dòng Ready Gate dưới đây nay đã thoả. `DEC-005` **vẫn PENDING** — vẫn tiếp tục
+chặn `T-08`; quyết định này KHÔNG đóng `DEC-005`. Chi tiết đầy đủ:
+`docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md`.
+
 ## Đóng finding
 
 - F-006 — Execution State machine không được cài đặt
@@ -155,7 +164,7 @@ Do not touch without Scope Expansion:
 - `webapp/`, `docs/spec/`
 
 ## Subtasks
-- [ ] C2.1 Viết ADR quyết định phạm vi: backtest có mô hình hoá treasury USDT không
+- [ ] C2.1 Viện dẫn `ADR-001` (đã Accepted — quyết định: backtest không mô hình hoá treasury USDT)
 - [ ] C2.2 Đặt tên và lưu sáu trạng thái theo phạm vi đã quyết
 - [ ] C2.3 Hợp nhất `Zone.status`, `in_cooldown`, `dq` về một chiều Execution State nhất quán
 - [ ] C2.4 Lưu `execution_state` vào snapshot nếu thuộc phạm vi (DM §4 yêu cầu NOT NULL)
@@ -167,10 +176,12 @@ Do not touch without Scope Expansion:
 - [x] Objective rõ ràng
 - [x] Scope được định nghĩa
 - [x] Out-of-scope được định nghĩa
-- [ ] **DEC-005 đã được chủ dự án quyết định tại T-05.** Chừng nào DEC-005 còn PENDING, gói này là
-      `BLOCKED` theo `TASK_READY_GATE_STANDARD.md` (Ready Status: PLANNED / READY / BLOCKED) và
-      escalation `MISSING_INPUT` của `ESCALATION_PROTOCOL.md`. **Agent không được tự quyết DEC-005.**
-- [ ] **ADR phạm vi Execution State tồn tại và được chủ dự án chấp nhận**
+- [x] **DEC-005 đã được chủ dự án quyết định tại T-05.** — thoả qua phân xử HẸP `DEC-035`
+      (PA-A, Owner-approved 2026-09-04): phạm vi đã đóng băng của `WP-C2` không chạm `webapp/`
+      nên không thể vi phạm bất kỳ phương án nào của `DEC-005`; `DEC-005` nghĩa rộng (webapp)
+      vẫn PENDING, không bị đóng bởi dòng này.
+- [x] **ADR phạm vi Execution State tồn tại và được chủ dự án chấp nhận** — `docs/adr/ADR-001-wp-c2-execution-state-scope.md`,
+      Status: Accepted (2026-09-04).
 - [x] Expected touch area được xác định
 - [x] Requirement liên quan được hiểu — ST §16, §19; DM §4, §11; BT §5; Product Spec §6, §11
 - [x] Data impact được biết — thêm chiều trạng thái vào snapshot; không đổi dữ liệu thị trường
@@ -368,7 +379,9 @@ Timestamp:
 
 ## Escalation Triggers
 
-- DEC-005 chưa được chốt → `MISSING_INPUT`, giữ BLOCKED. **Agent không tự quyết DEC-005.**
+- ~~DEC-005 chưa được chốt → `MISSING_INPUT`, giữ BLOCKED.~~ — RESOLVED cho riêng `WP-C2` qua
+  `DEC-035` (PA-A, 2026-09-04); `DEC-005` nghĩa rộng vẫn PENDING, không áp dụng escalation này cho
+  `WP-C2` nữa.
 - Việc đặt tên trạng thái làm đổi kết quả backtest → DỪNG. Đó là dấu hiệu gói đã vượt ra ngoài
   "đặt tên hành vi đã có", `SCOPE_CHANGED`, tính lại routing và phân lớp (có thể phải lên lớp A).
 - Mô hình hoá treasury USDT hoá ra đòi đổi Backtest §5 → `CONFLICT DETECTED`, chuyển sang **WP-D2**,
