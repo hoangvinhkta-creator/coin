@@ -6,6 +6,7 @@ cho những điểm spec để ngỏ: docs/CONVENTIONS.md.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import StrEnum
 
 import numpy as np
 import pandas as pd
@@ -43,6 +44,77 @@ CANDLE = 900.0                  # một nến execution 15m, tính bằng giây
 _POOL_RANK = {"BASE": 0, "SMART": 1, "OPPORTUNITY": 2}
 
 
+# ------------------------------------------------------------- Execution State (WP-C2)
+
+class ExecutionState(StrEnum):
+    """Sáu Execution State canonical của Strategy §16/§19 — MỘT chiều duy nhất.
+
+    Đây là VỐN TỪ VỰNG, không phải một máy trạng thái mới: engine không thêm biến trạng
+    thái nào, không đổi một nhánh execution nào. Chiều này được DẪN XUẤT từ các nguồn sự
+    thật đã có (`Zone.status`, `in_cooldown`, `data_quality`) tại một điểm đo cố định
+    trong chu kỳ 15m — xem `derive_execution_state` và `docs/CONVENTIONS.md` #22.
+
+    Chiều này ĐỘC LẬP với Market Regime (`NORMAL/STRESSED/CRASH/RECOVERY`, thuộc WP-A3):
+    ST §16 đòi hai chiều "phải được lưu riêng", nên không giá trị nào ở đây mang nhãn
+    regime và không nhánh regime nào đọc giá trị ở đây.
+
+    `StrEnum` để giá trị VỪA là hằng có kiểu (không gõ nhầm được) VỪA là `str` thuần khi
+    serialize — `WP-B3` tiêu thụ trực tiếp cho `previous_state`/`new_state` (DM §11) mà
+    không phải định nghĩa một enum thứ hai.
+    """
+
+    WAIT = "WAIT"
+    FUNDING_REQUIRED = "FUNDING_REQUIRED"
+    READY_TO_BUY = "READY_TO_BUY"
+    ACTION_PENDING = "ACTION_PENDING"
+    COOLDOWN = "COOLDOWN"
+    DATA_BLOCKED = "DATA_BLOCKED"
+
+
+#: `ADR-001` (Accepted 2026-09-04, `DEC-035`): ở TẦNG BACKTEST `FUNDING_REQUIRED` là
+#: `NOT_APPLICABLE` — engine KHÔNG mô hình hoá số dư USDT treasury, và `funding_delay` là
+#: hàm tất định của `funding_policy` (`docs/CONVENTIONS.md` #8), nên không tồn tại nhánh
+#: "treasury có đủ không" để trạng thái này phát sinh. Trạng thái vẫn nằm trong enum vì
+#: Product Spec §6/§7/§11 bắt buộc nó ở TẦNG APP — tuyên bố NOT_APPLICABLE là tường minh,
+#: không phải vắng mặt im lặng (`CHECK-C2-03`).
+BACKTEST_NOT_APPLICABLE_STATES = (ExecutionState.FUNDING_REQUIRED,)
+
+
+def derive_execution_state(*, action_due: bool, action_open: bool, data_invalid: bool,
+                           cooldown_blocking: bool) -> ExecutionState:
+    """Hợp nhất bốn dữ kiện ĐÃ CÓ của một nến thành đúng một Execution State.
+
+    Bốn đầu vào đều là quan sát, không phải trạng thái mới:
+
+    - `action_due`      — bước 12 xác định có action tới hạn và còn TTL (`ts >= execute_at`);
+    - `action_open`     — còn zone `ACTION_PENDING` chưa tới hạn và chưa hết TTL;
+    - `data_invalid`    — `data_quality == "INVALID"` của bước 8 (ST §3);
+    - `cooldown_blocking` — bước 11: đang trong cooldown và override KHÔNG kích hoạt.
+
+    Thứ tự ưu tiên lấy ĐÚNG theo hành vi engine, không phải theo thẩm mỹ:
+
+    1. `READY_TO_BUY` / 2. `ACTION_PENDING` — hai trạng thái này mô tả một action ĐÃ TỒN
+       TẠI. Bước 12 và 16–17 KHÔNG đọc `dq` cũng không đọc `in_cooldown`, nên một action
+       đã tạo vẫn fill kể cả khi dữ liệu INVALID hoặc đang cooldown; vì vậy khi có action
+       mở thì chính nó LÀ trạng thái thực thi.
+    3. `DATA_BLOCKED` / 4. `COOLDOWN` — hai trạng thái này mô tả vì sao không tạo được
+       action MỚI. Bước 14c kiểm `dq != "INVALID"` TRƯỚC rồi mới kiểm cooldown, nên
+       DATA_BLOCKED đứng trước COOLDOWN — đây là thứ tự của chính engine.
+    5. `WAIT` — không có điều kiện thực thi nào đang hiệu lực.
+
+    Hàm thuần: không đọc và không ghi state nào của engine, nên không thể đổi hành vi.
+    """
+    if action_due:
+        return ExecutionState.READY_TO_BUY
+    if action_open:
+        return ExecutionState.ACTION_PENDING
+    if data_invalid:
+        return ExecutionState.DATA_BLOCKED
+    if cooldown_blocking:
+        return ExecutionState.COOLDOWN
+    return ExecutionState.WAIT
+
+
 def zone_order_key(zone, ladder) -> tuple:
     """Khoá sắp thứ tự thực thi khi nhiều zone cùng trigger — Strategy §15.1 [F2].
 
@@ -75,6 +147,15 @@ class RunResult:
     #   benchmark — vốn không mang nhãn regime — về đúng regime đang hiệu lực.
     opp_cap_samples: list = field(default_factory=list)
     regime_timeline: list = field(default_factory=list)        # (ts, label), chỉ ghi khi đổi
+    # WP-C2 (đặt tên + lưu vết, KHÔNG đổi hành vi) — chiều Execution State (ST §16/§19).
+    # `execution_state_timeline`: (ts, ExecutionState) ghi KHI ĐỔI, cùng khuôn với
+    #   `regime_timeline`. Ghi khi đổi là KHÔNG mất mát ở độ phân giải nến: trạng thái tại
+    #   một thời điểm bất kỳ = mốc gần nhất <= thời điểm đó. Đây cũng chính là hình dạng
+    #   `previous_state`/`new_state` mà WP-B3 cần (DM §11) — WP-C2 chỉ cấp vốn từ vựng.
+    # `market_snapshots`: một bản ghi mỗi accounting day (cùng nhịp, cùng vị trí với
+    #   `cash_samples`) mang `execution_state` NOT NULL theo DM §4.
+    execution_state_timeline: list = field(default_factory=list)
+    market_snapshots: list = field(default_factory=list)
 
     @property
     def eth_total(self) -> float:
@@ -459,6 +540,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         # 12. pending action tới hạn / TTL / MISSED — chỉ XÁC ĐỊNH action đủ điều kiện fill
         # và đánh dấu MISSED; fill/ledger/cooldown là các bước 15–17 (WP-A6/F-018)
         due_fills = []
+        open_actions = 0                             # WP-C2: đếm ngay trong vòng lặp đã có
         for lad in ladders:
             for z in lad.zones:
                 if z.status != "ACTION_PENDING":
@@ -474,6 +556,26 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     release_zone(z, ts, "ACTION_MISSED")
                     z.status = "MISSED"
                     counters["missed_actions"] += 1
+                else:
+                    # Còn mở, chưa tới hạn (kể cả `execute_at is None` — action sẽ MISSED
+                    # khi hết TTL nhưng TẠI ĐÂY nó vẫn là một action đang chờ).
+                    open_actions += 1
+
+        # 12b. WP-C2 — ĐẶT TÊN (không đổi hành vi): hợp nhất `data_quality` (bước 8),
+        # `in_cooldown`/override (bước 11) và vòng đời `Zone` (bước 12) thành MỘT chiều
+        # Execution State canonical. Điểm đo là ĐÂY vì đây là nơi cả bốn dữ kiện vừa đủ
+        # và chưa bị các bước 13–18 của chính nến này làm nhoè: bước 12 vừa phân loại
+        # xong action tới hạn (`READY_TO_BUY` sống đúng ở điều kiện `ts >= execute_at` mà
+        # S001 chỉ ra), còn action MỚI của nến này chưa được tạo (bước 14c).
+        # Chỉ ĐỌC; không nhánh execution nào đọc lại giá trị này — cùng khuôn quan sát mà
+        # WP-A5 đã dùng cho `regime_timeline` / `opp_cap_samples`.
+        exec_state = derive_execution_state(
+            action_due=bool(due_fills),
+            action_open=open_actions > 0,
+            data_invalid=dq == "INVALID",
+            cooldown_blocking=in_cooldown and not override_ok)
+        if not res.execution_state_timeline or res.execution_state_timeline[-1][1] != exec_state:
+            res.execution_state_timeline.append((ts, exec_state))
 
         # 13. trigger Smart (LOW) / confirmation Opportunity (CLOSE) — sắp thứ tự §15.1 [F2].
         # Ladder tạo ở bước 14 của nến này KHÔNG tham gia trigger cùng nến (§19: 13 trước 14).
@@ -701,6 +803,32 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 "available": opp_fund.available,
                 "at_cap": cap > 0 and opp_fund.total >= cap - 1e-9,
                 "idle": opp_fund.available > 1e-9,
+            })
+            # WP-C2/C2.4 — `market_snapshots` (DM §4). Cùng nhịp và cùng vị trí với
+            # `cash_samples`: một bản ghi mỗi accounting day. Nhóm `state` của DM §4
+            # (`market_regime`, `execution_state`, `data_quality`) LUÔN NOT NULL, và hai
+            # chiều Regime/Execution nằm ở HAI trường riêng — ST §16 đòi "lưu riêng".
+            # `execution_state` là giá trị đã đo ở bước 12b của CHÍNH nến này.
+            # Phạm vi có chủ ý: WP-C2 là gói ĐẶT TÊN, nên bản ghi chỉ mang những nhóm
+            # DM §4 mà engine đã có sẵn tại điểm này (identity/market/score/capital/state).
+            # Ba nhóm indicator (price location, market stress, relative value) và
+            # `btc_price` KHÔNG được sinh ở đây — chúng đòi kéo thêm cột chỉ báo vào
+            # engine, việc đó nằm ngoài phạm vi đã đóng băng của gói này và được ghi
+            # nhận tường minh trong `docs/CONVENTIONS.md` #22 thay vì bỏ trống im lặng.
+            res.market_snapshots.append({
+                "ts": ts,                                   # timestamp_utc (epoch giây)
+                "accounting_date_local": lts.strftime("%Y-%m-%d"),
+                "eth_price": o,
+                "opportunity_score_raw": None if np.isnan(oscore) else float(oscore),
+                "smart_unlock": eff_smart_unlock,
+                "opportunity_unlock": o_unl,
+                "smart_unlock_peak": su.peak,
+                "opportunity_fund_balance_vnd": opp_fund.total,
+                "opportunity_fund_available_vnd": opp_fund.available,
+                "opportunity_fund_reserved_vnd": opp_fund.reserved,
+                "market_regime": regime.regime,             # chiều 1 — WP-A3, nhãn §16
+                "execution_state": exec_state,              # chiều 2 — WP-C2, NOT NULL
+                "data_quality": dq,
             })
 
     res.counters = counters

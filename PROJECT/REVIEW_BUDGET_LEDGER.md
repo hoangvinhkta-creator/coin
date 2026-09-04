@@ -201,7 +201,8 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
 ### 2.2 `CAP-WEBAPP` — App web: sổ sách, trạng thái thực thi, parity JS/Python
 
     LINEAGE ROOT   = WP-C1 (docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md)
-    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (IMPLEMENTED — S014), WP-C2 (BLOCKED),
+    THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (IMPLEMENTED — S014),
+                     WP-C2 (IMPLEMENTED — S024, 2026-09-04; trước đó READY tại `DEC-035`),
                      WP-C3, WP-C4 (PLANNED)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
@@ -216,12 +217,15 @@ DONE ngày 2026-09-02. `USED` vẫn = 0 vì **chưa tiêu**, không phải vì �
 | — | `WP-C1` (kết luận, không vá) | `cb75f9d` | `814d185` | **0** — `CHECK-C1-07` chứng minh `app_logic.js`/`engine.js` không đổi một dòng | 8/8 REQUIRED PASS (E1) |
 | 0 | `T-09A` implementation ban đầu | `814d185` | `d125fe5` | 1 file, +88 / −16 (`webapp/app_logic.js`) | 12/12 REQUIRED PASS (E1); batch review PASS, 0 BLOCKING |
 | 0' | `T-09B` implementation ban đầu (S014) | `4502ea6` | `0d4917a` | 3 file, +560 / −162 (`app_logic.js`, `app_shell.html`, `build_app.js`) + 3 file runtime MỚI chưa trong khai báo (`webapp/firebase_config.js` 25, `firestore.rules` 32, `firebase.json` 21 dòng — `H-32`) | 16/16 REQUIRED PASS (E1, Firebase Emulator Suite); batch review PASS, 0 BLOCKING còn lại; project thật NOT_TESTED |
+| 0'' | `WP-C2` implementation ban đầu (S024) | `2189a8f` | nhánh `claude/wp-c2-execution-state-y4rraf` | **1 file, +128 / −0** (`src/eth_dca_os/engine.py`) — thuần THÊM MỚI, không xoá/sửa dòng nào; `webapp/` = 0, `pyproject.*` = 0 | 8/8 REQUIRED PASS (E1; `CHECK-C2-07` E0 theo gate FROZEN); backtest bit-for-bit không đổi (`sha256 e0492a58…`); full suite 494/494 |
 
-    REPAIR CYCLES ĐÃ TIÊU  = 0   (lượt trên là implementation ban đầu, không phải repair
-                                  cycle — cùng quy ước đã dùng ở §1 cho CAP-PROV và §2.1
-                                  cho CAP-DATA)
+    REPAIR CYCLES ĐÃ TIÊU  = 0   (ba lượt trên đều là implementation ban đầu, không phải
+                                  repair cycle — cùng quy ước đã dùng ở §1 cho CAP-PROV và
+                                  §2.1 cho CAP-DATA. `WP-C2` chưa từng DONE nên chưa có
+                                  repair cycle nào để mở.)
     VÒNG E2 ĐÃ TIÊU        = 0   (WP-C1 và T-09A đều đóng ở mức E1; batch review T-09A là
-                                  E1 + dò đối kháng, KHÔNG phải E2)
+                                  E1 + dò đối kháng, KHÔNG phải E2. Completion Gate của
+                                  `WP-C2` KHÔNG đòi check E2 nào — bảy check E1, một E0.)
 
 Delivery change budget tích luỹ, đo trực tiếp (không cộng tay). Hai con số vì
 `PRODUCTION_PATHS.md` tự mâu thuẫn — xem `HARDENING_BACKLOG.md` **H-21**:
@@ -489,3 +493,48 @@ từ đây trở đi là khiếm khuyết của CHÍNH chu kỳ 1 và **không**
 - Hai quyết định đang mở nêu ở §1 (`VERIFICATION_DEPTH`; disposition 3 hạng mục legacy của
   WP-A1) vẫn ĐANG MỞ.
 - `GOLDEN_BASELINE_SHA` = `PENDING_OWNER_DATA / MIGRATION_REQUIRED`, không đổi.
+
+---
+
+## 8. Phiên `S024` (2026-09-04) — `WP-C2` implementation ban đầu, budget KHÔNG đổi
+
+    CAPABILITY      = CAP-WEBAPP        (lineage root WP-C1)
+    TASK            = WP-C2             (READY -> IN_PROGRESS -> IMPLEMENTED)
+    LOẠI            = INITIAL IMPLEMENTATION — KHÔNG tiêu repair cycle
+    BRANCH          = claude/wp-c2-execution-state-y4rraf   (tách từ origin/main 2189a8f)
+
+`WP-C2` **chưa từng `DONE`**, nên chưa có repair cycle nào để mở — cùng quy ước đã áp dụng
+cho `WP-A4` (`DEC-016`/`DEC-017`), `T-09A` (`DEC-018`), `T-09B` (`DEC-019`) và `WP-B1`
+(`DEC-034`). Ba con số dưới đây **không được đọc lại như thể vừa được cấp mới**: `USED = 0`
+vì `CAP-WEBAPP` chưa tiêu chu kỳ sửa nào, không phải vì phiên này đặt lại.
+
+    ALLOWED BUDGET            = 2 repair cycle     (Owner-ratified, `DEC-018`/`OD-WEBAPP-01`)
+    CURRENT BUDGET USED       = 0 repair cycle
+    CURRENT BUDGET REMAINING  = 2 repair cycle
+    OWNER_EXTENSION           = KHÔNG CẦN
+
+Delivery change budget — đo trực tiếp bằng lệnh chuẩn của `PRODUCTION_PATHS.md` §1, không
+cộng tay từ báo cáo:
+
+    git diff --shortstat 2189a8f -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 1 file changed, 128 insertions(+)
+
+Một file production, **thuần thêm mới** (`−0`). `webapp/engine.js` và `webapp/app_logic.js`
+= 0 dòng đổi, nên phiên này KHÔNG mở rộng bề mặt trôi parity của `RSK-002`. `pyproject.toml`
+/ `pyproject.lock` = 0 dòng đổi, nên `dependency_lock_hash` của run record không đổi.
+
+**Bốn ngưỡng Absorption Limit** (`CAPABILITY_MODEL.md`) — không ngưỡng nào bị chạm:
+
+| Ngưỡng | Điều kiện | Phiên này |
+|---|---|---|
+| A | Effective Risk tăng ≥ 1 mức do việc được hấp thụ | KHÔNG — không hấp thụ việc nào; Effective Risk `CAP-WEBAPP` giữ HIGH |
+| B | > 3 hạng mục mới hấp thụ vào một task baseline đã duyệt | KHÔNG — 0 hạng mục hấp thụ |
+| C | Số REQUIRED check tăng > 50 % | KHÔNG — vẫn đúng 8, gate FROZEN không đổi một chữ |
+| D | Việc ngoài Vertical Slice bị kéo lên đường găng | KHÔNG — không mở việc nào ngoài phạm vi đóng băng |
+
+Số task ID mới do phiên này tạo = **0**. Không finding nào được chuyển thành task
+(`REVIEW_PROTOCOL.md` § "A Finding Is Not A Task"). Hai quan sát non-blocking của phiên được
+route vào `PROJECT/HARDENING_BACKLOG.md` (`H-34`, `H-35`) kèm `RE_TRIGGER_CONDITION`.
+
+`GOLDEN_BASELINE_SHA` vẫn `PENDING_OWNER_DATA / MIGRATION_REQUIRED` (`H-10` chưa đóng), nên
+budget tầng B vẫn chưa khai được — phiên này KHÔNG chọn một SHA tiện lợi để gọi là Golden.

@@ -25,7 +25,29 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-04 — **OWNER DECISION `DEC-035` — APPROVE PA-A + CHẤP NHẬN `ADR-001`: `WP-C2: BLOCKED →
+2026-09-04 — **`WP-C2` THỰC THI: `READY → IN_PROGRESS → IMPLEMENTED` (phiên `S024`, nhánh
+`claude/wp-c2-execution-state-y4rraf`, tách từ `origin/main` `2189a8f`).** Đóng `F-006`.
+**8/8 REQUIRED check PASS** (`CHECK-C2-01`…`CHECK-C2-08`). Chiều Execution State của Strategy
+§16/§19 nay có ĐÚNG MỘT định nghĩa (`engine.ExecutionState`, `StrEnum` sáu giá trị) và MỘT hàm
+thuần hợp nhất `Zone.status` / `in_cooldown` / `data_quality` (`derive_execution_state`, đo tại
+bước 12b của BT §19) — **không tạo class `StateMachine`** (`CHECK-C2-07`, `RCP-001`). Lưu vết ở
+hai hình dạng cùng một nguồn: `RunResult.execution_state_timeline` (ghi-khi-đổi, độ phân giải
+nến, chính là hình dạng `previous_state`/`new_state` mà `WP-B3` cần) và
+`RunResult.market_snapshots` (một bản ghi mỗi accounting day, `execution_state` **NOT NULL**
+theo DM §4). `FUNDING_REQUIRED` = `NOT_APPLICABLE` ở tầng backtest theo `ADR-001` — tuyên bố
+tường minh trong mã (`BACKTEST_NOT_APPLICABLE_STATES`) và `docs/CONVENTIONS.md` #22, **0 lần**
+phát sinh trên mọi lần chạy. **Kết quả backtest KHÔNG ĐỔI — bit-for-bit**: payload chuẩn tắc
+1.340.788 byte (Gate 1 chín window + OOS + Gate 2/3 + controls + verdict + hai lần chạy engine
+toàn kỳ) có `sha256 = e0492a58f67e9fab0105216713ed9ca3dfecbae1608d91089ca48eef380fdbba` ở CẢ HAI
+lần chạy baseline TRƯỚC và lần chạy SAU. Diff production: **1 file, +128/−0** (`engine.py`,
+thuần thêm mới — không xoá/sửa một dòng cũ nào). Full suite **494/494 PASS** (461 test cũ + 33 test mới của gói này; exit 0). `WP-C2` **CHƯA
+`DONE`**: `STATE_AUTHORITY.md` quy định `DONE` do chủ dự án ghi (tiền lệ `WP-B1`/`DEC-034`) →
+**`OWNER_DECISION_REQUIRED`**. `WP-B3` VẪN `BLOCKED` (chờ `WP-C2` thật sự `DONE`); `WP-B2`
+`READY`; `GATE-B` chưa mở; `T-07` NOT READY; `DEC-005` vẫn `PENDING`; verdict lịch sử `T-06`
+(`DO_NOT_BUILD`) không đổi. Không task ID mới. Báo cáo đầy đủ:
+`docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md`; biên bản: `docs/sessions/S024-wp-c2-execution-state.md`.
+
+Trước đó, cùng ngày — **OWNER DECISION `DEC-035` — APPROVE PA-A + CHẤP NHẬN `ADR-001`: `WP-C2: BLOCKED →
 READY`.** Tiếp nối phiên chuẩn bị (nhánh `claude/wp-c2-scope-adr-dec005-8o6fvr`). Chủ dự án phê
 duyệt nguyên văn qua chat: *"APPROVE PA-A CHO DEC-035, VÀ CHẤP NHẬN ADR-001."* — phân xử HẸP cho
 Ready Gate của `WP-C2` (không chờ `DEC-005` chốt theo nghĩa rộng cho webapp) và chấp nhận
@@ -568,7 +590,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | BLOCKED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Dependency `T-06 DONE` nay thoả (`DEC-031`); dependency `WP-C2 DONE` **CHƯA thoả** (`WP-C2` nay `READY` tại `DEC-035`, nhưng chưa `DONE`) — đây là lý do chặn DUY NHẤT còn lại. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | `T-06` nay DONE (`DEC-031`, verdict `DO_NOT_BUILD`) nhưng **GATE-B CHƯA MỞ** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE — hiện cả ba đều chưa DONE, chỉ READY/BLOCKED). NOT READY. Chặn T-11 |
 | DONE | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | **DONE 2026-09-02** (8/8 REQUIRED PASS, E1). V-01 XÁC NHẬN, V-02 XÁC NHẬN, V-03 BÁC BỎ (an toàn tình cờ, HARDENING). Harness khôi phục (F-027 đóng). Gỡ BLOCKED cho T-03 (CHECK-03-01 PASS) |
-| READY | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | **READY tại `DEC-035`** (2026-09-04, PA-A) — phân xử HẸP cho Ready Gate, không chờ `DEC-005` chốt theo nghĩa rộng cho webapp (`DEC-005` vẫn PENDING, vẫn chặn T-08). `ADR-001` Accepted (`FUNDING_REQUIRED` = NOT_APPLICABLE ở tầng backtest). Chưa IN_PROGRESS — cần phiên thực thi riêng (đóng F-006) |
+| IMPLEMENTED | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | **IMPLEMENTED tại `S024` (2026-09-04)** — đóng `F-006`. 8/8 REQUIRED PASS (`CHECK-C2-01`…`08`, E1 trừ `CHECK-C2-07` E0 theo gate FROZEN). Một enum `ExecutionState` (sáu giá trị ST §16/§19) + một hàm thuần `derive_execution_state` đo tại bước 12b BT §19; KHÔNG có class `StateMachine`. Lưu vết: `execution_state_timeline` (ghi-khi-đổi, độ phân giải nến — hình dạng `previous_state`/`new_state` cho `WP-B3`) và `market_snapshots` (mỗi accounting day, `execution_state` NOT NULL, DM §4). `FUNDING_REQUIRED` = NOT_APPLICABLE theo `ADR-001`, 0 lần phát sinh. **Backtest bit-for-bit không đổi** (`sha256 e0492a58…`, 1.340.788 byte, hai baseline TRƯỚC trùng nhau và trùng lần chạy SAU); diff production 1 file +128/−0 thuần thêm mới; full suite 494/494. Quy ước: `docs/CONVENTIONS.md` #22. **CHƯA DONE — `OWNER_DECISION_REQUIRED`** (`STATE_AUTHORITY.md`: `DONE` do chủ dự án ghi; tiền lệ `WP-B1`/`DEC-034`). Trước đó READY tại `DEC-035` (PA-A, `DEC-005` vẫn PENDING) |
 | PLANNED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | Sau WP-C2 (đóng F-020) |
 | PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
 | PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |

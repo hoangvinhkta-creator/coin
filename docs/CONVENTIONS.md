@@ -295,6 +295,88 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     (đã quyết ở nhánh Gate 1/OOS FAIL, trước khi Failure Signal cap được xét — xem mục #21(a)
     và `CHECK-B1-02`) không bị ảnh hưởng bởi quyết định này.
 
+22. **Chiều Execution State: điểm đo, thứ tự ưu tiên, phạm vi lưu vết (WP-C2, đóng
+    `F-006`)** — Strategy §16/§19 liệt kê sáu Execution State
+    (`WAIT / FUNDING_REQUIRED / READY_TO_BUY / ACTION_PENDING / COOLDOWN / DATA_BLOCKED`)
+    và đòi Execution State với Market Regime là **hai chiều độc lập, phải được lưu riêng**.
+    Spec **không** nói trạng thái được đo tại điểm nào trong chu kỳ 15m, cũng **không** nói
+    trạng thái nào thắng khi nhiều điều kiện cùng đúng. Đây là hai điểm để ngỏ, nên quy ước
+    được chốt ở đây. WP-C2 là gói **ĐẶT TÊN**: năm trong sáu trạng thái đã tồn tại như hành
+    vi không tên trong `engine.py`; gói này không viết logic thực thi mới và không được đổi
+    kết quả backtest (`CHECK-C2-06`).
+
+    (a) **Vốn từ vựng ở đúng một nơi.** `engine.ExecutionState` (`StrEnum`) là định nghĩa
+    duy nhất; `engine.derive_execution_state(...)` là **hàm thuần** hợp nhất bốn dữ kiện đã
+    có thành một giá trị. Không có class máy trạng thái, không có đối tượng mang vòng đời,
+    không có bảng chuyển trạng thái — `RCP-001` / `CHECK-C2-07` cấm dựng kiến trúc chỉ để
+    khớp danh từ "state machine" trong spec. `Zone.status` (ST §19, chín giá trị),
+    `in_cooldown` và `data_quality` **giữ nguyên vai trò nguồn sự thật**; Execution State là
+    chiều **dẫn xuất** đọc từ chúng, không thay thế và không cạnh tranh với chúng.
+
+    (b) **Điểm đo = ngay sau bước 12 của BT §19** (gọi là bước 12b trong `engine.py`). Chọn
+    điểm này vì đó là nơi cả bốn dữ kiện vừa đủ và chưa bị chính nến đó làm nhoè: bước 8 đã
+    chốt `data_quality`, bước 11 đã chốt `in_cooldown`/override, bước 12 vừa phân loại xong
+    action tới hạn (`ts >= execute_at` — đúng chỗ S001 chỉ ra `READY_TO_BUY` đang sống ngầm),
+    còn action MỚI của nến này chưa được tạo (bước 14c). Hệ quả cần biết: action tạo ở bước
+    14c của nến N chỉ xuất hiện dưới dạng `ACTION_PENDING` **từ nến N+1**.
+
+    (c) **Thứ tự ưu tiên = thứ tự của chính engine**, không phải thẩm mỹ:
+
+        READY_TO_BUY > ACTION_PENDING > DATA_BLOCKED > COOLDOWN > WAIT
+
+    Hai trạng thái đầu mô tả một action **đã tồn tại**. Bước 12 và 16–17 không đọc `dq` cũng
+    không đọc `in_cooldown`, nên một action đã tạo vẫn fill kể cả khi dữ liệu INVALID hoặc
+    đang cooldown — vì vậy khi có action mở thì chính nó LÀ trạng thái thực thi. Hai trạng
+    thái sau mô tả vì sao **không tạo được action mới**, và bước 14c kiểm `dq != "INVALID"`
+    **trước** rồi mới kiểm cooldown, nên `DATA_BLOCKED` đứng trước `COOLDOWN`. Bảng quyết
+    định đầy đủ (16 tổ hợp) được đóng băng trong
+    `tests/test_wp_c2_execution_state.py::test_c2_02_derivation_precedence_table_is_frozen`.
+
+    (d) **`FUNDING_REQUIRED` = `NOT_APPLICABLE` ở TẦNG BACKTEST** — `ADR-001` (Accepted
+    2026-09-04, `DEC-035`). Engine không mô hình hoá số dư USDT treasury; `funding_delay` là
+    hàm tất định của `funding_policy` (mục #8 ở trên), nên nhánh "treasury có đủ không" của
+    BT §5 chưa từng được thực thi trong mã này. Trạng thái **vẫn nằm trong enum** vì Product
+    Spec §6/§7/§11 bắt buộc nó ở **tầng app** (`CHECK TREASURY → [FUNDING_REQUIRED] →
+    READY_TO_BUY`), và `engine.BACKTEST_NOT_APPLICABLE_STATES` khai báo tường minh điều đó
+    trong mã. Đây là tuyên bố, **không phải vắng mặt im lặng** (`CHECK-C2-03`). Hệ quả phải
+    biết khi đọc output backtest: `execution_state` **không bao giờ** mang giá trị
+    `FUNDING_REQUIRED`; ai đọc snapshot phải biết đó là trạng thái chỉ có ở tầng app.
+
+    (e) **Lưu vết ở hai hình dạng, cùng một nguồn.**
+    `RunResult.execution_state_timeline` ghi `(ts, state)` **chỉ khi đổi** — cùng khuôn với
+    `regime_timeline` (#20/WP-A5). Ghi-khi-đổi là **không mất mát** ở độ phân giải nến:
+    trạng thái tại một thời điểm bất kỳ = mốc gần nhất `<=` thời điểm đó. Đây cũng chính là
+    hình dạng `previous_state` / `new_state` mà `WP-B3` cần (DM §11).
+    `RunResult.market_snapshots` ghi **một bản ghi mỗi accounting day**, cùng nhịp và cùng
+    vị trí với `cash_samples` sẵn có, mang `execution_state` **NOT NULL** theo DM §4.
+    Hai hình dạng đọc từ **cùng một giá trị** đo ở bước 12b — không có nguồn sự thật thứ hai.
+    *Lệch trong-nến phải biết:* trong một bản ghi `market_snapshots`, `execution_state` đo ở
+    bước 12b còn khối vốn/regime/`data_quality` đọc ở CUỐI nến (để ba bản ghi theo ngày —
+    `cash_samples`, `opp_cap_samples`, `market_snapshots` — nhất quán với nhau tại cùng `ts`).
+    Đọc tất cả ở bước 12b sẽ làm ba bản ghi đó mâu thuẫn nhau về vốn; đo `execution_state` ở
+    cuối nến sẽ làm `READY_TO_BUY` không bao giờ quan sát được. Lựa chọn hiện tại và hai
+    phương án bị loại được ghi ở `PROJECT/HARDENING_BACKLOG.md` **H-35**.
+
+    (f) **Phạm vi có chủ ý của `market_snapshots`.** Bản ghi mang các nhóm DM §4 mà engine
+    đã có sẵn tại điểm đo: identity (`ts`, `accounting_date_local`), market (`eth_price`),
+    score (`opportunity_score_raw`), capital (`smart_unlock`, `opportunity_unlock`,
+    `smart_unlock_peak`, `opportunity_fund_*`) và state (`market_regime`, `execution_state`,
+    `data_quality`). **KHÔNG** mang `btc_price` và ba nhóm indicator (price location, market
+    stress, relative value): sinh chúng đòi kéo thêm cột chỉ báo vào `engine.py`, nằm ngoài
+    phạm vi đã đóng băng của gói ĐẶT TÊN này. Ghi ở đây để đó là một giới hạn **được tuyên
+    bố**, không phải một ô trống im lặng; phần dư này thuộc `F-006`, được ghi ở
+    `PROJECT/HARDENING_BACKLOG.md` **H-34** kèm điều kiện tái kích hoạt, và cần một quyết định
+    phạm vi riêng nếu về sau `market_snapshots` phải đầy đủ theo DM §4. Định danh cấp run
+    (`strategy_version`, `strategy_config_hash`) không lặp lại trên từng dòng — nó đã nằm
+    trong run record (DM §12), cùng quy ước với dòng `capital_ledger` của `Pool._log`.
+
+    (g) **Hai chiều không được trộn.** Không giá trị Execution State nào mang nhãn regime
+    (`CRASH_READY_TO_BUY`… bị cấm), `regime.py` không biết gì về enum này, và **không nhánh
+    execution nào đọc** Execution State. Điểm cuối được chứng minh bằng hành vi chứ không
+    bằng cách đọc mã: ép `derive_execution_state` trả một giá trị sai rồi chạy lại engine,
+    kết quả vẫn trùng bit với trước WP-C2
+    (`test_c2_07_forcing_a_wrong_execution_state_changes_no_behaviour`).
+
 ## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
 
 Nguồn dữ liệu được khai báo **tại nơi dataset được tạo** — đó là nơi duy nhất biết dữ liệu

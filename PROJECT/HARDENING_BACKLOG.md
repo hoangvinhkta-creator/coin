@@ -1108,3 +1108,68 @@ là provider-abstraction/over-engineering, trái Personal Tool Simplification Pr
     - `firebase-tools` phát hành bản CLI tách nhỏ theo sản phẩm (modular install) mà dự án muốn
       chuyển sang; HOẶC
     - một audit bảo mật dependency (không phải mục tiêu V1, `DEC-021` §3) yêu cầu giảm bề mặt.
+
+---
+
+## H-34 — `market_snapshots` của WP-C2 chỉ phủ MỘT PHẦN các nhóm trường của Data Model §4
+
+Capability: `CAP-WEBAPP` · Owner: `WP-C2` (phần dư của `F-006`) · Phân loại: **CONFIRMED HARDENING** (phạm vi được tuyên bố, không phải khiếm khuyết im lặng)
+Ngày ghi nhận: 2026-09-04 (phiên `S024`, thực thi `WP-C2`)
+
+`RunResult.market_snapshots` do `WP-C2` sinh ra mang các nhóm DM §4 mà engine đã có sẵn tại
+điểm đo: identity (`ts`, `accounting_date_local`), market (`eth_price`), score
+(`opportunity_score_raw`), capital (`smart_unlock`, `opportunity_unlock`, `smart_unlock_peak`,
+`opportunity_fund_balance_vnd` / `_available_vnd` / `_reserved_vnd`) và state (`market_regime`,
+`execution_state`, `data_quality`). **Chưa mang** `btc_price` và ba nhóm indicator của DM §4:
+price location (`dd365`, `d_norm`, `ma200`, `ma_ratio`, `m_norm`, `percentile365`, `p_norm`,
+`price_location_score`), market stress (`rsi14`, `r_norm`, `return7`, `s7_norm`,
+`volume_ratio`, `v_norm`, `market_stress_score`), relative value (`ethbtc`, `ethbtc_return30`,
+`w_norm`, `ethbtc_percentile180`, `rp_norm`, `relative_value_score`).
+
+Vì sao KHÔNG BLOCKING: `WP-C2` là gói **ĐẶT TÊN** với Completion Gate đã ĐÓNG BĂNG từ
+2026-08-23; check duy nhất nói về bảng này là `CHECK-C2-05` — `market_snapshots.execution_state`
+NOT NULL — và nó PASS (17.532 bản ghi, 0 null). Sinh thêm ba nhóm indicator đòi kéo cột chỉ báo
+mới vào `engine.py`, tức mở rộng phạm vi production ngoài Scope Lock của gói, đúng thứ mà
+`CAPABILITY_MODEL.md` § "Reasons That Are NEVER Sufficient" và `CHECK-C2-06` (kết quả backtest
+không đổi) cùng ngăn. Giới hạn được **tuyên bố** ở `docs/CONVENTIONS.md` #22(f) chứ không để
+trống im lặng. Không tạo task ID mới cho mục này (`REVIEW_PROTOCOL.md` § "A Finding Is Not A
+Task").
+
+    RE_TRIGGER_CONDITION:
+    - một tiêu dùng thật đòi các nhóm indicator của DM §4 từ `market_snapshots` (tầng app khi
+      Product Spec §11 dựng dashboard hero; hoặc một task đối chiếu tuân thủ DM §4 đầy đủ); HOẶC
+    - `WP-B3`/`WP-C3` phát hiện `decision_log`/partial-fill cần trường indicator mà bảng này
+      chưa có; HOẶC
+    - chủ dự án quyết định `market_snapshots` phải được sinh đầy đủ theo DM §4 trước khi mở
+      `T-11`.
+
+---
+
+## H-35 — Trong một bản ghi `market_snapshots`, `execution_state` đo ở bước 12b còn phần vốn đo ở cuối nến
+
+Capability: `CAP-WEBAPP` · Owner: `WP-C2` · Phân loại: **CONFIRMED HARDENING** (quy ước đo được tuyên bố; không ảnh hưởng hành vi)
+Ngày ghi nhận: 2026-09-04 (phiên `S024`, tự rà đối kháng)
+
+Một bản ghi `market_snapshots` không đọc mọi trường tại cùng MỘT thời điểm bên trong nến 15m:
+`execution_state` được đo ở **bước 12b** (ngay sau bước 12 của BT §19 — nơi duy nhất
+`READY_TO_BUY` tồn tại, vì tới bước 16–17 fill đã xong và zone đã `EXECUTED`), còn khối vốn /
+regime / data_quality được đọc ở **cuối nến**, cùng chỗ và cùng nhịp với `cash_samples` và
+`opp_cap_samples` sẵn có. Hệ quả quan sát được: một dòng có thể ghi `execution_state =
+READY_TO_BUY` bên cạnh số dư pool đã phản ánh chính lần fill đó.
+
+Vì sao chọn như vậy, và vì sao KHÔNG BLOCKING: phương án thay thế (đọc TẤT CẢ ở bước 12b) làm
+`market_snapshots` lệch với `cash_samples`/`opp_cap_samples` tại **cùng một `ts`** — ba bản ghi
+theo ngày vốn được đọc cùng nhau sẽ mâu thuẫn nhau về vốn, một khiếm khuyết rộng hơn. Phương án
+còn lại (đo `execution_state` ở cuối nến) làm `READY_TO_BUY` **không bao giờ** quan sát được,
+tức mất một trạng thái mà `CHECK-C2-02` đòi. Lệch trong-nến này không đổi một con số backtest
+nào (`CHECK-C2-06` bit-for-bit) và không nhánh execution nào đọc `execution_state`. Quy ước
+được ghi tường minh ở `docs/CONVENTIONS.md` #22(b)/(e).
+
+    RE_TRIGGER_CONDITION:
+    - một tiêu dùng thật đòi mọi trường của một dòng `market_snapshots` phải nhất quán tại đúng
+      một thời điểm (ví dụ đối chiếu số dư ↔ trạng thái ở tầng app, hoặc `WP-C3` partial fill);
+      HOẶC
+    - `market_snapshots` được nâng lên nhịp theo NẾN thay vì theo ngày (khi đó điểm đo trở thành
+      một lựa chọn duy nhất, không còn hai điểm); HOẶC
+    - `WP-B3` cần `previous_state`/`new_state` kèm ảnh chụp vốn tại đúng thời điểm chuyển trạng
+      thái.
