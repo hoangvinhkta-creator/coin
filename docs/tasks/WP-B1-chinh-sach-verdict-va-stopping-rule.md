@@ -5,12 +5,12 @@ Status:
 IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
 (mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
 (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
-**Kết quả phiên IN_PROGRESS (cập nhật sau Independent E2 finding trên CHECK-B1-09 — CHECK-B1-03
-đảo về `BLOCKED`):** **7/10 REQUIRED PASS** (CHECK-B1-01, 02, 04, 05, 06, 08, 10). **2/10
-`BLOCKED`**: CHECK-B1-03 (evidence FS-08 post-F-017 chưa tính được — MISSING_INPUT, thiếu dataset
-official; production repair của F-017 tự nó ĐÚNG, không bị nghi ngờ), CHECK-B1-07 (phụ thuộc hẹp
-vào CHECK-B1-03, năm gạch đầu dòng còn lại không đổi). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09 (E2
-độc lập đã FAIL — finding đã được chấp nhận và xử lý, chưa chạy lại E2). WP-B1 **CHƯA DONE** — xem
+**Kết quả phiên IN_PROGRESS (cập nhật sau Owner-supplied POST-F-017 WP-B1 EVIDENCE REPLAY —
+CHECK-B1-03/07 phục hồi `PASS`):** **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03, 04, 05, 06, 07,
+08, 10). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09 — Independent E2 trước đó đã FAIL trên
+CHECK-B1-03; finding đã được chấp nhận, xử lý, và CHECK-B1-03 nay có đủ evidence (FS-08 post-F-017
+= FALSE, tính từ dataset official thật do Owner cung cấp) — nhưng CHECK-B1-09 **CHƯA được chạy lại
+độc lập**, giữ nguyên `NOT_TESTED`/FAIL cho tới khi có một phiên E2 mới. WP-B1 **CHƯA DONE** — xem
 báo cáo hoàn thành phiên (`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` +
 addendum).
 
@@ -191,9 +191,9 @@ Do not touch without Scope Expansion:
 - [x] B1.2 Xác định remediation nào ảnh hưởng Gate 1 và áp DEC-009 (xem CHECK-B1-02) —
       KẾT LUẬN: KHÔNG. Bằng chứng đường mã tại CHECK-B1-02.
 - [x] B1.3 Sửa Control F giữ đúng kích thước tranche và profile giải ngân theo tháng (F-017) —
-      PRODUCTION REPAIR đúng và đã kiểm chứng bằng mechanism test; nhưng CHECK-B1-03 (đủ chữ,
-      gồm cả yêu cầu tính lại FS-08) `BLOCKED — EVIDENCE INCOMPLETE` theo Independent E2 finding
-      — xem CHECK-B1-03
+      PRODUCTION REPAIR đúng, kiểm chứng bằng mechanism test; FS-08 post-F-017 nay ĐÃ TÍNH LẠI
+      bằng POST-F-017 WP-B1 EVIDENCE REPLAY (Owner-supplied, dataset official thật) = `FALSE`.
+      CHECK-B1-03 đủ chữ hoàn toàn, `PASS` — xem CHECK-B1-03 Addendum 3
 - [x] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại —
       APPROVE AS-IS (Owner Decision `DEC-033`), ghi tại `docs/CONVENTIONS.md` #21(e) (xem
       CHECK-B1-04)
@@ -399,7 +399,8 @@ Priority:
 REQUIRED
 
 Status:
-BLOCKED — EVIDENCE INCOMPLETE (đảo từ `PASS`, xem Addendum — Independent E2 finding)
+PASS (phục hồi từ `BLOCKED — EVIDENCE INCOMPLETE` sau khi có Owner-supplied POST-F-017 replay
+evidence — xem Addendum 3)
 
 Evidence Level:
 E1
@@ -544,9 +545,52 @@ dataset official (từ commit hiện tại của nhánh này) và dán lại out
 
 Status giữ `BLOCKED — EVIDENCE INCOMPLETE` cho tới khi có output đó.
 
+**Addendum 3 — POST-F-017 WP-B1 EVIDENCE REPLAY (Owner-supplied, cùng phiên tiếp nối) —
+`BLOCKED → PASS`:**
+
+Chủ dự án đã tự chạy đúng script replay ở trên (không sửa) trên máy Mac có dataset official T-06
+được bảo toàn, và cung cấp lại output. **Đây KHÔNG phải một official T-06 run mới** — chỉ là phép
+tính lại FS-08 bằng code đã sửa F-017, dán nhãn tường minh **"POST-F-017 WP-B1 EVIDENCE REPLAY"**.
+
+Xác minh cơ học từng điểm (không suy diễn/tối ưu, đối chiếu bằng số):
+
+| Điều kiện | Yêu cầu | Giá trị Owner cung cấp | Kết quả |
+|---|---|---|---|
+| `source_head` | phải là commit chứa bản sửa F-017 | `702b940` (= HEAD của nhánh này trước khi nhận evidence này; là hậu duệ trực tiếp của `fd6a514`, commit mang bản sửa F-017 — không có production diff nào giữa hai commit) | KHỚP |
+| `dataset_hash` | phải khớp official T-06 | `3150860cb3799403ff40620b6834e4826681893e2e5cd2af3ca815d2a652d2c5` | KHỚP nguyên văn với `dataset_hash` official đã dùng xuyên suốt WP-B1 (CHECK-B1-08, DEC-031) |
+| `master_seed` | phải = 42 | `42` | KHỚP `MASTER_SEED` |
+| `n_sims` | phải = 1000 (official, không phải dev-limit 200) | `1000` | KHỚP |
+| `v2_eth` vs `frozen_v2_eth` | phải khớp (validity check chống lệch dataset/strategy) | `14.910758150139896` == `14.910758150139896` | KHỚP TUYỆT ĐỐI (bit-for-bit) |
+| `beats_f` | `v2_eth > control_f_p95` | `14.910758150139896 > 14.887400583487747` → `True` | ĐÚNG công thức, khớp `"beats_f": true` |
+| `beats_g` | `v2_eth > control_g_p95` | `14.910758150139896 > 14.813546903782814` → `True` | ĐÚNG công thức, khớp `"beats_g": true` |
+| `FS-08` | `not (beats_f and beats_g)` | `not (True and True)` = `False` | ĐÚNG công thức, khớp `"FS-08": false` |
+
+Tất cả tám điều kiện xác nhận **KHỚP**, tính toán lại độc lập bằng Python xác nhận cùng kết quả.
+Không có điều kiện nào cần STOP.
+
+**Kết quả chính thức (POST-F-017 WP-B1 EVIDENCE REPLAY, KHÔNG PHẢI một official T-06 run mới):**
+
+    dataset_hash    = 3150860cb3799403ff40620b6834e4826681893e2e5cd2af3ca815d2a652d2c5
+    master_seed     = 42, n_sims = 1000
+    source_head     = 702b940 (F-017 đã sửa)
+    v2_eth          = 14.910758150139896 (khớp frozen official)
+    control_f_p95   = 14.887400583487747
+    control_g_p95   = 14.813546903782814
+    beats_f = true, beats_g = true
+    FS-08 (post-F-017) = FALSE
+
+**CHECK-B1-03 nay ĐỦ CHỮ hoàn toàn**: (a) test khẳng định Control F/G không gộp tháng vào một
+lệnh — PASS từ trước; (b) F-017 ĐÓNG; (c) "Kết quả FS-08 (do Control F nuôi) phải được tính lại
+sau khi sửa" — **NAY ĐÃ THOẢ** bằng evidence ở trên. `Status: BLOCKED → PASS`.
+
+**Không ảnh hưởng verdict lịch sử T-06**: FS-08 chỉ được `verdict.py` xét ở nhánh cuối cùng khi cả
+bốn gate (Gate 1, OOS, Gate 2, Gate 3) đều PASS (xem CHECK-B1-02/#21(a)); verdict T-06 đã dừng ở
+nhánh Gate 1 FAIL/OOS FAIL từ trước khi FS được xét. `FS-08=false` (post-F-017) không viết lại,
+không mâu thuẫn với, và không được dùng để suy luận lại verdict `DO_NOT_BUILD` của T-06.
+
 Executed By:
-Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — chấp nhận E2 finding, thiết kế + smoke-test
-replay harness, không tính được evidence thật vì thiếu dataset official
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — canonicalize Owner-supplied replay
+evidence, xác minh cơ học 8/8 điều kiện, không rerun/không suy diễn
 
 Timestamp:
 2026-09-04
@@ -662,7 +706,8 @@ Priority:
 REQUIRED
 
 Status:
-BLOCKED — pending CHECK-B1-03 (đảo từ `PASS`, xem Addendum cuối check)
+PASS (phục hồi từ `BLOCKED — pending CHECK-B1-03` sau khi CHECK-B1-03 có đủ evidence — xem
+Addendum 3 cuối check)
 
 Evidence Level:
 E1
@@ -723,6 +768,13 @@ finding thành sai không bằng chứng, không hạ ngưỡng) **KHÔNG bị �
 chứng riêng, không phụ thuộc CHECK-B1-03. Status hạ xuống `BLOCKED — pending CHECK-B1-03` (không
 phải hạ toàn bộ nội dung) — sẽ tự động PASS lại ngay khi CHECK-B1-03 có đủ evidence (không cần
 viết lại năm gạch đầu dòng kia).
+
+**Addendum 3 — PHỤC HỒI `PASS` (cùng phiên, tiếp nối) sau khi CHECK-B1-03 có đủ evidence:**
+CHECK-B1-03 nay `PASS` bằng POST-F-017 WP-B1 EVIDENCE REPLAY do Owner cung cấp (xem
+CHECK-B1-03 Addendum 3) — 8/8 điều kiện xác minh cơ học khớp (`source_head`, `dataset_hash`,
+`master_seed`, `n_sims`, `v2_eth` bit-for-bit khớp frozen, `beats_f`/`beats_g`/`FS-08` đúng công
+thức). Đúng phạm vi hẹp đã nêu ở Addendum 2: KHÔNG viết lại năm gạch đầu dòng còn lại (chúng chưa
+từng bị ảnh hưởng). `Status: BLOCKED — pending CHECK-B1-03 → PASS`.
 
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
@@ -898,26 +950,28 @@ Timestamp:
 2026-09-03
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS — **7/10 PASS** (01,02,04,05,06,08,10); **`BLOCKED`**:
-      CHECK-B1-03 (evidence FS-08 post-F-017 chưa tính được, MISSING_INPUT), CHECK-B1-07 (phụ
-      thuộc CHECK-B1-03); **`NOT_TESTED`/FAIL**: CHECK-B1-09 (Independent E2 đã FAIL, chưa chạy
-      lại)
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 7 check PASS;
-      CHECK-B1-03/07 evidence chưa đủ; E2 của CHECK-B1-09 đã FAIL, chưa PASS lại
+- [ ] 100% REQUIRED checks PASS — **9/10 PASS** (01,02,03,04,05,06,07,08,10); `NOT_TESTED`/FAIL:
+      CHECK-B1-09 (Independent E2 trước đã FAIL trên CHECK-B1-03; CHECK-B1-03 nay đủ evidence
+      nhưng E2 CHƯA được chạy lại độc lập) — check REQUIRED duy nhất còn lại
+- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 9 check PASS
+      (gồm CHECK-B1-03/07 phục hồi bằng POST-F-017 WP-B1 EVIDENCE REPLAY); E2 của CHECK-B1-09
+      CHƯA chạy lại
 - [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
       chứng đường mã kiểm lại được độc lập
 - [x] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md` — #20(d) (WP-A5) +
       #21(a)-(e) (phiên này, gồm phê chuẩn ngưỡng tại #21(e)/`DEC-033`)
-- [x] Verdict cuối cùng (T-06, TRƯỚC F-017) được ghi nhận kèm toàn bộ lý do — CHECK-B1-08 PASS:
+- [x] Verdict cuối cùng (T-06 lịch sử) được ghi nhận kèm toàn bộ lý do — CHECK-B1-08 PASS:
       `DO_NOT_BUILD` / `["Gate 1 FAIL", "OOS hard condition FAIL"]` / `can_proceed_to_app=false`,
       cross-verified từ `baseline_808b61fa5ffe_metrics.json` + `report.json` cùng gói official
-      (Owner-supplied). **Riêng biệt**: verdict này KHÔNG phản ánh FS-08 sau F-017 — xem
-      CHECK-B1-03
+      (Owner-supplied). Verdict lịch sử này KHÔNG đổi bởi FS-08 post-F-017 (đã quyết ở nhánh
+      Gate 1/OOS FAIL, trước khi FS được xét — xem CHECK-B1-02)
 - [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-005 được cập nhật
 - [x] Session handoff được viết
 - [x] Không hạ REQUIRED check nào để đạt DONE — Independent E2 finding trên CHECK-B1-09 được CHẤP
       NHẬN nguyên vẹn, không tranh cãi/bypass; CHECK-B1-03/07 ĐẢO về `BLOCKED` đúng như finding đòi
-      hỏi, không giữ `PASS` giả; CHECK-B1-09 KHÔNG tự chạy lại/tự cấp PASS trong phiên này
+      hỏi, không giữ `PASS` giả; phục hồi `PASS` chỉ SAU KHI có evidence thật (POST-F-017 WP-B1
+      EVIDENCE REPLAY, xác minh cơ học 8/8 điều kiện) — không tự nới; CHECK-B1-09 KHÔNG tự chạy
+      lại/tự cấp PASS trong phiên này, giữ nguyên `NOT_TESTED`/FAIL lịch sử
 
 ## Escalation Triggers
 

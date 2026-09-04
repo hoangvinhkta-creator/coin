@@ -309,9 +309,77 @@ bằng con số đã biết, không ghi). Không rerun T-06. Kết quả replay 
 
 7/10 PASS (01,02,04,05,06,08,10). 2/10 BLOCKED (03,07). 1/10 NOT_TESTED/FAIL (09).
 
-### Khuyến nghị cuối cùng
+### Khuyến nghị cuối cùng (tại thời điểm Addendum 2)
 
 **WP-B1 REMAINS IN PROGRESS.** Independent E2 finding được xử lý trung thực (đảo status, không
 che giấu). Việc còn lại KHÔNG nằm trong quyền hạn agent: cần Owner chạy đúng script đã viết sẵn
 trên máy có dataset official, dán lại output FS-08 post-F-017, rồi chạy lại E2 độc lập cho
 CHECK-B1-09. Không đề xuất DONE.
+
+---
+
+## Addendum 3 — Owner cung cấp POST-F-017 WP-B1 EVIDENCE REPLAY; CHECK-B1-03/07 phục hồi PASS (2026-09-04)
+
+Chủ dự án tự chạy đúng script replay (đã viết sẵn ở Addendum 2, không sửa) trên máy Mac giữ dataset
+official T-06, cung cấp lại output:
+
+```json
+{
+  "replay_label": "POST-F-017 WP-B1 EVIDENCE REPLAY",
+  "source_head": "702b940",
+  "dataset_hash": "3150860cb3799403ff40620b6834e4826681893e2e5cd2af3ca815d2a652d2c5",
+  "master_seed": 42, "n_sims": 1000,
+  "v2_eth": 14.910758150139896, "frozen_v2_eth": 14.910758150139896,
+  "control_f_p95": 14.887400583487747, "control_g_p95": 14.813546903782814,
+  "beats_f": true, "beats_g": true, "FS-08": false
+}
+```
+
+### Xác minh (không suy diễn/tối ưu — đối chiếu bằng số, 8/8 khớp)
+
+| # | Điều kiện | Kết quả |
+|---|---|---|
+| 1 | `source_head=702b940` là hậu duệ trực tiếp của `fd6a514` (commit F-017) | KHỚP — `git log` xác nhận, 0 production diff giữa hai commit |
+| 2 | `dataset_hash` khớp official T-06 | KHỚP nguyên văn `3150860cb3799403ff40620b6834e4826681893e2e5cd2af3ca815d2a652d2c5` |
+| 3 | `master_seed=42` | KHỚP |
+| 4 | `n_sims=1000` (official) | KHỚP |
+| 5 | `v2_eth` vs `frozen_v2_eth` | KHỚP BIT-FOR-BIT (`14.910758150139896 == 14.910758150139896`) |
+| 6 | `beats_f = v2_eth > control_f_p95` | `14.910758150139896 > 14.887400583487747` → `True`, khớp |
+| 7 | `beats_g = v2_eth > control_g_p95` | `14.910758150139896 > 14.813546903782814` → `True`, khớp |
+| 8 | `FS-08 = not(beats_f and beats_g)` | `not(True and True) = False`, khớp |
+
+Tính toán lại độc lập bằng Python xác nhận cùng kết quả (xem CHECK-B1-03 Addendum 3 trong task
+file). Không có điều kiện nào cần STOP.
+
+### CHECK-B1-03 / CHECK-B1-07 sau Addendum này
+
+| Check | Trước Addendum này | Sau |
+|---|---|---|
+| CHECK-B1-03 | `BLOCKED — EVIDENCE INCOMPLETE` | `PASS` |
+| CHECK-B1-07 | `BLOCKED — pending CHECK-B1-03` | `PASS` (phạm vi hẹp — 5 gạch đầu dòng khác không đổi) |
+| CHECK-B1-09 | `NOT_TESTED`/FAIL | Giữ nguyên — KHÔNG tự chạy lại E2 trong phiên này |
+
+### Bảo toàn lịch sử T-06
+
+`T-06 = DONE`, `V2.1.5 = FAILED`, verdict = `DO_NOT_BUILD`,
+`reasons = ["Gate 1 FAIL", "OOS hard condition FAIL"]`, `can_proceed_to_app = false` — không đổi.
+`FS-08=false` (post-F-017) không lật ngược verdict lịch sử vì Gate1/OOS đã FAIL trước khi FS được
+xét trong precedence của `verdict.py` (CHECK-B1-02). Kết quả replay dán nhãn tường minh
+**"POST-F-017 WP-B1 EVIDENCE REPLAY"**, không phải một official T-06 validation mới. Không mutate
+artifact official. Không rerun T-06/Gate1/Gate2/Gate3. Không đổi ngưỡng. Không tune V2.1.5.
+
+### Production diff
+
+`0` — chỉ `docs/tasks/WP-B1-*.md`, `PROJECT/PROJECT_PROGRESS.md`, `docs/sessions/S023-*.md` thay
+đổi. Không sửa `tests/` (canonical validator không đòi hỏi gì bất ngờ).
+
+### WP-B1 REQUIRED checks sau Addendum này
+
+**9/10 PASS** (01,02,03,04,05,06,07,08,10). 1/10 `NOT_TESTED`/FAIL (09) — check REQUIRED duy nhất
+còn lại.
+
+### Khuyến nghị cuối cùng (cập nhật)
+
+**WP-B1 REMAINS IN PROGRESS.** 9/10 REQUIRED PASS bằng bằng chứng thật, xác minh cơ học đầy đủ.
+Việc còn lại DUY NHẤT: một phiên Independent E2 MỚI cho `CHECK-B1-09` (Independent E2 trước đã
+FAIL, chưa chạy lại — không tự chạy trong phiên này). Không đề xuất DONE.

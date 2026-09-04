@@ -25,7 +25,29 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-04 — **INDEPENDENT E2 (`CHECK-B1-09`) FAILED trên `WP-B1`: `CHECK-B1-03`/`CHECK-B1-07`
+2026-09-04 — **POST-F-017 WP-B1 EVIDENCE REPLAY (Owner-supplied) canonical hoá: `CHECK-B1-03`/
+`CHECK-B1-07` phục hồi `BLOCKED → PASS`.** Chủ dự án tự chạy đúng script replay tối thiểu (đã viết
+sẵn tại phiên trước, không sửa) trên máy Mac giữ dataset official T-06, cung cấp lại output. Xác
+minh cơ học 8/8 điều kiện — **KHỚP TOÀN BỘ, không cần STOP**: `source_head=702b940` (hậu duệ trực
+tiếp của commit F-017, 0 production diff giữa hai commit); `dataset_hash` khớp nguyên văn official
+(`3150860cb...`); `master_seed=42`, `n_sims=1000` (official, không phải dev-limit); `v2_eth`
+KHỚP BIT-FOR-BIT `frozen_v2_eth` (`14.910758150139896`, đọc từ `random_control_21b7d88e9691_
+metrics.json` — validity check chống lệch dataset/strategy); `beats_f`/`beats_g` đúng công thức
+(`v2_eth > control_f_p95`/`control_g_p95`, cả hai `True`); `FS-08 = not(True and True) = False`
+đúng cơ học. Kết quả dán nhãn tường minh **"POST-F-017 WP-B1 EVIDENCE REPLAY"** — KHÔNG phải một
+official T-06 run mới, không mutate artifact official, không rerun T-06/Gate1/Gate2/Gate3.
+`CHECK-B1-03: BLOCKED → PASS` (đủ chữ hoàn toàn — production repair F-017 + evidence FS-08
+post-repair). `CHECK-B1-07: BLOCKED → PASS` (phạm vi hẹp đúng như đã cam kết ở lần đảo trước —
+năm gạch đầu dòng khác không bị viết lại). **`CHECK-B1-09` GIỮ NGUYÊN `NOT_TESTED`/FAIL lịch sử**
+— KHÔNG tự chạy lại E2 trong phiên này, cần một phiên độc lập mới. Verdict lịch sử T-06
+(`DO_NOT_BUILD`, `Gate 1 FAIL`/`OOS hard condition FAIL`, `can_proceed_to_app=false`) **KHÔNG
+đổi** — FS-08 chỉ được `verdict.py` xét ở nhánh cuối khi cả 4 gate PASS, T-06 đã dừng ở Gate
+1/OOS trước đó. **WP-B1 nay 9/10 REQUIRED PASS** (01,02,03,04,05,06,07,08,10); chỉ còn CHECK-B1-09
+(E2 độc lập mới) `NOT_TESTED`. Production diff = 0 (chỉ docs/state). Không rerun T-06. Không mở
+WP-B2/WP-B3/GATE-B/T-07. Không merge `main`. WP-B1 **VẪN IN_PROGRESS**, không đề xuất DONE. Chi
+tiết: `docs/tasks/WP-B1-*.md` (CHECK-B1-03/07 Addendum 3), `docs/sessions/S023-*.md`.
+
+Trước đó, 2026-09-04 — **INDEPENDENT E2 (`CHECK-B1-09`) FAILED trên `WP-B1`: `CHECK-B1-03`/`CHECK-B1-07`
 đảo `PASS → BLOCKED`.** Finding: `CHECK-B1-03` (frozen) đòi "Kết quả FS-08 (do Control F nuôi)
 phải được tính lại sau khi sửa [F-017]" — check này đã bị đóng khung `PASS` ở phiên trước dù
 chính evidence của nó tự nói FS-08 post-repair chưa tính được (thiếu dataset official). Finding
@@ -304,11 +326,11 @@ vẫn `PENDING`, nhưng chỉ chặn `T-08` và `WP-C2`, không nằm trên đư
 
 Current Task:
 `WP-B1` — `IN_PROGRESS` (phiên hiện tại, nhánh `claude/wp-b1-verdict-correctness-j9d390`).
-Independent E2 FAILED → `CHECK-B1-03`/`CHECK-B1-07` đảo `PASS → BLOCKED` (finding chấp nhận
-nguyên vẹn). 7/10 REQUIRED PASS (01,02,04,05,06,08,10); chờ Owner chạy exact replay command (đã
-viết sẵn tại `docs/tasks/WP-B1-*.md::CHECK-B1-03`) trên máy có dataset official để tính FS-08
-post-F-017, rồi chạy lại E2 cho CHECK-B1-09. DỪNG đúng phạm vi WP-B1 theo chỉ thị phiên — không
-mở WP-B2/WP-B3, không mở GATE-B, không chạy T-07, không merge `main`, không tự chạy CHECK-B1-09,
+Owner cung cấp POST-F-017 WP-B1 EVIDENCE REPLAY → `CHECK-B1-03`/`CHECK-B1-07` phục hồi
+`BLOCKED → PASS` (8/8 điều kiện xác minh cơ học khớp). **9/10 REQUIRED PASS**
+(01,02,03,04,05,06,07,08,10); chỉ còn `CHECK-B1-09` (cần một phiên Independent E2 MỚI — Independent
+E2 trước đã FAIL, chưa chạy lại). DỪNG đúng phạm vi WP-B1 theo chỉ thị phiên — không mở
+WP-B2/WP-B3, không mở GATE-B, không chạy T-07, không merge `main`, không tự chạy CHECK-B1-09,
 không sửa production code, không rerun T-06.
 
 Current Task Mode:
@@ -366,7 +388,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | **DONE tại S014 (2026-09-03)** — 8/8 REQUIRED PASS: test thứ tự viết từ chữ BT §19 đỏ trên engine cũ (F-019 đóng, F-018 nâng lên E1: cả ba quan sát XÁC NHẬN về thứ tự, quan sát 3 BÁC BỎ về hệ quả), tác động đo từng sai lệch trên dataset synth 7,5 năm (chỉ "tạo ladder sau bước 13" đổi kết quả: +0,054 %/+0,064 % ETH, −2/543 fill, nominal Base/Smart/Crash không đổi), quyết định SỬA `engine.py` theo chữ §19 (chỉ thứ tự), 22/22 test A6 PASS, thử phá có chủ đích bị bắt, no-lookahead 15m XÁC NHẬN (Impl Plan §7 mệnh đề 1). H-15 trả lời: GIỮ NGUYÊN (CONVENTIONS #19, 0 lần xảy ra trên dataset có cửa sổ INVALID 31 ngày; vế thứ ba của RE_TRIGGER_CONDITION còn mở, chờ T-06). **CHECK-A6-08 PASS (E2 độc lập)** — `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`, reviewer tự tái lập mọi con số trước khi đọc kết luận implementer, đồng ý toàn bộ quyết định. Hai finding non-blocking phát sinh từ E2 route sang `HARDENING_BACKLOG.md` H-24/H-25 (không mở lại Scope Lock — thuộc `ladders.py`/lifecycle, ngoài touch area). Đóng F-018, F-019. Biên bản: `docs/sessions/S014-wp-a6-thu-tu-18-buoc.md` |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
 | DONE | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | **DONE tại `DEC-031`, 2026-09-03 — historical governance disposition, KHÔNG phải validation PASS.** Official verdict = **`DO_NOT_BUILD`** (Gate 1 FAIL, OOS hard condition FAIL). `can_proceed_to_app=false`. `V2.1.5` validation = **FAILED**. `DONE` ở đây chỉ có nghĩa: official execution lifecycle đã hoàn tất và evidence đã được canonicalize (`docs/T06_OFFICIAL_EVIDENCE_RECORD.md`) — KHÔNG có Ready Gate/Completion Gate task-level (khoảng trống governance lịch sử, đã dispositioned tại `DEC-031`, historical exception, KHÔNG tạo precedent). Code commit `5228130677e9e9875335eef890b6ed748a384603`, tag `v2.1.5-official-T06`. Cả hai nhóm prerequisite trước đây đã thoả: (A) GATE-A CLOSED (`DEC-028`); (B) BLK-001 RESOLVED (`DEC-031`) |
-| IN_PROGRESS | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | **IN_PROGRESS (phiên hiện tại, sau `READY` tại `DEC-031`)** — **7/10 REQUIRED PASS** (CHECK-B1-01/02/04/05/06/08/10). Independent E2 trên `CHECK-B1-09` **FAILED**: `CHECK-B1-03` bị đóng khung PASS trong khi chính evidence của nó nói rõ FS-08 (do Control F nuôi) chưa được tính lại sau F-017 — finding ĐƯỢC CHẤP NHẬN, không tranh cãi. `CHECK-B1-03: PASS → BLOCKED` (production repair của F-017 vẫn ĐÚNG, chỉ THIẾU evidence FS-08 post-repair); `CHECK-B1-07: PASS → BLOCKED` (phụ thuộc hẹp CHECK-B1-03, 5/6 gạch đầu dòng còn lại không đổi). Thiết kế + smoke-test (synthetic, không phải evidence) một replay tối thiểu tính lại Control F/G + FS-08 bằng code đã sửa trên dataset official — **MISSING_INPUT**: môi trường agent không có dataset official (`data/raw` gitignored, không tồn tại ở đây, không được fetch mới); cần Owner chạy script đã viết sẵn (xem file task CHECK-B1-03) trên máy có dataset official rồi dán lại output. F-017 ĐÓNG (code); F-026 ĐÓNG; F-015 ĐÓNG (`DEC-033`); CHECK-B1-08 PASS (evidence T-06 GỐC, TRƯỚC F-017 — không thay thế cho FS-08 post-repair). `CHECK-B1-09` **NOT_TESTED lại** sau khi CHECK-B1-03/07 có evidence đầy đủ. Xem file task để có evidence đầy đủ |
+| IN_PROGRESS | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | **IN_PROGRESS (phiên hiện tại, sau `READY` tại `DEC-031`)** — **9/10 REQUIRED PASS** (CHECK-B1-01/02/03/04/05/06/07/08/10). Owner đã tự chạy exact replay script (CHECK-B1-03) trên máy có dataset official T-06 (`dataset_hash=3150860cb...` khớp), cung cấp **POST-F-017 WP-B1 EVIDENCE REPLAY** (KHÔNG phải official T-06 run mới): `v2_eth=14.910758150139896` khớp bit-for-bit `frozen_v2_eth`; `control_f_p95=14.887400583487747`, `control_g_p95=14.813546903782814`; `beats_f=true`, `beats_g=true` → `FS-08=false`. Xác minh cơ học 8/8 điều kiện khớp (source_head, dataset_hash, seed, n_sims, v2_eth, cả hai beats, công thức FS-08). `CHECK-B1-03: BLOCKED → PASS`; `CHECK-B1-07: BLOCKED → PASS` (phạm vi hẹp, 5 gạch đầu dòng khác không đổi). Verdict lịch sử T-06 (`DO_NOT_BUILD`, Gate 1/OOS FAIL) KHÔNG đổi — FS-08 chỉ được xét sau khi cả 4 gate PASS, T-06 đã dừng ở Gate 1/OOS trước đó. `CHECK-B1-09` vẫn `NOT_TESTED`/FAIL lịch sử — cần một phiên E2 độc lập MỚI (không tự chạy trong phiên này) — check REQUIRED duy nhất còn lại. Xem file task để có evidence đầy đủ |
 | READY | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | **READY tại `DEC-031`** — dependency `T-06 DONE` nay thoả, mọi mục khác đã `[x]` từ trước. Song song với WP-B1, WP-B3 |
 | BLOCKED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Dependency `T-06 DONE` nay thoả (`DEC-031`); dependency `WP-C2 DONE` **CHƯA thoả** (`WP-C2` = `BLOCKED`) — đây là lý do chặn DUY NHẤT còn lại. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | `T-06` nay DONE (`DEC-031`, verdict `DO_NOT_BUILD`) nhưng **GATE-B CHƯA MỞ** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE — hiện cả ba đều chưa DONE, chỉ READY/BLOCKED). NOT READY. Chặn T-11 |
