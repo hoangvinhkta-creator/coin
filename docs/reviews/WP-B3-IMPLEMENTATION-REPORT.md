@@ -962,7 +962,32 @@ Lệnh tái lập phép đo, đã commit:
 
 ## 25. Commit / Push
 
-<!--COMMIT_PUSH-->
+| Mục | Giá trị |
+|---|---|
+| Nhánh | `claude/wp-b3-audit-trail-impl-3covtf` |
+| Base | `origin/main` `04f77ac57d42b115098d32798874a5851d10e53a` |
+| Commit thực thi | `7be3c4d8cd9effcfdbcd0dacf1e1b22eee6aeed1` |
+| Ahead of default | 1 commit (commit thứ hai chỉ bổ sung §16/§25 của chính báo cáo này) |
+| Push | `git push -u origin claude/wp-b3-audit-trail-impl-3covtf` → `[new branch]`, upstream đã đặt |
+
+Branch authority check chạy lại **SAU khi push**:
+
+    branch            = claude/wp-b3-audit-trail-impl-3covtf
+    default branch    = main (resolved, not assumed)
+    behind upstream   = 0
+    ahead of default  = 1 commit(s)
+    divergence age    = 0 day(s)
+    divergence LOC    = 2923
+    integration       = INTEGRATION_DECISION_REQUIRED=NO
+    tracked worktree  = CLEAN
+    production diff   = EMPTY
+    BRANCH AUTHORITY: PASS
+
+Không vượt ngưỡng Integration Decision nào (`ahead ≤ 10`, `age ≤ 3 ngày`, `LOC ≤ 5.000`).
+
+**KHÔNG làm** (đúng đề bài §25): không merge `main`, không push `main`, không xoá nhánh nào,
+không dọn dẹp repo, không đụng `data/` (untracked, chủ dự án giữ có chủ ý), **không tạo pull
+request** (đề bài không yêu cầu).
 
 ---
 
