@@ -17,6 +17,8 @@ Hợp đồng đầu ra với `verdict.py` (WP-B1 lát cắt DEC-026, đóng F-S
 """
 from __future__ import annotations
 
+import math
+
 FS_DESCRIPTIONS = {
     "FS-01": "V2 tích lũy ít ETH hơn Monthly DCA ở phần lớn gate window",
     "FS-02": "Opportunity reserve thường xuyên chạm cap và nằm im",
@@ -41,6 +43,17 @@ def _flag(value) -> bool | None:
     một ngưỡng nào.
     """
     return None if value is None else bool(value)
+
+
+def _numeric_and_finite(x) -> bool:
+    """E2-B1-F01: `None`, NaN, hoặc giá trị không phải số đều KHÔNG phải bằng chứng dùng
+    được cho một phép so sánh ngưỡng — coi như thiếu input (UNKNOWN), không so sánh."""
+    if x is None:
+        return False
+    try:
+        return not math.isnan(float(x))
+    except (TypeError, ValueError):
+        return False
 
 
 def evaluate_failure_signals(*, gate1_windows: dict | None = None,
@@ -88,9 +101,15 @@ def evaluate_failure_signals(*, gate1_windows: dict | None = None,
     else:
         fs["FS-07"] = None
 
-    if v2_eth is not None and (random_timing_p95 is not None or random_anchor_p95 is not None):
-        beats_f = (random_timing_p95 is None) or (v2_eth > random_timing_p95)
-        beats_g = (random_anchor_p95 is None) or (v2_eth > random_anchor_p95)
+    # E2-B1-F01 (WP-B1 fresh E2, 2026-09-04): trước đây chỉ đòi MỘT trong hai P95, rồi coi
+    # control còn thiếu là "V2 tự động beat" (vacuous true) — một control vắng mặt không
+    # phải bằng chứng "V2 thắng nó". FS-08 cần CẢ HAI P95 (và `v2_eth`) mới được coi là
+    # known; thiếu bất kỳ input nào trong ba -> None (UNKNOWN), đúng hợp đồng fail-closed
+    # của cả module (xem docstring đầu file) thay vì tự chế một ngoại lệ chỉ cho FS-08.
+    if (_numeric_and_finite(v2_eth) and _numeric_and_finite(random_timing_p95)
+            and _numeric_and_finite(random_anchor_p95)):
+        beats_f = v2_eth > random_timing_p95
+        beats_g = v2_eth > random_anchor_p95
         fs["FS-08"] = _flag(not (beats_f and beats_g))
     else:
         fs["FS-08"] = None

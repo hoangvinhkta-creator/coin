@@ -407,9 +407,19 @@ def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
         oos_ae=g1["oos"]["ae"],
     )
     v = decide_verdict(g1["gate1"], g1["oos"], g2["gate2"], g3["gate3"], fs)
-    # WP-A1/A1.2: verdict chỉ official khi CẢ Gate 2 và Gate 3 official — mà mỗi cờ đó đã
-    # gồm điều kiện lineage đủ tư cách. Không tính lại eligibility ở đây (một nguồn sự thật).
-    official = g2.get("official", False) and g3.get("official", False)
+    # E2-B1-F02 (WP-B1 fresh E2, 2026-09-04): trước đây `official` chỉ AND Gate 2/Gate 3,
+    # bỏ sót Gate 1 và Controls — và dù đủ bốn thì cờ đó cũng CHỈ được dùng để thêm một
+    # dòng `warning` (text), không hề chặn `can_proceed_to_app`. Đây là cổng DUY NHẤT
+    # T-07/T-11 đọc (CONVENTIONS #21(a)), nên phải fail-closed thật, không chỉ cảnh báo.
+    # Tái dùng NGUYÊN cờ `official` đã có sẵn ở từng thành phần (không phát minh lại
+    # provenance/eligibility — mỗi cờ đã tự bao gồm điều kiện lineage đủ tư cách của nó).
+    official = (g1.get("official", False) and g2.get("official", False)
+                and g3.get("official", False)
+                and bool(controls) and controls.get("official", False))
+    if not official and v["can_proceed_to_app"]:
+        v = {**v, "can_proceed_to_app": False,
+             "reasons": v["reasons"] + [
+                 "Non-official/chưa đủ tư cách official: can_proceed_to_app buộc về false"]}
     # WP-A5: PHẠM VI và LÝ DO của từng đại lượng đo, ghi thẳng vào run record. Mục đích là
     # để một FS còn UNKNOWN luôn nói được VÌ SAO nó UNKNOWN (CHECK-A5-04) — đây là siêu dữ
     # liệu ĐO LƯỜNG, không phải chính sách verdict (chính sách = WP-B1).
@@ -434,8 +444,9 @@ def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
                "failure_signal_inputs_wp_a5": fs_inputs, "official": official,
                "official_reason": g2.get("official_reason")}
     if not official:
-        payload["warning"] = ("DEV RUN — Gate 2/Gate 3 chạy với dev_limit hoặc dữ liệu không "
-                              "đủ tư cách official. KHÔNG phải official verdict. Chạy full "
+        payload["warning"] = ("DEV RUN — Gate 1/Gate 2/Gate 3/Controls chạy với dev_limit hoặc "
+                              "dữ liệu không đủ tư cách official. KHÔNG phải official verdict. "
+                              "`can_proceed_to_app` đã bị buộc về false (E2-B1-F02). Chạy full "
                               "manifest trên dữ liệu Binance thật để có official verdict.")
     save_run(out_dir, "BASELINE", payload, strategy_config_hash=BASELINE_STRATEGY.hash,
              execution_config_hash=GATE3_REALISTIC.hash, dataset_hash=dataset_hash,

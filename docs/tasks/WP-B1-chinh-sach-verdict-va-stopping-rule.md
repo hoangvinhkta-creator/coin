@@ -5,14 +5,17 @@ Status:
 IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
 (mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
 (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
-**Kết quả phiên IN_PROGRESS (cập nhật sau Owner-supplied POST-F-017 WP-B1 EVIDENCE REPLAY —
-CHECK-B1-03/07 phục hồi `PASS`):** **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03, 04, 05, 06, 07,
-08, 10). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09 — Independent E2 trước đó đã FAIL trên
-CHECK-B1-03; finding đã được chấp nhận, xử lý, và CHECK-B1-03 nay có đủ evidence (FS-08 post-F-017
-= FALSE, tính từ dataset official thật do Owner cung cấp) — nhưng CHECK-B1-09 **CHƯA được chạy lại
-độc lập**, giữ nguyên `NOT_TESTED`/FAIL cho tới khi có một phiên E2 mới. WP-B1 **CHƯA DONE** — xem
-báo cáo hoàn thành phiên (`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` +
-addendum).
+**Kết quả phiên IN_PROGRESS (cập nhật sau fresh Independent E2 `E2-WP-B1-002-FRESH-2026-09-04` +
+repair batch E2-B1-F01/F02):** **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03, 04, 05, 06, 07, 08,
+10). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09 — fresh Independent E2 tái lập được 2 BLOCKING
+finding mới (`E2-B1-F01`: FS-08 fail-open khi thiếu đúng một control; `E2-B1-F02`: officiality
+không chặn `can_proceed_to_app`), khiến CHECK-B1-01/07/09 tạm FAIL. Cả hai finding ĐÃ ĐƯỢC SỬA
+(`failure_signals.py`, `pipeline.py`) trong cùng một repair batch, có regression test mới (21
+test, `tests/test_wp_b1_e2_fresh_fail_repair.py`), CHECK-B1-01/07 phục hồi `PASS`. CHECK-B1-09
+vẫn `NOT_TESTED`/FAIL — **CHƯA chạy lại E2 mới trong phiên này**, cần một phiên độc lập khác. Xem
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md` (artifact E2 gốc) và
+`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` (addendum repair). WP-B1 **CHƯA
+DONE**.
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -312,6 +315,42 @@ phép tại DEC-026. Addendum: Sonnet 5, phiên WP-B1 IN_PROGRESS hiện tại.
 
 Timestamp:
 2026-09-03
+
+**Addendum 2 — Fresh Independent E2 (`E2-WP-B1-002-FRESH-2026-09-04`) FAIL, repair, phục hồi
+PASS:** reviewer tái lập được một đường production KHÔNG thuộc 12 vector "đúng một FS là None"
+đã có: một signal (FS-08) có BA input độc lập (`v2_eth` + hai Control P95); nếu CHỈ đúng một P95
+vắng mặt (không phải cả ba), code cũ (`v2_eth is not None and (F is not None or G is not None)`)
+coi control vắng mặt là "V2 tự động beat" thay vì UNKNOWN. Ví dụ tái hiện: `v2_eth=10.0`,
+`random_timing_p95=None`, `random_anchor_p95=9.5`, 11 signal khác sạch → production
+`run_verdict` ra `verdict=BUILD`, `can_proceed_to_app=true`. Đây LÀ đúng loại vi phạm mà
+CHECK-B1-01 tồn tại để chặn ("BUILD không được phép khi bất kỳ REQUIRED FS nào còn UNKNOWN"),
+dù 33 test hiện có (theo cấu trúc "toàn bộ input của một FS vắng mặt") không chạm tới ca THIẾU
+MỘT PHẦN input của một FS ba-input này. Chấp nhận finding, không tranh cãi.
+
+**Repair (E2-B1-F01, cùng phê duyệt với E2-B1-F02 — xem CHECK-B1-07):**
+`src/eth_dca_os/failure_signals.py` — FS-08 nay đòi ĐỦ CẢ BA input (`v2_eth`,
+`random_timing_p95`, `random_anchor_p95`) hợp lệ (không `None`, không NaN/non-numeric qua helper
+mới `_numeric_and_finite()`) mới tính; thiếu/invalid BẤT KỲ input nào trong ba → `None` (UNKNOWN).
+Không đổi chiều so sánh (`v2_eth > p95`, strict), không đổi bất kỳ ngưỡng nào.
+
+Test mới (`tests/test_wp_b1_e2_fresh_fail_repair.py`, 21 test): ma trận đầy đủ F present/missing
+× G present/missing × cả hai present (bao gồm ca đúng của E2-B1-F01), NaN/invalid cho từng P95,
+`v2_eth` thiếu, end-to-end qua `decide_verdict` xác nhận verdict ≠ BUILD/`can_proceed_to_app=False`
+cho đúng counterexample của reviewer, cộng giữ nguyên semantics tie (`>` strict) và exact-boundary/
+one-ULP cho FS-02/07/12 (retained adversarial coverage). `tests/test_gates_verdict.py::
+test_fs08_random_control` được SỬA (không phải nới lỏng) vì case đầu của nó vô tình mã hoá đúng
+hành vi lỗi (chỉ truyền Control F, kỳ vọng `True`) — nay kỳ vọng đúng `None`.
+
+`Status: PASS` (phục hồi từ `FAIL` do fresh E2) — production path đã fail-closed đúng, có
+regression test khoá lại. Không hạ bớt phạm vi câu chữ CHECK-B1-01 (vẫn đòi UNKNOWN chặn BUILD
+cho MỌI signal, không riêng 12 vector cũ).
+
+Executed By:
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — chấp nhận fresh E2 finding, sửa
+`failure_signals.py`, thêm regression test
+
+Timestamp:
+2026-09-04
 
 #### CHECK-B1-02 — DEC-009: quy tắc Gate 1 staleness được cưỡng chế
 Priority:
@@ -706,8 +745,8 @@ Priority:
 REQUIRED
 
 Status:
-PASS (phục hồi từ `BLOCKED — pending CHECK-B1-03` sau khi CHECK-B1-03 có đủ evidence — xem
-Addendum 3 cuối check)
+PASS (phục hồi từ `FAIL` sau fresh Independent E2 + repair E2-B1-F01/F02 — xem Addendum 4 cuối
+check)
 
 Evidence Level:
 E1
@@ -775,6 +814,46 @@ CHECK-B1-03 Addendum 3) — 8/8 điều kiện xác minh cơ học khớp (`sour
 `master_seed`, `n_sims`, `v2_eth` bit-for-bit khớp frozen, `beats_f`/`beats_g`/`FS-08` đúng công
 thức). Đúng phạm vi hẹp đã nêu ở Addendum 2: KHÔNG viết lại năm gạch đầu dòng còn lại (chúng chưa
 từng bị ảnh hưởng). `Status: BLOCKED — pending CHECK-B1-03 → PASS`.
+
+**Addendum 4 — Fresh Independent E2 (`E2-WP-B1-002-FRESH-2026-09-04`) FAIL, repair, phục hồi
+`PASS`:** reviewer tái lập được HAI đường production counterexample cho đúng câu hỏi mà
+CHECK-B1-07 đặt ra ("có đường nào để BUILD/can_proceed_to_app=true lọt qua khi evidence chưa
+đủ?") — CÓ, hai đường:
+
+1. **E2-B1-F01**: FS-08 (ba input: `v2_eth` + hai Control P95) chỉ cần MỘT trong hai P95 hiện
+   diện; P95 còn thiếu bị coi là "V2 tự động beat" thay vì UNKNOWN — vi phạm trực tiếp gạch đầu
+   dòng "`UNKNOWN` không được coi là PASS ở bất kỳ đâu" của chính CHECK-B1-07 này (xem
+   CHECK-B1-01 Addendum 2 để có repro/repair đầy đủ).
+2. **E2-B1-F02**: `official` (tính trong `pipeline.run_verdict`) trước đây chỉ AND Gate 2/Gate 3
+   (bỏ sót Gate 1 và Controls), và dù đủ bốn cũng CHỈ tạo một dòng `warning` — không hề chặn
+   `can_proceed_to_app`. Non-official/dev-run evidence có thể mang `verdict=BUILD`,
+   `can_proceed_to_app=true` — vi phạm cùng gạch đầu dòng đó theo một đường khác.
+
+Cả hai đều là bằng chứng CHECK-B1-07 đã KHÔNG được chứng minh đầy đủ như Addendum 3 tuyên bố —
+không phải finding ngoài phạm vi. Chấp nhận nguyên vẹn, không tranh cãi.
+
+**Repair (một batch, cùng phạm vi CAP-VERDICT/WP-B1):**
+- `src/eth_dca_os/failure_signals.py`: FS-08 đòi đủ cả ba input hợp lệ (không `None`, không
+  NaN/non-numeric) mới tính; thiếu/invalid bất kỳ input nào → `None` (UNKNOWN). Xem chi tiết ở
+  CHECK-B1-01 Addendum 2.
+- `src/eth_dca_os/pipeline.py::run_verdict`: `official` nay AND đủ CẢ BỐN nguồn (Gate 1, Gate 2,
+  Gate 3, Controls — mỗi cờ đã tự bao gồm điều kiện lineage đủ tư cách của nó, không phát minh
+  provenance mới); khi `official=False` VÀ `can_proceed_to_app` đang `True` (từ `decide_verdict`),
+  ép về `False` kèm lý do tường minh trong `reasons`. `verdict.py::decide_verdict` KHÔNG bị sửa
+  (giữ nguyên là chính sách gate/FS thuần, không lẫn khái niệm officiality — officiality được
+  chặn đúng một chỗ duy nhất, tại điểm `run_verdict` đã có sẵn đủ bốn cờ).
+
+Test mới (`tests/test_wp_b1_e2_fresh_fail_repair.py`, 21 test): CASE A (official đầy đủ + BUILD-
+eligible → không đổi hành vi, `can_proceed_to_app=True`), CASE B/C (thiếu từng control → FS-08
+UNKNOWN → không BUILD được), CASE D (non-official toàn phần → `can_proceed_to_app=False`), thiếu
+từng thành phần official riêng lẻ (Gate1/Gate2/Gate3/Controls, 4 test tham số hoá) đều buộc
+`can_proceed_to_app=False`, `controls=None` không crash và không lọt `can_proceed_to_app=true`,
+và CASE E (provenance unresolved trong khi tuyên bố official → `ProvenanceUnresolvedError` từ
+cơ chế `save_run()` có sẵn từ WP-A1 — không cần sửa gì, chỉ xác nhận bằng test là cơ chế đó vẫn
+chặn đúng, không để payload lọt ra ngoài).
+
+`Status: FAIL → PASS`. Phạm vi vẫn hẹp đúng như Addendum 2/3 đã cam kết: năm gạch đầu dòng còn
+lại (đã liệt kê ở Addendum 2) không bị viết lại, không phụ thuộc lần sửa này.
 
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
@@ -936,12 +1015,19 @@ này, KHÔNG phải regression code, xác nhận bằng `test_a1_08_lockfile_mat
 PASS trở lại sau khi ghim đúng phiên bản, không sửa `pyproject.lock` hay bất kỳ file production
 nào để né check).
 
-**Kết quả: 391 tests collected, 391 PASS, 0 FAIL, 0 ERROR, 0 SKIP, 0 XFAIL. `EXIT=0`.** (addopts
-`-q` trong `pyproject.toml` không in dòng tổng kết dạng "N passed" — đếm bằng số `.` trong log,
-đối chiếu `EXIT=$?`). Không test nào bị skip/xfail/deselect. Không sửa/xoá/nới lỏng test nào có
-sẵn trong phiên này — chỉ SỬA 2 test hiện có cho khớp chữ ký hàm mới (`test_random_controls_
-reproducible` trong `test_benchmarks.py`, call site trong `test_e2e.py`) và THÊM test mới (không
-bớt assertion nào của hai test được sửa — số lượng assertion tăng, phạm vi kiểm không giảm).
+**Kết quả (lần chạy đầu, trước repair E2-B1-F01/F02): 391 tests collected, 391 PASS, 0 FAIL, 0
+ERROR, 0 SKIP, 0 XFAIL. `EXIT=0`.** (addopts `-q` trong `pyproject.toml` không in dòng tổng kết
+dạng "N passed" — đếm bằng số `.` trong log, đối chiếu `EXIT=$?`). Không test nào bị skip/xfail/
+deselect. Không sửa/xoá/nới lỏng test nào có sẵn trong phiên này — chỉ SỬA 2 test hiện có cho
+khớp chữ ký hàm mới (`test_random_controls_reproducible` trong `test_benchmarks.py`, call site
+trong `test_e2e.py`) và THÊM test mới (không bớt assertion nào của hai test được sửa — số lượng
+assertion tăng, phạm vi kiểm không giảm).
+
+**Kết quả (lần chạy thứ hai, sau repair batch E2-B1-F01/F02, cùng phiên tiếp nối 2026-09-04):
+412 tests collected, 412 PASS, 0 FAIL, 0 ERROR, 0 SKIP, 0 XFAIL. `EXIT=0`.** Khớp đúng số học:
+391 + 21 test mới (`tests/test_wp_b1_e2_fresh_fail_repair.py`) = 412. `test_gates_verdict.py::
+test_fs08_random_control` SỬA (không xoá/nới) case đầu để phản ánh đúng hành vi fail-closed mới
+— xem CHECK-B1-01 Addendum 2.
 
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
@@ -951,11 +1037,11 @@ Timestamp:
 
 ## Exit Criteria
 - [ ] 100% REQUIRED checks PASS — **9/10 PASS** (01,02,03,04,05,06,07,08,10); `NOT_TESTED`/FAIL:
-      CHECK-B1-09 (Independent E2 trước đã FAIL trên CHECK-B1-03; CHECK-B1-03 nay đủ evidence
-      nhưng E2 CHƯA được chạy lại độc lập) — check REQUIRED duy nhất còn lại
+      CHECK-B1-09 (fresh Independent E2 tái lập E2-B1-F01/F02, đã sửa xong, CHƯA chạy lại E2 mới)
+      — check REQUIRED duy nhất còn lại
 - [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 9 check PASS
-      (gồm CHECK-B1-03/07 phục hồi bằng POST-F-017 WP-B1 EVIDENCE REPLAY); E2 của CHECK-B1-09
-      CHƯA chạy lại
+      (gồm CHECK-B1-01/07 phục hồi bằng repair E2-B1-F01/F02 + 21 regression test mới); E2 của
+      CHECK-B1-09 CHƯA chạy lại
 - [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
       chứng đường mã kiểm lại được độc lập
 - [x] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md` — #20(d) (WP-A5) +
@@ -967,11 +1053,12 @@ Timestamp:
       Gate 1/OOS FAIL, trước khi FS được xét — xem CHECK-B1-02)
 - [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-005 được cập nhật
 - [x] Session handoff được viết
-- [x] Không hạ REQUIRED check nào để đạt DONE — Independent E2 finding trên CHECK-B1-09 được CHẤP
-      NHẬN nguyên vẹn, không tranh cãi/bypass; CHECK-B1-03/07 ĐẢO về `BLOCKED` đúng như finding đòi
-      hỏi, không giữ `PASS` giả; phục hồi `PASS` chỉ SAU KHI có evidence thật (POST-F-017 WP-B1
-      EVIDENCE REPLAY, xác minh cơ học 8/8 điều kiện) — không tự nới; CHECK-B1-09 KHÔNG tự chạy
-      lại/tự cấp PASS trong phiên này, giữ nguyên `NOT_TESTED`/FAIL lịch sử
+- [x] Không hạ REQUIRED check nào để đạt DONE — mọi Independent E2 finding (CHECK-B1-03 lần 1,
+      E2-B1-F01/F02 lần 2) được CHẤP NHẬN nguyên vẹn, không tranh cãi/bypass; check liên quan ĐẢO
+      về `BLOCKED`/`FAIL` đúng như finding đòi hỏi, không giữ `PASS` giả; mọi lần phục hồi `PASS`
+      đều SAU KHI có evidence/repair thật (evidence replay xác minh 8/8; repair E2-B1-F01/F02 xác
+      minh bằng 21 regression test mới) — không tự nới; CHECK-B1-09 KHÔNG tự chạy lại/tự cấp PASS
+      trong phiên này, giữ nguyên `NOT_TESTED`/FAIL lịch sử cho tới khi có phiên E2 mới
 
 ## Escalation Triggers
 
@@ -1001,26 +1088,33 @@ Created:
 - `docs/sessions/S016-wp-b1-lat-cat-dec026.md` (lát cắt DEC-026, S016)
 - `tests/test_wp_b1_verdict_policy.py` (phiên hiện tại — CHECK-B1-07: precedence, can_proceed,
   numpy/bool equivalence, determinism)
-- (dự kiến, cần phiên riêng) `docs/reviews/E2-WP-B1-*.md`
+- `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md` (Owner/reviewer, KHÔNG phải agent phiên
+  này — artifact E2 fresh FAIL, tái lập E2-B1-F01/F02)
+- `tests/test_wp_b1_e2_fresh_fail_repair.py` (phiên hiện tại — 21 test cho repair E2-B1-F01/F02)
+- (dự kiến, cần phiên riêng) `docs/reviews/E2-WP-B1-*.md` khác (E2 mới cho CHECK-B1-09 sau repair)
 
 Modified:
-- `src/eth_dca_os/failure_signals.py` (lát cắt DEC-026, S016 — chỉ chuẩn hoá kiểu + cờ chặn)
+- `src/eth_dca_os/failure_signals.py` (lát cắt DEC-026, S016 — chuẩn hoá kiểu + cờ chặn; phiên
+  hiện tại — FS-08 [E2-B1-F01] đòi đủ cả ba input hợp lệ, thêm helper `_numeric_and_finite()`)
 - `tests/test_wp_a5_failure_signal_instrumentation.py` (lát cắt DEC-026, S016 — xoá test đánh dấu
   F-S015-01; khoá CHECK-A5-07 vào khoảng `b095874..d4586b8`)
 - `src/eth_dca_os/benchmarks.py` (phiên hiện tại — F-017: `random_timing_control`/
   `random_anchor_control` nhận `monthly_tranches` per-tranche thay vì `monthly_deployments`
   scalar/tháng; random hóa độc lập theo từng tranche)
 - `src/eth_dca_os/pipeline.py` (phiên hiện tại — `run_gate1` dựng `monthly_tranches` từ
-  `full.purchases`; `run_controls` đổi tên tham số theo)
+  `full.purchases`; `run_controls` đổi tên tham số theo; `run_verdict::official` nay AND đủ 4
+  nguồn [E2-B1-F02] + ép `can_proceed_to_app=False` khi không official)
 - `src/eth_dca_os/cli.py` (phiên hiện tại — cập nhật call site theo khoá payload mới
   `_full_run_monthly_tranches`)
 - `tests/test_benchmarks.py` (phiên hiện tại — cập nhật fixture theo định dạng tranche-list;
   thêm 2 test F-017)
 - `tests/test_e2e.py` (phiên hiện tại — cập nhật call site theo khoá payload mới)
+- `tests/test_gates_verdict.py` (phiên hiện tại — sửa `test_fs08_random_control` case đầu, vốn
+  vô tình mã hoá đúng hành vi lỗi E2-B1-F01)
 - `docs/CONVENTIONS.md` (phiên hiện tại — mục #21(a)-(e): ánh xạ gate-fail→verdict, chính sách
   UNKNOWN, `shift_days=10`, Control F/G per-tranche, phê chuẩn ngưỡng FS-02/FS-07/FS-12)
 - `docs/tasks/WP-B1-chinh-sach-verdict-va-stopping-rule.md` (phiên hiện tại — evidence
-  CHECK-B1-02/03/04/05/06/07/08/10, subtask B1.2-B1.8)
+  CHECK-B1-01/02/03/04/05/06/07/08/10, subtask B1.2-B1.8)
 - `PROJECT/PROJECT_DECISIONS.md` (phiên hiện tại — `DEC-033`, Owner Decision APPROVE AS-IS ba
   ngưỡng FS-02/FS-07/FS-12, đóng CHECK-B1-04)
 
@@ -1044,6 +1138,22 @@ Migration Impact:
   CHECK-B1-08 để phiên/reviewer sau không hiểu nhầm `pipeline_state.json` là nguồn full-fidelity
   cho `reasons`.
 - `DEC-033` không đổi giá trị ngưỡng nào — không có migration nào cho `failure_signals.py`.
+- **E2-B1-F01 behavior change**: bất kỳ caller nào trước đây phụ thuộc vào FS-08 tự resolve
+  thành TRUE/FALSE khi chỉ CÓ MỘT trong hai Control P95 (hành vi cũ, sai) nay sẽ nhận `None`
+  (UNKNOWN) — đây là thay đổi HÀNH VI CÓ CHỦ ĐÍCH (fix bug fail-open), không phải regression.
+  Không có call site nào khác trong repo gọi `evaluate_failure_signals` với đúng một control
+  (đã grep `random_timing_p95=`/`random_anchor_p95=` toàn `src/`) — chỉ `pipeline.run_verdict`
+  gọi với cả hai cùng lúc (từ cùng khối `controls`), nên thay đổi này không ảnh hưởng call site
+  production nào ngoài đúng ca lỗi đang sửa.
+- **E2-B1-F02 behavior change**: bất kỳ dev/non-official run nào trước đây vô tình đọc được
+  `can_proceed_to_app=true` (khi verdict=BUILD nhưng dữ liệu không official) nay sẽ luôn thấy
+  `false` kèm lý do trong `reasons`. Đây cũng là thay đổi HÀNH VI CÓ CHỦ ĐÍCH — không ai được
+  phép coi một dev run là đủ điều kiện mở app stage. `warning` text cập nhật để nói rõ
+  `can_proceed_to_app` đã bị ép về false, không chỉ cảnh báo suông.
+- Verdict lịch sử T-06 (`DO_NOT_BUILD`, `can_proceed_to_app=false`, official=true) hoàn toàn
+  KHÔNG bị ảnh hưởng bởi cả hai sửa — verdict đã dừng ở nhánh Gate 1/OOS FAIL từ trước khi FS-08
+  hay officiality-gate được xét tới, và T-06 vốn official=true nên officiality-gate mới không
+  đổi gì ở đó.
 
 ## Notes
 

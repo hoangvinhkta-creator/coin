@@ -378,8 +378,132 @@ artifact official. Không rerun T-06/Gate1/Gate2/Gate3. Không đổi ngưỡng.
 **9/10 PASS** (01,02,03,04,05,06,07,08,10). 1/10 `NOT_TESTED`/FAIL (09) — check REQUIRED duy nhất
 còn lại.
 
-### Khuyến nghị cuối cùng (cập nhật)
+### Khuyến nghị cuối cùng (tại thời điểm Addendum 3)
 
 **WP-B1 REMAINS IN PROGRESS.** 9/10 REQUIRED PASS bằng bằng chứng thật, xác minh cơ học đầy đủ.
 Việc còn lại DUY NHẤT: một phiên Independent E2 MỚI cho `CHECK-B1-09` (Independent E2 trước đã
 FAIL, chưa chạy lại — không tự chạy trong phiên này). Không đề xuất DONE.
+
+---
+
+## Addendum 4 — Fresh Independent E2 FAIL (E2-B1-F01/F02), bounded repair batch (2026-09-04)
+
+### Nguồn finding
+
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md` — artifact do reviewer/Owner tạo (commit
+`ea5c8ac`), KHÔNG phải agent phiên này. Reviewer detached worktree tại HEAD `a796300`
+(khớp prefix `a7963002c1ac23d01e62a43fe9a6dd8978f27750`), branch authority PASS, không chạm
+workspace Owner. Kết luận: `CHECK-B1-01/07/09 = FAIL`; 7/10 REQUIRED PASS; **E2 FAIL —
+NOT_ELIGIBLE_FOR_FREEZE**.
+
+### Tái lập độc lập TRƯỚC khi sửa (bắt buộc theo brief)
+
+**E2-B1-F01** — tái lập bằng `evaluate_failure_signals(v2_eth=10.0, random_timing_p95=None,
+random_anchor_p95=9.5, ...11 input sạch khác)` → `FS-08=False` (không phải `None`), rồi qua
+`decide_verdict` → `verdict=BUILD`, `can_proceed_to_app=True`. Khớp chính xác mô tả của reviewer.
+Root cause: `failure_signals.py:91-96` (trước sửa) chỉ đòi `v2_eth is not None and (F is not
+None or G is not None)`, rồi coi control vắng mặt là thắng vacuously.
+
+**E2-B1-F02** — tái lập bằng `pipeline.run_verdict()` với `g1["official"]=False`,
+`controls["official"]=False`, `g2`/`g3` cũng `official=False`, gates/FS sạch → `official=False`
+nhưng `verdict=BUILD`, `can_proceed_to_app=True`, chỉ có `warning` text. Khớp mô tả reviewer.
+Root cause: `official = g2.get("official", False) and g3.get("official", False)` (bỏ sót Gate 1
++ Controls) và `can_proceed_to_app` không hề đọc `official`.
+
+Cả hai tái lập KHỚP mô tả của E2 artifact — KHÔNG có discrepancy cần STOP.
+
+### CAP-VERDICT budget
+
+Trước repair: 0 repair cycle đã tiêu (WP-B1 chưa từng DONE — vẫn implementation ban đầu). Diff
+production cộng dồn phiên (vs `fa6422c`, mốc bắt đầu phiên IN_PROGRESS thật) trước batch này:
+3 file (`benchmarks.py`, `cli.py`, `pipeline.py`), +46/−25 (F-017). Sau batch này: 4 file
+(`benchmarks.py`, `cli.py`, `failure_signals.py`, `pipeline.py`), +84/−33. Trong ngân sách
+canonical: không REQUIRED check nào thêm (vẫn 10), Effective Risk không đổi, không kéo việc
+ngoài vertical slice CAP-VERDICT, cả hai file sửa (`failure_signals.py`, `pipeline.py`) đều nằm
+trong Scope đã khai của `WP-B1`. Không `CHANGE_BUDGET_EXCEEDED`.
+
+### Repair
+
+- `src/eth_dca_os/failure_signals.py` — FS-08 (E2-B1-F01): thêm helper `_numeric_and_finite()`
+  (None/NaN/non-numeric → không hợp lệ); FS-08 chỉ tính khi CẢ BA input (`v2_eth`,
+  `random_timing_p95`, `random_anchor_p95`) hợp lệ, ngược lại `None`. Không đổi chiều so sánh,
+  không đổi ngưỡng.
+- `src/eth_dca_os/pipeline.py::run_verdict` — officiality (E2-B1-F02): `official` nay AND đủ
+  CẢ BỐN nguồn (`g1`, `g2`, `g3`, `controls`, tái dùng nguyên cờ có sẵn — không phát minh
+  provenance mới); khi `not official and v["can_proceed_to_app"]` → ép `can_proceed_to_app` về
+  `False`, thêm lý do vào `reasons`. `verdict.py::decide_verdict` KHÔNG bị sửa.
+
+### Regression tests
+
+`tests/test_wp_b1_e2_fresh_fail_repair.py` (21 test mới):
+- 8 test FS-08: cả hai present (3 tổ hợp thắng/thua), F missing, G missing, cả hai missing,
+  F invalid (NaN), G invalid (NaN), v2_eth missing, một test end-to-end qua `decide_verdict`
+  đúng counterexample của reviewer.
+- Officiality: CASE A (official đầy đủ → không đổi hành vi), CASE D (non-official toàn phần →
+  `can_proceed_to_app=False`), 4 test tham số hoá (thiếu TỪNG một trong Gate1/Gate2/Gate3/
+  Controls → luôn `False`), CASE E (`controls=None` → không crash, không lọt `True`), CASE E'
+  (provenance unresolved khi tuyên bố official → `ProvenanceUnresolvedError` từ cơ chế
+  `save_run()` có sẵn từ WP-A1 — xác nhận cơ chế vẫn chặn đúng, không sửa gì).
+- Retained adversarial: tie (so sánh strict `>` không đổi), exact-boundary/one-ULP cho
+  FS-02/FS-07/FS-12.
+
+Sửa 1 test cũ: `tests/test_gates_verdict.py::test_fs08_random_control` — case đầu (chỉ truyền
+Control F) vô tình mã hoá đúng hành vi lỗi (`assert FS-08 is True`); sửa thành `is None` +
+tách thêm một case mới "đủ cả hai, V2 thua F -> True" để giữ nguyên phần intent gốc còn đúng.
+
+### Test execution
+
+Targeted: `pytest tests/test_benchmarks.py tests/test_e2e.py tests/test_gates_verdict.py
+tests/test_wp_b1_verdict_policy.py tests/test_wp_b1_slice_failure_signal_cap.py
+tests/test_wp_b1_e2_fresh_fail_repair.py tests/test_wp_a5_failure_signal_instrumentation.py -v`
+→ **104 collected, 104 passed, 0 failed, 477.59s**.
+
+Full suite (`pytest tests/ -q -p no:cacheprovider`): **412 collected, 412 PASS, 0 FAIL/ERROR/
+SKIP/XFAIL, `EXIT=0`** (391 trước + 21 test mới = 412, khớp số học).
+
+### Production Reachability (production-realistic, qua chính production function)
+
+- **CASE A** (đủ 4 nguồn official=True, gates/FS sạch) → `verdict=BUILD`,
+  `can_proceed_to_app=True`, không `warning` — hành vi cũ giữ nguyên khi dữ liệu THẬT official.
+- **CASE B** (Control F P95 thiếu) → `FS-08=None` → verdict không thể BUILD.
+- **CASE C** (Control G P95 thiếu) → `FS-08=None` → verdict không thể BUILD.
+- **CASE D** (non-official toàn phần, otherwise BUILD-eligible) → `can_proceed_to_app=False`.
+- **CASE E** (provenance unresolved trong khi tuyên bố official) → `ProvenanceUnresolvedError`,
+  không payload nào được trả về.
+
+Fixture dùng để chứng minh mechanism dùng dict Python trực tiếp gọi thẳng `run_verdict`/
+`evaluate_failure_signals` (production function thật, KHÔNG stub/mock nội bộ) — production-
+realistic theo đúng nghĩa `PRODUCTION_PATHS.md` §3 cho phép, KHÔNG trình bày như financial
+validation (đó là vai trò của T-06/official run, không đổi).
+
+### Check state trước/sau
+
+| Check | Trước Addendum này | Sau |
+|---|---|---|
+| CHECK-B1-01 | `FAIL` (fresh E2) | `PASS` |
+| CHECK-B1-07 | `FAIL` (fresh E2) | `PASS` |
+| CHECK-B1-09 | `FAIL` | Giữ nguyên `NOT_TESTED`/FAIL — KHÔNG tự chạy lại E2 |
+
+### Bảo toàn lịch sử T-06 / non-goals
+
+`T-06 = DONE`, verdict = `DO_NOT_BUILD`, `reasons=["Gate 1 FAIL","OOS hard condition FAIL"]`,
+`can_proceed_to_app=false` — không đổi (đã dừng ở Gate 1/OOS trước khi FS-08/officiality-gate
+mới được xét, và T-06 vốn official=true nên gate mới không đổi gì ở đó). Không rerun T-06/
+Gate1/Gate2/Gate3. Không đổi threshold/strategy. Không mở V2.2. Không chạm WP-B2/WP-B3. Không
+tạo task mới — đúng một repair batch trong `CAP-VERDICT`/`WP-B1` hiện có.
+
+### H-26
+
+Giữ nguyên `CONFIRMED HARDENING` — chính reviewer E2 cũng xác nhận lại không có business
+consequence mới, không nâng BLOCKING, không Scope Expansion.
+
+### WP-B1 REQUIRED checks sau Addendum này
+
+**9/10 PASS** (01,02,03,04,05,06,07,08,10). 1/10 `NOT_TESTED`/FAIL (09) — cần một phiên E2 độc
+lập MỚI (khác reviewer E2 này, không tự chạy trong phiên implementer).
+
+### Khuyến nghị cuối cùng (cập nhật)
+
+**WP-B1 REMAINS IN PROGRESS.** Hai finding BLOCKING của fresh Independent E2 đã được chấp nhận
+và sửa trong MỘT repair batch có phạm vi hẹp, đúng CAP-VERDICT/WP-B1, trong ngân sách canonical.
+Việc còn lại DUY NHẤT: một phiên Independent E2 MỚI cho `CHECK-B1-09`. Không đề xuất DONE.

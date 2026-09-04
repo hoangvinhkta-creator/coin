@@ -97,7 +97,14 @@ def test_verdict_mapping():
 
 
 def test_fs08_random_control():
+    # E2-B1-F01: chỉ MỘT control (thiếu Control G) -> UNKNOWN, không phải suy ra TRUE bằng
+    # cách coi control vắng mặt là "V2 tự động beat". Trước bản sửa, ca này ra `True`.
     fs = evaluate_failure_signals(v2_eth=10.0, random_timing_p95=11.0)
-    assert fs["signals"]["FS-08"] is True
+    assert fs["signals"]["FS-08"] is None
+    assert "FS-08" in fs["unknown"]
+    # Đủ cả hai control, V2 thua F -> TRUE.
+    fs_lose_f = evaluate_failure_signals(v2_eth=10.0, random_timing_p95=11.0, random_anchor_p95=9.0)
+    assert fs_lose_f["signals"]["FS-08"] is True
+    # Đủ cả hai control, V2 thắng cả hai -> FALSE.
     fs2 = evaluate_failure_signals(v2_eth=12.0, random_timing_p95=11.0, random_anchor_p95=11.5)
     assert fs2["signals"]["FS-08"] is False
