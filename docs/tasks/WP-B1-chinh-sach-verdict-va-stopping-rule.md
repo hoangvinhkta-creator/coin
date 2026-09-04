@@ -5,9 +5,12 @@ Status:
 IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
 (mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
 (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
-**Kết quả phiên IN_PROGRESS (cập nhật sau Owner Decision `DEC-033` + Owner-supplied CHECK-B1-08
-evidence):** 9/10 REQUIRED PASS (CHECK-B1-01, 02, 03, 04, 05, 06, 07, 08, 10), 1/10 `NOT_TESTED`
-chờ phiên E2 độc lập (CHECK-B1-09) — check REQUIRED DUY NHẤT còn lại. WP-B1 **CHƯA DONE** — xem
+**Kết quả phiên IN_PROGRESS (cập nhật sau Independent E2 finding trên CHECK-B1-09 — CHECK-B1-03
+đảo về `BLOCKED`):** **7/10 REQUIRED PASS** (CHECK-B1-01, 02, 04, 05, 06, 08, 10). **2/10
+`BLOCKED`**: CHECK-B1-03 (evidence FS-08 post-F-017 chưa tính được — MISSING_INPUT, thiếu dataset
+official; production repair của F-017 tự nó ĐÚNG, không bị nghi ngờ), CHECK-B1-07 (phụ thuộc hẹp
+vào CHECK-B1-03, năm gạch đầu dòng còn lại không đổi). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09 (E2
+độc lập đã FAIL — finding đã được chấp nhận và xử lý, chưa chạy lại E2). WP-B1 **CHƯA DONE** — xem
 báo cáo hoàn thành phiên (`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` +
 addendum).
 
@@ -188,7 +191,9 @@ Do not touch without Scope Expansion:
 - [x] B1.2 Xác định remediation nào ảnh hưởng Gate 1 và áp DEC-009 (xem CHECK-B1-02) —
       KẾT LUẬN: KHÔNG. Bằng chứng đường mã tại CHECK-B1-02.
 - [x] B1.3 Sửa Control F giữ đúng kích thước tranche và profile giải ngân theo tháng (F-017) —
-      xem CHECK-B1-03
+      PRODUCTION REPAIR đúng và đã kiểm chứng bằng mechanism test; nhưng CHECK-B1-03 (đủ chữ,
+      gồm cả yêu cầu tính lại FS-08) `BLOCKED — EVIDENCE INCOMPLETE` theo Independent E2 finding
+      — xem CHECK-B1-03
 - [x] B1.4 Phê chuẩn hoặc thay thế ngưỡng FS-02 / FS-07 / FS-12, có căn cứ ghi lại —
       APPROVE AS-IS (Owner Decision `DEC-033`), ghi tại `docs/CONVENTIONS.md` #21(e) (xem
       CHECK-B1-04)
@@ -394,7 +399,7 @@ Priority:
 REQUIRED
 
 Status:
-PASS
+BLOCKED — EVIDENCE INCOMPLETE (đảo từ `PASS`, xem Addendum — Independent E2 finding)
 
 Evidence Level:
 E1
@@ -441,11 +446,110 @@ CHECK-B1-02). Giá trị FS-08 thật của official run T-06 CHỈ tính lại 
 `pipeline_state.json` của official run — xem CHECK-B1-08 (MISSING_INPUT, artifact do chủ dự án
 bảo toàn bên ngoài repository, agent không truy cập được trong phiên này).
 
+**Addendum — ĐẢO NGƯỢC Status sau finding của Independent E2 (`CHECK-B1-09`):** finding nêu chính
+xác câu chữ đóng khung của CHECK-B1-03 này: *"Kết quả FS-08 (do Control F nuôi) **phải được tính
+lại sau khi sửa**."* Đối chiếu lại: agent đã viết ngay ở đoạn trên rằng giá trị FS-08 thật "CHỈ
+tính lại được khi có `pipeline_state.json`" — tức đã tự xác nhận việc TÍNH LẠI chưa xảy ra — nhưng
+vẫn để `Status: PASS`. Đây là một vi phạm thật, không phải suy diễn của reviewer: một REQUIRED
+check được đóng khung PASS trong khi chính đoạn evidence của nó nói rõ một phần bắt buộc còn
+thiếu. Finding được CHẤP NHẬN, không tranh cãi, không bypass.
+
+*(Ghi chú minh bạch, không phải để giảm nhẹ: không tìm thấy artifact `docs/reviews/E2-WP-B1-*.md`
+nào trong repository tại thời điểm nhận finding này — `ls docs/reviews/ | grep -i b1` rỗng. Nội
+dung finding vẫn được xác nhận ĐÚNG độc lập bằng cách đối chiếu trực tiếp với câu chữ frozen của
+chính CHECK-B1-03 và với evidence agent tự viết ở trên — nên được chấp nhận và sửa trên cơ sở đó,
+không phải vì đã xác minh được một phiên E2 hình thức đã diễn ra.)*
+
+**Owner-authorized minimal replay (cùng phiên tiếp nối) — thiết kế đã hoàn tất, KHÔNG tính được vì
+MISSING_INPUT:**
+
+Yêu cầu chính xác: tính lại `random_timing_control`/`random_anchor_control` (đã sửa F-017) trên
+ĐÚNG dataset official T-06 (`dataset_hash = 3150860cb3799403ff40620b6834e4826681893e2e5cd2af
+3ca815d2a652d2c5`), rồi áp công thức FS-08
+(`fs["FS-08"] = _flag(not (beats_f and beats_g))`, `beats_f = v2_eth > random_timing_p95`,
+`beats_g = v2_eth > random_anchor_p95` — cả F VÀ G đều bắt buộc vì `run_verdict()` luôn truyền cả
+hai `p95` từ cùng một khối `controls`, không có đường nào chỉ dùng một trong hai).
+
+Input bắt buộc: dataset official (Binance thật, khớp `dataset_hash` trên); `full.purchases` của
+V2 (KHÔNG có sẵn trong bất kỳ artifact frozen nào — khoá bắt đầu bằng `_` bị `_strip()`/
+`write_report()` loại bỏ khỏi cả `pipeline_state.json` lẫn `report.json`) → phải tái tạo bằng
+`run_engine()` với `BASELINE_STRATEGY`/`GATE1_LOW_FRICTION`/`start=2019-01-01`/`end=prep.oos_end()`
+— ĐÂY LÀ ĐÚNG lần gọi "full-period run" mà `run_gate1()` vốn đã làm cho Controls, **không phải**
+một lần chạy Gate 1 evaluation (`evaluate_gate1`/`window_metrics` không được gọi trong thiết kế
+này — xác nhận KHÔNG rerun Gate1/Gate2/Gate3). `v2_eth` (giá trị V2 ETH thật) **CÓ SẴN** không cần
+tính lại: `results/random_control_21b7d88e9691_metrics.json` (đã canonical hoá SHA-256 tại
+`docs/T06_OFFICIAL_EVIDENCE_RECORD.md` §4) mang khoá `v2_eth` — dùng để đối chiếu (assert khớp
+`full.eth_total` tính lại, sai lệch → STOP, không phải bằng chứng hợp lệ).
+
+Exact replay command (Python, chạy NGOÀI `src/`, dùng nguyên production code đã sửa tại
+commit này — KHÔNG sửa `src/eth_dca_os/*` để phục vụ replay):
+
+```python
+import json
+from pathlib import Path
+import pandas as pd
+from eth_dca_os import MASTER_SEED
+from eth_dca_os.config import BASELINE_STRATEGY, GATE1_LOW_FRICTION
+from eth_dca_os.engine import TZ_OFFSET, run_engine
+from eth_dca_os.pipeline import Prepared
+from eth_dca_os.benchmarks import random_timing_control, random_anchor_control
+from eth_dca_os.failure_signals import _flag
+
+RAW_DIR = "data/raw"  # thư mục official ĐÃ fetch trước đây — KHÔNG fetch lại, KHÔNG dữ liệu mới
+prep = Prepared(RAW_DIR)
+assert prep.dataset_hash == "3150860cb3799403ff40620b6834e4826681893e2e5cd2af3ca815d2a652d2c5", \
+    f"dataset_hash lệch official: {prep.dataset_hash} — STOP, không phải dataset T-06"
+
+cfg, exec_cfg = BASELINE_STRATEGY, GATE1_LOW_FRICTION
+scores = prep.scores(cfg.score_weights)
+start, end = pd.Timestamp("2019-01-01"), prep.oos_end()
+
+full = run_engine(prep.dataset, scores, cfg, exec_cfg, start, end)  # KHÔNG evaluate_gate1/2/3
+
+monthly_tranches = {}
+for p in full.purchases:
+    mk = pd.Timestamp(p["ts"] + TZ_OFFSET, unit="s").strftime("%Y-%m")
+    monthly_tranches.setdefault(mk, []).append(p["nominal"])
+
+f = random_timing_control(prep.dataset, monthly_tranches, start, end,
+                           n_sims=1000, master_seed=MASTER_SEED)
+g = random_anchor_control(prep.dataset, monthly_tranches, start, end,
+                           n_sims=1000, master_seed=MASTER_SEED)
+
+v2_eth = float(full.eth_total)
+frozen = json.loads(Path("results/random_control_21b7d88e9691_metrics.json").read_text())
+assert abs(v2_eth - frozen["v2_eth"]) < 1e-6, "V2 eth_total lệch frozen official — STOP"
+
+beats_f, beats_g = bool(v2_eth > f["p95"]), bool(v2_eth > g["p95"])
+fs08 = _flag(not (beats_f and beats_g))
+print(json.dumps({"dataset_hash": prep.dataset_hash, "v2_eth": v2_eth,
+                   "control_f_p95": f["p95"], "control_g_p95": g["p95"],
+                   "beats_f": beats_f, "beats_g": beats_g, "FS-08": fs08}, indent=2))
+```
+
+**Smoke test (KHÔNG phải evidence — chỉ kiểm script không lỗi cú pháp/API)**: chạy đúng script trên
+trên dataset SYNTHETIC (`eth_dca_os.data.synth.generate`) tại phiên này — chạy thành công, output
+JSON hợp lệ, không exception, `FS-08` trả về đúng kiểu `bool` (không phải `numpy.bool_`, nhờ
+`_flag()` — đúng hợp đồng F-S015-01). Dataset_hash in ra là synthetic, KHÔNG khớp official, KHÔNG
+được dùng làm bằng chứng FS-08 thật.
+
+**MISSING_INPUT — không thực thi được trên dữ liệu official trong phiên này:** môi trường agent
+(sandbox phiên hiện tại) không có `data/raw/*.parquet` official (gitignored, chưa từng tồn tại ở
+đây — xác nhận bằng `find` toàn repo), không có kết nối Binance, và KHÔNG được fetch dữ liệu mới
+thay thế (chỉ thị Owner + Master Index §6). Dataset official thật chỉ tồn tại trên máy Owner (thư
+mục `data/` từ lần fetch official trước đây, và bản backup
+`/Users/hoangvinh/Documents/CoinDCA_T06_OFFICIAL_BACKUP_2026-09-03`). **FS-08 post-F-017 = CHƯA
+TÍNH ĐƯỢC — KHÔNG suy về FALSE/TRUE, giữ UNKNOWN** cho tới khi Owner chạy đúng script trên ở máy có
+dataset official (từ commit hiện tại của nhánh này) và dán lại output.
+
+Status giữ `BLOCKED — EVIDENCE INCOMPLETE` cho tới khi có output đó.
+
 Executed By:
-Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — chấp nhận E2 finding, thiết kế + smoke-test
+replay harness, không tính được evidence thật vì thiếu dataset official
 
 Timestamp:
-2026-09-03
+2026-09-04
 
 #### CHECK-B1-04 — Ngưỡng FS-02 / FS-07 / FS-12 được phê chuẩn hoặc thay thế, có căn cứ ghi lại
 Priority:
@@ -558,7 +662,7 @@ Priority:
 REQUIRED
 
 Status:
-PASS
+BLOCKED — pending CHECK-B1-03 (đảo từ `PASS`, xem Addendum cuối check)
 
 Evidence Level:
 E1
@@ -606,11 +710,25 @@ gạch đầu dòng "Thiếu bằng chứng không được coi là PASS" ở tr
 Owner cung cấp cho CHECK-B1-08), không phải bằng cách hạ tiêu chí. Xem evidence chi tiết tại
 chính hai check đó.
 
+**Addendum 2 — ĐẢO Status sau Independent E2 finding trên `CHECK-B1-03` (cùng phiên, tiếp nối):**
+đây chính xác là trường hợp CHECK-B1-07 tồn tại để bắt: gạch đầu dòng "Thiếu bằng chứng không
+được coi là PASS" ở trên đã bị VI PHẠM bởi chính agent — `CHECK-B1-03` được đóng khung `PASS`
+trong khi evidence của chính nó nói rõ phần bắt buộc (tính lại FS-08 sau F-017) chưa thực hiện.
+Đây không phải một finding từ bên ngoài không liên quan; nó là bằng chứng CHECK-B1-07 đã KHÔNG
+được chứng minh đầy đủ như tuyên bố trước đó. Theo đúng chữ mục 8 của brief phiên này ("Reassess
+CHECK-B1-07 only to the extent that its E2 failure was caused by missing CHECK-B1-03 evidence.
+Do not broaden the scope"): PHẠM VI hẹp lại đúng gạch đầu dòng đó — năm gạch đầu dòng còn lại
+(UNKNOWN không PASS, một BLOCKED không cho DONE, không dùng synthetic thay official, không đổi
+finding thành sai không bằng chứng, không hạ ngưỡng) **KHÔNG bị ảnh hưởng**, vẫn đúng và có bằng
+chứng riêng, không phụ thuộc CHECK-B1-03. Status hạ xuống `BLOCKED — pending CHECK-B1-03` (không
+phải hạ toàn bộ nội dung) — sẽ tự động PASS lại ngay khi CHECK-B1-03 có đủ evidence (không cần
+viết lại năm gạch đầu dòng kia).
+
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
 
 Timestamp:
-2026-09-03
+2026-09-04
 
 #### CHECK-B1-08 — Verdict được tính lại từ kết quả đã lưu và kết quả được ghi nhận
 Priority:
@@ -780,22 +898,26 @@ Timestamp:
 2026-09-03
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS — **9/10 PASS** (01,02,03,04,05,06,07,08,10); CHECK-B1-09
-      `NOT_TESTED` (cần phiên E2 độc lập) — check REQUIRED duy nhất còn lại
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 9 check PASS;
-      E2 của CHECK-B1-09 CHƯA thực hiện
+- [ ] 100% REQUIRED checks PASS — **7/10 PASS** (01,02,04,05,06,08,10); **`BLOCKED`**:
+      CHECK-B1-03 (evidence FS-08 post-F-017 chưa tính được, MISSING_INPUT), CHECK-B1-07 (phụ
+      thuộc CHECK-B1-03); **`NOT_TESTED`/FAIL**: CHECK-B1-09 (Independent E2 đã FAIL, chưa chạy
+      lại)
+- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 7 check PASS;
+      CHECK-B1-03/07 evidence chưa đủ; E2 của CHECK-B1-09 đã FAIL, chưa PASS lại
 - [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
       chứng đường mã kiểm lại được độc lập
 - [x] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md` — #20(d) (WP-A5) +
       #21(a)-(e) (phiên này, gồm phê chuẩn ngưỡng tại #21(e)/`DEC-033`)
-- [x] Verdict cuối cùng được ghi nhận kèm toàn bộ lý do — CHECK-B1-08 PASS: `DO_NOT_BUILD` /
-      `["Gate 1 FAIL", "OOS hard condition FAIL"]` / `can_proceed_to_app=false`, cross-verified
-      từ `baseline_808b61fa5ffe_metrics.json` + `report.json` cùng gói official (Owner-supplied)
+- [x] Verdict cuối cùng (T-06, TRƯỚC F-017) được ghi nhận kèm toàn bộ lý do — CHECK-B1-08 PASS:
+      `DO_NOT_BUILD` / `["Gate 1 FAIL", "OOS hard condition FAIL"]` / `can_proceed_to_app=false`,
+      cross-verified từ `baseline_808b61fa5ffe_metrics.json` + `report.json` cùng gói official
+      (Owner-supplied). **Riêng biệt**: verdict này KHÔNG phản ánh FS-08 sau F-017 — xem
+      CHECK-B1-03
 - [x] `PROJECT/PROJECT_PROGRESS.md` được cập nhật; RSK-005 được cập nhật
 - [x] Session handoff được viết
-- [x] Không hạ REQUIRED check nào để đạt DONE — CHECK-B1-04/08 PASS bằng bằng chứng thật (Owner
-      Decision có thẩm quyền; artifact official do Owner cung cấp), không phải bằng cách hạ tiêu
-      chí; CHECK-B1-09 giữ nguyên `NOT_TESTED`, KHÔNG tự cấp E2
+- [x] Không hạ REQUIRED check nào để đạt DONE — Independent E2 finding trên CHECK-B1-09 được CHẤP
+      NHẬN nguyên vẹn, không tranh cãi/bypass; CHECK-B1-03/07 ĐẢO về `BLOCKED` đúng như finding đòi
+      hỏi, không giữ `PASS` giả; CHECK-B1-09 KHÔNG tự chạy lại/tự cấp PASS trong phiên này
 
 ## Escalation Triggers
 

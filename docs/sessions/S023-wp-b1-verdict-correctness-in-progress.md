@@ -207,8 +207,111 @@ Duy nhất: một phiên "Solo Independent Review Procedure" độc lập cho `C
 biệt CHECK-B1-01/02/07 (và nay có thể mở rộng xem xét CHECK-B1-04/08 vì đây là hai check vừa
 đóng), lưu tại `docs/reviews/E2-WP-B1-*.md`.
 
-### Khuyến nghị cập nhật
+### Khuyến nghị cập nhật (tại thời điểm Addendum này)
 
 **WP-B1 REMAINS IN PROGRESS.** 9/10 REQUIRED PASS — tiến bộ đáng kể so với phần 1-6 (7/10).
 Không còn `BLOCKED` nào. Chỉ còn một việc duy nhất chặn Completion Gate: phiên E2 độc lập
 (`CHECK-B1-09`). Không đề xuất DONE.
+
+---
+
+## Addendum 2 — Independent E2 (CHECK-B1-09) FAILED: CHECK-B1-03/07 đảo về BLOCKED (2026-09-04)
+
+### Finding
+
+Independent E2 trên `CHECK-B1-09` báo: `CHECK-B1-03` (frozen) đòi nguyên văn "Kết quả FS-08 (do
+Control F nuôi) phải được tính lại sau khi sửa" [F-017] — check này đã bị đóng khung `Status:
+PASS` ở Addendum 1 dù chính đoạn evidence agent tự viết ("Giá trị FS-08 thật của official run
+T-06 CHỈ tính lại được khi có `pipeline_state.json`...") đã tự thừa nhận việc tính lại đó CHƯA xảy
+ra. Đây là một REQUIRED check tuyên bố PASS trong khi thiếu đúng phần bằng chứng mà chính nó yêu
+cầu — vi phạm trực tiếp CHECK-B1-07 ("Thiếu bằng chứng không được coi là PASS").
+
+**Chấp nhận nguyên vẹn, không tranh cãi, không bypass** — đúng chỉ thị phiên này. Ghi chú minh
+bạch (không phải để giảm nhẹ): `ls docs/reviews/ | grep -i b1` rỗng tại thời điểm nhận finding —
+không có artifact `E2-WP-B1-*.md` nào trong repo. Nội dung finding vẫn được xác nhận ĐÚNG độc lập
+bằng đối chiếu trực tiếp với câu chữ frozen của `CHECK-B1-03` và evidence agent tự viết — nên được
+sửa trên cơ sở đó, không phải vì đã xác minh được một phiên E2 hình thức đã ghi hồ sơ.
+
+### Reconstruct yêu cầu (mục 2 của brief)
+
+- FS-08 = "Random control bao trùm/vượt V2 (không vượt P95)". Công thức:
+  `fs["FS-08"] = _flag(not (beats_f and beats_g))`,
+  `beats_f = (random_timing_p95 is None) or (v2_eth > random_timing_p95)`,
+  `beats_g = (random_anchor_p95 is None) or (v2_eth > random_anchor_p95)`.
+- Cả **F VÀ G** đều bắt buộc: `run_verdict()` luôn truyền cả hai `p95` từ cùng khối `controls`
+  (không có đường chỉ dùng một control).
+- Input: `v2_eth` (CÓ SẴN trong `results/random_control_21b7d88e9691_metrics.json`, không cần
+  tính lại) + `random_timing_p95`/`random_anchor_p95` MỚI (cần tính lại bằng code đã sửa, cần
+  `monthly_tranches` — KHÔNG có trong bất kỳ artifact frozen nào, phải tái tạo bằng `run_engine()`
+  trên dataset official).
+- Provenance bắt buộc: `dataset_hash = 3150860cb3799403ff40620b6834e4826681893e2e5cd2af
+  3ca815d2a652d2c5`, `master_seed = 42`, code commit chứa bản sửa F-017 (nhánh này, hiện tại
+  `badbfdf` hoặc mới hơn).
+- Output đủ để thoả CHECK-B1-03: `control_f_p95`, `control_g_p95`, `v2_eth`, `FS-08` (TRUE/FALSE/
+  UNKNOWN), cùng đủ provenance để tái lập.
+
+### Frozen input/provenance gate
+
+`dataset_hash`/`master_seed`/official code commit như trên đã xác định rõ. Backup official:
+`/Users/hoangvinh/Documents/CoinDCA_T06_OFFICIAL_BACKUP_2026-09-03` (chỉ đọc, không mutate).
+Owner workspace có `data/` từ lần fetch official trước — dùng lại, KHÔNG fetch mới.
+
+### Replay design + validity
+
+Thiết kế dùng ĐÚNG `run_engine()` (production, không sửa) để tái tạo `full.purchases` → nhóm
+`monthly_tranches` (logic y hệt `pipeline.run_gate1()`, tách riêng để KHÔNG gọi
+`evaluate_gate1`/`window_metrics`/`evaluate_gate2`/`evaluate_gate3` — xác nhận KHÔNG rerun
+Gate1/Gate2/Gate3) → `random_timing_control`/`random_anchor_control` (đã sửa F-017) →
+FS-08 qua `_flag()` (đúng hợp đồng F-S015-01, tránh numpy.bool_). `v2_eth` tính lại được assert
+khớp `results/random_control_21b7d88e9691_metrics.json["v2_eth"]` (dung sai 1e-6) làm validity
+check — sai lệch → STOP, không coi là bằng chứng hợp lệ. Script đầy đủ: xem
+`docs/tasks/WP-B1-*.md::CHECK-B1-03`.
+
+**Smoke test** (KHÔNG phải evidence): chạy chính script trên trên dataset SYNTHETIC
+(`eth_dca_os.data.synth.generate`, phạm vi 2018-01-01..2022-12-31, n_sims=30) trong phiên này —
+PASS, output JSON hợp lệ, không exception, `FS-08` kiểu `bool` thuần (không phải `numpy.bool_`).
+Dataset_hash in ra là synthetic — không được và không dùng làm bằng chứng FS-08 thật.
+
+### MISSING_INPUT — không tính được trong môi trường này
+
+Sandbox phiên này không có `data/raw/*.parquet` official (gitignored, `find` toàn repo xác nhận
+không tồn tại), không có kết nối Binance, và KHÔNG được fetch dữ liệu mới thay thế (chỉ thị +
+Master Index §6). **STOP với MISSING_INPUT** đúng chỉ thị mục 3 của brief — không tự tính bằng dữ
+liệu khác, không suy diễn FS-08 = FALSE. FS-08 post-F-017 = **CHƯA TÍNH ĐƯỢC (UNKNOWN)**, không
+coerce về FALSE.
+
+### CHECK-B1-03 / CHECK-B1-07 trước/sau
+
+| Check | Trước | Sau |
+|---|---|---|
+| CHECK-B1-03 | `PASS` | `BLOCKED — EVIDENCE INCOMPLETE` |
+| CHECK-B1-07 | `PASS` | `BLOCKED — pending CHECK-B1-03` (phạm vi hẹp; 5/6 gạch đầu dòng khác không đổi, có bằng chứng riêng) |
+| CHECK-B1-09 | `NOT_TESTED` (E2 vừa FAIL) | Giữ nguyên `NOT_TESTED`/FAIL — KHÔNG tự chạy lại trong phiên này |
+
+### Test/validator chạy trong lượt này
+
+Smoke test harness trên dataset synthetic (ngoài `src/`, tại `/tmp` scratchpad phiên — không
+commit vào repo). Không sửa/chạy lại `tests/` (không có code production nào thay đổi). Không rerun
+official T-06. Không chạy CHECK-B1-09.
+
+### Production diff của lượt này
+
+`0` — lượt này chỉ sửa `docs/tasks/WP-B1-*.md`, `PROJECT/PROJECT_PROGRESS.md`,
+`docs/sessions/S023-*.md`. Không file nào dưới `src/`/`tests/` bị đổi.
+
+### Historical T-06 / mutation
+
+Không artifact official nào bị sửa (chỉ đọc `v2_eth` từ `random_control_21b7d88e9691_metrics.json`
+bằng con số đã biết, không ghi). Không rerun T-06. Kết quả replay (khi Owner chạy) sẽ được gắn nhãn
+**"POST-F-017 WP-B1 EVIDENCE REPLAY"**, không phải một official T-06 validation mới.
+
+### WP-B1 REQUIRED checks sau lượt này
+
+7/10 PASS (01,02,04,05,06,08,10). 2/10 BLOCKED (03,07). 1/10 NOT_TESTED/FAIL (09).
+
+### Khuyến nghị cuối cùng
+
+**WP-B1 REMAINS IN PROGRESS.** Independent E2 finding được xử lý trung thực (đảo status, không
+che giấu). Việc còn lại KHÔNG nằm trong quyền hạn agent: cần Owner chạy đúng script đã viết sẵn
+trên máy có dataset official, dán lại output FS-08 post-F-017, rồi chạy lại E2 độc lập cho
+CHECK-B1-09. Không đề xuất DONE.
