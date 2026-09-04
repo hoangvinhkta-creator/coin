@@ -1173,3 +1173,111 @@ nào (`CHECK-C2-06` bit-for-bit) và không nhánh execution nào đọc `execut
       một lựa chọn duy nhất, không còn hai điểm); HOẶC
     - `WP-B3` cần `previous_state`/`new_state` kèm ảnh chụp vốn tại đúng thời điểm chuyển trạng
       thái.
+
+---
+
+## H-36 — Nhánh `ACTION_TTL_EXPIRED` không tới lượt chạy khi `action_ttl_seconds` là bội số của nến 15m
+
+Capability: `CAP-ENGINE` · Owner: `WP-A3` (vòng đời zone/action) · Phân loại: **CONFIRMED HARDENING** (không đổi hành vi; không nằm trong REQUIRED check nào)
+Ngày ghi nhận: 2026-09-04 (phiên `S025`, thực thi `WP-B3`)
+
+Bước 12 của BT §19 phân loại action đang mở theo đúng thứ tự này:
+
+    if z.execute_at is not None and ts >= z.execute_at:
+        -> đủ điều kiện fill, HOẶC (nếu execute_at > action_expires_at) ACTION_TTL_EXPIRED
+    elif ts >= z.action_expires_at:
+        -> ACTION_MISSED
+
+`action_expires_at = ts_close + action_ttl_seconds`, và `ts_close` luôn nằm trên lưới nến
+900s. Khi `action_ttl_seconds % 900 == 0` — đúng với baseline (12h) **và với mọi tổ hợp
+trong `manifests.GATE3_GRID`** — `action_expires_at` rơi đúng vào một mốc nến, nên nến đầu
+tiên có `ts >= action_expires_at` LUÔN tới trước nến đầu tiên có `ts >= execute_at` (vì
+`execute_at > action_expires_at` là điều kiện của chính nhánh kia). Zone đã bị đánh
+`ACTION_MISSED` và rời trạng thái `ACTION_PENDING` trước khi nhánh `ACTION_TTL_EXPIRED` có
+cơ hội chạy. Đo được: kịch bản `action_missed` (`user_delay 12h + funding_delay 4h`, đúng
+một điểm trong lưới Gate 3) sinh `ACTION_MISSED` và **không** sinh `ACTION_TTL_EXPIRED`;
+chỉ khi TTL lệch lưới (`12h + 100s`, kịch bản `action_ttl_expired`) nhánh kia mới chạy.
+Khoá bằng `test_b3_action_ttl_expired_is_unreachable_when_ttl_is_a_multiple_of_the_candle`.
+
+Vì sao KHÔNG BLOCKING: hai nhánh đều RELEASE toàn bộ reserve và đều đặt `status = "MISSED"`,
+chỉ khác `reason_code` ghi vào ledger/audit trail — không một con số tài chính nào phụ
+thuộc vào việc nhánh nào chạy (bất biến bit-for-bit của `CHECK-B3-07` bao trùm điều này).
+Không REQUIRED check nào của bất kỳ task nào đòi phân biệt hai mã, và không risk đã đăng ký
+nào trỏ vào đây. Đây là cấu trúc sẵn có của engine từ trước `WP-B3`, `WP-B3` chỉ làm nó
+QUAN SÁT ĐƯỢC.
+
+    RE_TRIGGER_CONDITION:
+    - một cấu hình production có `action_ttl_seconds` KHÔNG phải bội số của 900s được đưa
+      vào lưới sensitivity hoặc vào cấu hình chạy thật; HOẶC
+    - tầng app/live phân biệt "hết TTL" với "lỡ hẹn" ở mức nghiệp vụ (ví dụ `WP-C3` partial
+      fill, hoặc luồng thực thi thủ công của Product Spec §7); HOẶC
+    - nhịp nến execution đổi khỏi 15m, làm lưới thời gian không còn chia hết TTL.
+
+---
+
+## H-37 — Strategy §20 thiếu mã reason cho hai lần chuyển trạng thái có thật: "cooldown hết hạn" và "dữ liệu trở lại GOOD"
+
+Capability: `CAP-SPEC` · Owner: `WP-D2` (đề xuất V2.2 cho khiếm khuyết đặc tả) · Phân loại: **CONFIRMED HARDENING** (khiếm khuyết ĐẶC TẢ, không phải khiếm khuyết mã)
+Ngày ghi nhận: 2026-09-04 (phiên `S025`, thực thi `WP-B3`)
+
+ST §20 yêu cầu "mọi state transition ... phải log reason code" và cấp một danh mục 36 mã.
+Danh mục đó có cặp VÀO/RA cho funding (`FUNDING_REQUIRED` / `FUNDING_COMPLETE`) và cho
+regime (`CRASH_ENTRY_*` / `CRASH_EXIT` / `RECOVERY_END`), nhưng **không** có mã cho hai lần
+chuyển trạng thái Execution State có thật trong engine:
+
+    COOLDOWN     -> WAIT   vì cooldown hết hạn (`ts >= cooldown_until`)
+    DATA_BLOCKED -> WAIT   vì data_quality trở lại GOOD
+
+`WP-B3` **không** phát minh mã mới để lấp (mục 21 của đề bài phiên và ST §20 đều cấm điều
+đó). Quy ước hiện hành, ghi ở `docs/CONVENTIONS.md` #23(c): bản ghi chuyển sang `WAIT` mang
+mã của dữ kiện vừa CHẤM DỨT (`COOLDOWN_START`, `DATA_INVALID`), và chiều VÀO/RA đọc được
+không nhập nhằng từ cặp (`previous_state`, `new_state`) trên chính bản ghi đó.
+
+Vì sao KHÔNG BLOCKING: mọi lần chuyển trạng thái đều CÓ bản ghi, đều có `reason_code` hợp
+lệ theo ST §20, và đều tái dựng được chiều — `CHECK-B3-03` (đối chiếu danh mục) và
+`CHECK-B3-06` (tái dựng lý do) đều thoả bằng quy ước này. Không có đường production nào bị
+mất thông tin. Sửa danh mục là sửa **spec V2.1.5**, mà Master Index §6 cấm vá V2.1.5 —
+đường đúng là đề xuất V2.2 qua `WP-D2`.
+
+    RE_TRIGGER_CONDITION:
+    - `WP-D2` mở phiên soạn đề xuất V2.2 (khi đó mục này là một đầu vào có sẵn); HOẶC
+    - một tiêu dùng thật (tầng app, báo cáo cho chủ dự án) đòi phân biệt VÀO/RA bằng riêng
+      `reason_code` mà không được đọc cặp trạng thái; HOẶC
+    - một Owner Decision cho phép mở rộng danh mục ST §20 trong phạm vi V2.1.5.
+
+---
+
+## H-38 — `task_registry_snapshot.sh` bỏ sót hai trạng thái vòng đời hợp lệ (`IMPLEMENTED`, `VERIFYING`) khi đếm SET A
+
+Capability: `CAP-GOVTOOL` · Owner: **chưa có** — `OWNER_ASSIGNMENT_REQUIRED` (cùng khe với `H-08`) · Phân loại: **CONFIRMED HARDENING** (khiếm khuyết đo lường của validator, không phải của dự án)
+Ngày ghi nhận: 2026-09-04 (phiên `S025`, thực thi `WP-B3`)
+
+`governance/scripts/governance/task_registry_snapshot.sh` là công cụ mà
+`governance/v4/CORE/CAPABILITY_MODEL.md` §II.9 chỉ định để đo chống-sinh-sôi task ("SET A =
+task ID trong vùng registry của file trạng thái"). Biểu thức lọc của nó chỉ nhận:
+
+    DONE | PLANNED | READY | BLOCKED | IN_PROGRESS | DEFERRED | CANCELLED | NOT_PLANNED
+
+Vòng đời canonical của dự án (`CLAUDE.md` § Task Lifecycle, `AGENTS.md` §4) có **bảy** trạng
+thái, trong đó `IMPLEMENTED` và `VERIFYING` **không** nằm trong danh sách trên. Hệ quả: mọi
+dòng roadmap đang ở hai trạng thái đó bị **rơi khỏi SET A**. Khiếm khuyết này có TỪ TRƯỚC
+phiên `S025`: dòng `T-03` (`VERIFYING`) đã bị bỏ sót ở mọi lần đo trước đây. Tại `S025` nó lộ
+ra lần thứ hai vì `WP-B3` chuyển `READY → IMPLEMENTED` (tiền lệ: `WP-C2` cũng từng nằm ở
+`IMPLEMENTED` trong bảng roadmap tại `S024`).
+
+Đo được: `count_roadmap_task_ids` = 28 tại `04f77ac`, = 27 sau `S025` — trong khi **số dòng
+task thật không đổi** (29 dòng: 27 khớp regex + `T-03` VERIFYING + `WP-B3` IMPLEMENTED) và
+**không task ID nào được tạo hay xoá**. Một validator báo SET A giảm trong khi registry không
+đổi là đúng loại "PASS rỗng / đo sai" mà `STATE_AUTHORITY.md` § Vacuous Validation cảnh báo.
+
+Vì sao KHÔNG BLOCKING: không có đường production nào (đây là tooling governance, không nằm
+trong `PROJECT/PRODUCTION_PATHS.md`), không REQUIRED check nào của `WP-B3` đọc con số này, và
+số đo đúng vẫn lấy được bằng tay trong một dòng lệnh. Phiên `S025` cố ý **không sửa** công cụ:
+đề bài cấm sửa governance tooling trong phiên thực thi, và `CAP-GOVTOOL` chưa có owner (cùng
+tình trạng đã ghi ở `H-08`).
+
+    RE_TRIGGER_CONDITION:
+    - `CAP-GOVTOOL` được cấp owner (khi đó gộp cùng `H-08` thành một lượt sửa validator); HOẶC
+    - một quyết định governance dựa trực tiếp vào `count_roadmap_task_ids` (ví dụ tranh chấp
+      chống-sinh-sôi task, hoặc một phiên audit đếm SET A trước/sau); HOẶC
+    - vòng đời task được sửa đổi, làm danh sách trạng thái hợp lệ đổi lần nữa.

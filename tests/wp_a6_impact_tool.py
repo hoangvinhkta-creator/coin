@@ -88,7 +88,7 @@ def main():
     try:
         tr = H.instrument(mp)
         res = run_engine(ds, scores, BASELINE_STRATEGY, exec_cfg,
-                         pd.Timestamp(args.start), pd.Timestamp(args.end), log_decisions=True)
+                         pd.Timestamp(args.start), pd.Timestamp(args.end))
     finally:
         mp.undo()
 

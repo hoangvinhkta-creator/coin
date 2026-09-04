@@ -55,15 +55,22 @@ SPEC_STATES = ("WAIT", "FUNDING_REQUIRED", "READY_TO_BUY", "ACTION_PENDING",
 #: Enum Market Regime (ST §16) — dùng để chứng minh hai chiều KHÔNG lẫn vào nhau.
 REGIME_LABELS = ("NORMAL", "STRESSED", "CRASH", "RECOVERY")
 
-#: Fingerprint hành vi engine CHỤP TRÊN CÂY MÃ TRƯỚC WP-C2 (HEAD `2189a8f`, origin/main),
-#: bằng `python tests/wp_c2_scenarios.py` chạy trước khi sửa `engine.py`. Chỉ tính trên
-#: các trường `RunResult` đã tồn tại từ trước (`PRE_WP_C2_RESULT_FIELDS`), nên bất kỳ thay
-#: đổi nào của vòng đời zone, thời điểm cooldown hay hành vi chặn dữ liệu xấu đều làm đỏ.
+#: Fingerprint hành vi engine CHỤP TRÊN CÂY MÃ TRƯỚC khi sửa, bằng
+#: `python tests/wp_c2_scenarios.py`. Chỉ tính trên các trường `RunResult` đã tồn tại từ
+#: trước (`PRE_WP_C2_RESULT_FIELDS`), nên bất kỳ thay đổi nào của vòng đời zone, thời điểm
+#: cooldown hay hành vi chặn dữ liệu xấu đều làm đỏ.
+#:
+#: Bốn giá trị ban đầu được chụp trên HEAD `2189a8f` (trước WP-C2). Chúng được CHỤP LẠI tại
+#: `WP-B3` trên HEAD `04f77ac` — cây mã TRƯỚC bản sửa WP-B3 — sau khi `decision_log` rời
+#: `PRE_WP_C2_RESULT_FIELDS` (lý do canonical ghi tại chính hằng đó: `WP-B3` sở hữu và cố ý
+#: đổi bề mặt `decision_log`, DM §11). Việc chụp lại xảy ra TRƯỚC khi một dòng production
+#: nào của WP-B3 được viết, nên đây vẫn là phép so TRƯỚC–SAU thật: WP-B3 phải giữ nguyên
+#: bốn giá trị này.
 FROZEN_PRE_WP_C2_FINGERPRINTS = {
-    "wait_only": "11cf0472f22be452ba138c8a16d6e87f81a14d26e500d8365a4d7c3fbdb6ebee",
-    "smart_action_cycle": "cc39918c8c2267ed4ace29b693e6a2940b71e8e640130b42d521322f2fdfb937",
-    "data_invalid_window": "add58cf1285e14f9db8692a43fdcca3fc3fbd111171e987d745d5ebf9849ccfd",
-    "crash_regime_cycle": "4baf1cfdebc054325aabe1387bc349177f0ccb266d6482e89e5a9f1c1f360990",
+    "wait_only": "6f39973c361124fd8174847c6543648fa4f0df0b56c1dac69811a36a51d3869a",
+    "smart_action_cycle": "9b273c446c71c367665ec79af9e429cb51e3b7c81357c24e922534c439b34f82",
+    "data_invalid_window": "b5d04b9bbfb0908500d4369ac1c8ef75020c7e35577475d318bcc23aa741c880",
+    "crash_regime_cycle": "206ab6d838bdbe507d9239ef0d8ba021c9952a0843266f4fce270aefc7b4f355",
 }
 
 _RUN_CACHE: dict[str, tuple] = {}

@@ -138,7 +138,7 @@ def _run(day_specs, drops=(), first_local_day="2023-03-01", contribution=100.0):
     ds = dict(ds)
     ds["ETHUSDT_15m"] = _drop_candles(ds["ETHUSDT_15m"], start, drops)
     return engine_mod.run_engine(ds, scores, BASELINE_STRATEGY, GATE1_LOW_FRICTION,
-                                 start, end, contribution=contribution, log_decisions=True)
+                                 start, end, contribution=contribution)
 
 
 def _tagged(res, tag):

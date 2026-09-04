@@ -354,22 +354,22 @@ def test_a6_step_order_monotonic_long_run(monkeypatch, synth_prepared, exec_cfg)
 # ============================================================ CHECK-A6-06: no-lookahead tầng 15m
 
 def _run_plain(ds, scores, start, end, exec_cfg=GATE1_LOW_FRICTION):
-    return engine_mod.run_engine(ds, scores, BASELINE_STRATEGY, exec_cfg, start, end,
-                                 log_decisions=True)
+    return engine_mod.run_engine(ds, scores, BASELINE_STRATEGY, exec_cfg, start, end)
 
 
 def _state_prefix(res, cut_ts):
     """Phần kết quả thuộc các nến có ts <= cut_ts (mọi trường).
 
-    `zone`/`ladder` id trong decision_log là bộ đếm TOÀN CỤC của `ladders.py`
+    `zone_id`/`ladder_id` trong decision_log là bộ đếm TOÀN CỤC của `ladders.py`
     (`itertools.count`), tăng qua mọi lần chạy trong cùng tiến trình — không phải trạng
-    thái engine, nên được bỏ khi so sánh.
+    thái engine, nên được bỏ khi so sánh. `decision_id` thì KHÔNG bỏ: nó là bộ đếm theo
+    RUN (WP-B3) nên vẫn tất định giữa hai lần chạy.
     """
     return {
         "purchases": [p for p in res.purchases if p["ts"] <= cut_ts],
         "cash": [c for c in res.cash_samples if c[0] <= cut_ts],
-        "log": [{k: v for k, v in d.items() if k not in ("zone", "ladder")}
-                for d in res.decision_log if d["ts"] <= cut_ts],
+        "log": [{k: v for k, v in d.items() if k not in ("zone_id", "ladder_id")}
+                for d in res.decision_log if d["timestamp_utc"] <= cut_ts],
         "contrib": [c for c in res.contributions if c[0] <= cut_ts],
     }
 

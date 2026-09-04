@@ -115,6 +115,82 @@ def derive_execution_state(*, action_due: bool, action_open: bool, data_invalid:
     return ExecutionState.WAIT
 
 
+# --------------------------------------------------- Audit trail / decision_log (WP-B3)
+
+#: Ánh xạ TẤT ĐỊNH `reason_code` (Strategy §20) -> `trigger_type` (Data Model §11).
+#: Đây là một BẢNG TRA, không phải một lớp chính sách mới: mỗi mã ST §20 thuộc đúng một
+#: nhóm nguyên nhân trong bảy giá trị DM §11 cho phép. `WP-B3` KHÔNG phát minh mã mới —
+#: `test_b3_03_reason_code_catalogue_matches_the_spec_text` đối chiếu tập khoá của bảng
+#: này với chính văn bản `docs/spec/02_STRATEGY_SPEC_V2_1_5.md` §20.
+TRIGGER_TYPE_BY_REASON: dict[str, str] = {
+    **{c: "base" for c in ("BASE_SCHEDULE", "BASE_ADVANCE_SCORE")},
+    **{c: "month_end" for c in ("MONTH_END_BASE", "MONTH_END_SMART",
+                                "CAP_OVERFLOW_TO_SMART")},
+    **{c: "zone" for c in (*(f"SMART_ZONE_S{i}" for i in range(3)),
+                           *(f"OPPORTUNITY_O{i}" for i in range(5)),
+                           *(f"CRASH_ZONE_C{i}" for i in range(4)),
+                           "DAILY_LIMIT_BLOCK", "MAX_ZONES_BLOCK", "PARTIAL_FILL",
+                           "ACTION_TTL_EXPIRED", "ACTION_MISSED",
+                           "BULLISH_INVALIDATION", "LADDER_EXPIRED",
+                           "OPPORTUNITY_SUSPENDED")},
+    **{c: "regime" for c in ("CRASH_ENTRY_7D", "CRASH_ENTRY_24H", "CRASH_EXIT",
+                             "RECOVERY_END")},
+    **{c: "cooldown" for c in ("COOLDOWN_START", "COOLDOWN_OVERRIDE")},
+    **{c: "funding" for c in ("FUNDING_REQUIRED", "FUNDING_COMPLETE")},
+    **{c: "data" for c in ("DATA_DEGRADED", "DATA_INVALID", "DELAYED_DATA_FILL")},
+}
+
+#: Danh mục reason code ST §20 — dẫn xuất từ đúng MỘT nguồn ở trên, không chép lại lần hai.
+STRATEGY_REASON_CODES = tuple(TRIGGER_TYPE_BY_REASON)
+
+#: Bảy `trigger_type` của DM §11 — không hơn.
+TRIGGER_TYPES = ("zone", "base", "regime", "funding", "cooldown", "month_end", "data")
+
+#: Trường của MỘT bản ghi `decision_log`, đúng theo Data Model §11 (`tags` là phần mở rộng
+#: mang NHÃN của ST §9/BT §18 — xem `docs/CONVENTIONS.md` #23).
+DECISION_LOG_FIELDS = (
+    "decision_id", "timestamp_utc", "previous_state", "new_state",
+    "market_regime", "data_quality", "trigger_type", "reason_code",
+    "opportunity_score", "recommended_price", "recommended_vnd", "recommended_usdt_est",
+    "zone_id", "ladder_id", "available_vnd", "reserved_vnd", "deployed_vnd",
+    "strategy_config_hash", "execution_config_hash", "tags",
+)
+
+#: Trường mà DM §11 đánh dấu "Bắt buộc" / "Snapshot bắt buộc" — KHÔNG được null.
+DECISION_LOG_NOT_NULL_FIELDS = (
+    "decision_id", "timestamp_utc", "market_regime", "data_quality", "trigger_type",
+    "reason_code", "available_vnd", "reserved_vnd", "deployed_vnd",
+    "strategy_config_hash", "execution_config_hash",
+)
+
+#: Mã ST §20 mà TẦNG BACKTEST không bao giờ ghi, kèm lý do canonical (`CHECK-B3-03`).
+#: Tuyên bố tường minh, không phải vắng mặt im lặng — cùng khuôn với
+#: `BACKTEST_NOT_APPLICABLE_STATES` của WP-C2.
+BACKTEST_NOT_EMITTED_REASONS = {
+    "FUNDING_REQUIRED": "ADR-001 (DEC-035): engine không mô hình hoá số dư USDT treasury; "
+                        "funding_delay là hàm tất định của funding_policy (CONVENTIONS #8). "
+                        "Trạng thái/mã này chỉ tồn tại ở TẦNG APP (Product Spec §6/§7/§11).",
+    "FUNDING_COMPLETE": "ADR-001 (DEC-035): mặt còn lại của FUNDING_REQUIRED — không có "
+                        "nhánh funding động nào ở tầng backtest để hoàn tất.",
+    "PARTIAL_FILL": "Engine backtest fill NGUYÊN ZONE (execution.apply_fill); partial fill "
+                    "thuộc WP-C3 và chưa có hành vi để ghi.",
+}
+
+#: Mã ST §20 được ghi dưới dạng NHÃN trên bản ghi (`tags`) chứ không phải một `reason_code`
+#: độc lập: nó là phẩm chất của một quyết định khác, không phải một sự kiện nghiệp vụ riêng.
+REASON_CODES_RECORDED_AS_TAG = ("DELAYED_DATA_FILL",)
+
+#: Nhãn audit dùng trên `decision_log.tags`. `EXECUTED_EARLY` là yêu cầu ST §9 ("phải đánh
+#: dấu"), hai nhãn còn lại là nhãn chất lượng dữ liệu BT §18 đã có trên purchase record.
+AUDIT_TAGS = ("EXECUTED_EARLY", "DELAYED_DATA_FILL", "EXECUTION_DATA_GAP")
+
+
+def zone_reason_code(ladder_type: str, zone_index: int) -> str:
+    """Mã reason ST §20 của một zone — CÙNG vốn từ vựng mà ledger `Pool._log` đang ghi."""
+    return {"SMART": "SMART_ZONE_S", "OPPORTUNITY": "OPPORTUNITY_O",
+            "CRASH": "CRASH_ZONE_C"}[ladder_type] + str(zone_index)
+
+
 def zone_order_key(zone, ladder) -> tuple:
     """Khoá sắp thứ tự thực thi khi nhiều zone cùng trigger — Strategy §15.1 [F2].
 
@@ -138,6 +214,14 @@ class RunResult:
     counters: dict = field(default_factory=dict)
     monthly_deployments: dict = field(default_factory=dict)  # "YYYY-MM" -> nominal deployed
     cash_samples: list = field(default_factory=list)          # (ts, cash, eth)
+    # WP-B3 (đóng F-024, F-033) — AUDIT TRAIL canonical theo Data Model §11. MỘT bản ghi
+    # cho MỘT sự kiện nghiệp vụ thật của engine, mang đủ trường DM §11 (`DECISION_LOG_FIELDS`)
+    # và CHỈ dùng reason code của ST §20. `previous_state`/`new_state` tiêu thụ trực tiếp
+    # `ExecutionState` của WP-C2 — không có vốn từ vựng trạng thái thứ hai.
+    # Đây là bề mặt QUAN SÁT: không nhánh execution nào đọc `decision_log`, nên gỡ bỏ toàn
+    # bộ lớp ghi log không đổi một con số backtest nào (`CHECK-B3-07`).
+    # Không còn cờ bật/tắt: audit trail của một official run không thể là tuỳ chọn
+    # (`CHECK-B3-04`). Xem `docs/CONVENTIONS.md` #23.
     decision_log: list = field(default_factory=list)
     # WP-A5 (đo lường, KHÔNG đổi hành vi): hai chuỗi số liệu mà ba Failure Signal cần.
     # FS-02 (BT §17 "Opportunity reserve thường xuyên chạm cap và nằm im"): mẫu THEO NGÀY
@@ -213,8 +297,8 @@ def _daily_arrays(scores: pd.DataFrame) -> dict:
 
 def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_cfg,
                start: pd.Timestamp, end: pd.Timestamp,
-               contribution: float = 100.0, behavioral_rng: np.random.Generator | None = None,
-               log_decisions: bool = False) -> RunResult:
+               contribution: float = 100.0,
+               behavioral_rng: np.random.Generator | None = None) -> RunResult:
     """Chạy engine từ `start` tới `end` (state mới hoàn toàn — xem CONVENTIONS #12)."""
     cfg = strategy_cfg
     start_ts = start.tz_localize("UTC").timestamp() if start.tzinfo is None else start.timestamp()
@@ -229,6 +313,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     behavioral = exec_cfg.behavioral_model == "LOCAL_HOUR"
     if behavioral and behavioral_rng is None:
         behavioral_rng = np.random.default_rng(0)
+
+    # WP-B3 — DM §11 đòi MỌI bản ghi decision tham chiếu hash của hai config snapshot
+    # (DM §14 "mọi decision và run phải tham chiếu hash của chúng"). Tính ĐÚNG MỘT LẦN mỗi
+    # run: `hash` là sha256 trên `asdict`, gọi lại mỗi bản ghi sẽ tốn vô ích.
+    strategy_config_hash = cfg.hash
+    execution_config_hash = exec_cfg.hash
 
     # ------------------------------------------------- state
     base_pool, smart_pool, opp_fund = Pool("BASE"), Pool("SMART"), Pool("OPPORTUNITY")
@@ -260,6 +350,13 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
     cooldown_until = -np.inf
     last_exec_price = np.nan
     prev_state = "NORMAL"           # trạng thái NỀN trước đó ([F1]: execution không đọc nhãn)
+    # WP-B3 — ngữ cảnh Execution State cho audit trail. `exec_state_now` là giá trị ĐÃ ĐO
+    # gần nhất ở bước 12b (WP-C2); `state_reason` là dữ kiện ST §20 đã quyết định giá trị đó
+    # (dùng làm lý do khi trạng thái đó CHẤM DỨT). Không phải nguồn sự thật mới: cả hai chỉ
+    # phản chiếu `derive_execution_state`.
+    exec_state_now = None
+    state_reason = (None, None, None)     # (reason_code, zone_id, ladder_id)
+    prev_dq = None                        # chất lượng dữ liệu của snapshot daily trước
     eth_total = 0.0
     counters = {
         "cooldown_override": {"NORMAL": 0, "STRESSED": 0, "CRASH": 0, "RECOVERY": 0},
@@ -271,12 +368,69 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
 
     day_end = d["day_end_ts"]
 
-    def log(ts, reason, **kw):
-        if log_decisions:
-            res.decision_log.append({"ts": ts, "reason_code": reason, **kw})
+    def log(ts, reason, *, zone_id=None, ladder_id=None, recommended_price=None,
+            recommended_vnd=None, previous_state=None, new_state=None, tags=()):
+        """Ghi MỘT bản ghi audit trail canonical theo Data Model §11 (WP-B3).
+
+        Thuần QUAN SÁT: hàm chỉ ĐỌC trạng thái engine và append vào `res.decision_log`;
+        không nhánh execution nào đọc lại danh sách đó. Ghi log KHÔNG có cờ bật/tắt —
+        audit trail của một official run không thể là tuỳ chọn (`CHECK-B3-04`).
+
+        `previous_state`/`new_state` mặc định là trạng thái ĐANG hiệu lực (`exec_state_now`,
+        đo ở bước 12b theo WP-C2): một sự kiện không đổi trạng thái thì hai trường bằng nhau.
+        Bản ghi chuyển trạng thái truyền hai giá trị khác nhau một cách tường minh.
+
+        `recommended_vnd` = lượng vốn (đơn vị danh nghĩa) mà chính quyết định này cam kết,
+        và `recommended_usdt_est` bằng nó vì backtest chạy 1 USDT = 1 đơn vị
+        (BT §2.1 [F6], `docs/CONVENTIONS.md` #11).
+        """
+        if new_state is None:
+            previous_state = new_state = exec_state_now
+        res.decision_log.append({
+            "decision_id": len(res.decision_log) + 1,
+            "timestamp_utc": ts,
+            "previous_state": previous_state,
+            "new_state": new_state,
+            "market_regime": regime.regime,
+            "data_quality": dq,
+            "trigger_type": TRIGGER_TYPE_BY_REASON[reason],
+            "reason_code": reason,
+            "opportunity_score": None if np.isnan(oscore) else float(oscore),
+            "recommended_price": recommended_price,
+            "recommended_vnd": recommended_vnd,
+            "recommended_usdt_est": recommended_vnd,
+            "zone_id": zone_id,
+            "ladder_id": ladder_id,
+            "available_vnd": base_pool.available + smart_pool.available + opp_fund.available,
+            "reserved_vnd": base_pool.reserved + smart_pool.reserved + opp_fund.reserved,
+            "deployed_vnd": base_pool.deployed + smart_pool.deployed + opp_fund.deployed,
+            "strategy_config_hash": strategy_config_hash,
+            "execution_config_hash": execution_config_hash,
+            "tags": list(tags),
+        })
+
+    def state_entry_reason(state, due, opened):
+        """Dữ kiện ST §20 quyết định `state`, theo ĐÚNG thứ tự ưu tiên CONVENTIONS #22(c).
+
+        Không phát minh lý do: `READY_TO_BUY`/`ACTION_PENDING` được quyết bởi một action cụ
+        thể nên mã của chúng là mã zone của action đó (`zone_order_key` — thứ tự canonical
+        của chính engine, cùng khoá bước 15 dùng để sắp fill); hai trạng thái còn lại được
+        quyết bởi một điều kiện có sẵn mã ST §20.
+        """
+        if state is ExecutionState.READY_TO_BUY and due:
+            z, lad = min(due, key=lambda p: zone_order_key(p[0], p[1]))
+            return zone_reason_code(lad.type, z.zone_index), z.zone_id, lad.ladder_id
+        if state is ExecutionState.ACTION_PENDING and opened:
+            z, lad = min(opened, key=lambda p: zone_order_key(p[0], p[1]))
+            return zone_reason_code(lad.type, z.zone_index), z.zone_id, lad.ladder_id
+        if state is ExecutionState.DATA_BLOCKED:
+            return "DATA_INVALID", None, None
+        if state is ExecutionState.COOLDOWN:
+            return "COOLDOWN_START", None, None
+        return (None, None, None)
 
     def record_purchase(ts, source, nominal, open_price, reason, recommended=None,
-                        tags=()):
+                        tags=(), zone_id=None, ladder_id=None, log_reason=None):
         """Ghi một purchase record. `tags` là nhãn chất lượng dữ liệu theo Backtest §18.
 
         WP-A4/A4.4 + A4.5 (đóng F-025, F-032): nhãn được gắn LÊN BẢN GHI, không chỉ cộng
@@ -310,9 +464,23 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             "tags": tag_list,
             "missing_candles_before": int(gap_before_now),
         })
+        # WP-B3 — audit trail (DM §11): mỗi purchase LÀ một quyết định đã thực thi. Ghi
+        # SAU khi purchase record và ledger đã xong, để snapshot available/reserved/deployed
+        # phản ánh đúng trạng thái vốn ngay sau quyết định.
+        audit_tags = list(tag_list)
+        if reason == "BASE_ADVANCE_SCORE":
+            # ST §9: tranche Base kéo sớm "phải đánh dấu EXECUTED_EARLY" (đóng F-033). Nhãn
+            # nằm trên bản ghi audit — nơi DM §11 dành cho nhãn của một quyết định — chứ
+            # KHÔNG trên `purchases[].tags`, vốn là danh mục nhãn chất lượng dữ liệu BT §18
+            # và là đầu ra tài chính phải bất biến (`CHECK-B3-07`). Xem CONVENTIONS #23(d).
+            audit_tags.append("EXECUTED_EARLY")
+        log(ts, log_reason or reason, zone_id=zone_id, ladder_id=ladder_id,
+            recommended_price=recommended, recommended_vnd=nominal, tags=audit_tags)
         if source in ("SMART", "OPPORTUNITY", "CRASH"):
             cooldown_until = ts + cfg.cooldown_hours * 3600.0
             last_exec_price = eff
+            # Cooldown vừa MỞ — sự kiện ST §20 `COOLDOWN_START` có thật, trước nay không ghi.
+            log(ts, "COOLDOWN_START", zone_id=zone_id, ladder_id=ladder_id)
 
     def zone_pools(z):
         return reserve_map.get(z.zone_id, [(z.pool, z.reserved_vnd)])
@@ -346,6 +514,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             if lad.type == "SMART" and lad.status == "ACTIVE":
                 cancel_open_zones(lad, ts, "LADDER_EXPIRED")
                 lad.status = "EXPIRED"
+                log(ts, "LADDER_EXPIRED", ladder_id=lad.ladder_id)
 
     def settle_month_end_smart(ts, open_price):
         avail = smart_pool.available
@@ -429,6 +598,11 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             su.month_reset(ts)                       # 4. reset HWM theo mode
             br = apply_monthly_contribution(mc, contribution, cfg, ts)  # 5–6. contribution + cap
             res.contributions.append((ts, contribution))
+            # WP-B3 — ST §20 `CAP_OVERFLOW_TO_SMART`: phần contribution vượt cap Opportunity
+            # được chuyển sang Smart. Sự kiện có thật, trước nay chỉ nằm trong ledger pool.
+            if br["opportunity_overflow_to_smart"] > 0:
+                log(ts, "CAP_OVERFLOW_TO_SMART",
+                    recommended_vnd=br["opportunity_overflow_to_smart"])
             month_base_budget = br["base"]
             month_smart_budget = br["smart"] + br["opportunity_overflow_to_smart"]
             base_state.month_reset(month_base_budget)
@@ -454,6 +628,15 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             adr30 = d["adr30"][ndi]
             daily_close = d["close"][ndi]
             new_score = True
+            # WP-B3 — ST §20 `DATA_INVALID` / `DATA_DEGRADED`: nhãn chất lượng dữ liệu đổi là
+            # một sự kiện thật của bước 8 (ST §3). `GOOD` không có mã trong ST §20 nên không
+            # được ghi — xem CONVENTIONS #23(c) và `BACKTEST_NOT_EMITTED_REASONS`.
+            if dq != prev_dq:
+                if dq == "INVALID":
+                    log(ts, "DATA_INVALID")
+                elif dq == "DEGRADED":
+                    log(ts, "DATA_DEGRADED")
+                prev_dq = dq
 
         # unlocks hiện hành (DEGRADED không được đẩy Opp unlock lên — CONVENTIONS #9)
         s_unl = float(smart_unlock(oscore)) if not np.isnan(oscore) else 0.0
@@ -512,6 +695,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         # đọc `regime_timeline`, nên điểm thu thập này không đổi hành vi.
         if not res.regime_timeline or res.regime_timeline[-1][1] != regime.regime:
             res.regime_timeline.append((ts, regime.regime))
+        # WP-B3 — ST §20: chuyển TRẠNG THÁI NỀN của regime (§17.1–§17.2) là sự kiện phải ghi.
+        # Trước WP-B3 chỉ crash entry KÈM ladder mới được ghi (bước 14a), nên một lần vào
+        # CRASH không tạo được ladder là hoàn toàn vô hình trong log.
+        if regime.state != prev_state:
+            log(ts, regime.last_entry_reason if regime.state == "CRASH"
+                else "CRASH_EXIT" if regime.state == "RECOVERY" else "RECOVERY_END")
         crash_snapshot = None                        # (snapshot, opp_avail, smart_avail)
         if regime.state == "CRASH" and prev_state != "CRASH":
             for lad in ladders:
@@ -540,7 +729,10 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         # 12. pending action tới hạn / TTL / MISSED — chỉ XÁC ĐỊNH action đủ điều kiện fill
         # và đánh dấu MISSED; fill/ledger/cooldown là các bước 15–17 (WP-A6/F-018)
         due_fills = []
-        open_actions = 0                             # WP-C2: đếm ngay trong vòng lặp đã có
+        # WP-C2 chỉ cần ĐẾM; WP-B3 cần cả DANH TÍNH action đang mở để đặt được lý do ST §20
+        # cho `ACTION_PENDING`. `bool(open_pairs)` ĐỒNG NHẤT với `open_actions > 0` cũ, nên
+        # giá trị đưa vào `derive_execution_state` không đổi (hợp đồng WP-C2 giữ nguyên).
+        open_pairs = []
         for lad in ladders:
             for z in lad.zones:
                 if z.status != "ACTION_PENDING":
@@ -549,17 +741,24 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     if z.execute_at <= z.action_expires_at:
                         due_fills.append((z, lad))
                     else:
+                        amt = z.reserved_vnd     # đọc TRƯỚC release (release đưa về 0)
                         release_zone(z, ts, "ACTION_TTL_EXPIRED")
                         z.status = "MISSED"
                         counters["missed_actions"] += 1
+                        log(ts, "ACTION_TTL_EXPIRED", zone_id=z.zone_id,
+                            ladder_id=lad.ladder_id, recommended_vnd=amt,
+                            recommended_price=z.target_price)
                 elif ts >= z.action_expires_at:
+                    amt = z.reserved_vnd
                     release_zone(z, ts, "ACTION_MISSED")
                     z.status = "MISSED"
                     counters["missed_actions"] += 1
+                    log(ts, "ACTION_MISSED", zone_id=z.zone_id, ladder_id=lad.ladder_id,
+                        recommended_vnd=amt, recommended_price=z.target_price)
                 else:
                     # Còn mở, chưa tới hạn (kể cả `execute_at is None` — action sẽ MISSED
                     # khi hết TTL nhưng TẠI ĐÂY nó vẫn là một action đang chờ).
-                    open_actions += 1
+                    open_pairs.append((z, lad))
 
         # 12b. WP-C2 — ĐẶT TÊN (không đổi hành vi): hợp nhất `data_quality` (bước 8),
         # `in_cooldown`/override (bước 11) và vòng đời `Zone` (bước 12) thành MỘT chiều
@@ -571,11 +770,25 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
         # WP-A5 đã dùng cho `regime_timeline` / `opp_cap_samples`.
         exec_state = derive_execution_state(
             action_due=bool(due_fills),
-            action_open=open_actions > 0,
+            action_open=bool(open_pairs),
             data_invalid=dq == "INVALID",
             cooldown_blocking=in_cooldown and not override_ok)
         if not res.execution_state_timeline or res.execution_state_timeline[-1][1] != exec_state:
             res.execution_state_timeline.append((ts, exec_state))
+            # WP-B3 — CÙNG MỘT giá trị, hình dạng thứ hai: bản ghi chuyển trạng thái theo
+            # DM §11 ("audit trail của state và action"). Không có nguồn sự thật thứ hai —
+            # cả hai hình dạng sinh ra trong đúng nhánh này, từ đúng `exec_state` của WP-C2.
+            # Lý do: dữ kiện quyết định trạng thái MỚI; khi trạng thái mới là `WAIT` (không
+            # điều kiện nào còn hiệu lực) thì lý do là dữ kiện vừa CHẤM DỨT — xem
+            # CONVENTIONS #23(b). Lần đo ĐẦU TIÊN của run chỉ thiết lập trạng thái nền,
+            # chưa phải một chuyển trạng thái, nên không sinh bản ghi.
+            entry = state_entry_reason(exec_state, due_fills, open_pairs)
+            reason, zid, lid = state_reason if exec_state is ExecutionState.WAIT else entry
+            if exec_state_now is not None and reason is not None:
+                log(ts, reason, zone_id=zid, ladder_id=lid,
+                    previous_state=exec_state_now, new_state=exec_state)
+            state_reason = entry
+        exec_state_now = exec_state
 
         # 13. trigger Smart (LOW) / confirmation Opportunity (CLOSE) — sắp thứ tự §15.1 [F2].
         # Ladder tạo ở bước 14 của nến này KHÔNG tham gia trigger cùng nến (§19: 13 trước 14).
@@ -633,7 +846,14 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             for z in lad.zones:
                 z.pool = src_pool
             ladders.append(lad)
-            log(ts, regime.last_entry_reason, ladder=lad.ladder_id)
+            # WP-B3 — mỗi Crash zone được reserve LÀ một recommendation ST §20 (`CRASH_ZONE_C*`),
+            # mang giá mục tiêu và lượng vốn cam kết. Sự kiện REGIME vào CRASH đã được ghi
+            # riêng ở bước 10: một sự kiện nghiệp vụ, một bản ghi.
+            for z in lad.zones:
+                if z.reserved_vnd > 0:
+                    log(ts, zone_reason_code("CRASH", z.zone_index), zone_id=z.zone_id,
+                        ladder_id=lad.ladder_id, recommended_price=z.target_price,
+                        recommended_vnd=z.reserved_vnd)
 
         # 14b. tạo reservation mới: Smart / Opportunity ladder (CONVENTIONS #1, #2)
         if dq != "INVALID" and not np.isnan(oscore) and not np.isnan(adr30):
@@ -657,6 +877,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                             z.status = "CANCELLED"
                     ladders.append(lad)
                     smart_ladder_created_this_month = True
+                    for z in lad.zones:
+                        if z.reserved_vnd > 0:
+                            log(ts, zone_reason_code("SMART", z.zone_index),
+                                zone_id=z.zone_id, ladder_id=lad.ladder_id,
+                                recommended_price=z.target_price,
+                                recommended_vnd=z.reserved_vnd)
             if opp_active and o_unl > 0 and not any(
                     l.type == "OPPORTUNITY" and l.status == "ACTIVE" for l in ladders):
                 osp = opportunity_spacing(ssp, cfg)
@@ -674,6 +900,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                         else:
                             z.status = "CANCELLED"
                     ladders.append(lad)
+                    for z in lad.zones:
+                        if z.reserved_vnd > 0:
+                            log(ts, zone_reason_code("OPPORTUNITY", z.zone_index),
+                                zone_id=z.zone_id, ladder_id=lad.ladder_id,
+                                recommended_price=z.target_price,
+                                recommended_vnd=z.reserved_vnd)
 
         # 14c. điều chỉnh reservation: TRIGGERED -> ACTION_PENDING theo thứ tự §15.1 [F2]
         # (zone_order_key), max_zones_per_cycle áp SAU khi sắp thứ tự; cooldown/override;
@@ -687,8 +919,16 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             override_counted_this_cycle = False
             ts_close = ts + 900.0
             local_hour = int(((ts_close + TZ_OFFSET) % DAY) // 3600)
-            for z in candidates:
+            for k, z in enumerate(candidates):
                 if created >= cfg.max_zones_per_cycle:
+                    # WP-B3 — ST §20 `MAX_ZONES_BLOCK`: mọi candidate còn lại bị chặn bởi
+                    # trần `max_zones_per_cycle` (§15.1). Ghi theo TỪNG zone, cùng khuôn với
+                    # `DAILY_LIMIT_BLOCK` đã có, để biết zone NÀO bị chặn chứ không chỉ có
+                    # bao nhiêu. Chỉ ghi — vòng lặp vẫn `break` y như trước.
+                    for zz in candidates[k:]:
+                        log(ts, "MAX_ZONES_BLOCK", zone_id=zz.zone_id,
+                            ladder_id=zz.ladder_id, recommended_price=zz.target_price,
+                            recommended_vnd=zz.reserved_vnd)
                     break
                 if in_cooldown and not override_ok:
                     continue  # zone giữ TRIGGERED, xét lại cycle sau (CONVENTIONS #6)
@@ -702,7 +942,9 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                         headroom = max(0.0, opp_fund.total * cfg.opportunity_daily_limit_pct
                                        - opp_used_today)
                         if opp_part > headroom + 1e-9:
-                            log(ts, "DAILY_LIMIT_BLOCK", zone=z.zone_id)
+                            log(ts, "DAILY_LIMIT_BLOCK", zone_id=z.zone_id,
+                                ladder_id=z.ladder_id, recommended_price=z.target_price,
+                                recommended_vnd=z.reserved_vnd)
                             continue
                         opp_used_today += opp_part
                 if in_cooldown and override_ok:
@@ -712,7 +954,9 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     if not override_counted_this_cycle:
                         counters["cooldown_override"][regime.regime] += 1
                         override_counted_this_cycle = True
-                    log(ts, "COOLDOWN_OVERRIDE", zone=z.zone_id)
+                    log(ts, "COOLDOWN_OVERRIDE", zone_id=z.zone_id,
+                        ladder_id=z.ladder_id, recommended_price=z.target_price,
+                        recommended_vnd=z.reserved_vnd)
                 create_action(z, lad_by_id[z.ladder_id], ts_close, cl, local_hour)
                 created += 1
 
@@ -732,7 +976,9 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
             counters["executed_actions"] += 1
             src = "CRASH" if lad.type == "CRASH" else lad.type
             record_purchase(ts, src, nominal, o, f"{lad.type}_ZONE_{z.zone_index}",
-                            recommended=zone_meta.get(z.zone_id, {}).get("recommended"))
+                            recommended=zone_meta.get(z.zone_id, {}).get("recommended"),
+                            zone_id=z.zone_id, ladder_id=lad.ladder_id,
+                            log_reason=zone_reason_code(lad.type, z.zone_index))
 
         # 18. ladder completion / suspension / expiry / bullish invalidation
         # 18a. bullish invalidation trên daily close vừa kích hoạt ở bước 8 (ST §18.2). Ladder
@@ -743,7 +989,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                 if lad.status == "ACTIVE" and lad.created_at < ts \
                         and update_bullish_invalidation(lad, daily_close):
                     cancel_open_zones(lad, ts, "BULLISH_INVALIDATION")
-                    log(ts, "BULLISH_INVALIDATION", ladder=lad.ladder_id)
+                    log(ts, "BULLISH_INVALIDATION", ladder_id=lad.ladder_id)
         # 18b. hysteresis Opportunity (ST §5): suspend / reactivate / cancel sau 7 ngày
         for lad in ladders:
             if lad.type == "OPPORTUNITY" and lad.status == "ACTIVE":
@@ -756,8 +1002,12 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                         z.suspended_at = None
                     elif z.status == "SUSPENDED" and z.suspended_at is not None and \
                             ts - z.suspended_at > cfg.suspended_zone_hold_days * DAY:
+                        amt = z.reserved_vnd
                         release_zone(z, ts, "OPPORTUNITY_SUSPENDED")
                         z.status = "CANCELLED"
+                        log(ts, "OPPORTUNITY_SUSPENDED", zone_id=z.zone_id,
+                            ladder_id=lad.ladder_id, recommended_price=z.target_price,
+                            recommended_vnd=amt)
         # 18c. Crash ladder theo chuyển trạng thái nền của nến này (ST §18.3)
         if regime.state == "RECOVERY" and prev_state == "CRASH":
             for lad in ladders:
@@ -782,6 +1032,7 @@ def run_engine(dataset: dict, scores_with_ind: pd.DataFrame, strategy_cfg, exec_
                     and ts >= lad.expires_at:
                 cancel_open_zones(lad, ts, "LADDER_EXPIRED")
                 lad.status = "EXPIRED"
+                log(ts, "LADDER_EXPIRED", ladder_id=lad.ladder_id)
             if lad.status == "ACTIVE" and all(
                     z.status in ("EXECUTED", "CANCELLED", "MISSED", "EXPIRED")
                     for z in lad.zones):

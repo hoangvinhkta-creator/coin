@@ -210,14 +210,14 @@ def build_dataset(day_specs: list[dict], first_local_day: str = "2023-03-01",
 
 
 def run_case(day_specs, monkeypatch, strategy_cfg=None, exec_cfg=None, contribution=100.0,
-             log_decisions=True, first_local_day: str = "2023-03-01"):
+             first_local_day: str = "2023-03-01"):
     """Chạy engine trên kịch bản day_specs với instrumentation. Trả (result, recorder)."""
     from eth_dca_os.config import BASELINE_STRATEGY, GATE1_LOW_FRICTION
     ds, scores, start, end = build_dataset(day_specs, first_local_day=first_local_day)
     rec = instrument(monkeypatch)
     res = engine_mod.run_engine(ds, scores, strategy_cfg or BASELINE_STRATEGY,
                                 exec_cfg or GATE1_LOW_FRICTION, start, end,
-                                contribution=contribution, log_decisions=log_decisions)
+                                contribution=contribution)
     return res, rec
 
 

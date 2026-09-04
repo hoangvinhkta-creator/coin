@@ -95,7 +95,7 @@ def main():
     try:
         rec = instrument(mp)
         res = run_engine(ds, scores, BASELINE_STRATEGY, GATE1_LOW_FRICTION,
-                         pd.Timestamp(args.start), pd.Timestamp(args.end), log_decisions=True)
+                         pd.Timestamp(args.start), pd.Timestamp(args.end))
     finally:
         mp.undo()
 

@@ -25,7 +25,47 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-04 — **OWNER DECISION `DEC-036` — Lifecycle Closure: `WP-C2: IMPLEMENTED → DONE`.**
+2026-09-04 — **`WP-B3` THỰC THI: `READY → IN_PROGRESS → IMPLEMENTED`** (phiên `S025`, nhánh
+`claude/wp-b3-audit-trail-impl-3covtf`, tách từ `origin/main` `04f77ac`). Đóng `F-024` và
+`F-033`. **8/8 REQUIRED check PASS** (`CHECK-B3-01`…`CHECK-B3-08`, E1 toàn bộ — Completion Gate
+đóng băng 2026-08-23 không bị sửa một chữ).
+
+Việc đã làm, gọn trong bốn ý. (1) **Audit trail canonical duy nhất**: `RunResult.decision_log`
+nay mang đúng 19 trường của Data Model §11 cộng một trường `tags` cho nhãn ST §9/BT §18 —
+không có `decision_log_v2`/`audit_log` song song. (2) **Tiêu thụ hợp đồng `WP-C2`**:
+`previous_state`/`new_state` là chính thành viên `ExecutionState`, sinh trong CHÍNH nhánh đã
+ghi `execution_state_timeline` nên không có nguồn sự thật thứ hai — đo được: số bản ghi chuyển
+trạng thái = số mốc timeline − 1 (1.043 = 1.044 − 1 và 1.077 = 1.078 − 1). Không enum thứ hai
+nào được tạo. (3) **Phạm vi sự kiện theo ST §20**: từ 3 loại lên **25 loại quan sát được trên
+một run toàn kỳ thật**; 32/36 mã của danh mục được ghi, bốn mã còn lại có lý do canonical
+(`FUNDING_REQUIRED`/`FUNDING_COMPLETE` theo `ADR-001`; `PARTIAL_FILL` thuộc `WP-C3`;
+`DELAYED_DATA_FILL` ghi làm nhãn). (4) **Audit trail hết là tuỳ chọn**: cờ `log_decisions` bị
+GỠ khỏi `run_engine` — trước gói này, đường production ghi **0 bản ghi**; sau gói,
+**2.441 / 2.478 bản ghi** trên hai lần chạy toàn kỳ.
+
+**Điều quan trọng nhất: con số tài chính không nhúc nhích.** Một payload chuẩn tắc 3.728.853
+byte (Gate 1 chín window + OOS + Gate 2/3 + Control F/G + verdict + hai lần chạy engine toàn
+kỳ kèm từng purchase, **cộng cả `execution_state_timeline` và `market_snapshots` của WP-C2**)
+cho cùng một `sha256 3ea7c8d7…` ở cả hai phía. Thêm bằng chứng HÀNH VI: gỡ bỏ hoàn toàn lớp
+ghi log rồi chạy lại, fingerprint vẫn trùng khớp giá trị chụp trước bản sửa.
+
+Diff production: **1 file** (`src/eth_dca_os/engine.py`), **+266 / −15**. Test: 43 test mới.
+`CAP-VERDICT` **không tiêu repair cycle** (implementation ban đầu của `WP-B3`; task chưa từng
+`DONE`). Phát sinh hai mục HARDENING: **H-36** (nhánh `ACTION_TTL_EXPIRED` không tới lượt khi
+TTL là bội số của nến 15m — cấu trúc sẵn có của engine) và **H-37** (ST §20 thiếu mã cho hai
+lần chuyển trạng thái có thật → `CAP-SPEC`/`WP-D2`, không vá V2.1.5). Không task ID mới.
+
+`WP-B3` **CHƯA `DONE`**: `STATE_AUTHORITY.md` quy định `DONE` do chủ dự án ghi (tiền lệ
+`WP-B1`/`DEC-034`, `WP-C2`/`DEC-036`) → **`OWNER_DECISION_REQUIRED`**. **`GATE-B` VẪN CHƯA MỞ**
+(đòi `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`; `WP-B2` mới `READY`, `WP-B3` mới `IMPLEMENTED`).
+`T-07` vẫn `NOT READY`. Giữ nguyên: `DEC-005 = PENDING` (vẫn chặn `T-08`); `T-06 = DONE`;
+V2.1.5 validation = `FAILED`; verdict lịch sử = `DO_NOT_BUILD`; `can_proceed_to_app = false`.
+Phiên này KHÔNG chạy `WP-B2`/`WP-C3`, KHÔNG mở `GATE-B`/`T-07`, KHÔNG rerun `T-06`, KHÔNG đổi
+threshold/strategy, KHÔNG merge `main`. Báo cáo đầy đủ:
+`docs/reviews/WP-B3-IMPLEMENTATION-REPORT.md`; biên bản:
+`docs/sessions/S025-wp-b3-audit-trail.md`.
+
+Trước đó, cùng ngày — **OWNER DECISION `DEC-036` — Lifecycle Closure: `WP-C2: IMPLEMENTED → DONE`.**
 Chủ dự án chấp nhận bằng chứng Completion Gate đóng băng (8/8 REQUIRED PASS, bất biến backtest
 bit-for-bit, production reachability PASS, full suite 494/494 PASS, 0 finding BLOCKING) và uỷ
 quyền đóng vòng đời. Đóng `F-006`.
@@ -604,7 +644,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | **DONE tại `DEC-031`, 2026-09-03 — historical governance disposition, KHÔNG phải validation PASS.** Official verdict = **`DO_NOT_BUILD`** (Gate 1 FAIL, OOS hard condition FAIL). `can_proceed_to_app=false`. `V2.1.5` validation = **FAILED**. `DONE` ở đây chỉ có nghĩa: official execution lifecycle đã hoàn tất và evidence đã được canonicalize (`docs/T06_OFFICIAL_EVIDENCE_RECORD.md`) — KHÔNG có Ready Gate/Completion Gate task-level (khoảng trống governance lịch sử, đã dispositioned tại `DEC-031`, historical exception, KHÔNG tạo precedent). Code commit `5228130677e9e9875335eef890b6ed748a384603`, tag `v2.1.5-official-T06`. Cả hai nhóm prerequisite trước đây đã thoả: (A) GATE-A CLOSED (`DEC-028`); (B) BLK-001 RESOLVED (`DEC-031`) |
 | DONE | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | **DONE (`DEC-034`, Lifecycle Closure 2026-09-04, sau `READY` tại `DEC-031`)** — **10/10 REQUIRED PASS** (CHECK-B1-01…10). Sau HAI vòng fresh Independent E2 liên tiếp FAIL (`E2-WP-B1-002`: `E2-B1-F01`/`E2-B1-F02` — sửa batch 1, 21 test; `E2-WP-B1-003`: cả hai finding CHƯA đóng hết — sửa batch 2, 49 test, `_numeric_and_finite()` viết lại triệt để + `run_verdict` hạ verdict về `INCONCLUSIVE` khi non-official), vòng E2 độc lập thứ BA (`E2-WP-B1-004-FRESH-ROUND3`) PASS trên đúng HEAD `9ac01b8`: tái lập độc lập cả hai finding lịch sử ĐÃ ĐÓNG, không BLOCKING mới, full suite 461/461 PASS. `CHECK-B1-09: NOT_TESTED → PASS`. Completion Gate = PASS. Verdict lịch sử T-06 (`DO_NOT_BUILD`) không đổi. Downstream KHÔNG tự mở: `GATE-B` vẫn chưa mở (`WP-B2` READY, `WP-B3` BLOCKED bởi `WP-C2`), `T-07` vẫn NOT READY. Xem file task để có evidence đầy đủ |
 | READY | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | **READY tại `DEC-031`** — dependency `T-06 DONE` nay thoả, mọi mục khác đã `[x]` từ trước. Song song với WP-B1, WP-B3 |
-| READY | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | **READY tại `DEC-036`** (2026-09-04) — cả hai dependency nay thoả: `T-06 DONE` (`DEC-031`) và `WP-C2 DONE` (`DEC-036`). Chưa mở/thực thi — cần một phiên riêng. Ngữ nghĩa `previous_state/new_state` tiêu thụ enum của WP-C2 (đóng F-024, F-033) |
+| IMPLEMENTED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | **IMPLEMENTED tại `S025` (2026-09-04)** — 8/8 REQUIRED PASS (`CHECK-B3-01`…`08`, E1 toàn bộ). Đóng `F-024`, `F-033`. `decision_log` nay đúng hình dạng DM §11 (19 trường + `tags`), `previous_state`/`new_state` là chính `ExecutionState` của WP-C2 (bản ghi chuyển trạng thái = mốc timeline − 1), phạm vi sự kiện từ 3 lên **25 loại** trên run toàn kỳ, và cờ `log_decisions` bị GỠ (production: 0 → 2.441/2.478 bản ghi). **Bất biến tài chính bit-for-bit** (`sha256 3ea7c8d7…`, 3.728.853 byte, gồm cả đầu ra WP-C2); gỡ bỏ lớp log không đổi hành vi. Diff production 1 file +266/−15; 43 test mới. Sinh H-36, H-37. **CHƯA `DONE`** — `DONE` là quyền chủ dự án (`OWNER_DECISION_REQUIRED`). `GATE-B` vẫn chưa mở (`WP-B2` mới READY) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | `T-06` nay DONE (`DEC-031`, verdict `DO_NOT_BUILD`) nhưng **GATE-B CHƯA MỞ** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE — hiện cả ba đều chưa DONE, chỉ READY/BLOCKED). NOT READY. Chặn T-11 |
 | DONE | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | **DONE 2026-09-02** (8/8 REQUIRED PASS, E1). V-01 XÁC NHẬN, V-02 XÁC NHẬN, V-03 BÁC BỎ (an toàn tình cờ, HARDENING). Harness khôi phục (F-027 đóng). Gỡ BLOCKED cho T-03 (CHECK-03-01 PASS) |
 | DONE | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-036`** (2026-09-04). Đóng `F-006`. 8/8 REQUIRED PASS (`CHECK-C2-01`…`08`, E1 trừ `CHECK-C2-07` E0 theo gate FROZEN). Một enum `ExecutionState` (sáu giá trị ST §16/§19) + một hàm thuần `derive_execution_state` đo tại bước 12b BT §19; KHÔNG có class `StateMachine`. Lưu vết: `execution_state_timeline` (ghi-khi-đổi — hình dạng `previous_state`/`new_state` cho `WP-B3`) và `market_snapshots` (mỗi accounting day, `execution_state` NOT NULL, DM §4). `FUNDING_REQUIRED` = NOT_APPLICABLE theo `ADR-001`. **Backtest bit-for-bit không đổi** (`sha256 e0492a58…`); diff production 1 file +128/−0 thuần thêm mới; full suite 494/494. Mở `WP-B3`/`WP-C3` sang `READY`. `GATE-B` vẫn chưa mở. Trước đó IMPLEMENTED tại `S024`, READY tại `DEC-035` |

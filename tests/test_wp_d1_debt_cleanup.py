@@ -83,7 +83,8 @@ def test_f031_cooldown_override_counts_once_per_event_not_per_zone(monkeypatch):
 
     ov_log = [d for d in res.decision_log if d["reason_code"] == "COOLDOWN_OVERRIDE"]
     assert len(ov_log) == 2, "tiền đề: đúng hai zone override trong kịch bản (log không đổi)"
-    assert ov_log[0]["ts"] == ov_log[1]["ts"], "tiền đề: cùng một cycle/sự kiện"
+    assert ov_log[0]["timestamp_utc"] == ov_log[1]["timestamp_utc"], \
+        "tiền đề: cùng một cycle/sự kiện"
 
     total_override = sum(res.counters["cooldown_override"].values())
     assert total_override == 1, (

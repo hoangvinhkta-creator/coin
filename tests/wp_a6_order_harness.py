@@ -535,7 +535,7 @@ def drop_candles(eth15: pd.DataFrame, start_utc: pd.Timestamp, drops) -> pd.Data
 
 def run_traced(monkeypatch, day_specs, overrides=None, drops=(), strategy_cfg=None,
                exec_cfg=None, contribution=100.0, first_local_day="2023-03-01",
-               log_decisions=True, engine=None):
+               engine=None):
     """Dựng dataset theo ngày (wp_a3_harness), ghi đè/xoá nến, chạy engine có trace."""
     from eth_dca_os.config import BASELINE_STRATEGY, GATE1_LOW_FRICTION
     from wp_a3_harness import build_dataset
@@ -552,7 +552,7 @@ def run_traced(monkeypatch, day_specs, overrides=None, drops=(), strategy_cfg=No
     tr = instrument(monkeypatch, engine=engine_mod)
     res = engine_mod.run_engine(ds, scores, strategy_cfg or BASELINE_STRATEGY,
                                 exec_cfg or GATE1_LOW_FRICTION, start, end,
-                                contribution=contribution, log_decisions=log_decisions)
+                                contribution=contribution)
     return res, tr, (ds, scores, start, end)
 
 

@@ -377,6 +377,88 @@ Những điểm dưới đây spec V2.1.5 không quy định chi tiết; engine 
     kết quả vẫn trùng bit với trước WP-C2
     (`test_c2_07_forcing_a_wrong_execution_state_changes_no_behaviour`).
 
+23. **Audit trail `decision_log`: hình dạng bản ghi, ngữ nghĩa lý do, phạm vi ghi (WP-B3,
+    đóng `F-024` và `F-033`)** — Data Model §11 quy định bảng `decision_log` là "audit trail
+    của **state** và **action**" và liệt kê các trường bắt buộc; Strategy §20 quy định "mọi
+    state transition và recommendation phải log reason code" kèm danh mục mã. Spec **không**
+    nói mỗi mã tương ứng sự kiện engine nào, **không** nói lý do của một lần CHUYỂN trạng
+    thái là gì, và **không** nói ghi vào lúc nào. Ba điểm để ngỏ đó được chốt ở đây.
+
+    (a) **Một sự kiện nghiệp vụ — một bản ghi — một vốn từ vựng.**
+    `RunResult.decision_log` là audit trail canonical DUY NHẤT; WP-B3 không tạo
+    `decision_log_v2` / `audit_log` / `state_log` song song. Trường của một bản ghi được
+    khai báo ở `engine.DECISION_LOG_FIELDS` và bằng ĐÚNG bảng DM §11, cộng đúng một trường
+    `tags` (mục (d)). `reason_code` chỉ nhận giá trị trong danh mục ST §20
+    (`engine.STRATEGY_REASON_CODES`), `trigger_type` chỉ nhận bảy giá trị DM §11, và ánh xạ
+    `reason_code -> trigger_type` là một BẢNG TRA tất định
+    (`engine.TRIGGER_TYPE_BY_REASON`), không phải một lớp chính sách mới. Dịch chuyển vốn
+    thuần tuý vẫn nằm ở `Pool.ledger` (DM §6) — `decision_log` không chép lại nó.
+
+    (b) **`previous_state` / `new_state` tiêu thụ `ExecutionState` của WP-C2, không có vốn
+    từ vựng thứ hai.** Giá trị của hai trường là chính thành viên enum đo ở **bước 12b**
+    (#22(b)). Với một sự kiện KHÔNG đổi trạng thái, hai trường bằng nhau và mang trạng thái
+    đang hiệu lực — sự kiện xảy ra TRƯỚC bước 12b của nến đó mang trạng thái đo ở nến
+    trước, đúng nghĩa "trạng thái đang hiệu lực tại thời điểm ấy". Với một lần CHUYỂN trạng
+    thái, bản ghi được sinh trong CHÍNH nhánh đã ghi `execution_state_timeline`, từ CÙNG
+    một giá trị — hai hình dạng, một nguồn sự thật (cùng khuôn #22(e)). Lần đo ĐẦU TIÊN của
+    một run chỉ thiết lập trạng thái nền nên không phải một chuyển trạng thái và không sinh
+    bản ghi; hệ quả kiểm chứng được: số bản ghi chuyển trạng thái = số mốc timeline − 1.
+
+    (c) **Lý do của một lần chuyển trạng thái = dữ kiện ST §20 quyết định trạng thái MỚI.**
+    Theo đúng thứ tự ưu tiên đã đóng băng ở #22(c):
+
+        READY_TO_BUY   -> mã zone của action tới hạn   (thứ tự canonical `zone_order_key`)
+        ACTION_PENDING -> mã zone của action đang mở    (cùng khoá thứ tự)
+        DATA_BLOCKED   -> DATA_INVALID
+        COOLDOWN       -> COOLDOWN_START
+        WAIT           -> mã của dữ kiện vừa CHẤM DỨT (tức mã đã ghi khi vào trạng thái cũ)
+
+    `WAIT` là "không điều kiện nào còn hiệu lực" nên không có dữ kiện nào để đặt tên; lý do
+    được ghi là dữ kiện vừa mất hiệu lực, và chiều VÀO hay RA đọc được từ chính cặp
+    (`previous_state`, `new_state`) trên bản ghi. Đây là lựa chọn có chủ ý để **không phát
+    minh mã mới**: ST §20 không có mã cho "cooldown hết hạn" và "chất lượng dữ liệu trở lại
+    GOOD" (nó có cặp `FUNDING_REQUIRED`/`FUNDING_COMPLETE` và `CRASH_EXIT`/`RECOVERY_END`
+    nhưng không có cặp tương ứng cho hai điều kiện trên). Khiếm khuyết đặc tả đó thuộc
+    `CAP-SPEC` (`WP-D2`, đề xuất V2.2 — Master Index §6 cấm vá V2.1.5) và được ghi ở
+    `PROJECT/HARDENING_BACKLOG.md` **H-37**.
+
+    (d) **`tags` — nhãn của một quyết định, không phải một sự kiện riêng.** Ba nhãn:
+    `EXECUTED_EARLY` (ST §9 "phải đánh dấu", đóng `F-033`), `DELAYED_DATA_FILL` và
+    `EXECUTION_DATA_GAP` (BT §18). `DELAYED_DATA_FILL` có mặt trong danh mục ST §20 nhưng
+    được ghi làm NHÃN chứ không làm `reason_code` độc lập, vì một lần fill trễ không phải
+    một sự kiện nghiệp vụ khác — nó là phẩm chất của chính lần fill đó
+    (`engine.REASON_CODES_RECORDED_AS_TAG`). `EXECUTED_EARLY` nằm trên bản ghi audit chứ
+    **không** trên `purchases[].tags`: danh mục nhãn của purchase record là nhãn chất lượng
+    dữ liệu BT §18 (và là đầu vào của `counters`), còn purchase record là **đầu ra tài chính
+    phải bất biến** theo `CHECK-B3-07`. DM §11 mới là nơi spec dành cho nhãn của một quyết
+    định.
+
+    (e) **Ghi log KHÔNG có cờ bật/tắt.** Cờ `log_decisions` đã bị gỡ khỏi `run_engine`: audit
+    trail của một official run không thể là tuỳ chọn (`CHECK-B3-04`, `F-024`). Trước WP-B3,
+    không đường production nào bật cờ đó, nên `decision_log` của mọi run chính thức là
+    **rỗng** — đo được: 0 bản ghi trên cả hai lần chạy toàn kỳ tại HEAD `04f77ac`.
+
+    (f) **Quan sát, không điều khiển.** Không nhánh execution nào đọc `decision_log`. Điểm
+    này được chứng minh bằng HÀNH VI chứ không bằng cách đọc mã: gỡ bỏ hoàn toàn lớp ghi log
+    (mọi `append` bị nuốt) rồi chạy lại engine, fingerprint hành vi vẫn trùng khớp giá trị
+    chụp trước WP-B3 — `test_b3_07_removing_the_audit_layer_changes_no_behaviour`.
+
+    (g) **`decision_id` là khoá theo RUN.** Bộ đếm 1..N trong phạm vi một `RunResult`, tất
+    định và liên tục — cố ý KHÔNG dùng `zone_id`/`ladder_id` (bộ đếm toàn cục của
+    `ladders.py`, đổi theo thứ tự chạy trong cùng tiến trình). Định danh cấp run
+    (`run_id`, `dataset_hash`) không lặp lại trên từng dòng vì đã nằm trong run record
+    (DM §12); `strategy_config_hash`/`execution_config_hash` thì CÓ trên từng dòng vì DM §11
+    và DM §14 đòi mọi decision tham chiếu hash của config đang hiệu lực — đó cũng là thứ
+    phân biệt log cũ (thiếu trường) với log mới.
+
+    (h) **`ACTION_TTL_EXPIRED` không tới lượt khi TTL là bội số của nến 15m.** Ghi ở đây vì
+    người đọc log sẽ thắc mắc: khi `action_ttl_seconds % 900 == 0` (baseline 12h và mọi cấu
+    hình trong `manifests.GATE3_GRID`), nến đầu tiên có `ts >= action_expires_at` luôn tới
+    TRƯỚC nến có `ts >= execute_at`, nên `ACTION_MISSED` luôn thắng. Đây là cấu trúc sẵn có
+    của engine (bước 12 BT §19), không phải hệ quả của WP-B3; ghi nhận ở
+    `PROJECT/HARDENING_BACKLOG.md` **H-36**.
+
+
 ## Phân loại nguồn dữ liệu trong `lineage.json` (WP-A1/A1.9)
 
 Nguồn dữ liệu được khai báo **tại nơi dataset được tạo** — đó là nơi duy nhất biết dữ liệu

@@ -24,9 +24,17 @@ from eth_dca_os.engine import _epoch_seconds, run_engine
 from wp_a3_harness import build_dataset
 
 #: Các trường `RunResult` đã tồn tại TRƯỚC WP-C2. Fingerprint chỉ tính trên tập này.
+#:
+#: `decision_log` ĐÃ RỜI tập này tại `WP-B3` (2026-09-04). Lý do canonical: `WP-B3` là gói
+#: sở hữu `decision_log` và CỐ Ý thay đổi bề mặt đó (DM §11, đóng `F-024`/`F-033`), nên giữ
+#: nó trong một fingerprint "hành vi không đổi" sẽ biến phép so thành phép so luôn đỏ —
+#: không còn nói được điều gì về hành vi. Mọi trường CÒN LẠI giữ nguyên vai trò khoá hành
+#: vi, và bốn giá trị trong `FROZEN_PRE_WP_C2_FINGERPRINTS` được CHỤP LẠI trên cây mã
+#: TRƯỚC bản sửa WP-B3 (HEAD `04f77ac`) rồi mới áp bản sửa — nên đây vẫn là một phép so
+#: TRƯỚC–SAU thật, không phải một giá trị chép từ kết quả sau khi sửa.
 PRE_WP_C2_RESULT_FIELDS = (
     "purchases", "contributions", "counters", "monthly_deployments",
-    "cash_samples", "decision_log", "opp_cap_samples", "regime_timeline",
+    "cash_samples", "opp_cap_samples", "regime_timeline",
 )
 
 
@@ -92,8 +100,8 @@ def run_scenario(name: str):
     """Chạy `run_engine` thật trên kịch bản `name`. Trả về `RunResult`.
 
     `_ladder_seq` / `_zone_seq` là bộ đếm cấp module nên được reset trước mỗi lần chạy:
-    không reset thì `decision_log` mang id khác nhau tuỳ THỨ TỰ chạy và fingerprint mất
-    tính tất định.
+    không reset thì `zone_id` / `ladder_id` trong `decision_log` khác nhau tuỳ THỨ TỰ chạy
+    và mọi phép so bản ghi mất tính tất định.
     """
     spec = SCENARIOS[name]
     ladders_mod._ladder_seq = itertools.count(1)
@@ -101,7 +109,7 @@ def run_scenario(name: str):
     ds, scores, start, end = build_dataset(
         spec["day_specs"], first_local_day=spec.get("first_local_day", "2023-03-01"))
     return run_engine(ds, scores, BASELINE_STRATEGY, spec["exec_cfg"], start, end,
-                      contribution=100.0, log_decisions=True)
+                      contribution=100.0)
 
 
 def run_scenario_with_grid(name: str):
@@ -116,7 +124,7 @@ def run_scenario_with_grid(name: str):
     ds, scores, start, end = build_dataset(
         spec["day_specs"], first_local_day=spec.get("first_local_day", "2023-03-01"))
     res = run_engine(ds, scores, BASELINE_STRATEGY, spec["exec_cfg"], start, end,
-                     contribution=100.0, log_decisions=True)
+                     contribution=100.0)
     ts = _epoch_seconds(ds["ETHUSDT_15m"]["open_time"])
     grid = ts[(ts >= start.timestamp()) & (ts < end.timestamp())]
     return res, [float(x) for x in grid], start
