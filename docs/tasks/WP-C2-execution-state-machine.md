@@ -2,19 +2,18 @@
 
 ## Metadata
 Status:
-IMPLEMENTED — 2026-09-04, phiên `S024` (nhánh `claude/wp-c2-execution-state-y4rraf`, tách từ
-`origin/main` `2189a8f`). Ready Gate được xác nhận lại đầy đủ khi mở task; `READY → IN_PROGRESS
-→ IMPLEMENTED`. **8/8 REQUIRED check PASS** (`CHECK-C2-01`…`CHECK-C2-08`), kết quả backtest
-trùng khớp bit-for-bit trước–sau, full suite PASS. Bằng chứng đầy đủ:
-`docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md`.
+**DONE — 2026-09-04, Owner-authorized Lifecycle Closure (`DEC-036`).** `IMPLEMENTED → DONE`.
+Chủ dự án chấp nhận bằng chứng Completion Gate đóng băng trong
+`docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md` và uỷ quyền đóng vòng đời — xem `DEC-036`
+(`PROJECT/PROJECT_DECISIONS.md`) cho toàn văn quyết định và hệ quả downstream. Đóng `F-006`.
 
-**CHƯA `DONE`.** `governance/v4/CORE/STATE_AUTHORITY.md` § "The State Machine And Who May
-Write It" quy định `DONE` do **chủ dự án hoặc một completion authority được chỉ định** ghi —
-tiền lệ trong dự án này là `WP-B1` (`DEC-034`, "Owner-authorized lifecycle closure"). Agent
-thực thi không tự ghi `DONE`. Việc còn lại là **đúng một quyết định đóng vòng đời của chủ dự
-án**: `OWNER_DECISION_REQUIRED`.
+Trước đó, cùng ngày — IMPLEMENTED — 2026-09-04, phiên `S024` (nhánh
+`claude/wp-c2-execution-state-y4rraf`, tách từ `origin/main` `2189a8f`). Ready Gate được xác
+nhận lại đầy đủ khi mở task; `READY → IN_PROGRESS → IMPLEMENTED`. **8/8 REQUIRED check PASS**
+(`CHECK-C2-01`…`CHECK-C2-08`), kết quả backtest trùng khớp bit-for-bit trước–sau, full suite
+494/494 PASS. Bằng chứng đầy đủ: `docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md`.
 
-Trước đó: READY — 2026-09-04 (`DEC-035` RESOLVED, phương án PA-A; `ADR-001` Accepted), theo
+Trước đó nữa: READY — 2026-09-04 (`DEC-035` RESOLVED, phương án PA-A; `ADR-001` Accepted), theo
 hợp đồng `docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md` §14.
 
 Phase:
@@ -563,9 +562,9 @@ Timestamp:
       2026-08-23; chỉ điền `Status` / `Kết quả` / `Executed By` / `Timestamp`, không sửa một chữ
       nào của phần `Yêu cầu`
 
-**Trạng thái đóng vòng đời:** mọi Exit Criteria đã thoả, nhưng bước `IMPLEMENTED → DONE` KHÔNG
-thuộc thẩm quyền của agent thực thi (`governance/v4/CORE/STATE_AUTHORITY.md`). Còn lại đúng một
-việc: **quyết định đóng vòng đời của chủ dự án** — `OWNER_DECISION_REQUIRED`.
+**Trạng thái đóng vòng đời:** `DONE` — chủ dự án đã ra quyết định đóng vòng đời tại `DEC-036`
+(2026-09-04). Mọi Exit Criteria đã thoả trước đó; bước `IMPLEMENTED → DONE` được ghi bởi đúng
+thẩm quyền theo `governance/v4/CORE/STATE_AUTHORITY.md`.
 
 ## Escalation Triggers
 

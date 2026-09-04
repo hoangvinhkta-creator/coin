@@ -2642,3 +2642,97 @@ rộng, phạm vi webapp/dashboard) **VẪN PENDING** — quyết định này K
 `PRODUCTION_PATHS.md` §2). Không tiêu review/repair budget nào.
 
 ---
+
+## DEC-036 — Owner-authorized Lifecycle Closure: `WP-C2: IMPLEMENTED → DONE`
+
+Date:
+2026-09-04 (phiên Lifecycle Closure, nhánh `claude/wp-c2-execution-state-y4rraf`)
+
+Task:
+`WP-C2` / capability `CAP-WEBAPP` (lineage root `WP-C1`). Đóng lifecycle toàn bộ gói `WP-C2`
+(đóng `F-006`).
+
+Decision:
+
+    Chủ dự án chấp nhận bằng chứng Completion Gate đã đóng băng trong
+    `docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md` (8/8 REQUIRED check PASS
+    — CHECK-C2-01..08; bất biến backtest bit-for-bit; production reachability
+    PASS; full regression 494/494 PASS; 0 finding BLOCKING) và uỷ quyền tường
+    minh cho phiên này:
+
+        1. canonical hoá WP-C2 REQUIRED = 8/8 PASS;
+        2. ghi nhận Completion Gate = PASS;
+        3. đóng lifecycle WP-C2 theo governance hiện có (`STATE_AUTHORITY.md`:
+           `DONE` = Owner, hoặc completion authority được chỉ định);
+        4. cập nhật MỨC TỐI THIỂU các file state canonical cần thiết (vòng đời,
+           roadmap, capability registry, ledger);
+        5. cập nhật readiness downstream ĐÚNG THEO dependency đã khai:
+           `WP-B3` (Ready Gate dòng còn lại DUY NHẤT là "Dependency WP-C2 DONE")
+           và `WP-C3` (Dependencies chỉ liệt kê `T-04` DONE + `WP-C2` DONE).
+
+    Uỷ quyền này KHÔNG bao gồm: production repair mới; mở/thực thi WP-B3; mở/thực
+    thi WP-B2; mở/thực thi WP-C3; mở GATE-B; chạy T-07; rerun T-06; replay lại
+    Control F/G; V2.2; điều tra AE; merge `main`; branch cleanup; chạm `data/`.
+
+Ghi nhận nguyên văn (Owner, qua chat): *"OWNER APPROVES WP-C2 LIFECYCLE CLOSURE... Owner
+authorizes: WP-C2: IMPLEMENTED → DONE."*
+
+Reason:
+Không có rà soát độc lập (E2) mới ở quyết định này — Completion Gate đã đóng băng của `WP-C2`
+KHÔNG đòi check E2 nào (bảy check E1, một check E0 cho `CHECK-C2-07` — đúng mức gate quy định,
+khác `WP-B1` có `CHECK-B1-09` đòi E2). Bằng chứng có thẩm quyền là báo cáo implementer
+(`docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md`), và chủ dự án tự xác nhận đã đọc nó (§14 bất
+biến backtest, §17 ma trận 8/8, §22 thẩm quyền vòng đời) trước khi phê duyệt. Đây là hành động
+Owner đúng `STATE_AUTHORITY.md`, không phải implementer tự cấp `DONE` cho chính mình.
+
+Tóm tắt evidence được Owner viện dẫn: `CHECK-C2-01`…`CHECK-C2-08` = PASS; bất biến backtest =
+payload chuẩn tắc 1.340.788 byte, `sha256 e0492a58f67e9fab0105216713ed9ca3dfecbae1608d91089ca48eef380fdbba`
+trùng khớp ở hai lần chạy BEFORE độc lập và lần chạy AFTER; production reachability = 13 lần
+chạy qua hàm production, 17.532 snapshot, 0 null, đủ năm trạng thái trong phạm vi,
+`FUNDING_REQUIRED` = 0 (đúng `ADR-001`); full regression = 494/494 PASS, exit 0; diff production
+= 1 file, +128/−0 (thuần thêm mới).
+
+Consequence:
+`WP-C2: IMPLEMENTED → DONE`. `Completion Gate: 8/8 REQUIRED PASS → CANONICAL DONE`.
+
+Downstream, ĐÚNG theo dependency đã khai trong từng file task (không suy luận thêm):
+- `WP-B3: BLOCKED → READY` — Ready Gate của `WP-B3` chỉ còn đúng một dòng `[ ]`
+  ("Dependency WP-C2 DONE"), nay `[x]`. `WP-B3` **chưa mở/thực thi** — chuyển `READY` là công
+  nhận điều kiện tiên quyết đã thoả, không phải bắt đầu làm việc.
+- `WP-C3: PLANNED → READY` — Dependencies của `WP-C3` chỉ liệt kê `T-04` (DONE) và `WP-C2`
+  (nay DONE); không còn tiền đề nào chưa thoả. `WP-C3` **chưa mở/thực thi**.
+- `WP-B2`: không đổi, giữ `READY` (không phụ thuộc `WP-C2`).
+- `GATE-B`: **vẫn CHƯA MỞ** — đòi cả ba `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`; nay `WP-B1` DONE,
+  `WP-B2` READY (chưa DONE), `WP-B3` READY (chưa DONE). Hai gói còn lại cần tự thực thi và tự
+  DONE ở phiên riêng.
+- `T-07`: **vẫn NOT READY** — chờ `GATE-B` mở.
+- `T-11`: không đổi — vẫn chờ `T-07` VÀ verdict `BUILD` (hiện `DO_NOT_BUILD`).
+
+Giữ nguyên, không đổi một chữ: `DEC-005 = PENDING` (tiếp tục chặn `T-08`); `T-06 = DONE`;
+V2.1.5 validation = `FAILED`; verdict lịch sử = `DO_NOT_BUILD`; `can_proceed_to_app = false`;
+tag `v2.1.5-official-T06`.
+
+Files cập nhật (docs/state-only, KHÔNG production code):
+- `docs/tasks/WP-C2-execution-state-machine.md`: `Status: IMPLEMENTED → DONE`, viện dẫn
+  `DEC-036`; Exit Criteria giữ nguyên (đã `[x]` từ phiên implementation).
+- `PROJECT/PROJECT_PROGRESS.md`: dòng roadmap `WP-C2` → `DONE`; dòng `WP-B3` → `READY`; dòng
+  `WP-C3` → `READY`; mục `Last Updated`.
+- `PROJECT/LO_TRINH_DE_HIEU.md`: sinh lại bằng generator (không sửa tay).
+- `PROJECT/CAPABILITY_REGISTRY.md`: `CAP-WEBAPP` — thành viên `WP-C2` → DONE.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md`: §2.2 cập nhật trạng thái thành viên; budget số **không
+  đổi** (`ALLOWED 2 / USED 0 / REMAINING 2`) — đóng lifecycle không tiêu repair cycle vì
+  production diff của chính lượt đóng này = 0.
+
+Review/repair budget (`CAP-WEBAPP`, lineage root `WP-C1`): **0 repair cycle mới tiêu bởi quyết
+định này** (production diff = 0 — quyết định chỉ đổi trạng thái, không sửa mã). Toàn bộ công
+việc implementation của `WP-C2` (diff +128/−0 tại `engine.py`) vẫn được tính là **implementation
+ban đầu**, không phải repair cycle — cùng quy ước xuyên suốt ledger cho `WP-A4`/`T-09A`/`T-09B`/
+`WP-B1`.
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: sửa production code nào; mở/thực thi `WP-B3`;
+mở/thực thi `WP-B2`; mở/thực thi `WP-C3`; mở `GATE-B`; chạy `T-07`; rerun `T-06`; replay Control
+F/G; đổi threshold/strategy; diễn giải lại `WP-C2 DONE` thành một tuyên bố về verdict (verdict
+lịch sử `DO_NOT_BUILD`/`can_proceed_to_app=false` giữ nguyên); merge `main`; xoá nhánh; chạm
+`data/`. Không task ID mới.
+
+---

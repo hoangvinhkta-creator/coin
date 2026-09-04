@@ -62,8 +62,8 @@ coi là đã thoả.
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | DONE tại S015 — 9/9 REQUIRED PASS (E1), chủ dự án phê chuẩn | CÓ |
 | `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
-| `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | READY một phần (`DEC-031`) — WP-B1/WP-B2 READY, WP-B3 BLOCKED (chờ WP-C2) | CÓ (lát cắt đã chạy — T-06 DONE) |
-| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | `WP-C1` DONE; `WP-C2` **IMPLEMENTED** (S024, 2026-09-04 — 8/8 REQUIRED PASS, chờ chủ dự án đóng vòng đời `DONE`); `WP-C3`/`WP-C4` PLANNED | KHÔNG (song song) |
+| `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | `WP-B1` DONE; `WP-B2` READY; `WP-B3` **READY** (`DEC-036`, 2026-09-04 — WP-C2 nay DONE, cả hai dependency thoả); chưa mở/thực thi | CÓ (lát cắt đã chạy — T-06 DONE) |
+| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **READY** (`DEC-036` — dependency WP-C2 DONE nay thoả); `WP-C4` PLANNED | KHÔNG (song song) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
 | `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | READY | KHÔNG |
 | `CAP-GOVTOOL` | Validator & tooling governance | `MICRO-GOVDEF-001` | chưa có owner cho phần glob | READY một phần | KHÔNG |
@@ -264,8 +264,8 @@ lập (2026-09-01), và các mục dưới đây là bản đính chính có ng�
 | `WP-C1` | DONE (2026-09-02) | Lineage root |
 | `T-09A` | DONE (2026-09-02, `DEC-018`) | Vá V-01/V-02 |
 | `T-09B` | **PLANNED** | Lưu trữ bền trên Firebase (`DEC-019`) — task này |
-| `WP-C2` | READY (`DEC-035`, 2026-09-04) | Ready Gate thoả qua phân xử hẹp `DEC-035` (PA-A) + `ADR-001` Accepted; `DEC-005` nghĩa rộng vẫn PENDING |
-| `WP-C3` | PLANNED | Sau WP-C2 |
+| `WP-C2` | **DONE** (`DEC-036`, 2026-09-04) | Owner-authorized Lifecycle Closure — 8/8 REQUIRED PASS, bất biến backtest bit-for-bit. `DEC-005` nghĩa rộng vẫn PENDING (không liên quan) |
+| `WP-C3` | **READY** (`DEC-036`, 2026-09-04) | Dependency WP-C2 DONE nay thoả; chưa mở/thực thi |
 | `WP-C4` | PLANNED | Sau WP-A3/A4/A6/A7 |
 
 Cả `T-09A` và `T-09B` đều **đã tồn tại trong roadmap từ RCP-001 (2026-08-23)**. Chúng không phải

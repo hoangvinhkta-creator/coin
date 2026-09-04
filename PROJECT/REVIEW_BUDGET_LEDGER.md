@@ -202,8 +202,8 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
 
     LINEAGE ROOT   = WP-C1 (docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md)
     THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (IMPLEMENTED — S014),
-                     WP-C2 (IMPLEMENTED — S024, 2026-09-04; trước đó READY tại `DEC-035`),
-                     WP-C3, WP-C4 (PLANNED)
+                     WP-C2 (DONE — DEC-036, Owner-authorized Lifecycle Closure, 2026-09-04),
+                     WP-C3 (READY — DEC-036), WP-C4 (PLANNED)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
     BRANCH         = main   (canonical trunk từ `DEC-013`)
@@ -538,3 +538,19 @@ route vào `PROJECT/HARDENING_BACKLOG.md` (`H-34`, `H-35`) kèm `RE_TRIGGER_COND
 
 `GOLDEN_BASELINE_SHA` vẫn `PENDING_OWNER_DATA / MIGRATION_REQUIRED` (`H-10` chưa đóng), nên
 budget tầng B vẫn chưa khai được — phiên này KHÔNG chọn một SHA tiện lợi để gọi là Golden.
+
+---
+
+## 9. Phiên Lifecycle Closure (2026-09-04, `DEC-036`) — budget KHÔNG đổi
+
+`WP-C2: IMPLEMENTED → DONE`, Owner-authorized. Phiên này **thuần state/docs** — không sửa một
+dòng production nào (`git diff --shortstat` trên bốn production path = rỗng cho lượt commit này).
+Do đó:
+
+    ALLOWED BUDGET            = 2 repair cycle     (không đổi)
+    CURRENT BUDGET USED       = 0 repair cycle     (không đổi)
+    CURRENT BUDGET REMAINING  = 2 repair cycle     (không đổi)
+
+Không rà soát độc lập (E2) nào được tiêu — Completion Gate của `WP-C2` không đòi E2; quyết định
+dựa trên báo cáo implementer đã có (`docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md`), không phải
+một vòng review mới. Chi tiết quyết định: `PROJECT/PROJECT_DECISIONS.md` `DEC-036`.
