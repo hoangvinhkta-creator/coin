@@ -2467,3 +2467,71 @@ nhận là quy ước triển khai" đã đóng qua #20/#21; phần "phê chuẩ
 **Không mở rộng phạm vi.** Quyết định này KHÔNG: đổi giá trị ngưỡng nào; sửa `gates.py` (H-26);
 authorize mang ngưỡng sang V2.2; chạy WP-B2/WP-B3; mở GATE-B; chạy T-07; rerun T-06. Không tạo
 task ID mới.
+
+---
+
+## DEC-034 — Owner-authorized Lifecycle Closure: `WP-B1: IN_PROGRESS → DONE` sau E2 vòng BA PASS
+
+Date:
+2026-09-04 (phiên Lifecycle Closure, nhánh `claude/wp-b1-verdict-correctness-j9d390`)
+
+Task:
+`WP-B1` / capability `CAP-VERDICT`. Đóng `CHECK-B1-09` (REQUIRED, E2) và đóng lifecycle toàn bộ
+gói `WP-B1`.
+
+Decision:
+
+    Chủ dự án chấp nhận kết quả fresh Independent E2 vòng BA
+    (`E2-WP-B1-004-FRESH-ROUND3-2026-09-04`,
+    `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`) làm completion evidence có thẩm
+    quyền cho `CHECK-B1-09`, và uỷ quyền tường minh cho phiên này:
+
+        1. canonical hoá CHECK-B1-09 = PASS;
+        2. canonical hoá WP-B1 REQUIRED = 10/10 PASS;
+        3. ghi nhận Completion Gate = PASS;
+        4. đóng lifecycle WP-B1 theo governance hiện có (`STATE_AUTHORITY.md`:
+           `DONE` = Owner, hoặc completion authority được chỉ định);
+        5. tích hợp artifact E2 PASS vào nhánh canonical WP-B1;
+        6. cập nhật MỨC TỐI THIỂU các file state/evidence canonical cần thiết.
+
+    Uỷ quyền này KHÔNG bao gồm: production repair mới; review mới; task mới; chạy WP-B2; rerun
+    T-06; replay lại Control F/G; V2.2; điều tra AE; merge `main`.
+
+Reason:
+Reviewer E2 vòng BA (độc lập với implementer VÀ với hai reviewer trước) review đúng HEAD
+`9ac01b8d3df19a68244b05f14a66f8a4ff9b90c0` (bounded repair #2 — cùng HEAD với nhánh canonical
+`claude/wp-b1-verdict-correctness-j9d390` tại thời điểm mở phiên đóng lifecycle). Xác minh độc
+lập: `E2-B1-F01`/`E2-B1-F02` ĐÓNG (tái lập 19/19 + 8/8 ca `_numeric_and_finite`, 57/57 ca FS-08
+theo vị trí, 8 tổ hợp officiality × 5 biểu diễn persist/report); CHECK-B1-01/02/03/04/07/08/10
+tái lập PASS độc lập; sibling fail-open search hẹp đúng biên verdict không tìm BLOCKING nào;
+full suite tự chạy 461/461 PASS. Artifact E2 review commit
+(`f3fb81eb7341b8a9521358245b30ece62f528a36`, nhánh
+`origin/claude/wp-b1-check-b1-09-e2-review-rzrrjx`) chỉ thêm ĐÚNG MỘT file
+(`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`, +265 dòng) trên đúng HEAD
+`9ac01b8`, xác nhận `git diff --stat 9ac01b8..f3fb81e -- src/ webapp/ pyproject.toml
+pyproject.lock` = rỗng — production diff do chính lượt E2 này gây ra = ZERO.
+
+Reviewer verdict là **advisory** (`ELIGIBLE_FOR_FREEZE`), không tự viết `FROZEN`/`DONE` —
+đúng `STATE_AUTHORITY.md`. Quyết định `DONE` ở đây là hành động của Owner (qua uỷ quyền tường
+minh cho phiên này), không phải reviewer tự cấp cho chính mình.
+
+Consequence:
+`CHECK-B1-09: NOT_TESTED → PASS`. `WP-B1 REQUIRED PASS count: 9/10 → 10/10`. `Completion Gate:
+KHÔNG THOẢ → PASS`. `WP-B1: IN_PROGRESS → DONE`. Lịch sử hai vòng E2 FAIL trước đó
+(`E2-WP-B1-002-FRESH`, `E2-WP-B1-003-FRESH-AFTER-REPAIR`) và hai repair batch giữ nguyên trong
+`docs/tasks/WP-B1-*.md` — KHÔNG viết lại để trông như pass ngay từ đầu.
+
+Review/repair budget (`CAP-VERDICT`, lineage root `WP-A5`/`WP-B1`): 0 repair cycle mới tiêu bởi
+phiên này (production diff = 0). Toàn bộ lịch sử sửa của `WP-B1` (F-017, hai repair batch
+E2-B1-F01/F02) vẫn được tính là **implementation ban đầu** theo quy ước đã dùng xuyên suốt
+`REVIEW_BUDGET_LEDGER.md` — task chưa từng DONE trước phiên này nên chưa có repair cycle chính
+thức nào được mở/tiêu.
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: sửa production code nào; mở WP-B2; mở WP-B3;
+mở GATE-B (vẫn đóng — `WP-B2` READY, `WP-B3` BLOCKED bởi `WP-C2`); chạy T-07; rerun T-06; replay
+Control F/G; đổi threshold/strategy; diễn giải lại `WP-B1 PASS` thành `V2.1.5 chứng minh được
+investment edge` (verdict lịch sử T-06 `DO_NOT_BUILD`/`can_proceed_to_app=false` giữ nguyên
+KHÔNG đổi); merge `main`; xoá branch; dọn dẹp git. Hai quan sát HARDENING bổ sung từ E2 vòng BA
+(`H-27` đề xuất; `aggregate_over_windows` không lọc `±inf`) ghi nhận là HARDENING-only, không
+tạo task ID mới, không chặn DONE (`GOVERNANCE_V4.md` convergence — Completion Gate PASS + không
+BLOCKING + Owner đã uỷ quyền đóng).

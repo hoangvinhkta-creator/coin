@@ -2,12 +2,19 @@
 
 ## Metadata
 Status:
-IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
-(mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
-(2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
+**DONE — đóng lifecycle tại phiên Lifecycle Closure (2026-09-04), theo uỷ quyền tường minh của
+chủ dự án, sau khi fresh Independent E2 vòng BA (`E2-WP-B1-004-FRESH-ROUND3-2026-09-04`,
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`) xác nhận độc lập `CHECK-B1-09 = PASS`
+trên đúng HEAD `9ac01b8d3df19a68244b05f14a66f8a4ff9b90c0`.** **10/10 REQUIRED PASS**
+(CHECK-B1-01…10). Completion Gate = PASS. Không còn BLOCKING nào mở.
+
+Lịch sử đầy đủ trước khi đóng (giữ nguyên, KHÔNG viết lại để trông như pass ngay từ đầu) —
+mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ (mục còn `[ ]`
+duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031` (2026-09-03):
+dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
 **Kết quả phiên IN_PROGRESS (cập nhật sau HAI vòng fresh Independent E2 liên tiếp +
-hai repair batch):** **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03, 04, 05, 06, 07, 08, 10).
-**1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09.
+hai repair batch):** trước phiên đóng lifecycle, **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03,
+04, 05, 06, 07, 08, 10). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09.
 
 Vòng E2 thứ nhất (`E2-WP-B1-002-FRESH-2026-09-04`) tìm ra `E2-B1-F01` (FS-08 fail-open khi thiếu
 đúng một control) và `E2-B1-F02` (officiality không chặn `can_proceed_to_app`) — sửa trong repair
@@ -21,12 +28,13 @@ lọt `±inf`; `E2-B1-F02` — repair lần một chỉ ép `can_proceed_to_app=
 `isinstance(numbers.Real)` + loại `bool` tường minh + `math.isfinite()`; `run_verdict` hạ
 **verdict** về `INCONCLUSIVE` (không chỉ progression flag) khi non-official.
 
-CHECK-B1-01/07 phục hồi `PASS` cả hai lần. CHECK-B1-09 vẫn `NOT_TESTED`/FAIL — **CHƯA chạy lại E2
-mới trong phiên này**, cần một phiên độc lập khác (lần thứ ba). Xem
+CHECK-B1-01/07 phục hồi `PASS` cả hai lần. CHECK-B1-09 vẫn `NOT_TESTED`/FAIL sau hai vòng đó —
+**chưa chạy lại E2 mới**, cần một phiên độc lập khác (lần thứ ba). Xem
 `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md`,
-`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md` (hai artifact E2 gốc) và
-`docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` (addendum repair). WP-B1 **CHƯA
-DONE**.
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md` (hai artifact E2 gốc thất bại),
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md` (artifact E2 vòng BA — PASS, đóng
+lifecycle) và `docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` (addendum repair +
+addendum đóng lifecycle). **WP-B1 = DONE.**
 
 Phase:
 Phase 4 — Lớp B: bắt buộc sửa trước verdict
@@ -1069,7 +1077,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS — Independent E2 vòng BA (fresh round 3)
 
 Evidence Level:
 E2
@@ -1080,17 +1088,37 @@ CHECK-B1-01, CHECK-B1-02 và CHECK-B1-07, coi mọi tuyên bố PASS của ngư�
 tin được. Reviewer phải tự trả lời câu hỏi: *có đường nào để một verdict BUILD lọt qua khi bằng
 chứng chưa đủ không?* Lưu tại `docs/reviews/`.
 
-**Ghi nhận (phiên WP-B1 IN_PROGRESS hiện tại):** check này đòi một phiên reviewer ĐỘC LẬP — cùng
-một agent/phiên vừa cài đặt (CHECK-B1-02/03/05/06/07 ở trên) không thể tự cấp E2 cho chính mình
-(đó chính xác là điều check này tồn tại để ngăn). Giữ **`NOT_TESTED`**, không tự nhận PASS. Cần
-một phiên riêng (`docs/reviews/E2-WP-B1-*.md`), do reviewer chưa đọc kết luận implementer trước
-khi tự tái lập, đúng "Solo Independent Review Procedure" đã áp dụng cho `WP-A1`/`WP-A6`.
+**Lịch sử (giữ nguyên, không xoá):** phiên WP-B1 IN_PROGRESS ban đầu giữ check này `NOT_TESTED`
+vì cùng agent/phiên vừa cài đặt không thể tự cấp E2 cho chính mình. Vòng E2 thứ nhất
+(`E2-WP-B1-002-FRESH-2026-09-04`, `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md`) FAIL, tìm ra
+`E2-B1-F01`/`E2-B1-F02` — repair batch 1. Vòng E2 thứ hai
+(`E2-WP-B1-003-FRESH-AFTER-REPAIR-2026-09-04`,
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md`) FAIL lại trên chính bản sửa đó
+(±inf lọt qua, nhãn `verdict` không hạ) — repair batch 2.
+
+**Kết quả cuối (2026-09-04) — PASS:** vòng E2 độc lập thứ BA
+(`E2-WP-B1-004-FRESH-ROUND3-2026-09-04`,
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`), reviewer mới, độc lập với implementer
+VÀ với hai reviewer trước, review đúng HEAD `9ac01b8d3df19a68244b05f14a66f8a4ff9b90c0` (bounded
+repair #2). Tái lập độc lập toàn bộ CHECK-B1-01/02/03/04/07/08/09/10, cả hai finding lịch sử
+`E2-B1-F01`/`E2-B1-F02` xác nhận ĐÓNG, sibling fail-open search hẹp đúng biên verdict không tìm
+thấy BLOCKING nào, production reachability xác nhận không có đường nào leak `BUILD` khi bằng
+chứng chưa đủ/invalid/non-official. Full suite tự chạy độc lập: 461/461 PASS, `EXIT=0`. Kết luận
+frozen question ("có đường nào để BUILD lọt qua khi bằng chứng chưa đủ?"): **KHÔNG**.
+`H-27` (đề xuất, HARDENING) và phần mở rộng của `H-26` (`aggregate_over_windows` không lọc
+`±inf`) được ghi nhận là HARDENING, không BLOCKING — không chặn PASS của check này.
+
+Reviewer verdict là **advisory** (`ELIGIBLE_FOR_FREEZE`); reviewer không tự viết `DONE`. Chủ dự
+án đã tường minh chấp nhận kết quả E2 vòng BA làm completion evidence và uỷ quyền canonicalize
+`CHECK-B1-09 = PASS` tại phiên Lifecycle Closure (2026-09-04) — xem `PROJECT/PROJECT_DECISIONS.md`
+`DEC-034`.
 
 Executed By:
-(chưa — cần phiên độc lập riêng)
+Fresh Independent E2 Reviewer (Opus, effort High), phiên E2 vòng BA — canonicalize tại phiên
+Lifecycle Closure (Sonnet 5), theo uỷ quyền chủ dự án.
 
 Timestamp:
-...
+2026-09-04
 
 ### Regression
 
@@ -1140,12 +1168,12 @@ Timestamp:
 2026-09-03
 
 ## Exit Criteria
-- [ ] 100% REQUIRED checks PASS — **9/10 PASS** (01,02,03,04,05,06,07,08,10); `NOT_TESTED`/FAIL:
-      CHECK-B1-09 (fresh Independent E2 tái lập E2-B1-F01/F02, đã sửa xong, CHƯA chạy lại E2 mới)
-      — check REQUIRED duy nhất còn lại
-- [ ] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 9 check PASS
-      (gồm CHECK-B1-01/07 phục hồi bằng repair E2-B1-F01/F02 + 21 regression test mới); E2 của
-      CHECK-B1-09 CHƯA chạy lại
+- [x] 100% REQUIRED checks PASS — **10/10 PASS** (01,02,03,04,05,06,07,08,09,10). `CHECK-B1-09`
+      đóng bằng fresh Independent E2 vòng BA (`E2-WP-B1-004-FRESH-ROUND3-2026-09-04`, PASS),
+      canonical hoá tại phiên Lifecycle Closure theo uỷ quyền chủ dự án (`DEC-034`).
+- [x] Mức evidence yêu cầu được thoả (E1 toàn bộ; E2 cho CHECK-B1-09) — E1 đạt cho 9 check PASS
+      (gồm CHECK-B1-01/07 phục hồi bằng repair E2-B1-F01/F02 + 21+49 regression test mới); E2 của
+      CHECK-B1-09 đạt tại vòng BA — xem `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`
 - [x] **DEC-009 được chứng minh, không chỉ được nhắc tới** — CHECK-B1-02, kết luận KHÔNG, bằng
       chứng đường mã kiểm lại được độc lập
 - [x] Mọi quy ước ảnh hưởng verdict đều truy được về `docs/CONVENTIONS.md` — #20(d) (WP-A5) +

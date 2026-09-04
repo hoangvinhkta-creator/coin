@@ -611,3 +611,58 @@ MỚI (vòng 3, khác cả hai reviewer trước và implementer).
 `CHECK-B1-07`: bắt một stopping rule bị nới ở chi tiết kỹ thuật (dù ý định đúng cả hai lần),
 buộc sửa tới khi không còn đường lọt nào tái lập được. Việc còn lại DUY NHẤT: một phiên
 Independent E2 MỚI (vòng 3) cho `CHECK-B1-09`. Không đề xuất DONE.
+
+---
+
+## Addendum — Lifecycle Closure (2026-09-04, phiên riêng, nhánh giữ nguyên)
+
+Phiên riêng biệt (Sonnet 5), sau khi hai addendum repair trên đóng trên chính nhánh này. Nhiệm
+vụ DUY NHẤT: canonical hoá kết quả fresh Independent E2 vòng BA và đóng lifecycle `WP-B1`, theo
+uỷ quyền tường minh của chủ dự án.
+
+**Nguồn:**
+- Nhánh implementation canonical: `origin/claude/wp-b1-verdict-correctness-j9d390`, HEAD xác
+  nhận = `9ac01b8d3df19a68244b05f14a66f8a4ff9b90c0` (khớp SHA kỳ vọng).
+- Nhánh E2 độc lập: `origin/claude/wp-b1-check-b1-09-e2-review-rzrrjx`, HEAD =
+  `f3fb81eb7341b8a9521358245b30ece62f528a36`, commit CHỈ thêm đúng một file
+  (`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`, +265) trên đúng HEAD `9ac01b8` —
+  `git diff --stat 9ac01b8..f3fb81e -- src/ webapp/ pyproject.toml pyproject.lock` rỗng.
+
+**Tích hợp:** fast-forward merge (`git merge --ff-only`) artifact E2 vào nhánh canonical —
+history-preserving, không tạo merge commit không cần thiết vì đã là fast-forward tự nhiên.
+
+**Cập nhật state (chỉ các file evidence/state tối thiểu cần thiết):**
+- `docs/tasks/WP-B1-chinh-sach-verdict-va-stopping-rule.md` — `CHECK-B1-09: NOT_TESTED → PASS`;
+  Exit Criteria 10/10; Status metadata → DONE (lịch sử giữ nguyên, không viết lại).
+- `PROJECT/PROJECT_DECISIONS.md` — `DEC-034` (Owner authorization đóng lifecycle).
+- `PROJECT/PROJECT_PROGRESS.md` — entry Last Updated mới + hàng roadmap `WP-B1: IN_PROGRESS →
+  DONE`.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` — ghi nhận đóng lifecycle tại hàng `CAP-VERDICT`, 0 repair
+  cycle mới tiêu.
+- `PROJECT/LO_TRINH_DE_HIEU.md` — regenerate bằng `sync_easy_roadmap.py` (không sửa tay).
+
+**Validators chạy (production code không đổi nên KHÔNG chạy lại full 461-test suite — dùng lại
+evidence E2 vòng BA):**
+- `branch_authority_check.sh --expect-branch claude/wp-b1-verdict-correctness-j9d390` → PASS,
+  production diff = EMPTY.
+- `validate_routing.py` → PASS.
+- `sync_easy_roadmap.py` → PASS.
+- `validate_easy_roadmap.py` → PASS.
+- `validate_structure.py` → PASS.
+- `validate_governance.py` → GOVERNANCE V4.3: PASS.
+- `validate_project_state.py` → PASS.
+
+**Production diff của toàn bộ phiên đóng lifecycle: ZERO** (`src/`, `webapp/`,
+`pyproject.toml`, `pyproject.lock` không đổi một dòng nào).
+
+**Kết quả:** `WP-B1: IN_PROGRESS → DONE`. `CHECK-B1-09 = PASS`. `WP-B1 REQUIRED = 10/10 PASS`.
+Completion Gate = PASS. Không BLOCKING còn lại. Hai quan sát HARDENING (`H-27` đề xuất,
+`aggregate_over_windows ±inf`) ghi nhận, không chặn đóng, không tạo task mới.
+
+**Downstream KHÔNG tự mở:** `WP-B2` giữ `READY`; `WP-B3` giữ `BLOCKED` (dependency `WP-C2` chưa
+`DONE`); `GATE-B` (đòi cả ba gói B `DONE`) VẪN CHƯA MỞ; `T-07` vẫn `NOT READY`; `T-11` vẫn
+`BLOCKED`. Không chạy WP-B2/WP-B3. Không mở GATE-B/T-07. Không rerun T-06. Không replay Control
+F/G. Không đổi threshold/strategy. Không merge `main`. Không xoá/dọn branch.
+
+Chi tiết đầy đủ: `PROJECT/PROJECT_DECISIONS.md` `DEC-034`,
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`.
