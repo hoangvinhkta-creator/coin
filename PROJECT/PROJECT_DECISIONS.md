@@ -2535,3 +2535,77 @@ KHÔNG đổi); merge `main`; xoá branch; dọn dẹp git. Hai quan sát HARDEN
 (`H-27` đề xuất; `aggregate_over_windows` không lọc `±inf`) ghi nhận là HARDENING-only, không
 tạo task ID mới, không chặn DONE (`GOVERNANCE_V4.md` convergence — Completion Gate PASS + không
 BLOCKING + Owner đã uỷ quyền đóng).
+
+---
+
+## DEC-035 — PENDING: Phân xử phạm vi hẹp cho Ready Gate của `WP-C2` (không đợi toàn bộ `DEC-005`)
+
+Date:
+2026-09-04 (phiên WP-C2 Scope ADR / DEC-005 Resolution, nhánh
+`claude/wp-c2-scope-adr-dec005-8o6fvr`)
+
+Task:
+Không thuộc task nào — phiên chuẩn bị quyết định phạm vi cho Ready Gate của `WP-C2`
+(`docs/tasks/WP-C2-execution-state-machine.md`), theo chỉ thị phiên "WP-C2 Scope ADR / DEC-005
+Resolution". Báo cáo đầy đủ:
+`docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md`.
+
+Vấn đề:
+`WP-C2` là `BLOCKED` vì hai dòng chưa `[x]` trong Ready Gate của chính nó: (1) "DEC-005 đã được
+chủ dự án quyết định tại T-05" và (2) "ADR phạm vi Execution State tồn tại và được chủ dự án
+chấp nhận". `DEC-005` (PENDING từ S000) là câu hỏi **phạm vi webapp/dashboard được phép xây
+trước verdict** (PA-1 đóng băng / PA-2 tách hai lớp / PA-3 mở V2.2) — một quyết định sản phẩm
+rộng, hiện cũng đang chặn `T-08`.
+
+Nhưng phạm vi ĐÃ ĐÓNG BĂNG của `WP-C2` (Scope: `docs/adr/`, `src/eth_dca_os/engine.py` phần đặt
+tên, `tests/`, `docs/CONVENTIONS.md`; "Do not touch without Scope Expansion" liệt kê tường minh
+`webapp/`) không chạm một dòng `webapp/` nào — gói này chỉ đặt tên hành vi đã có trong backtest
+engine, không xây dashboard, không xây tầng tự động hoá thực thi, không đổi kết quả backtest
+(`CHECK-C2-06`). `HARDENING_BACKLOG.md` H-20 xác nhận độc lập: nó liệt kê "`WP-C2` biến app từ
+GHI NHẬN sang ĐẶT LỆNH" như một `RE_TRIGGER_CONDITION` **giả định cho tương lai**, không phải mô
+tả phạm vi hiện tại của gói. Vì vậy `WP-C2`, đúng như đã đóng băng, không thể vi phạm bất kỳ
+phương án nào trong PA-1/PA-2/PA-3 — nó nằm bên trong ranh giới "ghi chép/backtest" ở cả ba
+phương án.
+
+Các phương án (phân tích đầy đủ tại báo cáo §8):
+
+- **PA-A (khuyến nghị) — Phân xử hẹp chỉ cho `WP-C2`:** chủ dự án xác nhận tường minh rằng vì
+  phạm vi đã đóng băng của `WP-C2` không chạm `webapp/` và không xây tầng tự động hoá, dòng Ready
+  Gate (1) của `WP-C2` được coi là thoả — **không cần đợi `DEC-005` được chốt theo nghĩa rộng**.
+  `DEC-005` bản thân **vẫn PENDING**, vẫn tiếp tục chặn `T-08`. Đây là quyết định nhỏ nhất, không
+  tạo tiền lệ kiến trúc nào, không khoá webapp vào bất kỳ phương án PA-1/2/3 nào trước hạn.
+- **PA-B — Chốt toàn bộ `DEC-005` ngay bây giờ** (ví dụ phê duyệt PA-2 — tách hai lớp — vốn đã là
+  khuyến nghị sơ bộ ban đầu và trên thực tế đã là mô hình vận hành từ `T-09A`/`T-09B`/`DEC-021`):
+  đóng luôn `DEC-005`, mở cả `WP-C2` LẪN `T-08`. Lớn hơn PA-A, không bắt buộc để mở `WP-C2`.
+- **PA-C — Không làm gì:** giữ `WP-C2` `BLOCKED`. Không khuyến nghị — không có lý do kỹ thuật mới
+  nào để tiếp tục chặn một gói không chạm `webapp/`.
+
+Ràng buộc đi kèm bất kể chọn phương án nào: dòng Ready Gate (2) của `WP-C2` — ADR phạm vi
+Execution State — cần được chấp nhận riêng. Đề xuất đã soạn sẵn tại
+`docs/adr/ADR-001-wp-c2-execution-state-scope.md` (Status: Proposed): `FUNDING_REQUIRED` =
+`NOT_APPLICABLE` ở tầng backtest (không mô hình hoá treasury USDT động — giữ nguyên quy ước đã
+canonical tại `docs/CONVENTIONS.md` #8 và đã được chính official run `T-06` sử dụng); năm trạng
+thái còn lại thuộc phạm vi đặt tên của `WP-C2`.
+
+Required decision:
+Chủ dự án chọn PA-A hoặc PA-B, **và** xác nhận chấp nhận `ADR-001`. Cho tới lúc đó `WP-C2` vẫn
+`BLOCKED`.
+
+Reason chưa chốt trong phiên này:
+Đây là quyết định phạm vi sản phẩm/kiến trúc thuộc thẩm quyền chủ dự án
+(`STATE_AUTHORITY.md` — Owner-only; xem thêm lý do gốc tại `DEC-005`). Phiên này được uỷ quyền
+điều tra, tái dựng thẩm quyền canonical, soạn ADR và soạn quyết định đề xuất — KHÔNG được uỷ
+quyền tự quyết thay chủ dự án một quyết định kiến trúc/sản phẩm thực chất.
+
+Impact (nếu PA-A được chấp thuận cùng `ADR-001`):
+- `WP-C2` Ready Gate: cả hai dòng còn `[ ]` chuyển `[x]`. `WP-C2: BLOCKED → READY`.
+- `DEC-005` giữ nguyên `PENDING`, tiếp tục chặn `T-08`. Không tự động mở webapp cho bất kỳ tính
+  năng nào ngoài phạm vi đã đóng băng của `WP-C2`.
+- `WP-B3` KHÔNG tự động đổi trạng thái (vẫn `BLOCKED` cho tới khi `WP-C2` thật sự `DONE`, không
+  chỉ `READY`). `GATE-B`, `T-07`, `T-11` không đổi ở phiên này.
+- Không có task ID mới, không tiêu review/repair budget nào (phiên này production diff = 0).
+
+Can Revisit After:
+Khi chủ dự án ra quyết định PA-A/PA-B và xác nhận `ADR-001`.
+
+---

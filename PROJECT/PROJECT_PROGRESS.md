@@ -25,7 +25,30 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-04 — **LIFECYCLE CLOSURE: `WP-B1: IN_PROGRESS → DONE`** (`DEC-034`, phiên Lifecycle
+2026-09-04 — **WP-C2 SCOPE ADR / DEC-005 RESOLUTION (phiên chuẩn bị quyết định, nhánh
+`claude/wp-c2-scope-adr-dec005-8o6fvr`) — KHÔNG có quyết định nào được chốt, chỉ chuẩn bị.**
+Phiên tái dựng canonical blocker của `WP-C2` (BLOCKED, hai dòng Ready Gate chưa `[x]`: (1)
+`DEC-005` chưa chốt tại `T-05`, (2) ADR phạm vi Execution State chưa tồn tại), xác nhận lại
+`DEC-030` (`T-05` chỉ chặn `T-08` và `WP-C2`, không nằm trên đường găng tới `T-06`/verdict).
+Kết luận: phạm vi ĐÃ ĐÓNG BĂNG của `WP-C2` không chạm `webapp/` và không xây tầng tự động hoá,
+nên dòng Ready Gate (1) có thể được phân xử bằng một quyết định HẸP hơn toàn bộ `DEC-005`
+(webapp scope PA-1/2/3) — ghi đề xuất tại `DEC-035` (PENDING), kèm bản soạn
+`docs/adr/ADR-001-wp-c2-execution-state-scope.md` (Status: Proposed — `FUNDING_REQUIRED` =
+`NOT_APPLICABLE` ở tầng backtest, khớp quy ước đã canonical `docs/CONVENTIONS.md` #8) cho dòng
+Ready Gate (2). Báo cáo đầy đủ (bằng chứng, phương án, khuyến nghị, hợp đồng phiên thực thi
+tương lai của `WP-C2`, đường găng sau quyết định):
+`docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md`.
+
+**`OWNER_DECISION_REQUIRED`** — chưa có quyết định nào được Owner phê chuẩn. `WP-C2` **VẪN
+BLOCKED**. `DEC-005` **VẪN PENDING**, tiếp tục chặn `T-08`. Không đổi trạng thái bất kỳ task nào
+khác (`WP-B1` DONE, `WP-B2` READY, `WP-B3` BLOCKED, `GATE-B` CHƯA MỞ, `T-07` NOT READY, `T-11`
+BLOCKED — tất cả giữ nguyên). Production diff phiên này = **ZERO** (chỉ `docs/adr/`,
+`PROJECT/PROJECT_DECISIONS.md`, `PROJECT/PROJECT_PROGRESS.md`,
+`docs/reviews/WP-C2-SCOPE-ADR-DEC005-REPORT.md`). Không implement `WP-C2`. Không chạy
+WP-B2/WP-B3, không mở GATE-B/T-07, không rerun T-06, không đổi threshold/strategy, không merge
+`main`.
+
+Trước đó, 2026-09-04 — **LIFECYCLE CLOSURE: `WP-B1: IN_PROGRESS → DONE`** (`DEC-034`, phiên Lifecycle
 Closure, nhánh `claude/wp-b1-verdict-correctness-j9d390`). Chủ dự án uỷ quyền tường minh chấp
 nhận fresh Independent E2 vòng BA (`E2-WP-B1-004-FRESH-ROUND3-2026-09-04`,
 `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-round3-pass.md`) làm completion evidence: reviewer mới,
