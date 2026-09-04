@@ -5,15 +5,26 @@ Status:
 IN_PROGRESS — mở tại phiên hiện tại (2026-09-03), sau khi Ready Gate được xác nhận lại đầy đủ
 (mục còn `[ ]` duy nhất nay `[x]`, xem Ready Gate bên dưới). READY trước đó tại `DEC-031`
 (2026-09-03): dependency `T-06 DONE` và `WP-A5 DONE` đều thoả.
-**Kết quả phiên IN_PROGRESS (cập nhật sau fresh Independent E2 `E2-WP-B1-002-FRESH-2026-09-04` +
-repair batch E2-B1-F01/F02):** **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03, 04, 05, 06, 07, 08,
-10). **1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09 — fresh Independent E2 tái lập được 2 BLOCKING
-finding mới (`E2-B1-F01`: FS-08 fail-open khi thiếu đúng một control; `E2-B1-F02`: officiality
-không chặn `can_proceed_to_app`), khiến CHECK-B1-01/07/09 tạm FAIL. Cả hai finding ĐÃ ĐƯỢC SỬA
-(`failure_signals.py`, `pipeline.py`) trong cùng một repair batch, có regression test mới (21
-test, `tests/test_wp_b1_e2_fresh_fail_repair.py`), CHECK-B1-01/07 phục hồi `PASS`. CHECK-B1-09
-vẫn `NOT_TESTED`/FAIL — **CHƯA chạy lại E2 mới trong phiên này**, cần một phiên độc lập khác. Xem
-`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md` (artifact E2 gốc) và
+**Kết quả phiên IN_PROGRESS (cập nhật sau HAI vòng fresh Independent E2 liên tiếp +
+hai repair batch):** **9/10 REQUIRED PASS** (CHECK-B1-01, 02, 03, 04, 05, 06, 07, 08, 10).
+**1/10 `NOT_TESTED`/FAIL**: CHECK-B1-09.
+
+Vòng E2 thứ nhất (`E2-WP-B1-002-FRESH-2026-09-04`) tìm ra `E2-B1-F01` (FS-08 fail-open khi thiếu
+đúng một control) và `E2-B1-F02` (officiality không chặn `can_proceed_to_app`) — sửa trong repair
+batch 1, thêm 21 test (`tests/test_wp_b1_e2_fresh_fail_repair.py`).
+
+Vòng E2 thứ hai (`E2-WP-B1-003-FRESH-AFTER-REPAIR-2026-09-04`), review đúng trên bản sửa đó, tìm
+ra CẢ HAI finding CHƯA đóng hết: `E2-B1-F01` — `_numeric_and_finite()` lần một chỉ loại NaN, để
+lọt `±inf`; `E2-B1-F02` — repair lần một chỉ ép `can_proceed_to_app=False`, để nguyên nhãn
+`verdict="BUILD"` (kể cả trong bản ghi đã persist). Sửa trong repair batch 2, thêm 49 test
+(`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`): `_numeric_and_finite()` viết lại bằng
+`isinstance(numbers.Real)` + loại `bool` tường minh + `math.isfinite()`; `run_verdict` hạ
+**verdict** về `INCONCLUSIVE` (không chỉ progression flag) khi non-official.
+
+CHECK-B1-01/07 phục hồi `PASS` cả hai lần. CHECK-B1-09 vẫn `NOT_TESTED`/FAIL — **CHƯA chạy lại E2
+mới trong phiên này**, cần một phiên độc lập khác (lần thứ ba). Xem
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md`,
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md` (hai artifact E2 gốc) và
 `docs/sessions/S023-wp-b1-verdict-correctness-in-progress.md` (addendum repair). WP-B1 **CHƯA
 DONE**.
 
@@ -348,6 +359,44 @@ cho MỌI signal, không riêng 12 vector cũ).
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — chấp nhận fresh E2 finding, sửa
 `failure_signals.py`, thêm regression test
+
+Timestamp:
+2026-09-04
+
+**Addendum 3 — E2-B1-F01 CHƯA ĐÓNG THẬT: Independent E2 thứ hai (`E2-WP-B1-003-FRESH-
+AFTER-REPAIR-2026-09-04`) FAIL trên chính bản sửa Addendum 2, repair lần hai, phục hồi PASS:**
+
+Reviewer chỉ ra `_numeric_and_finite()` (Addendum 2) chỉ loại `None`/NaN
+(`not math.isnan(float(x))`), nhưng `math.isnan(inf)` là `False` — nên `+inf`/`-inf` vẫn được
+chấp nhận là "finite" và tạo `beats_*` giả (một P95 = `-inf` khiến `v2_eth` "thắng" vô điều
+kiện). Chấp nhận finding, không tranh cãi — tái lập độc lập trước khi sửa:
+`evaluate_failure_signals(v2_eth=10.0, random_timing_p95=float("-inf"),
+random_anchor_p95=9.5)` → `FS-08=False` (đúng như reviewer mô tả), dẫn tới `verdict=BUILD`,
+`can_proceed_to_app=True` qua `decide_verdict`.
+
+**Repair (E2-B1-F01 lần hai, cùng phê duyệt với E2-B1-F02 lần hai — xem CHECK-B1-07):**
+`_numeric_and_finite()` viết lại triệt để: loại `None`; loại tường minh `bool`/`numpy.bool_`
+(`isinstance(x, bool)` bắt Python `bool`; `numpy.bool_` không phải instance của `numbers.Real`
+nên tự động bị loại, không cần nhánh riêng); kiểm `isinstance(x, numbers.Real)` TRƯỚC khi ép
+kiểu (loại chuỗi/object không phải số mà không cần dựa vào exception); cuối cùng dùng
+`math.isfinite(float(x))` — hàm ĐÚNG loại cả NaN LẪN hai vô cực, khác `isnan` chỉ loại NaN.
+Không đổi chiều so sánh, không đổi ngưỡng nào, `decide_verdict()` không bị chạm.
+
+Test mới (`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`, 49 test — gộp cả phần F02 lần hai bên
+dưới): ma trận đầy đủ cho `_numeric_and_finite()` (số thường + `numpy.float64`/`numpy.int64`
+hợp lệ; `None`/NaN/`+inf`/`-inf` cả dạng Python lẫn `numpy.float64`/`bool`/`numpy.bool_`/chuỗi
+số/chuỗi bất kỳ/object đều bị loại), ma trận FS-08 cho từng vị trí input (v2_eth/F/G) ×
+None/NaN/`+inf`/`-inf`/chuỗi/object/bool, end-to-end qua `decide_verdict` cho đúng
+counterexample `-inf` của reviewer, và một test khoá lại nguyên giá trị post-F-017 replay của
+Owner (complete finite input) để chứng minh repair này KHÔNG chạm formula hợp lệ.
+
+`Status: PASS` (phục hồi từ `FAIL` do fresh E2 lần hai) — cả hai vòng E2 liên tiếp tìm ra một
+lỗ hở thật trong CÙNG cơ chế fail-closed; cả hai đều được chấp nhận, sửa, và khoá lại bằng
+regression test, không phải bị bỏ qua hay tranh cãi.
+
+Executed By:
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại) — chấp nhận fresh E2 lần hai, viết lại
+`_numeric_and_finite()`, thêm regression test
 
 Timestamp:
 2026-09-04
@@ -745,8 +794,8 @@ Priority:
 REQUIRED
 
 Status:
-PASS (phục hồi từ `FAIL` sau fresh Independent E2 + repair E2-B1-F01/F02 — xem Addendum 4 cuối
-check)
+PASS (phục hồi từ `FAIL` sau fresh Independent E2 LẦN HAI + repair E2-B1-F01/F02 lần hai — xem
+Addendum 5 cuối check)
 
 Evidence Level:
 E1
@@ -854,6 +903,54 @@ chặn đúng, không để payload lọt ra ngoài).
 
 `Status: FAIL → PASS`. Phạm vi vẫn hẹp đúng như Addendum 2/3 đã cam kết: năm gạch đầu dòng còn
 lại (đã liệt kê ở Addendum 2) không bị viết lại, không phụ thuộc lần sửa này.
+
+Executed By:
+Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
+
+Timestamp:
+2026-09-04
+
+**Addendum 5 — Fresh Independent E2 LẦN HAI (`E2-WP-B1-003-FRESH-AFTER-REPAIR-2026-09-04`)
+FAIL trên chính bản sửa Addendum 4, repair lần hai, phục hồi `PASS`:** cùng một câu hỏi
+("có đường nào để `verdict=BUILD` lọt qua khi evidence chưa đủ?"), reviewer tìm ra HAI đường
+còn hở TRONG CHÍNH CƠ CHẾ vừa sửa ở Addendum 4 — không phải hai finding mới, mà là bản sửa lần
+một CHƯA ĐÓNG HẾT:
+
+1. **E2-B1-F01 (còn hở):** `_numeric_and_finite()` (Addendum 4) chỉ loại `None`/NaN, để lọt
+   `+inf`/`-inf` — một P95 vô hạn vẫn tạo `beats_*` giả. Vi phạm CÙNG gạch đầu dòng "`UNKNOWN`
+   không được coi là PASS ở bất kỳ đâu" theo một biến thể khác của cùng lỗ hổng.
+2. **E2-B1-F02 (còn hở):** repair lần một chỉ ép `can_proceed_to_app=False` khi non-official,
+   nhưng ĐỂ NGUYÊN `v["verdict"]="BUILD"` — cả trong giá trị trả về LẪN bản ghi persist
+   (`backtest_runs.jsonl`, `*_metrics.json`). Frozen Objective đòi rõ: evidence non-official
+   không được cho ra **verdict=BUILD** (không chỉ progression flag).
+
+Chấp nhận nguyên vẹn cả hai, không tranh cãi — đây đúng là loại "sibling fail-open path tại
+cùng verdict boundary" mà brief phiên này yêu cầu tìm, không phải mở rộng phạm vi.
+
+**Repair lần hai (một batch, cùng phạm vi CAP-VERDICT/WP-B1, hai file y hệt lần một):**
+- `failure_signals.py::_numeric_and_finite()`: viết lại dùng `isinstance(x, numbers.Real)` +
+  loại tường minh `bool` + `math.isfinite()` (loại cả NaN lẫn `±inf`). Xem chi tiết CHECK-B1-01
+  Addendum 3.
+- `pipeline.py::run_verdict`: khi `not official and v["verdict"] == "BUILD"`, hạ **verdict**
+  về `"INCONCLUSIVE"` (tái dùng đúng một trong bốn nhãn verdict đã có, không phát minh trạng
+  thái thứ năm) VÀ ép `can_proceed_to_app=False`. Vì `can_proceed_to_app` chỉ có thể `True` khi
+  `verdict=="BUILD"` (hợp đồng `decide_verdict`), các nhánh verdict khác không cần chạm.
+  `decide_verdict()` không đổi cho evidence official.
+
+Test mới (`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`, 49 test): ma trận đầy đủ cho
+`_numeric_and_finite` (số hợp lệ kể cả `numpy.float64`/`numpy.int64`; loại `None`/NaN/`±inf`
+dạng Python lẫn `numpy.float64`/`bool`/`numpy.bool_`/chuỗi/object), ma trận FS-08 cho từng vị
+trí input × mọi giá trị invalid, end-to-end đúng counterexample `-inf` của reviewer, ma trận
+officiality B-G (từng nguồn/nhiều nguồn/tất cả false) khẳng định CẢ `verdict != "BUILD"` LẪN
+`can_proceed_to_app=False` — kiểm cả trên payload trả về VÀ trên bản ghi `backtest_runs.jsonl`
+đã persist (đúng điểm reviewer chỉ ra: label từng lọt vào bản ghi lưu trên đĩa), case toàn bộ
+official giữ nguyên `verdict=BUILD`/`can_proceed_to_app=True` (không làm BUILD biến mất khỏi hệ
+thống), và unresolved provenance vẫn fail-loud như cũ.
+
+`Status: FAIL → PASS`. Hai vòng E2 liên tiếp cùng đóng vai trò làm ĐÚNG chức năng CHECK-B1-07:
+bắt được stopping rule bị nới ở một chi tiết kỹ thuật (dù ý định đúng), buộc sửa tới khi không
+còn đường lọt nào tái lập được. Năm gạch đầu dòng khác của CHECK-B1-07 (đã liệt kê Addendum 2)
+tiếp tục không bị ảnh hưởng.
 
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
@@ -1023,11 +1120,18 @@ khớp chữ ký hàm mới (`test_random_controls_reproducible` trong `test_ben
 trong `test_e2e.py`) và THÊM test mới (không bớt assertion nào của hai test được sửa — số lượng
 assertion tăng, phạm vi kiểm không giảm).
 
-**Kết quả (lần chạy thứ hai, sau repair batch E2-B1-F01/F02, cùng phiên tiếp nối 2026-09-04):
+**Kết quả (lần chạy thứ hai, sau repair batch 1 E2-B1-F01/F02, cùng phiên tiếp nối 2026-09-04):
 412 tests collected, 412 PASS, 0 FAIL, 0 ERROR, 0 SKIP, 0 XFAIL. `EXIT=0`.** Khớp đúng số học:
 391 + 21 test mới (`tests/test_wp_b1_e2_fresh_fail_repair.py`) = 412. `test_gates_verdict.py::
 test_fs08_random_control` SỬA (không xoá/nới) case đầu để phản ánh đúng hành vi fail-closed mới
 — xem CHECK-B1-01 Addendum 2.
+
+**Kết quả (lần chạy thứ ba, sau repair batch 2 E2-B1-F01/F02 lần hai, cùng phiên tiếp nối
+2026-09-04): 461 tests collected, 461 PASS, 0 FAIL, 0 ERROR, 0 SKIP, 0 XFAIL. `EXIT=0`.** Khớp
+đúng số học: 412 + 49 test mới (`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`) = 461. Hai test
+hiện có trong `tests/test_wp_b1_e2_fresh_fail_repair.py` được TĂNG CƯỜNG (không xoá/nới) thêm
+assertion `verdict != "BUILD"` bên cạnh assertion `can_proceed_to_app` sẵn có — xem CHECK-B1-01
+Addendum 3 / CHECK-B1-07 Addendum 5.
 
 Executed By:
 Sonnet 5, phiên WP-B1 IN_PROGRESS (session hiện tại)
@@ -1089,13 +1193,20 @@ Created:
 - `tests/test_wp_b1_verdict_policy.py` (phiên hiện tại — CHECK-B1-07: precedence, can_proceed,
   numpy/bool equivalence, determinism)
 - `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-fail.md` (Owner/reviewer, KHÔNG phải agent phiên
-  này — artifact E2 fresh FAIL, tái lập E2-B1-F01/F02)
-- `tests/test_wp_b1_e2_fresh_fail_repair.py` (phiên hiện tại — 21 test cho repair E2-B1-F01/F02)
-- (dự kiến, cần phiên riêng) `docs/reviews/E2-WP-B1-*.md` khác (E2 mới cho CHECK-B1-09 sau repair)
+  này — artifact E2 fresh FAIL vòng 1, tái lập E2-B1-F01/F02)
+- `docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md` (Owner/reviewer, KHÔNG phải
+  agent phiên này — artifact E2 fresh FAIL vòng 2, tái lập phần CHƯA đóng hết của E2-B1-F01/F02)
+- `tests/test_wp_b1_e2_fresh_fail_repair.py` (phiên hiện tại — 21 test cho repair batch 1)
+- `tests/test_wp_b1_e2_fresh_fail_repair_v2.py` (phiên hiện tại — 49 test cho repair batch 2:
+  `_numeric_and_finite` ma trận đầy đủ + officiality label matrix)
+- (dự kiến, cần phiên riêng) `docs/reviews/E2-WP-B1-*.md` khác (E2 vòng 3 cho CHECK-B1-09 sau
+  repair batch 2)
 
 Modified:
 - `src/eth_dca_os/failure_signals.py` (lát cắt DEC-026, S016 — chuẩn hoá kiểu + cờ chặn; phiên
-  hiện tại — FS-08 [E2-B1-F01] đòi đủ cả ba input hợp lệ, thêm helper `_numeric_and_finite()`)
+  hiện tại — FS-08 [E2-B1-F01] đòi đủ cả ba input hợp lệ; `_numeric_and_finite()` thêm ở repair
+  batch 1 [chỉ loại None/NaN], viết lại ở repair batch 2 [`isinstance(numbers.Real)` + loại
+  `bool` tường minh + `math.isfinite()`, loại cả `±inf`])
 - `tests/test_wp_a5_failure_signal_instrumentation.py` (lát cắt DEC-026, S016 — xoá test đánh dấu
   F-S015-01; khoá CHECK-A5-07 vào khoảng `b095874..d4586b8`)
 - `src/eth_dca_os/benchmarks.py` (phiên hiện tại — F-017: `random_timing_control`/
@@ -1103,7 +1214,8 @@ Modified:
   scalar/tháng; random hóa độc lập theo từng tranche)
 - `src/eth_dca_os/pipeline.py` (phiên hiện tại — `run_gate1` dựng `monthly_tranches` từ
   `full.purchases`; `run_controls` đổi tên tham số theo; `run_verdict::official` nay AND đủ 4
-  nguồn [E2-B1-F02] + ép `can_proceed_to_app=False` khi không official)
+  nguồn [E2-B1-F02]; repair batch 1 chỉ ép `can_proceed_to_app=False` khi không official; repair
+  batch 2 hạ thêm **verdict về `INCONCLUSIVE`** khi non-official, không chỉ progression flag)
 - `src/eth_dca_os/cli.py` (phiên hiện tại — cập nhật call site theo khoá payload mới
   `_full_run_monthly_tranches`)
 - `tests/test_benchmarks.py` (phiên hiện tại — cập nhật fixture theo định dạng tranche-list;

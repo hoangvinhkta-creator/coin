@@ -407,19 +407,29 @@ def run_verdict(g1: dict, g2: dict, g3: dict, controls: dict | None, out_dir,
         oos_ae=g1["oos"]["ae"],
     )
     v = decide_verdict(g1["gate1"], g1["oos"], g2["gate2"], g3["gate3"], fs)
-    # E2-B1-F02 (WP-B1 fresh E2, 2026-09-04): trước đây `official` chỉ AND Gate 2/Gate 3,
-    # bỏ sót Gate 1 và Controls — và dù đủ bốn thì cờ đó cũng CHỈ được dùng để thêm một
-    # dòng `warning` (text), không hề chặn `can_proceed_to_app`. Đây là cổng DUY NHẤT
-    # T-07/T-11 đọc (CONVENTIONS #21(a)), nên phải fail-closed thật, không chỉ cảnh báo.
+    # E2-B1-F02 (WP-B1 fresh E2, 2026-09-04; bản sửa lần hai theo `E2-WP-B1-003` — canonical
+    # interpretation A): trước đây `official` chỉ AND Gate 2/Gate 3, bỏ sót Gate 1 và
+    # Controls — và dù đủ bốn thì cờ đó cũng CHỈ được dùng để thêm một dòng `warning` (text)
+    # hoặc (bản sửa lần một) chỉ chặn `can_proceed_to_app` mà VẪN persist/print nhãn
+    # `verdict="BUILD"`. Frozen Objective/CHECK-B1-01/07/09 đòi CẢ HAI: evidence non-official
+    # không được cho ra verdict=BUILD LẪN can_proceed_to_app=true — chỉ ép một cờ phụ trong
+    # khi nhãn chính vẫn nói "BUILD" là chưa đủ fail-closed. `can_proceed_to_app` chỉ có thể
+    # `True` khi `v["verdict"] == "BUILD"` (hợp đồng `decide_verdict`), nên chỉ nhánh đó cần
+    # hạ; `BUILD_WITH_MODIFICATIONS`/`INCONCLUSIVE`/`DO_NOT_BUILD` vốn đã `can_proceed_to_app
+    # = False`, không cần chạm. Hạ về `INCONCLUSIVE` — tái dùng ĐÚNG một trong bốn verdict đã
+    # có sẵn (không phát minh trạng thái thứ năm), đúng nghĩa "chưa đủ căn cứ để kết luận"
+    # (cùng nghĩa với nhánh Gate 2/3 FAIL hiện có), không phải "chiến lược thất bại"
+    # (`DO_NOT_BUILD` sẽ sai nghĩa đó). `decide_verdict()` không đổi cho evidence official.
     # Tái dùng NGUYÊN cờ `official` đã có sẵn ở từng thành phần (không phát minh lại
     # provenance/eligibility — mỗi cờ đã tự bao gồm điều kiện lineage đủ tư cách của nó).
     official = (g1.get("official", False) and g2.get("official", False)
                 and g3.get("official", False)
                 and bool(controls) and controls.get("official", False))
-    if not official and v["can_proceed_to_app"]:
-        v = {**v, "can_proceed_to_app": False,
+    if not official and v["verdict"] == "BUILD":
+        v = {**v, "verdict": "INCONCLUSIVE", "can_proceed_to_app": False,
              "reasons": v["reasons"] + [
-                 "Non-official/chưa đủ tư cách official: can_proceed_to_app buộc về false"]}
+                 "Non-official/chưa đủ tư cách official: verdict hạ về INCONCLUSIVE, "
+                 "can_proceed_to_app buộc về false"]}
     # WP-A5: PHẠM VI và LÝ DO của từng đại lượng đo, ghi thẳng vào run record. Mục đích là
     # để một FS còn UNKNOWN luôn nói được VÌ SAO nó UNKNOWN (CHECK-A5-04) — đây là siêu dữ
     # liệu ĐO LƯỜNG, không phải chính sách verdict (chính sách = WP-B1).

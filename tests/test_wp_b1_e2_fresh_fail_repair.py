@@ -142,10 +142,12 @@ def test_official_valid_evidence_preserves_build_and_can_proceed(tmp_path):
 
 
 def test_non_official_evidence_cannot_reach_can_proceed_true(tmp_path):
-    # 10. non-official evidence + otherwise BUILD-eligible -> can_proceed_to_app=False
+    # 10. non-official evidence + otherwise BUILD-eligible -> can_proceed_to_app=False AND
+    # verdict != BUILD (canonical interpretation A, E2-WP-B1-003 -- fixed in repair v2).
     payload = run_verdict(_clean_g1(False), _clean_g2(False), _clean_g3(False),
                           _clean_controls(False), tmp_path, dataset_hash="dummy")
     assert payload["official"] is False
+    assert payload["verdict"]["verdict"] != "BUILD"
     assert payload["verdict"]["can_proceed_to_app"] is False
     assert "warning" in payload
 
@@ -157,11 +159,13 @@ def test_non_official_evidence_cannot_reach_can_proceed_true(tmp_path):
     (True, True, True, False),   # Controls not official
 ])
 def test_can_proceed_false_whenever_any_single_component_not_official(tmp_path, official_flags):
-    # 12. can_proceed_to_app=false whenever official eligibility fails, for EACH component
+    # 12. can_proceed_to_app=false AND verdict != BUILD whenever official eligibility fails,
+    # for EACH component individually.
     g1_off, g2_off, g3_off, ctl_off = official_flags
     payload = run_verdict(_clean_g1(g1_off), _clean_g2(g2_off), _clean_g3(g3_off),
                           _clean_controls(ctl_off), tmp_path, dataset_hash="dummy")
     assert payload["official"] is False
+    assert payload["verdict"]["verdict"] != "BUILD"
     assert payload["verdict"]["can_proceed_to_app"] is False
 
 
@@ -177,10 +181,11 @@ def test_unresolved_provenance_cannot_leak_can_proceed_true(tmp_path, monkeypatc
 
 def test_controls_none_cannot_reach_can_proceed_true(tmp_path):
     """`controls=None` (Controls never run) must be treated as non-official -- must not
-    crash and must not allow can_proceed_to_app=true."""
+    crash and must not allow can_proceed_to_app=true (or verdict=BUILD)."""
     payload = run_verdict(_clean_g1(True), _clean_g2(True), _clean_g3(True), None, tmp_path,
                           dataset_hash="dummy")
     assert payload["official"] is False
+    assert payload["verdict"]["verdict"] != "BUILD"
     assert payload["verdict"]["can_proceed_to_app"] is False
 
 

@@ -25,7 +25,78 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-04 — **Fresh Independent E2 (`E2-WP-B1-002-FRESH-2026-09-04`, `docs/reviews/E2-WP-B1-
+2026-09-04 — **Fresh Independent E2 VÒNG HAI (`E2-WP-B1-003-FRESH-AFTER-REPAIR-2026-09-04`,
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md`) FAIL trên chính bản sửa vòng 1 →
+repair batch 2 → `CHECK-B1-01`/`CHECK-B1-07` phục hồi `PASS` lần thứ hai.** Reviewer độc lập
+(khác cả implementer lẫn reviewer vòng 1) review đúng HEAD mang bản sửa vòng 1
+(`82ff39c94685151f94764c158b0b3b10c53d7d6f`) và tái lập được CẢ HAI finding CHƯA đóng hết
+(không phải finding mới, cùng ID `E2-B1-F01`/`E2-B1-F02`):
+
+1. **`E2-B1-F01` (còn hở):** `_numeric_and_finite()` (Addendum 4/repair batch 1) chỉ loại
+   `None`/NaN bằng `not math.isnan(float(x))` — công thức này KHÔNG loại `+inf`/`-inf`
+   (`math.isnan(inf)` là `False`). Tái lập trước sửa: `evaluate_failure_signals(v2_eth=10.0,
+   random_timing_p95=float("-inf"), random_anchor_p95=9.5)` → `FS-08=False` (đúng như finding
+   mô tả) → `decide_verdict` → `verdict=BUILD`, `can_proceed_to_app=True`.
+2. **`E2-B1-F02` (còn hở):** repair batch 1 chỉ ép `can_proceed_to_app=False` khi
+   `official=False`, nhưng ĐỂ NGUYÊN `v["verdict"]="BUILD"` — cả trong giá trị trả về LẪN bản
+   ghi đã persist (`backtest_runs.jsonl`, `*_metrics.json` qua `save_run(...,
+   verdict=v["verdict"])`). Reviewer tái dựng canonical interpretation A trực tiếp từ frozen
+   text (Objective + CHECK-B1-01/07/09): evidence non-official phải ngăn CẢ `verdict=BUILD`
+   LẪN `can_proceed_to_app=true` — không phải chỉ progression flag. Tái lập trước sửa: 6/6 tổ
+   hợp non-official (từng nguồn/nhiều nguồn/tất cả) đều `official=False`,
+   `can_proceed_to_app=False` NHƯNG `verdict` vẫn in ra literal `"BUILD"`.
+
+Chấp nhận nguyên vẹn cả hai, không tranh cãi/bypass — đây là dạng "sibling fail-open path tại
+cùng verdict boundary" mà quy trình review đòi tìm, không phải finding ngoài phạm vi.
+
+**Repair batch 2** (cùng CAP-VERDICT/WP-B1, hai file y hệt batch 1):
+`src/eth_dca_os/failure_signals.py::_numeric_and_finite()` viết lại: loại `None`; loại tường
+minh `bool` (Python `bool` là subclass của `int` nên `float(True)==1.0` sẽ lọt nếu không chặn
+riêng); `numpy.bool_` tự động bị loại vì KHÔNG phải instance của `numbers.Real` (khác
+`numpy.float64`, có đăng ký ABC này); kiểm `isinstance(x, numbers.Real)` TRƯỚC khi ép kiểu
+(loại chuỗi/object mà không cần dựa vào exception); cuối cùng `math.isfinite(float(x))` — loại
+ĐÚNG cả NaN lẫn `±inf`. `src/eth_dca_os/pipeline.py::run_verdict`: khi
+`not official and v["verdict"] == "BUILD"`, hạ **verdict** về `"INCONCLUSIVE"` (tái dùng đúng
+một trong bốn nhãn có sẵn — `BUILD`/`BUILD_WITH_MODIFICATIONS`/`INCONCLUSIVE`/`DO_NOT_BUILD`,
+không phát minh trạng thái thứ năm) VÀ ép `can_proceed_to_app=False`; các nhánh verdict khác
+vốn đã có `can_proceed_to_app=False` nên không cần chạm (hợp đồng `decide_verdict`:
+`can_proceed_to_app` chỉ `True` khi `verdict=="BUILD"`). `decide_verdict()` không đổi cho
+evidence official — case toàn official vẫn `verdict=BUILD`/`can_proceed_to_app=True` y hệt
+trước, xác nhận repair không "xoá BUILD khỏi hệ thống".
+
+70 regression test tổng cộng qua hai batch (`tests/test_wp_b1_e2_fresh_fail_repair.py` 21 +
+`tests/test_wp_b1_e2_fresh_fail_repair_v2.py` 49 mới): ma trận `_numeric_and_finite` đầy đủ
+(số hợp lệ kể cả `numpy.float64`/`numpy.int64`; loại `None`/NaN/`±inf` dạng Python lẫn
+`numpy.float64`/`bool`/`numpy.bool_`/chuỗi số/chuỗi bất kỳ/object), ma trận FS-08 cho từng vị
+trí input × mọi giá trị invalid, end-to-end đúng counterexample `-inf` của reviewer, ma trận
+officiality B-G (từng nguồn/nhiều nguồn/tất cả false) khẳng định CẢ `verdict != "BUILD"` LẪN
+`can_proceed_to_app=False` — kiểm cả payload trả về VÀ bản ghi `backtest_runs.jsonl` đã persist,
+case toàn official giữ nguyên hành vi, và unresolved provenance vẫn fail-loud
+(`ProvenanceUnresolvedError`) như cũ, cộng test khoá nguyên post-F-017 owner replay (complete
+finite input, không rerun 1000 sim) chứng minh repair không chạm formula hợp lệ.
+
+Targeted: 151 test PASS (`test_benchmarks.py`, `test_gates_verdict.py`,
+`test_wp_b1_verdict_policy.py`, `test_wp_b1_slice_failure_signal_cap.py`,
+`test_wp_b1_e2_fresh_fail_repair.py`, `test_wp_b1_e2_fresh_fail_repair_v2.py`,
+`test_wp_a5_failure_signal_instrumentation.py`) + `test_e2e.py` 2/2 PASS riêng (430s). Full
+suite: xem `docs/sessions/S023-*.md`/`EXIT` cuối log.
+
+`CHECK-B1-01: FAIL → PASS`; `CHECK-B1-07: FAIL → PASS` (lần thứ hai). Verdict lịch sử T-06
+(`DO_NOT_BUILD`, `Gate 1 FAIL`/`OOS hard condition FAIL`, `can_proceed_to_app=false`) KHÔNG đổi
+— quyết định ở nhánh Gate 1/OOS FAIL, trước cả FS-08 lẫn officiality gate. Post-F-017 owner
+replay (dataset official, complete finite input, `FS-08=false`) KHÔNG bị chạm, KHÔNG rerun 1000
+simulation. **WP-B1 nay 9/10 REQUIRED PASS** (01,02,03,04,05,06,07,08,10). **`CHECK-B1-09` GIỮ
+NGUYÊN `NOT_TESTED`/FAIL lịch sử** — KHÔNG tự chạy lại E2 trong phiên này, cần một phiên độc lập
+MỚI (vòng 3). Production diff batch 2: 2 file (`failure_signals.py`, `pipeline.py`), +37/−13;
+cộng dồn cả phiên (vs `fa6422c`): 4 file, +108/−33 — trong ngân sách canonical, không
+`CHANGE_BUDGET_EXCEEDED`, 0 repair cycle tiêu (WP-B1 chưa từng DONE). Không rerun T-06. Không mở
+WP-B2/WP-B3/GATE-B/T-07. Không merge `main`. Không đổi threshold/strategy. WP-B1 **VẪN
+IN_PROGRESS**, không đề xuất DONE. Chi tiết:
+`docs/reviews/E2-WP-B1-CHECK-B1-09-fresh-after-repair-fail.md`,
+`docs/tasks/WP-B1-*.md` (CHECK-B1-01 Addendum 3, CHECK-B1-07 Addendum 5),
+`docs/sessions/S023-*.md`.
+
+Trước đó, 2026-09-04 — **Fresh Independent E2 (`E2-WP-B1-002-FRESH-2026-09-04`, `docs/reviews/E2-WP-B1-
 CHECK-B1-09-fresh-fail.md`) FAIL → repair batch E2-B1-F01/F02 → `CHECK-B1-01`/`CHECK-B1-07` phục
 hồi `PASS`.** Reviewer độc lập (không phải phiên implementer) tái lập được HAI đường production
 counterexample thật, cả hai đã được xác nhận độc lập lại lần nữa trong phiên này TRƯỚC khi sửa:
@@ -362,13 +433,16 @@ vẫn `PENDING`, nhưng chỉ chặn `T-08` và `WP-C2`, không nằm trên đư
 
 Current Task:
 `WP-B1` — `IN_PROGRESS` (phiên hiện tại, nhánh `claude/wp-b1-verdict-correctness-j9d390`).
-Fresh Independent E2 tái lập 2 BLOCKING finding (E2-B1-F01 FS-08 fail-open, E2-B1-F02 officiality
-không chặn `can_proceed_to_app`) → sửa xong trong một repair batch (`failure_signals.py`,
-`pipeline.py`) + 21 regression test mới → `CHECK-B1-01`/`CHECK-B1-07` phục hồi `FAIL → PASS`.
-**9/10 REQUIRED PASS** (01,02,03,04,05,06,07,08,10); chỉ còn `CHECK-B1-09` (cần một phiên
-Independent E2 MỚI — không tự chạy trong phiên này). DỪNG đúng phạm vi WP-B1 theo chỉ thị phiên
-— không mở WP-B2/WP-B3, không mở GATE-B, không chạy T-07, không merge `main`, không tự chạy
-CHECK-B1-09, không rerun T-06, không đổi threshold/strategy.
+HAI vòng fresh Independent E2 liên tiếp, mỗi vòng tìm ra lỗ hở thật trong CÙNG cơ chế
+`E2-B1-F01`(FS-08 fail-open)/`E2-B1-F02`(officiality không chặn verdict) — vòng 1 sửa
+None/NaN + progression flag, vòng 2 (review đúng bản sửa vòng 1) sửa thêm `±inf`/`bool` +
+nhãn verdict. Cả hai batch trong `failure_signals.py`/`pipeline.py`, 70 regression test mới
+tổng cộng (`tests/test_wp_b1_e2_fresh_fail_repair.py` +
+`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`) → `CHECK-B1-01`/`CHECK-B1-07` phục hồi
+`FAIL → PASS` cả hai lần. **9/10 REQUIRED PASS** (01,02,03,04,05,06,07,08,10); chỉ còn
+`CHECK-B1-09` (cần một phiên Independent E2 MỚI, vòng 3 — không tự chạy trong phiên này). DỪNG
+đúng phạm vi WP-B1 theo chỉ thị phiên — không mở WP-B2/WP-B3, không mở GATE-B, không chạy T-07,
+không merge `main`, không tự chạy CHECK-B1-09, không rerun T-06, không đổi threshold/strategy.
 
 Current Task Mode:
 MAJOR
@@ -425,7 +499,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | WP-A6 | Chốt và kiểm chứng đúng thứ tự các bước tính toán | Thứ tự sai nghĩa là con số chính thức không đại diện đúng cho chiến lược đã đặc tả | D | max | **DONE tại S014 (2026-09-03)** — 8/8 REQUIRED PASS: test thứ tự viết từ chữ BT §19 đỏ trên engine cũ (F-019 đóng, F-018 nâng lên E1: cả ba quan sát XÁC NHẬN về thứ tự, quan sát 3 BÁC BỎ về hệ quả), tác động đo từng sai lệch trên dataset synth 7,5 năm (chỉ "tạo ladder sau bước 13" đổi kết quả: +0,054 %/+0,064 % ETH, −2/543 fill, nominal Base/Smart/Crash không đổi), quyết định SỬA `engine.py` theo chữ §19 (chỉ thứ tự), 22/22 test A6 PASS, thử phá có chủ đích bị bắt, no-lookahead 15m XÁC NHẬN (Impl Plan §7 mệnh đề 1). H-15 trả lời: GIỮ NGUYÊN (CONVENTIONS #19, 0 lần xảy ra trên dataset có cửa sổ INVALID 31 ngày; vế thứ ba của RE_TRIGGER_CONDITION còn mở, chờ T-06). **CHECK-A6-08 PASS (E2 độc lập)** — `docs/reviews/E2-WP-A6-thu-tu-18-buoc.md`, reviewer tự tái lập mọi con số trước khi đọc kết luận implementer, đồng ý toàn bộ quyết định. Hai finding non-blocking phát sinh từ E2 route sang `HARDENING_BACKLOG.md` H-24/H-25 (không mở lại Scope Lock — thuộc `ladders.py`/lifecycle, ngoài touch area). Đóng F-018, F-019. Biên bản: `docs/sessions/S014-wp-a6-thu-tu-18-buoc.md` |
 | DONE | WP-A7 | Sửa phạm vi kế toán vốn Smart theo tháng | Vốn Smart gần như không bao giờ đi qua cơ chế ladder từ tháng thứ ba, và một chiều bắt buộc của Gate 2 bị vô hiệu | D | max | **DONE tại S004** (12/12 REQUIRED PASS; E2 PASS WITH FOLLOW-UPS; F-035 RESOLVED, RSK-010 CLOSED). Đã hết chặn WP-A5/WP-A6/WP-C4/GATE-A về phía A7; các gói đó còn chờ dependency khác (đóng F-035) |
 | DONE | T-06 | Chạy backtest chính thức trên dữ liệu thật | Mở cổng verdict — đây là đường găng tới mục tiêu cuối | C | xhigh | **DONE tại `DEC-031`, 2026-09-03 — historical governance disposition, KHÔNG phải validation PASS.** Official verdict = **`DO_NOT_BUILD`** (Gate 1 FAIL, OOS hard condition FAIL). `can_proceed_to_app=false`. `V2.1.5` validation = **FAILED**. `DONE` ở đây chỉ có nghĩa: official execution lifecycle đã hoàn tất và evidence đã được canonicalize (`docs/T06_OFFICIAL_EVIDENCE_RECORD.md`) — KHÔNG có Ready Gate/Completion Gate task-level (khoảng trống governance lịch sử, đã dispositioned tại `DEC-031`, historical exception, KHÔNG tạo precedent). Code commit `5228130677e9e9875335eef890b6ed748a384603`, tag `v2.1.5-official-T06`. Cả hai nhóm prerequisite trước đây đã thoả: (A) GATE-A CLOSED (`DEC-028`); (B) BLK-001 RESOLVED (`DEC-031`) |
-| IN_PROGRESS | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | **IN_PROGRESS (phiên hiện tại, sau `READY` tại `DEC-031`)** — **9/10 REQUIRED PASS** (CHECK-B1-01/02/03/04/05/06/07/08/10). Fresh Independent E2 (`E2-WP-B1-002-FRESH-2026-09-04`) tái lập 2 BLOCKING finding mới: **E2-B1-F01** (FS-08 chỉ đòi MỘT trong hai Control P95, control thiếu bị coi "V2 tự động beat" → BUILD/can_proceed_to_app=true lọt qua khi thiếu evidence) và **E2-B1-F02** (`official` bỏ sót Gate 1/Controls, và dù đủ cũng không chặn `can_proceed_to_app` — non-official evidence có thể ra BUILD/true). Cả hai tái hiện độc lập lại trong phiên trước khi sửa. **Repair** (`failure_signals.py`: FS-08 đòi đủ 3 input hợp lệ, fail-closed cho thiếu/NaN/non-numeric; `pipeline.py::run_verdict`: `official` AND đủ 4 nguồn + ép `can_proceed_to_app=False` khi không official) + 21 regression test mới (`tests/test_wp_b1_e2_fresh_fail_repair.py`) + sửa 1 test cũ vô tình mã hoá hành vi lỗi. `CHECK-B1-01: FAIL → PASS`; `CHECK-B1-07: FAIL → PASS`. Verdict lịch sử T-06 (`DO_NOT_BUILD`) không đổi. `CHECK-B1-09` vẫn `NOT_TESTED`/FAIL lịch sử — cần một phiên E2 độc lập MỚI (không tự chạy trong phiên này) — check REQUIRED duy nhất còn lại. Xem file task để có evidence đầy đủ |
+| IN_PROGRESS | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | **IN_PROGRESS (phiên hiện tại, sau `READY` tại `DEC-031`)** — **9/10 REQUIRED PASS** (CHECK-B1-01/02/03/04/05/06/07/08/10), sau HAI vòng fresh Independent E2 liên tiếp. **Vòng 1** (`E2-WP-B1-002`): `E2-B1-F01` (FS-08 chỉ đòi MỘT trong hai Control P95) + `E2-B1-F02` (`official` không chặn `can_proceed_to_app`) — sửa, 21 test mới. **Vòng 2** (`E2-WP-B1-003`, review đúng bản sửa vòng 1): CẢ HAI finding CHƯA đóng hết — `E2-B1-F01`: `_numeric_and_finite()` lần một chỉ loại NaN, để lọt `±inf` (một P95 vô hạn vẫn tạo `beats_*` giả); `E2-B1-F02`: repair lần một chỉ ép progression flag, để nguyên nhãn `verdict="BUILD"` (kể cả trong bản ghi đã persist) — vi phạm canonical interpretation A mà chính E2 tái dựng từ frozen text ("non-official phải ngăn CẢ verdict=BUILD LẪN can_proceed_to_app=true"). **Repair vòng 2**: `_numeric_and_finite()` viết lại bằng `isinstance(x, numbers.Real)` + loại `bool`/`numpy.bool_` tường minh + `math.isfinite()` (loại cả NaN lẫn `±inf`); `run_verdict` hạ **verdict về `INCONCLUSIVE`** (tái dùng nhãn có sẵn, không phát minh trạng thái mới) khi non-official, không chỉ ép progression flag. 49 test mới (`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`), gồm kiểm cả bản ghi `backtest_runs.jsonl` đã persist không còn giữ `BUILD`. `CHECK-B1-01`/`CHECK-B1-07`: `FAIL → PASS` (cả hai lần). Verdict lịch sử T-06 (`DO_NOT_BUILD`) không đổi; post-F-017 owner replay (complete finite input) không bị chạm, không rerun 1000 sim. `CHECK-B1-09` vẫn `NOT_TESTED`/FAIL lịch sử — cần một phiên E2 độc lập MỚI (vòng 3, không tự chạy trong phiên này) — check REQUIRED duy nhất còn lại. Xem file task để có evidence đầy đủ |
 | READY | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | **READY tại `DEC-031`** — dependency `T-06 DONE` nay thoả, mọi mục khác đã `[x]` từ trước. Song song với WP-B1, WP-B3 |
 | BLOCKED | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | Dependency `T-06 DONE` nay thoả (`DEC-031`); dependency `WP-C2 DONE` **CHƯA thoả** (`WP-C2` = `BLOCKED`) — đây là lý do chặn DUY NHẤT còn lại. Ngữ nghĩa `previous_state/new_state` phụ thuộc WP-C2 (đóng F-024, F-033) |
 | PLANNED | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | `T-06` nay DONE (`DEC-031`, verdict `DO_NOT_BUILD`) nhưng **GATE-B CHƯA MỞ** (WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE — hiện cả ba đều chưa DONE, chỉ READY/BLOCKED). NOT READY. Chặn T-11 |

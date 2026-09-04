@@ -502,8 +502,112 @@ consequence mới, không nâng BLOCKING, không Scope Expansion.
 **9/10 PASS** (01,02,03,04,05,06,07,08,10). 1/10 `NOT_TESTED`/FAIL (09) — cần một phiên E2 độc
 lập MỚI (khác reviewer E2 này, không tự chạy trong phiên implementer).
 
-### Khuyến nghị cuối cùng (cập nhật)
+### Khuyến nghị cuối cùng (tại thời điểm Addendum 4, sau repair batch 1)
 
 **WP-B1 REMAINS IN PROGRESS.** Hai finding BLOCKING của fresh Independent E2 đã được chấp nhận
 và sửa trong MỘT repair batch có phạm vi hẹp, đúng CAP-VERDICT/WP-B1, trong ngân sách canonical.
 Việc còn lại DUY NHẤT: một phiên Independent E2 MỚI cho `CHECK-B1-09`. Không đề xuất DONE.
+
+---
+
+## Addendum 5 — Fresh Independent E2 VÒNG HAI (`E2-WP-B1-003`) FAIL trên repair batch 1;
+## repair batch 2; CHECK-B1-01/07 phục hồi PASS lần thứ hai (2026-09-04)
+
+### Finding
+
+Reviewer E2 độc lập thứ ba (`E2-WP-B1-003-FRESH-AFTER-REPAIR-2026-09-04`, khác cả implementer
+lẫn reviewer vòng 1) review đúng HEAD mang repair batch 1
+(`82ff39c94685151f94764c158b0b3b10c53d7d6f`) và tái lập được CẢ HAI phần CHƯA đóng hết của
+CÙNG hai finding (không phải finding mới, giữ nguyên ID):
+
+- **`E2-B1-F01` còn hở**: `_numeric_and_finite()` batch 1 = `not math.isnan(float(x))` — loại
+  NaN nhưng KHÔNG loại `+inf`/`-inf` (`math.isnan(inf)` là `False`). Một P95 vô hạn vẫn so
+  sánh được, tạo `beats_*` giả.
+- **`E2-B1-F02` còn hở**: batch 1 chỉ ép `can_proceed_to_app=False` khi non-official, để
+  NGUYÊN `v["verdict"]="BUILD"` — cả trong payload trả về LẪN bản ghi đã `save_run()` xuống
+  đĩa. Reviewer tái dựng canonical interpretation A trực tiếp từ frozen Objective/CHECK-B1-01/
+  07/09: non-official phải ngăn CẢ verdict=BUILD LẪN can_proceed_to_app=true.
+
+**Chấp nhận nguyên vẹn, không tranh cãi/bypass** — đây là loại "sibling fail-open path tại
+cùng verdict boundary" mà chỉ thị phiên này yêu cầu tìm và đóng, không phải mở rộng phạm vi.
+Tái lập độc lập trước khi sửa (khớp mô tả reviewer cả hai finding — xem thân bài chat log của
+phiên).
+
+### Budget trước/sau
+
+Trước: 0 repair cycle tiêu; diff cộng dồn (vs `fa6422c`) 4 file, +84/−33 (F-017 + repair batch
+1). Sau: cùng 4 file, +108/−33 (repair batch 2 riêng: 2 file — `failure_signals.py`,
+`pipeline.py` — +37/−13). Vẫn trong ngân sách canonical: không REQUIRED check mới, không Risk
+tăng, không kéo việc ngoài vertical slice, không chạm `engine.py`/`gates.py`/`regime.py`/
+`ladders.py`/`capital.py`/`score.py`. Không `CHANGE_BUDGET_EXCEEDED`.
+
+### Repair batch 2
+
+- `failure_signals.py::_numeric_and_finite()`: viết lại — loại `None`; loại tường minh `bool`
+  (Python `bool` subclass `int`, `float(True)==1.0` sẽ lọt nếu không chặn riêng); `numpy.bool_`
+  tự động bị loại vì KHÔNG phải instance của `numbers.Real`; `isinstance(x, numbers.Real)`
+  kiểm TRƯỚC khi ép kiểu; `math.isfinite(float(x))` loại cả NaN lẫn `±inf`.
+- `pipeline.py::run_verdict`: khi `not official and v["verdict"] == "BUILD"`, hạ **verdict**
+  về `"INCONCLUSIVE"` (tái dùng một trong bốn nhãn có sẵn, không phát minh trạng thái mới) VÀ
+  ép `can_proceed_to_app=False`. Nhánh khác không cần chạm vì `can_proceed_to_app` chỉ `True`
+  khi `verdict=="BUILD"` (hợp đồng `decide_verdict`, không đổi).
+
+### Test mới
+
+`tests/test_wp_b1_e2_fresh_fail_repair_v2.py` (49 test): ma trận `_numeric_and_finite` đầy đủ
+(hợp lệ: int/float/`numpy.float64`/`numpy.int64`; loại: `None`/NaN/`±inf` Python lẫn
+`numpy.float64`/`bool`/`numpy.bool_`/chuỗi số/chuỗi bất kỳ/object); ma trận FS-08 cho từng vị
+trí input × mọi giá trị invalid (16 tổ hợp); end-to-end đúng counterexample `-inf` của reviewer;
+ma trận officiality 6 tổ hợp (từng nguồn/nhiều nguồn/tất cả false) khẳng định CẢ
+`verdict != "BUILD"` LẪN `can_proceed_to_app=False`, kiểm cả trên payload trả về VÀ trên bản ghi
+`backtest_runs.jsonl` đã persist; case toàn official giữ nguyên `verdict=BUILD`/
+`can_proceed_to_app=True` (không "xoá BUILD khỏi hệ thống"); unresolved provenance vẫn
+fail-loud; và một test khoá nguyên giá trị post-F-017 owner replay (complete finite input,
+KHÔNG rerun 1000 sim) để chứng minh repair không chạm formula hợp lệ. Hai test hiện có trong
+`tests/test_wp_b1_e2_fresh_fail_repair.py` được TĂNG CƯỜNG (không xoá/nới) thêm assertion
+`verdict != "BUILD"`.
+
+### Kết quả test
+
+Targeted (7 file, gồm hai test file mới): 151 PASS (không tính `test_e2e.py`, chạy riêng vì
+chậm) + `test_e2e.py` 2/2 PASS (430.60s). Full suite: **461 collected, 461 PASS, 0 FAIL/ERROR/
+SKIP/XFAIL, `EXIT=0`** — khớp số học 412 + 49 = 461.
+
+### CHECK-B1-01 / CHECK-B1-07 trước/sau (lần thứ hai)
+
+| Check | Trước Addendum này | Sau |
+|---|---|---|
+| CHECK-B1-01 | `FAIL` (E2 vòng 2) | `PASS` |
+| CHECK-B1-07 | `FAIL` (E2 vòng 2) | `PASS` |
+| CHECK-B1-09 | `FAIL` (E2 vòng 2) | Giữ nguyên — cần E2 vòng 3, không tự chạy |
+
+### Bảo toàn lịch sử T-06 / post-F-017 evidence
+
+`T-06 = DONE`, `V2.1.5 = FAILED`, verdict=`DO_NOT_BUILD`,
+`reasons=["Gate 1 FAIL","OOS hard condition FAIL"]`, `can_proceed_to_app=false` — không đổi
+(quyết ở nhánh Gate 1/OOS FAIL, trước cả FS-08 lẫn officiality gate; T-06 vốn official=true nên
+không bị ảnh hưởng bởi gate mới). Post-F-017 owner replay
+(`dataset_hash=3150860cb...`, `v2_eth=14.910758150139896`, `FS-08=false`) giữ nguyên, KHÔNG
+rerun 1000 simulation — repair này chỉ đổi hành vi cho input thiếu/invalid/non-official, không
+đổi formula cho input đầy đủ/hợp lệ/official.
+
+### Production diff batch 2
+
+2 file (`failure_signals.py`, `pipeline.py`), +37/−13. Cộng dồn phiên (vs `fa6422c`): 4 file,
++108/−33.
+
+### H-26
+
+Giữ nguyên `CONFIRMED HARDENING` (reviewer vòng 2 cũng xác nhận lại).
+
+### WP-B1 REQUIRED checks sau Addendum này
+
+**9/10 PASS** (01,02,03,04,05,06,07,08,10). 1/10 `NOT_TESTED`/FAIL (09) — cần phiên E2 độc lập
+MỚI (vòng 3, khác cả hai reviewer trước và implementer).
+
+### Khuyến nghị cuối cùng (cập nhật)
+
+**WP-B1 REMAINS IN PROGRESS.** Hai vòng E2 liên tiếp đã cùng làm đúng chức năng của
+`CHECK-B1-07`: bắt một stopping rule bị nới ở chi tiết kỹ thuật (dù ý định đúng cả hai lần),
+buộc sửa tới khi không còn đường lọt nào tái lập được. Việc còn lại DUY NHẤT: một phiên
+Independent E2 MỚI (vòng 3) cho `CHECK-B1-09`. Không đề xuất DONE.

@@ -18,6 +18,7 @@ Hợp đồng đầu ra với `verdict.py` (WP-B1 lát cắt DEC-026, đóng F-S
 from __future__ import annotations
 
 import math
+import numbers
 
 FS_DESCRIPTIONS = {
     "FS-01": "V2 tích lũy ít ETH hơn Monthly DCA ở phần lớn gate window",
@@ -46,14 +47,27 @@ def _flag(value) -> bool | None:
 
 
 def _numeric_and_finite(x) -> bool:
-    """E2-B1-F01: `None`, NaN, hoặc giá trị không phải số đều KHÔNG phải bằng chứng dùng
-    được cho một phép so sánh ngưỡng — coi như thiếu input (UNKNOWN), không so sánh."""
-    if x is None:
+    """E2-B1-F01 (bản sửa lần hai, fresh E2 `E2-WP-B1-003`): bản trước chỉ loại `None`/NaN,
+    còn để lọt `+inf`/`-inf` (`math.isnan(inf)` là `False`) — một P95/`v2_eth` vô hạn vẫn so
+    sánh được và tạo ra một `beats_*` "thắng"/"thua" giả. Chỉ số THỰC HỮU HẠN mới là bằng
+    chứng dùng được cho một phép so sánh ngưỡng.
+
+    Loại rõ ràng, không coerce:
+    - `None`, NaN, `+inf`, `-inf` (`math.isfinite` loại cả NaN lẫn hai vô cực, khác
+      `isnan` chỉ loại NaN);
+    - chuỗi/objekt không phải số (`isinstance(x, numbers.Real)` — kiểm TRƯỚC khi ép kiểu,
+      không dựa vào `float()` raise lỗi để phát hiện);
+    - `bool`/`numpy.bool_`: `bool` là subclass của `int` trong Python (`float(True) == 1.0`)
+      nhưng `True`/`False` không phải một PHÉP ĐO tài chính — loại tường minh bằng
+      `isinstance(x, bool)`. `numpy.bool_` không phải subclass của `bool` nhưng CŨNG không
+      phải instance của `numbers.Real` (khác `numpy.float64`, có đăng ký ABC này) nên đã bị
+      loại tự nhiên bởi điều kiện `numbers.Real` — không cần thêm nhánh riêng.
+    """
+    if x is None or isinstance(x, bool):
         return False
-    try:
-        return not math.isnan(float(x))
-    except (TypeError, ValueError):
+    if not isinstance(x, numbers.Real):
         return False
+    return math.isfinite(float(x))
 
 
 def evaluate_failure_signals(*, gate1_windows: dict | None = None,
