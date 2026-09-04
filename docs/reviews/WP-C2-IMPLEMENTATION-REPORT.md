@@ -47,6 +47,7 @@ Xem §22 và §26.
 | Expected HEAD (theo đề bài) | `2189a8f817ad8acaa2433c5be9d9afead9059f92` |
 | `git rev-parse origin/main` đo được | `2189a8f817ad8acaa2433c5be9d9afead9059f92` ✅ khớp |
 | Nhánh thực thi | `claude/wp-c2-execution-state-y4rraf` (tách từ đúng SHA trên, 0 commit lệch) |
+| Commit thực thi | `148f9011c0d4198aa942c5f85a57a164e652e722` (1 commit trên nhánh) |
 | Interpreter | Python 3.11.15 |
 | Dependency | đúng theo `pyproject.lock`: numpy 2.4.6 · pandas 3.0.5 · pyarrow 25.0.1 · pytest 9.1.1 |
 | `data/` (untracked, chủ dự án giữ có chủ ý) | **KHÔNG đụng tới** — không clean, không stash, không commit |
@@ -67,7 +68,17 @@ khi đọc bất kỳ file trạng thái nào:
 **Duy nhất một lý do FAIL: nhánh chưa có upstream** — đúng như mong đợi với một nhánh vừa tạo
 chưa push. Điều kiện thực chất mà check này bảo vệ (đọc trạng thái từ nhánh cũ/lệch) **được
 thoả**: nhánh trùng khớp `origin/main` 0 commit, 0 LOC lệch, worktree sạch. Không có
-`INTEGRATION_DECISION_REQUIRED`. Sau khi push, chạy lại check sẽ PASS.
+`INTEGRATION_DECISION_REQUIRED`.
+
+Chạy lại SAU khi push (upstream đã tồn tại):
+
+    behind upstream   = 0
+    ahead of default  = 1 commit(s)
+    divergence age    = 0 day(s)
+    integration       = INTEGRATION_DECISION_REQUIRED=NO
+    tracked worktree  = CLEAN
+    production diff   = EMPTY
+    BRANCH AUTHORITY: PASS
 
 ---
 
@@ -669,7 +680,18 @@ kiện mà gate đòi — và `CAP-WEBAPP` còn `REMAINING = 2 repair cycle` n�
 - Commit bounded trên **đúng một nhánh**: `claude/wp-c2-execution-state-y4rraf`.
 - **KHÔNG** merge `main`. **KHÔNG** push `main`. **KHÔNG** xoá nhánh nào. **KHÔNG** dọn dẹp gì.
 - `data/` không được thêm, không stash, không clean.
-- SHA commit và kết quả push: xem phần STATUS ngắn ở cuối phiên (và `git log` của nhánh).
+Kết quả:
+
+    commit  148f9011c0d4198aa942c5f85a57a164e652e722
+            "WP-C2: đặt tên, hợp nhất và lưu vết Execution State (đóng F-006)"
+    push    git push -u origin claude/wp-c2-execution-state-y4rraf  -> OK ([new branch])
+
+Sau khi push, `branch_authority_check.sh` chạy lại cho **`BRANCH AUTHORITY: PASS`**
+(`behind upstream = 0`, `ahead of default = 1`, `INTEGRATION_DECISION_REQUIRED=NO`,
+worktree CLEAN) — xem §2.
+
+Một commit phụ sau đó chỉ cập nhật §2/§25 của chính báo cáo này để ghi SHA và kết quả push
+(diff production = 0).
 
 ---
 
