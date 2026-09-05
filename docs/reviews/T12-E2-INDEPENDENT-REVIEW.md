@@ -32,7 +32,7 @@ Số liệu tái lập độc lập trong phiên này:
 | Múi giờ tiến trình | 6 giá trị `TZ` → digest trùng nhau |
 | `P-1`…`P-6` (harness của implementer) | PASS, exit 0, 10 event thật |
 | `P-1`…`P-6` (**kịch bản riêng của người review**) | PASS, exit 0, 10 event thật tạo qua UI, 9 event cuối |
-| Python regression | 678 ca thu thập lại đúng bằng claim; bề mặt Python **0 thay đổi** trong `T-12`; xem §22 |
+| Python regression | **678/678 PASS, exit 0** khi chạy lại độc lập; bề mặt Python **0 thay đổi** trong `T-12` (§22) |
 
 ## 2. Reviewer Independence
 
@@ -700,16 +700,32 @@ review đòi đánh giá phê phán claim regression. Người review đã làm 
 không được pytest thu thập. Kết luận: **không test Python nào bị sửa, xoá, `skip`, `xfail` hay
 `deselect`**; claim "không đổi test nào của `src/eth_dca_os`" đứng vững.
 
-### 22.2 Số ca thu thập — tái lập độc lập
+### 22.2 Chạy lại đầy đủ — 678/678 PASS, exit 0
 
-    PYTHONPATH=src pytest --collect-only -q  ->  total collected = 678
+    PYTHONPATH=src pytest --collect-only -q   ->  678 ca thu thập (đúng bằng claim)
+    PYTHONPATH=src pytest                     ->  678 passed in 1173,67s (0:19:33), exit 0
 
-Đúng bằng con số implementer báo (678). Chạy đầy đủ `pytest` được khởi động trong phiên E2 này
-bằng venv riêng (`pip install -e ".[dev]"`); tại thời điểm chốt báo cáo, lượt chạy vẫn đang tiếp
-diễn với **0 `F` và 0 `E`** trong output tiến trình. Người review **không** tuyên bố đã tự tay
-xác nhận 678/678 PASS; điều đã xác nhận độc lập là (a) 678 ca được thu thập, (b) bề mặt Python
-byte-identical với baseline trước `T-12`, (c) không có failure nào trong phần đã chạy. Vì
-`T-12` không chạm một dòng Python nào, kết quả suite không thể khác baseline vì `T-12`.
+**Ghi lại đầy đủ đường đi tới con số này, không giấu lượt chạy hỏng.** Lượt chạy ĐẦU của người
+review cho `674 passed / 4 failed`. Bốn ca đó đã được truy nguyên đến cùng và **không ca nào do
+`T-12`** — cả bốn là hiện vật của môi trường container remote này:
+
+| Ca | Nguyên nhân gốc | Sau khi sửa môi trường |
+|---|---|---|
+| `test_wp_a5_...::test_a5_07_no_diff_in_policy_files` | gọi `git show b095874:...`; clone của container là **shallow** (60 commit) nên object không tồn tại → `exit 128` | PASS |
+| `test_wp_a5_...::test_a5_08_instrumentation_does_not_change_engine_behaviour` | cùng nguyên nhân (`git show` trên SHA lịch sử) | PASS |
+| `test_wp_b1_...::test_b1_01_only_blocking_semantics_changed_vs_pre_slice` | cùng nguyên nhân (`git show 28b0255:src/eth_dca_os/failure_signals.py`) | PASS |
+| `test_wp_a1_...::test_a1_08_lockfile_matches_installed_environment` | venv của người review tạo bằng `pip install -e ".[dev]"` (KHÔNG ghim), nên certifi/charset-normalizer/idna/packaging/requests/six/urllib3 mới hơn `pyproject.lock` | PASS |
+
+Hai thao tác sửa môi trường: `git fetch --unshallow` (60 → 132 commit; chỉ chạm `.git`, **không**
+chạm working tree, **không** đổi `HEAD`, `git status --porcelain` vẫn rỗng) và
+`pip install --no-deps -r <các dòng ghim của pyproject.lock>`. Sau đó chạy lại **toàn bộ** suite:
+**678 passed, 0 failed, exit 0**.
+
+Điểm cần nhấn cho Owner: ba ca đầu là **test provenance** — chúng cố tình so mã hiện tại với mã ở
+một commit lịch sử. Chúng sẽ đỏ ở **bất kỳ** container clone nông nào, độc lập hoàn toàn với
+`T-12`, và cũng sẽ đỏ y hệt nếu chạy trên commit trước `T-12`. Đây là giới hạn của môi trường
+chạy, không phải một regression; và cùng với §22.1 (`src/eth_dca_os/**` và `pyproject.lock` = 0
+thay đổi), claim `678/678 PASS` của implementer được **xác nhận độc lập**.
 
 ### 22.3 Npm — người review KHÔNG chấp nhận N/A trọn gói
 
@@ -922,7 +938,7 @@ Owner** (xem §26).
 | `CHECK-T12-10` | REQUIRED | E2_REQUIRED | §11/§18 — 8 ca `M-1`…`M-4`, `W-1`, nguyên tử, không rò rỉ chiến lược | **PASS** |
 | `CHECK-T12-11` | REQUIRED | E2_REQUIRED | §12 — ghi→ACK→REST→derive→reload→derive trùng tuyệt đối; export sửa tay bị bỏ qua | **PASS** |
 | `CHECK-T12-12` | REQUIRED | E2_REQUIRED | §13/§20 — hai lần đo trên `app_final.html`, 20 event thật, 23 case | **PASS** |
-| `CHECK-T12-13` | REQUIRED | PASS (E1) | §22 — bề mặt Python 0 thay đổi + 678 ca thu thập lại; **cả 6** script npm chạy lại, cùng một chữ ký dừng ở tiền đề legacy | không phải E2-required; phân loại N/A đứng vững |
+| `CHECK-T12-13` | REQUIRED | PASS (E1) | §22 — **678/678 PASS exit 0** khi chạy lại độc lập, bề mặt Python 0 thay đổi; **cả 6** script npm chạy lại, cùng một chữ ký dừng ở tiền đề legacy | không phải E2-required; xác nhận, phân loại N/A đứng vững |
 | `CHECK-T12-14` | REQUIRED | PASS (E1) | 0 tham chiếu `ENGINE`/`engine.js` trong module sổ cái; đổi `PRICE`/chỉ báo → phần tiền không đổi; `source = RESERVE` bắt buộc note | không phải E2-required; xác nhận |
 
     9/9 E2-REQUIRED CHECK = PASS
