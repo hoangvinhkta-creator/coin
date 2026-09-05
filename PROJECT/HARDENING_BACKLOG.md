@@ -1369,7 +1369,7 @@ không thể sai), không REQUIRED check nào của một gate đóng băng đò
 
 ## H-41 — Nhóm lỗi kế toán `B1`–`B10` của `webapp/app_logic.js` — ràng buộc thiết kế cho spec L-1
 
-Capability: `CAP-WEBAPP` · Owner: chưa có (spec L-1 chưa tồn tại) · Phân loại: **CONFIRMED HARDENING** cho `B1`–`B4`; **PROVISIONAL** cho `B5`–`B10`
+Capability: `CAP-WEBAPP` · Owner: **`T-12`** cho `B1`–`B9` (từ 2026-09-05, `S032`); `B10` vẫn chưa có owner · Phân loại: **CONFIRMED HARDENING** cho `B1`–`B4`; **PROVISIONAL** cho `B5`–`B10`
 Ngày ghi nhận: 2026-09-05 (`DEC-041` K.2, phiên L-1 canonical transition)
 
 Owner tường minh (`DEC-041` K.2): mang nhóm này sang làm **ràng buộc thiết kế L-1**, KHÔNG phải
@@ -1407,6 +1407,26 @@ buộc **đầu vào** của spec kế tiếp, không phải finding chờ sửa
 `RSK-003` ĐÓNG tại `DEC-041` I). `B1`–`B10` **chưa từng được vá**. Vì vậy cảnh báo
 **"dừng dùng app với tiền thật" VẪN CÒN HIỆU LỰC** tới khi pivot L-1 hoàn tất.
 
+**Cập nhật 2026-09-05 (`S032`) — re-trigger thứ nhất ĐÃ KÍCH HOẠT VÀ ĐÃ ĐƯỢC ĐÁP ỨNG Ở TẦNG SPEC.**
+Phiên `L-1 PRODUCT + ACCOUNTING SPEC` đã chạy (`S030`) và spec được Owner duyệt (`DEC-042`); spec
+trả lời tường minh cả mười hạng mục ở Phụ lục A của
+`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md`. Việc **thi hành** các ràng buộc đó nay có
+owner là `T-12` (`docs/tasks/T-12-so-cai-l1-v2-va-derive.md`, `READY`), phân loại như sau —
+đây là **định tuyến ràng buộc, KHÔNG phải mười task**:
+
+| # | Phân loại | Neo |
+|---|---|---|
+| `B1`, `B2` | `CLOSED_BY_ARCHITECTURE` | ladder/zone/pool cộng dồn không tồn tại dưới L-1 (`CHECK-T12-01`); `M-4` chặn migration khi zone đã phát tác (`CHECK-T12-10`) |
+| `B3`, `B4`, `B7` | `COVERED_BY_STEP_A` | `CHECK-T12-06` (`SC-07`, `SC-08`) |
+| `B5` | `COVERED_BY_STEP_A` | `CHECK-T12-05` (`SC-05`, `SC-06`) |
+| `B6` | `COVERED_BY_STEP_A` | `CHECK-T12-01`/`-03` (`SC-01`) |
+| `B8` | `COVERED_BY_STEP_A` | `CHECK-T12-10`/`-11` (`INV-14`) |
+| `B9` | `COVERED_BY_STEP_A` | `CHECK-T12-07` (`INV-5`) |
+| `B10` | `OUTSIDE_STEP_A` / `RETRIGGER_LATER` | rolling window `engine.js` ngoài đường tiền L-1; re-trigger giữ nguyên ở `H-43` |
+
+Mục `H-41` **KHÔNG đóng** tại đây: nó chỉ đóng khi `T-12` `DONE` với bằng chứng gate, và `B10`
+ở lại backlog với re-trigger nguyên vẹn. Hai re-trigger còn lại bên dưới vẫn còn hiệu lực.
+
     RE_TRIGGER_CONDITION:
     - phiên `L-1 PRODUCT + ACCOUNTING SPEC` khởi động — khi đó toàn bộ mục này là đầu vào BẮT
       BUỘC và mỗi hạng mục phải được spec trả lời hoặc bác bỏ tường minh; HOẶC
@@ -1418,7 +1438,7 @@ buộc **đầu vào** của spec kế tiếp, không phải finding chờ sửa
 
 ## H-42 — Firebase isolation và xác thực bền vững — product-readiness constraint của L-1
 
-Capability: `CAP-WEBAPP` · Owner: chưa có (spec L-1 chưa tồn tại) · Phân loại: **CONFIRMED HARDENING**
+Capability: `CAP-WEBAPP` · Owner: chưa có — **`T-12` KHÔNG nhận mục này** (bước C của spec §24, ngoài phạm vi `T-12` mục `O-5`) · Phân loại: **CONFIRMED HARDENING**
 Ngày ghi nhận: 2026-09-05 (`DEC-041` K.1)
 
 Owner **MỞ LẠI** câu hỏi đa thiết bị/recovery vốn bị `DEC-021` (Personal Tool Simplification
@@ -1460,7 +1480,7 @@ Vì sao KHÔNG BLOCKING bây giờ: `T-09B` đã `DONE` với gate FROZEN của 
 
 ## H-43 — Phần dư parity của `WP-C4`: OSCORE `engine.js` ↔ `score.py` nếu tab Research L-1 được bật
 
-Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **PROVISIONAL HARDENING**
+Capability: `CAP-WEBAPP` · Owner: chưa có — **`T-12` KHÔNG nhận mục này** (tab Research ngoài phạm vi, `T-12` mục `O-2`/`O-11`) · Phân loại: **PROVISIONAL HARDENING**
 Ngày ghi nhận: 2026-09-05 (`DEC-041` F)
 
 `WP-C4` (mở rộng parity JS/Python) `CANCELLED` tại `DEC-041` F, nhãn `NOT_APPLICABLE_TO_V2_1_5`:

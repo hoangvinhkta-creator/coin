@@ -134,10 +134,42 @@ lại Owner Decision — **không tự tạo task**.
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | DONE tại S015 — 9/9 REQUIRED PASS (E1), chủ dự án phê chuẩn | CÓ |
 | `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
 | `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | `WP-B1` **DONE** (`DEC-034`); `WP-B2` **DONE** (`DEC-038`, 2026-09-05 — Owner-authorized Lifecycle Closure, 10/10 REQUIRED PASS, 141 ca test mới, 0 dòng production bị sửa, đóng `R-09` + danh sách "chưa có test" của `S001` thuộc BT §21); `WP-B3` **DONE** (`DEC-037`, 2026-09-05 — Owner-authorized Lifecycle Closure, 8/8 REQUIRED PASS, đóng `F-024`/`F-033`). **Toàn bộ lineage DONE** — `GATE-B = CLOSED` (`DEC-038`) | CÓ (lát cắt đã chạy — T-06 DONE) |
-| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; partial fill là khái niệm zone/ladder, không tồn tại dưới L-1. Ghi chú: `DEC-036` từng chuyển `READY` nhưng không được áp vào file task — stale `ST-09`, đóng tại `DEC-041` I); `WP-C4` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; phần dư parity OSCORE → `RE_TRIGGER_CONDITION` trong `HARDENING_BACKLOG.md`, không phải task) | **CÓ — lineage còn sống, lineage root của công việc L-1** (`DEC-041`) |
+| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python; **từ `DEC-041` gồm cả sổ cái tài chính CoinDCA L-1** | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4`, **`T-12` (READY — `S032`, 2026-09-05)** | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; partial fill là khái niệm zone/ladder, không tồn tại dưới L-1. Ghi chú: `DEC-036` từng chuyển `READY` nhưng không được áp vào file task — stale `ST-09`, đóng tại `DEC-041` I); `WP-C4` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; phần dư parity OSCORE → `RE_TRIGGER_CONDITION` trong `HARDENING_BACKLOG.md`, không phải task) | **CÓ — lineage còn sống, lineage root của công việc L-1** (`DEC-041`) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
 | `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; `DEC-040` từ chối V2.2 và đòi giả thuyết tương lai không kế thừa V2.1.5. `S-001`/`S-002`/`S-003` được ghi chú kèm freeze `DEC-041` A) | KHÔNG — đóng cùng V2.1.5 |
 | `CAP-GOVTOOL` | Validator & tooling governance | `MICRO-GOVDEF-001` | chưa có owner cho phần glob | READY một phần | KHÔNG |
+
+### 2.1 `T-12` — thành viên mới của `CAP-WEBAPP` (2026-09-05, `S032`)
+
+`T-12` (*Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán*,
+`docs/tasks/T-12-so-cai-l1-v2-va-derive.md`) là bước **A** của
+`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24 và là hạng mục **đầu tiên** nằm trên lát
+cắt ACTIVE §1.A.
+
+Định tuyến theo `CAPABILITY_MODEL.md` § Capability-First Question Order, ghi lại để không phải
+quyết lại:
+
+1. *Cần cho lát cắt ACTIVE chạy đúng không?* — **CÓ.** §1.A đi qua "sổ cái + giá vốn tính lại từ
+   (số dư đầu kỳ + toàn bộ trades)"; không có bước A thì lát cắt không chạy đúng được.
+2. *Thuộc capability đã có không?* — **CÓ**, `CAP-WEBAPP` (`DEC-041` J đã chỉ định đây là lineage
+   còn sống của công việc L-1). **Không** tạo capability mới, **không** tạo lineage root mới.
+3. *Task/owner nào gần nhất?* — **không có task nào đang mở**: `WP-C1`, `T-09A`, `T-09B`, `WP-C2`
+   đều `DONE`; `WP-C3`, `WP-C4` `CANCELLED` (`DEC-041` F).
+4. *Hấp thụ vào owner đó có vượt Absorption Limit không?* — **hấp thụ không khả dụng**:
+   `CAPABILITY_MODEL.md` §II.7 chỉ cho hấp thụ tự động vào task có scope baseline đã duyệt và
+   **còn mở**; không có task nào như vậy trong `CAP-WEBAPP`.
+5. *Đưa lên Owner.* — **đã có**: `DEC-042` § Consequence, *"Việc mở task ID cho bước A
+   (Ledger/Data Model v2) thuộc một phiên riêng sau `DEC-042`"*.
+
+`T-12` **không** phải sibling task tách ra để giải phóng budget: nó nằm **trong** capability đã
+có, dùng chung pool của lineage root `WP-C1` và không đặt lại con số nào
+(`REVIEW_BUDGET_LEDGER.md` §2.2). Số task ID mới do phiên `S032` tạo = **1**; số capability mới =
+**0**; số lineage root mới = **0**; số proposal mới = **0**;
+số `OWNER_ASSIGNMENT_REQUIRED` mới = **0**.
+
+`END_TO_END_ACCEPTANCE` của §1.A vẫn `PENDING_OWNER_DATA` — **không đổi**. `T-12` được chấp nhận
+bằng toạ độ nghiệp vụ **tổng hợp** (`SC-01`…`SC-12`, spec §19, có số cụ thể), đúng như `DEC-041`
+C cho phép; `A-5` (`OWNER_LOCAL_ACCEPTANCE`, spec §22.1) vẫn nằm ngoài `T-12`.
 
 ---
 
