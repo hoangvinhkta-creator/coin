@@ -24,6 +24,8 @@ thực thi xem file nào là "production"; agent đọc bảng này. Ba nơi dù
 | Đường dẫn | Vai trò trong runtime | Ghi chú |
 |---|---|---|
 | `src/eth_dca_os/**` | Backtest engine Python — đường duy nhất sinh ra official run và verdict | 26 module; là production path chính |
+| `webapp/ledger.js` | Sổ cái L-1: schema, derive, migration và ranh giới snapshot | T-12, DEC-043; build_app → app_logic/ledger_ui |
+| `webapp/ledger_ui.js` | Adapter nhập/sửa/xóa L-1 vào persistence hiện có | T-12; không đổi Firebase/auth/rules/hosting |
 | `webapp/app_logic.js` | Logic sổ sách của app web (ghi giao dịch, vốn, P&L) | Có thể được dùng với tiền thật — xem RSK-001, RSK-003 |
 | `webapp/engine.js` | Bản cài đặt JS song song của engine chiến lược | Nguồn của rủi ro parity RSK-002 |
 | `webapp/app_shell.html` | Vỏ app web được người dùng mở trực tiếp | |

@@ -7,6 +7,8 @@ const DIR = __dirname;
 const shell  = fs.readFileSync(path.join(DIR, 'app_shell.html'), 'utf8');
 const fbcfg  = fs.readFileSync(path.join(DIR, 'firebase_config.js'), 'utf8');
 const engine = fs.readFileSync(path.join(DIR, 'engine.js'), 'utf8');
+const ledger = fs.readFileSync(path.join(DIR, 'ledger.js'), 'utf8');
+const ledgerUI = fs.readFileSync(path.join(DIR, 'ledger_ui.js'), 'utf8');
 const logic  = fs.readFileSync(path.join(DIR, 'app_logic.js'), 'utf8');
 
 // T-09B (DEC-020 OD-A): app chạy trên Firebase Hosting, nguồn bền là Cloud Firestore.
@@ -16,6 +18,8 @@ const logic  = fs.readFileSync(path.join(DIR, 'app_logic.js'), 'utf8');
 const BODY = shell
   + '\n<script>\n' + fbcfg + '\n</script>\n'
   + '<script>\n' + engine + '\n</script>\n'
+  + '<script>\n' + ledger + '\n</script>\n'
+  + '<script>\n' + ledgerUI + '\n</script>\n'
   + '<script>\n' + logic + '\n</script>\n';
 
 const FULL = '<!doctype html><html lang="vi"><head><meta charset="utf-8">'

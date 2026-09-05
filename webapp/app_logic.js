@@ -39,7 +39,7 @@
   // `ethdca/seed`). Trang khởi động với sổ rỗng và mọi thao tác ghi bị khoá cho tới khi
   // initPersistence() nạp xong bản bền. Trang không còn nhúng state; localStorage/sessionStorage
   // chỉ là mirror/cache và KHÔNG được tự thắng bản bền (CHECK-T09B-16).
-  var state = emptyState();
+  var state = CoinLedger.empty(CoinLedger.clock().today.slice(0, 7));
   var seed = null;
 
   /** Trạng thái persistence — EPHEMERAL, không bao giờ được ghi lên nguồn bền. */
@@ -452,6 +452,16 @@
   }
 
   function render() {
+    CoinLedgerUI.mount({ state: function () { return state; }, seed: function () { return seed; },
+      raw: function () { return P.rawDurable; },
+      canWrite: function () { return P.phase === "ONLINE" && !P.saving && !P.diverged; },
+      commit: function (next) {
+        next = CoinLedger.canonical(next);
+        next.rev = Math.max(state.rev || 0, P.durableRev || 0);
+        state = next; touch();
+      }
+    });
+    renderPersistence(); CoinLedgerUI.render(); return;
     recompute();
     renderPersistence();   // gồm cả renderBanners()
     renderDash();
@@ -465,6 +475,7 @@
   }
 
   function renderBanners() {
+    $("banners").innerHTML = persistenceBanners(); return;
     var out = persistenceBanners();   // T-09B: trạng thái nguồn bền luôn đứng đầu
     out += '<div class="banner warn"><span class="mk">CHƯA QUA VERDICT</span><p>' +
       "Implementation Plan §9 chỉ cho phép dựng app sau khi backtest cho verdict BUILD. " +
@@ -868,6 +879,10 @@
    *  Chỉ kiểm schema + bất biến kế toán đo được trên state đã lưu. KHÔNG sửa, KHÔNG backfill
    *  (`ladders[].month` được phép vắng — historical state giữ nguyên, CHECK-T09B-15). */
   function validateState(o) {
+    if (o && o.schema === CoinLedger.SCHEMA) {
+      try { CoinLedger.canonical(o); return { ok: true }; }
+      catch (e) { return { ok: false, reason: e.message }; }
+    }
     var bad = function (r) { return { ok: false, reason: r }; };
     if (!o || typeof o !== "object" || Array.isArray(o)) return bad("không phải object");
     if (o.schema !== "ethdca.tracker/1") {
@@ -945,6 +960,7 @@
   }
   /** Mọi thao tác ghi sổ đều đi qua đây: chỉ được ghi khi nguồn bền đã nạp xong (fail closed). */
   function canWrite(msgId) {
+    if (msgId) return false; // Legacy financial entry points are read-only under L-1.
     if (P.phase === "ONLINE") return true;
     if (msgId) msg(msgId, "Không ghi sổ — nguồn bền: " + phaseLabel() + ". Xem banner đầu trang.", "err");
     return false;
@@ -970,7 +986,7 @@
    *  durableRev. Lệnh ghi chồng nhau được gộp: bản mới nhất được ghi lại sau khi lệnh hiện
    *  tại kết thúc (resave). */
   function persist() {
-    if (P.phase !== "ONLINE" || !fb.db) return;
+    if (P.phase !== "ONLINE" || !fb.db || state.schema !== CoinLedger.SCHEMA) return;
     if (P.saving) { P.resave = true; return; }
     P.saving = true; P.resave = false; P.lastError = null; P.unconfirmed = false;
     var snap = plain(state);
@@ -1003,7 +1019,7 @@
     work.then(function () {
       clearTimeout(timer);
       P.durableRev = rev;
-      P.lastAck = new Date().toISOString();
+      P.lastAck = CoinLedger.clock().instant;
       if (seedSnap && gen === P.seedGen) { P.seedPending = false; P.seedDurable = true; }
     }, function (err) {
       clearTimeout(timer);
@@ -1142,7 +1158,9 @@
     mirror();
   }
   function pushDiverged() {
-    if (!P.diverged || !canWrite("dataMsg")) return;
+    if (!P.diverged || !canWrite()) return;
+    if (P.diverged.schema !== CoinLedger.SCHEMA) return;
+    P.diverged = CoinLedger.canonical(P.diverged);
     state = P.diverged;
     P.diverged = null;
     try { localStorage.removeItem(STORE_STASH); } catch (e) { /* ignore */ }
@@ -1204,10 +1222,10 @@
       var raw = snapState.data();
       var v = validateState(raw);
       if (!v.ok) { P.rawDurable = raw; setPhase("CORRUPT", v.reason); return; }
-      state = raw;
+      state = raw.schema === CoinLedger.SCHEMA ? CoinLedger.canonical(raw) : raw;
       P.durableRev = raw.rev;
     } else {
-      state = emptyState();
+      state = CoinLedger.empty(CoinLedger.clock().today.slice(0, 7));
       P.durableRev = null;
     }
     if (snapSeed.exists && validSeed(snapSeed.data())) {
@@ -1429,7 +1447,7 @@
   });
 
   // mặc định ngày/tháng = hôm nay
-  var today = new Date().toISOString().slice(0, 10);
+  var today = CoinLedger.clock().today;
   $("pxDate").value = today;
   $("pxDate").max = today;
   $("cbMonth").value = today.slice(0, 7);
