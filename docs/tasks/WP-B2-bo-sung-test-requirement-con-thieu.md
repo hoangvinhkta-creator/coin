@@ -13,6 +13,10 @@ Bảng đối chiếu **31/31 requirement §21** nằm ở `docs/CONVENTIONS.md`
 không trôi khỏi văn bản spec. Sinh hai mục HARDENING `H-39`, `H-40` (không nâng đường găng,
 không tạo task ID nào).
 
+Commit: `ce91a325159b5c665fa366522f7c22684b472b33` trên nhánh
+`claude/wp-b2-implementation-u9y68k` (parent `b778dc1`); remote SHA trùng local; branch
+authority check sau push = **PASS**.
+
 `IMPLEMENTED → DONE` là quyết định của chủ dự án theo
 `governance/v4/CORE/STATE_AUTHORITY.md` — implementer KHÔNG tự chuyển. Bằng chứng đầy đủ:
 `docs/reviews/WP-B2-IMPLEMENTATION-REPORT.md`.

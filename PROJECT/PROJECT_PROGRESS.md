@@ -66,7 +66,9 @@ không tới lượt chạy ở TTL baseline 12h (cùng họ `H-36`).
 `T-08`); `T-06 = DONE`; V2.1.5 validation = `FAILED`; verdict lịch sử = `DO_NOT_BUILD`;
 `can_proceed_to_app = false`. `WP-C3` KHÔNG được mở. Phiên này KHÔNG chạy `WP-C3`, KHÔNG mở
 `GATE-B`/`T-07`, KHÔNG rerun `T-06`, KHÔNG đổi threshold/strategy, KHÔNG merge `main`.
-Báo cáo đầy đủ: `docs/reviews/WP-B2-IMPLEMENTATION-REPORT.md`; biên bản:
+Commit: `ce91a32` trên nhánh `claude/wp-b2-implementation-u9y68k` (parent `b778dc1`); remote SHA
+trùng local; branch authority sau push = PASS. Báo cáo đầy đủ:
+`docs/reviews/WP-B2-IMPLEMENTATION-REPORT.md`; biên bản:
 `docs/sessions/S026-wp-b2-bo-sung-test-spec21.md`.
 
 Trước đó, cùng ngày — **OWNER DECISION `DEC-037` — Lifecycle Closure: `WP-B3: IMPLEMENTED → DONE`.**

@@ -612,7 +612,36 @@ và `IMPLEMENTED` không phải `DONE`. Đúng một mắt xích còn thiếu, v
 
 ## 25. Commit / Push
 
-Xem cuối tài liệu — mục này được điền bằng SHA thật sau khi commit và push.
+Đúng một commit cho toàn bộ gói, đẩy lên **duy nhất** nhánh chuyên dụng của phiên.
+
+    commit         ce91a325159b5c665fa366522f7c22684b472b33
+    parent         b778dc161356ee9b422c15a238bc994a266556ae   (= origin/main lúc mở phiên)
+    branch         claude/wp-b2-implementation-u9y68k
+    remote SHA     ce91a325159b5c665fa366522f7c22684b472b33   (git ls-remote — TRÙNG local)
+    tiêu đề        WP-B2: bổ sung test cho requirement Backtest §21 còn thiếu (đóng R-09)
+
+Branch authority check chạy lại SAU push:
+
+    branch            = claude/wp-b2-implementation-u9y68k
+    default branch    = main (resolved, not assumed)
+    behind upstream   = 0
+    ahead of default  = 1 commit(s)
+    divergence age    = 0 day(s)
+    divergence LOC    = 2864
+    integration       = INTEGRATION_DECISION_REQUIRED=NO
+    tracked worktree  = CLEAN
+    production diff   = EMPTY
+    BRANCH AUTHORITY: PASS
+
+`divergence LOC` 2.864 nằm xa dưới ngưỡng 5.000 của `GOVERNANCE_V4.md` §II.3, và **toàn bộ**
+con số đó là test + tài liệu + trạng thái — `production diff = EMPTY`.
+
+KHÔNG làm, và cố ý không làm: không merge `main`; không push `main`; không xoá nhánh nào; không
+`git clean`/`git stash`; không tạo Pull Request (đề bài không yêu cầu); không di chuyển hay tạo
+lại tag `v2.1.5-official-T06`.
+
+Bản ghi cuối cùng của báo cáo này (mục §25 và các số suite) được commit trong một commit
+tài liệu tiếp theo trên cùng nhánh — nội dung kỹ thuật của gói không đổi.
 
 ## 26. Exact Next Action
 
