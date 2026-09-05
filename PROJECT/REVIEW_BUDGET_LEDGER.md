@@ -713,3 +713,41 @@ finding nào BLOCKING. Bốn finding (`F-E2-01`…`F-E2-04`) đều route thành
 (`DEC-046`) cũng không tiêu budget — đây là hành vi ghi nhận vòng đời, không phải một chu kỳ
 repair mới. Golden `T12_GOLDEN_ACCOUNTING_BASELINE = c610a299ed6b66dea3cd63372a0943967c93e95d`
 giữ nguyên trong suốt E2 và closure; fixture `webapp/test_t12_fixtures.js` không đổi một byte.
+
+---
+
+### 2.2.9 — S035 (2026-09-05) — mở `T-13` (L-1 bước B), budget KHÔNG ĐỔI
+
+`T-13` (`docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md`) được thêm vào THÀNH VIÊN của
+`CAP-WEBAPP`. Giống `T-12` tại `2.2.6`, đây là một **task ID MỚI** — mở theo thẩm quyền tường
+minh của Owner tại `DEC-047` (chỉ thị phiên trực tiếp "COINDCA — L-1 STEP B DEFINITION"). Định
+tuyến đầy đủ (5 câu hỏi `CAPABILITY_MODEL.md`) ghi tại `CAPABILITY_REGISTRY.md` §15.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI (Owner-ratified, `DEC-018`)
+    CURRENT BUDGET USED       = 1 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1, tiêu bởi T-12
+                                                     tại `2a2ab3f`, DEC-043 — không thuộc T-13)
+    CURRENT BUDGET REMAINING  = 1 repair cycle    <- KHÔNG ĐỔI
+    T-13 tự cấp thêm          = 0   <- không pre-authorize gì (khác `T-12`/`DEC-043`); nếu
+                                        implementation cần sửa lại sau lượt đầu, đó là RÚT từ
+                                        1 chu kỳ REMAINING hiện có, qua đúng quy trình
+                                        `CAPABILITY_MODEL.md` §II.8 (Owner Decision khi FAIL
+                                        thật xảy ra, không cấp trước)
+    OWNER_EXTENSION           = KHÔNG CẤP
+
+**`T-13` KHÔNG làm budget reset và KHÔNG được cấp budget riêng** — cùng ba lý do đã ghi cho `T-12`
+tại `2.2.6`: (1) budget bám lineage root `WP-C1`, không reset trên trục ngang (task anh em trong
+cùng capability); (2) `migration_status` của `CAP-WEBAPP` chưa từng khai `ADOPTED`, nên một repair
+cycle cho `T-13` (nếu cần) đòi một Owner Decision riêng khi FAIL thật xảy ra; (3) lượt thi hành
+đầu tiên của `T-13` là **INITIAL IMPLEMENTATION** — không tiêu repair cycle, theo đúng tiền lệ đã
+ghi cho `WP-A4`/`T-09A`/`T-09B`/`WP-C2`/`T-12`.
+
+Effective Risk của `CAP-WEBAPP` tại `T-13` = **HIGH** (`MAX(Local Risk 3, Blast Radius 3)`), không
+đổi so với `T-12`. Golden Reduction KHÔNG dùng được — `H-10` vẫn mở, chưa có Golden baseline.
+
+Phiên `S035` là phiên governance/spec/task-definition-only. Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat origin/main..HEAD -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 0   (production diff = EMPTY; xem `docs/sessions/S035-l1-step-b-task-definition.md`)
+
+Vì diff production = 0, phiên này **không tiêu** chu kỳ nào và không cần cặp BASE/HEAD SHA trong
+bảng §2.2. Cặp SHA sẽ được ghi tại lượt implementation thật của `T-13`.

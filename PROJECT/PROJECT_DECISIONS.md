@@ -4131,3 +4131,99 @@ thành trạng thái hợp lệ. Câu hỏi tích hợp nhánh `codex/t12-l1-led
 khi Owner chọn thời điểm.
 
 ---
+
+## DEC-047 — Owner Direction: mở CoinDCA L-1 Bước B (dashboard/UX); duyệt Step-B spec; mở task `T-13`
+
+Date:
+2026-09-05 (Owner Decision, qua chỉ thị phiên trực tiếp "COINDCA — L-1 STEP B DEFINITION", nhánh
+`claude/coindca-l1-step-b-definition-xvq3b1`)
+
+Task:
+Không thuộc task ID nào tại thời điểm ra quyết định — quyết định mở vòng đời Bước B và cho phép
+mở đúng một task ID (`T-13`), đúng khuôn `DEC-040`/`DEC-041`/`DEC-042`.
+
+## Owner Direction (tóm lược, đầy đủ ở chỉ thị phiên)
+
+    OWNER DIRECTION — COINDCA L-1 STEP B DEFINITION
+    MODE: PRODUCT / CAPABILITY DEFINITION ONLY. Do NOT implement production code this session.
+    Purpose: turn T-12's completed accounting ledger into a practical daily-use personal CoinDCA
+    application (dashboard, transaction entry, history, edit/delete, plan/carry UX). Reuse T-12
+    accounting truth — do NOT create a second accounting engine.
+    SELL: explicitly OUT OF SCOPE (H-46/F-E2-03 unresolved) — hide or mark unavailable, do not
+    resolve H-46, do not implement realized P&L this session.
+    Firebase/real-data/Step C: explicitly OUT OF SCOPE this session.
+    Research features (Buy Score/regime/ladder/recommendation/Research tab/V2.1.5/V2.2): do NOT
+    reintroduce.
+    Owner Decisions: make reasonable UX choices without escalating cosmetic questions; escalate
+    only genuine Owner decisions (different navigation/product direction, scope outside Step B,
+    architecture expansion, conflict with T-12 accounting truth, need for another capability).
+    Governance output: determine correct canonical identity for Step B using current governance;
+    if it should become the next task, create exactly ONE task definition; expected lifecycle
+    PLANNED or READY, do NOT transition to IN_PROGRESS.
+
+## Decision
+
+**A. Bước B được mở, đúng thẩm quyền `T12-OWNER-CLOSURE.md` §7** ("Step B is an Owner decision,
+not an automatic consequence of `T-12 DONE`"). Chỉ thị phiên nói trên **LÀ** hành vi Owner Decision
+đó — được ghi lại chính thức tại đây theo yêu cầu `STATE_AUTHORITY.md`, không phải một suy diễn
+của agent.
+
+**B. Spec Bước B DUYỆT — `CANONICAL — APPROVED`.**
+`docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md` (soạn cùng phiên này, `S035`) chuyển thẳng sang
+`CANONICAL — APPROVED`, đúng thẩm quyền uỷ quyền của chỉ thị phiên: *"Make reasonable UX choices
+yourself when they do not alter accounting or product scope. Escalate only genuine Owner
+decisions."* Không mục nào trong spec đó đổi phạm vi kế toán/schema/kiến trúc Firebase, nên không
+mục nào cần một vòng duyệt hỏi-đáp riêng — spec tự liệt kê các lựa chọn đã chốt thay Owner ở §16
+của chính nó để không phải tranh luận lại.
+
+**C. Mở đúng MỘT task ID — `T-13`.** Định tuyến theo `CAPABILITY_MODEL.md` § Capability-First
+Question Order (chi tiết đầy đủ: `PROJECT/CAPABILITY_REGISTRY.md` §15, `docs/tasks/T-13-buoc-b-
+dashboard-giao-dich-lich-su.md` § Notes): cần cho lát cắt ACTIVE (CÓ), thuộc `CAP-WEBAPP` đã có
+(CÓ), không task nào đang mở để hấp thụ vào, không phải hấp thụ nên Absorption Limit không áp
+dụng, đưa lên Owner = chính chỉ thị phiên này. Task Mode `MAJOR`, routing `C / Opus / xhigh`
+(bằng chứng router: `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md` § Ghi chú chấm điểm
+routing). Trạng thái sau phiên: `NOT_PLANNED → READY` (Ready Gate 17/17 tương đương, Completion
+Gate 13/13 REQUIRED FROZEN) — **KHÔNG** `IN_PROGRESS`, đúng giới hạn chỉ thị phiên.
+
+**D. Guard tiếp tục hiệu lực, không đổi.** `T-13` KHÔNG mở SELL cho dữ liệu thật (`H-46`/`F-E2-03`
+vẫn cần một Owner Decision riêng trước), KHÔNG mở Firebase project riêng/Google Sign-in (`H-42`,
+bước C), KHÔNG tái sinh Buy Score/regime/ladder/recommendation/tab Research. `T-12 DONE` và mọi
+guard của `DEC-046` giữ nguyên tuyệt đối.
+
+**E. Không hạng mục nào khác được mở.** Không capability mới, không lineage root mới, không
+proposal mới. `CAP-WEBAPP` budget không đổi (`allowed 2 / used 1 / remaining 1` — xem
+`PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.9). Không thi hành ledger/migration/UI/Firebase/auth
+trong phiên này — production diff = **EMPTY**.
+
+## Reason
+
+`T12-OWNER-CLOSURE.md` §7 để lại đúng một câu hỏi mở: "Step B là quyết định của Owner, không phải
+hệ quả tự động." Chỉ thị phiên "COINDCA — L-1 STEP B DEFINITION" là câu trả lời trực tiếp đó —
+đến kèm đủ chi tiết nghiệp vụ (dashboard, transaction entry, history, edit/delete, plan UX, IA,
+mobile, out-of-scope, acceptance scenarios, production reachability, change budget) để một phiên
+"capability definition only" hoàn tất toàn bộ Ready Gate mà không cần hỏi lại Owner từng lựa chọn
+thẩm mỹ — đúng cơ chế uỷ quyền mà `STATE_AUTHORITY.md` cho phép Owner trao khi phạm vi đã đủ rõ.
+
+## Impact
+
+- `docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md` (mới): `CANONICAL — APPROVED`.
+- `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md` (mới): `NOT_PLANNED → READY`, Task Mode
+  MAJOR, Completion Gate 13/13 REQUIRED FROZEN, Routing C/Opus/xhigh.
+- `PROJECT/PROJECT_PROGRESS.md`: Last Updated; roadmap thêm dòng `T-13`; Current Task Snapshot;
+  Session History.
+- `PROJECT/CAPABILITY_REGISTRY.md` §15 (mới): định tuyến 5-câu-hỏi cho `T-13`, ghi nhận không
+  capability/lineage mới.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.9 (mới): ghi nhận `T-13` là thành viên mới của
+  `CAP-WEBAPP`, budget không đổi (2/1/1).
+- `docs/sessions/S035-l1-step-b-task-definition.md` (mới): biên bản phiên định nghĩa.
+- Số task ID mới = **1** (`T-13`). Số capability mới = **0**. Số lineage root mới = **0**.
+  Production diff = **EMPTY**.
+
+## Can Revisit After
+
+`H-46`/`F-E2-03` khi Owner quyết định mở nghiệp vụ SELL cho dữ liệu thật (Owner Decision riêng,
+không phải hệ quả của `T-13`); Step-B spec §16 khi Owner muốn đổi một lựa chọn UX đã chốt thay
+(IA, FAB, ẩn SELL, card-based history, nút tắt "Ghi đã mua"); mở bước C (`H-42`) khi Owner sẵn
+sàng cho Firebase project riêng.
+
+---

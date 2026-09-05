@@ -567,3 +567,42 @@ sau này.
 §24).** Nó KHÔNG mở khoá dùng tiền thật không giới hạn cho CoinDCA: `H-42` (Firebase
 isolation/xác thực bền vững — bước C) và các ràng buộc product-readiness khác (backup,
 `OWNER_LOCAL_ACCEPTANCE` — bước D) giữ nguyên, không đổi bởi quyết định này.
+
+## 15. `T-13` — thành viên mới của `CAP-WEBAPP` (2026-09-05, `S035`) — mở CoinDCA L-1 Bước B
+
+`T-13` (*CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao dịch/Lịch sử*,
+`docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md`) là bước **B** của
+`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24 và
+`docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md` (`CANONICAL — APPROVED`, `DEC-047`).
+
+Định tuyến theo `CAPABILITY_MODEL.md` § Capability-First Question Order, ghi lại để không phải
+quyết lại:
+
+1. *Cần cho lát cắt ACTIVE chạy đúng không?* — **CÓ.** §1.A đi tới "4 con số dashboard"; không có
+   bước B thì bốn con số đó chỉ đúng trong test, không dùng được hằng ngày như mục tiêu cuối của
+   `PROJECT_PROFILE.md` đòi hỏi.
+2. *Thuộc capability đã có không?* — **CÓ**, `CAP-WEBAPP` (lineage root `WP-C1`, cùng lineage của
+   `T-12`). **Không** tạo capability mới, **không** tạo lineage root mới.
+3. *Task/owner nào gần nhất?* — **không có task nào đang mở**: `T-12` đã `DONE`
+   (`DEC-046`); không thành viên nào khác của `CAP-WEBAPP` đang `READY`/`IN_PROGRESS`.
+4. *Hấp thụ vào owner đó có vượt Absorption Limit không?* — **không áp dụng**: đây là mở một task
+   MỚI trong capability đã có (giống hình thái `T-12` tại §2.1), không phải hấp thụ một finding
+   vào một task đang mở, nên bốn ngưỡng Absorption Limit không đo trên hành vi này.
+5. *Đưa lên Owner.* — **đã có**: chỉ thị phiên trực tiếp "COINDCA — L-1 STEP B DEFINITION", ghi
+   nhận thành `DEC-047` (`PROJECT/PROJECT_DECISIONS.md`).
+
+`T-13` **không** phải sibling task tách ra để giải phóng budget: nó nằm **trong** capability đã
+có, dùng chung pool của lineage root `WP-C1` (`allowed 2 / used 1 / remaining 1` — không đổi bởi
+việc mở task) và không đặt lại con số nào (`REVIEW_BUDGET_LEDGER.md` §2.2.9). Số task ID mới do
+phiên `S035` tạo = **1**; số capability mới = **0**; số lineage root mới = **0**; số proposal mới
+= **0**; số `OWNER_ASSIGNMENT_REQUIRED` mới = **0**.
+
+`T-13` là **UI/UX thuần** tiêu thụ API đã đóng băng của `T-12`
+(`derive()`/`update()`/`migrate()`/`destructive()` của `webapp/ledger.js`) — nó **không** mở lại
+Scope Lock của `T-12`, **không** đổi schema `coindca.ledger/2`, **không** đổi ranh giới
+persistence `ethdca/state`. Trạng thái sau phiên định nghĩa: `NOT_PLANNED → READY` (Ready Gate
+17/17 tương đương, Completion Gate 13/13 REQUIRED FROZEN) — chưa `IN_PROGRESS`.
+
+`H-46` (`F-E2-03` — ngữ nghĩa SELL) và `H-42` (Firebase isolation, bước C) **không** bị `T-13`
+chạm tới hay giải quyết — `T-13` ẩn hoàn toàn tuỳ chọn SELL khỏi UI thay vì xử lý khiếm khuyết đặc
+tả, và không mở bất kỳ thành phần Firebase mới nào.
