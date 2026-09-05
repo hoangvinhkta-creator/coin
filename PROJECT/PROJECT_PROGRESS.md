@@ -25,6 +25,14 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
+2026-09-05 — **S034 tiếp nối: DEC-044 áp dụng; preflight đủ SC-01…SC-12 còn hai nhóm mâu thuẫn.**
+Carry SC-04 đã sửa thành 11.775.522 VND. Preflight: 9 CONSISTENT / 3 CONTRACT_CONFLICT;
+(A) bình quân bất biến exact vs ROUND_VND của SC-04/CHECK-T12-03;
+(B) carryOut tháng 3 tại asOfDate trong tháng 3 của SC-09/SC-10.
+T-12 giữ BLOCKED — OWNER_DECISION_REQUIRED; Owner cần định đoạt một batch trong phần bổ sung
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md`. Không implementation/fixture/baseline/repair.
+
+Lịch sử cập nhật trước:
 2026-09-05 — **S034: T-12 READY → BLOCKED; OWNER_DECISION_REQUIRED.** SC-04 yêu cầu remainingPlannedBudget(2026-02) = 7.090.822 VND, nhưng §11.2/§11.4 và DEC-042 bắt buộc 11.775.522 VND (carryIn = 4.684.700 VND).
 Dừng trước implementation theo Stop conditions của T-12; production diff = 0; chưa tạo fixture,
 chưa đóng băng golden baseline; repair used vẫn 0. Báo cáo và đề xuất chờ Owner:
@@ -774,15 +782,15 @@ Vertical Acceptance Slice ACTIVE đổi sang **sản phẩm CoinDCA L-1**
 `can_proceed_to_app = false` giữ nguyên vĩnh viễn.
 
 Current Task:
-T-12 — BLOCKED (`S034`, `OWNER_DECISION_REQUIRED` do SC-04 mâu thuẫn carry canonical).
+T-12 — BLOCKED (`S034`, `OWNER_DECISION_REQUIRED` do hai nhóm xung đột preflight sau DEC-044).
 Chưa bắt đầu implementation. Chi tiết: Current Task Snapshot và báo cáo T12 §3/§29.
 
 Current Task Mode:
 MAJOR
 
 Next Recommended Task:
-Owner định đoạt `COMPLETION GATE CHANGE PROPOSAL` trong
-`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §29, rồi tái xác nhận Ready Gate của chính T-12.
+Owner định đoạt đề xuất gộp hai nhóm ở phần bổ sung DEC-044/preflight trong
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md`, rồi tái xác nhận Ready Gate của chính T-12.
 Không mở task mới. Spec L-1 đã được duyệt tại DEC-042; các task V2.1.5 đã đóng/hoãn giữ nguyên.
 
 Branch authority: mọi phiên mới branch từ `origin/main` sau khi fetch. Baseline đo
@@ -965,14 +973,14 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
     Trạng thái     BLOCKED — dừng ở DISCOVER, chưa bắt đầu implementation
     Routing        D / max; model_score 3.1, effort_score 3.65; router tái chạy PASS
     Gate           FROZEN 2026-09-05 — 14 REQUIRED, vẫn NOT_TESTED; không sửa câu chữ
-    Ready Gate     S033 đã ghi 17/17; S034 không tái xác nhận được vì xung đột SC-04/carry
+    Ready Gate     Chưa tái xác nhận 17/17: preflight sau DEC-044 còn CONTRACT_CONFLICT
     Capability     CAP-WEBAPP (lineage root WP-C1)
     Kiến trúc      DEC-043 vẫn có hiệu lực: schema mới bên trong ethdca/state
     Golden         Chưa có fixture commit; T12_GOLDEN_ACCOUNTING_BASELINE_SHA chưa tồn tại
     Budget         allowed 2 / used 0 / remaining 2; repair pre-authorized của T-12 chưa tiêu
-    Blocker        SC-04: 7.090.822 VND; §11.2/§11.4: 11.775.522 VND
-    Bằng chứng     docs/reviews/T12-IMPLEMENTATION-REPORT.md §3 (số học E1)
-    Bước kế tiếp   Owner duyệt/bác đề xuất §29; không tự đổi ngữ nghĩa, không mở task mới
+    Blocker        A: WAC/ROUND_VND (SC-04); B: carryOut tháng đang mở (SC-09/SC-10)
+    Bằng chứng     Phần bổ sung DEC-044/preflight của báo cáo T12; không phải gate evidence
+    Bước kế tiếp   Owner duyệt/bác một batch A+B; carry SC-04 đã được DEC-044 đóng
 
 Bước B/C/D chưa mở. `H-41`/`H-42` chưa đóng. Không ghi hay đọc dữ liệu tài chính thật của Owner.
 Nguồn checkpoint: `7d1985aaf306294df49c9508078d5425da10f47e`; production diff = 0.
@@ -1664,6 +1672,10 @@ Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 (Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
 
 ## Session History
+
+- **S034 tiếp nối (2026-09-05)** — áp dụng DEC-044 cho carry SC-04; một lượt preflight đủ 12 SC,
+  9 CONSISTENT / 3 CONTRACT_CONFLICT, hai nhóm gửi Owner cùng một batch. Không implementation,
+  không fixture/baseline/repair; giữ BLOCKED. Cùng báo cáo/session, không thêm artifact.
 
 - **S034 (2026-09-05)** — T-12 dừng tại DISCOVER với OWNER_DECISION_REQUIRED; SC-04 lệch
   công thức carry 4.684.700 VND. Không production/fixture commit, không tiêu repair cycle.
@@ -2386,8 +2398,9 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
-**Hiện hành sau S034:** Owner định đoạt đề xuất trong `docs/reviews/T12-IMPLEMENTATION-REPORT.md`
-§29. Không bắt đầu implementation từ bản 17/17 lịch sử khi xung đột SC-04 còn mở. Sau disposition,
+**Hiện hành sau DEC-044:** Owner định đoạt một batch A+B trong phần bổ sung preflight của
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md`. Oracle carry SC-04 đã đóng; hai nhóm khác còn mở.
+Không bắt đầu implementation từ bản 17/17 lịch sử. Sau disposition,
 tái xác nhận Ready Gate và branch authority trên nhánh được Owner cho phép; tiếp tục chính T-12.
 
 ### Hướng dẫn trước S034 (lịch sử, chỉ áp dụng sau khi blocker trên được đóng)

@@ -5,6 +5,7 @@
 Status: `CANONICAL — APPROVED` (Owner Decision `DEC-042`, 2026-09-05; các câu hỏi §21 đã QUYẾT)
 Thẩm quyền nền: `DEC-040`, `DEC-041` (A, B, C, D, J, K), `DEC-042`, `H-41`, `H-42`
 Ngày soạn: 2026-09-05 · Ngày duyệt: 2026-09-05 (`DEC-042`)
+Tu chỉnh oracle SC-04: 2026-09-05 (`DEC-044`); giữ nguyên input, WAC và ngữ nghĩa `DEC-042`.
 
 ## Tóm tắt Thi hành (Executive Summary)
 
@@ -1044,7 +1045,8 @@ Trạng thái nền dùng chung cho `SC-01`…`SC-08`:
             ethQty 0,95 · ethCostUsdt 2.300,6
             ethCostVnd 58.224.478 · avgCostVnd ~61.288.924,21/ETH
             usdtQty 599,4 · usdtCostVnd 15.475.522
-            planInvested(2026-02) = 12.909.178 · remainingPlannedBudget(2026-02) = 7.090.822
+            carryInVnd(2026-02) = 4.684.700 · plannedBudgetVnd(2026-02) = 24.684.700
+            planInvested(2026-02) = 12.909.178 · remainingPlannedBudgetVnd(2026-02) = 11.775.522
     INV     hai tỷ giá khác nhau được trộn bởi WAC, KHÔNG cần ghép lô (§8.3-1)
 
 ### SC-05 — Edit past trade and recompute

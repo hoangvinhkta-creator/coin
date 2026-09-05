@@ -3913,3 +3913,63 @@ pyproject.lock` → rỗng). Review/repair budget: quyết định này TỰ NÓ
 pre-authorize một chu kỳ để dùng SAU, khi `T-12` thi hành và cần).
 
 ---
+
+## DEC-044 — T-12: sửa oracle SC-04 trước implementation và trước golden freeze
+
+Date:
+2026-09-05 (Owner Decision qua yêu cầu “OWNER DECISION — T-12 SC-04 ORACLE CORRECTION”,
+nhánh `codex/t12-l1-ledger-impl`)
+
+Task:
+T-12 — cùng capability CAP-WEBAPP, lineage root WP-C1. Không task/capability mới.
+
+## Decision
+
+Owner **DUYỆT** đề xuất bounded `COMPLETION GATE CHANGE PROPOSAL` trong
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §29 (báo cáo S034 tại commit
+`2642c8e9908d63e8bb1f266432d67be073e51c20`). Đây là sửa một oracle mâu thuẫn nội tại
+**trước implementation**, không phải implementation repair, không nới ngưỡng/tolerance,
+không thay đổi chiến lược hay ngữ nghĩa DEC-042.
+
+Giữ nguyên mọi input SC-01…SC-04, monthlyBudgetVnd = 20.000.000, CAPPED_CARRY,
+carryCapMonths = 1, WAC và planInvestedVnd tháng 2 = 12.909.178. Sửa SC-04 tại spec §19:
+
+    January planInvestedVnd          = 15.315.300
+    January carryOutVnd              =  4.684.700
+    February carryInVnd              =  4.684.700
+    February plannedBudgetVnd        = 24.684.700
+    February planInvestedVnd         = 12.909.178
+    February remainingPlannedBudgetVnd:
+      7.090.822 -> 11.775.522
+
+Giá trị 7.090.822 bị bác vì bỏ sót carryIn đã canonical. Không thi hành FORFEIT để giữ số cũ.
+Biểu thức Owner dùng min(max(0, 20.000.000 − 15.315.300), 20.000.000) cho tháng 1 cho đúng
+4.684.700 trong trường hợp này; **không** sửa công thức tổng quát §11.4 (cap vẫn ở carryIn).
+
+## Trạng thái tại thời điểm sửa
+
+- Không production implementation T-12 tồn tại; production diff từ base user chỉ định
+  `7d1985aaf306294df49c9508078d5425da10f47e` rỗng.
+- Chưa tạo golden fixture T-12 nào; T12_GOLDEN_ACCOUNTING_BASELINE chưa frozen.
+- REPAIR_CYCLE_1 = NOT_CONSUMED; pool CAP-WEBAPP allowed 2 / used 0 / remaining 2 giữ nguyên.
+- Không REQUIRED check nào bị làm yếu. Substance CHECK-T12-06/08, tolerance = 0, 12 SC,
+  15 INV, scope, production budget và quyền persistence không đổi.
+- Commit quyết định/tài liệu này **không** là golden freeze point. Freeze chỉ xảy ra ở commit
+  implementation đầu tiên chứa đủ fixture canonical SC-01…SC-12 sau amendment này.
+
+## Consequence / quyền tiếp tục có điều kiện
+
+Thực hiện **một** lượt preflight số học/ngữ nghĩa bounded trên đủ SC-01…SC-12, đối chiếu
+DEC-042, spec, INV-1…INV-15, CHECK-T12-01…14. Mỗi SC chỉ phân loại CONSISTENT hoặc
+CONTRACT_CONFLICT. Đây không phải implementation, experiment, fixture run hay Completion Gate
+evidence. Kiểm riêng SC-09/SC-10 về tháng đã đóng; không tự sửa bất kỳ SC khác.
+
+Nếu còn mâu thuẫn tái lập được: dừng, gom toàn bộ thành **một** yêu cầu Owner Decision,
+không bắt đầu implementation. Nếu không còn: tái đánh giá đủ 17 Ready Gate; chỉ khi 17/17 PASS
+và Branch Authority PASS mới `BLOCKED → READY → IN_PROGRESS`, tiếp tục implementation đã được
+ủy quyền ngay trong nhánh/phiên này, không xin phép lại vì lần dừng S034.
+
+Không đổi Firebase/auth/rules/Hosting, kiến trúc kế toán, dữ liệu Owner, V2.1.5 hay budget.
+Kết quả preflight được ghi riêng là kết quả của agent, **không phải một quyết định Owner mới**.
+
+---

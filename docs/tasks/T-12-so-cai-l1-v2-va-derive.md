@@ -4,6 +4,20 @@
 Status:
 BLOCKED
 
+**Tu chỉnh DEC-044 — 2026-09-05:** Owner duyệt sửa riêng oracle SC-04 thành
+`remainingPlannedBudgetVnd(2026-02) = 11.775.522`, ghi rõ carryInVnd = 4.684.700 và
+plannedBudgetVnd = 24.684.700; input/WAC/DEC-042/tolerance/budget không đổi.
+Xung đột carry SC-04 của S034 đã được đóng ở tầng hợp đồng. Chỉ được chuyển READY/IN_PROGRESS
+sau một lượt preflight đủ SC-01…SC-12 không còn CONTRACT_CONFLICT và Ready Gate 17/17 PASS.
+Không fixture/baseline nào đã được tạo, không tiêu repair cycle. Chi tiết: DEC-044 và
+báo cáo T12 phần bổ sung về preflight.
+
+**Kết quả preflight sau DEC-044:** 9 CONSISTENT / 3 CONTRACT_CONFLICT, gom hai nhóm:
+(A) SC-04 số dư integer làm bình quân sau ROUND_VND lệch rất nhỏ, trái mệnh đề bất biến exact
+của CHECK-T12-03; (B) SC-09/SC-10 có carryOut tháng 3 trong EXPECT của asOfDate vẫn tháng 3.
+Giữ BLOCKED — OWNER_DECISION_REQUIRED; chưa đủ điều kiện tái xác nhận 17/17 hay bắt đầu mã.
+Bằng chứng và đề xuất gộp ở phần bổ sung cuối báo cáo T12. Không đổi các check/SC còn lại.
+
 **S034 — 2026-09-05: `OWNER_DECISION_REQUIRED`, dừng tại DISCOVER trước implementation.**
 Ready Gate 17/17 của S033 là bản ghi lịch sử; phiên này **không tái xác nhận được 17/17** vì
 hợp đồng SC-04 mâu thuẫn với công thức carry canonical. Không chuyển `IN_PROGRESS`, không tạo

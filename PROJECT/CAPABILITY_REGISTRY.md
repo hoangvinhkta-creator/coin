@@ -532,3 +532,8 @@ Production reachability trên project Firebase thật đóng bằng evidence E1
 `T-12: READY → BLOCKED`, `OWNER_DECISION_REQUIRED`: SC-04 mâu thuẫn với §11.2/§11.4 của spec L-1.
 Bằng chứng: `docs/reviews/T12-IMPLEMENTATION-REPORT.md` §3/§29. Không đổi capability/lineage;
 không task ID mới; pool `CAP-WEBAPP` giữ 2/0/2. Chưa có fixture hay golden accounting baseline.
+
+**Tiếp nối S034, DEC-044:** xung đột carry SC-04 ở đoạn trên đã đóng bằng sửa oracle 11.775.522.
+Preflight đủ 12 SC còn hai nhóm (SC04 WAC exact vs ROUND_VND; SC09/10 carryOut tháng đang mở),
+nên T-12 giữ BLOCKED — OWNER_DECISION_REQUIRED. Xem phần bổ sung báo cáo T12.
+Không implementation, không task/capability/lineage mới, budget giữ 2/0/2.

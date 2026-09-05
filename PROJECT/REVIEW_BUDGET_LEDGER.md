@@ -478,6 +478,11 @@ Không implementation, không repair. `ALLOWED = 2 / USED = 0 / REMAINING = 2` g
 Mốc đầu phiên `7d1985aaf306294df49c9508078d5425da10f47e`; mốc đo task vẫn
 `91cfbba5e3af01d432c64369bb5a286f6461ab6a`; không fixture commit, baseline kế toán chưa tồn tại.
 
+**Tiếp nối S034 — DEC-044, trước implementation:** sửa carry oracle SC-04 đã được Owner duyệt;
+không phải repair. Preflight đủ SC01…12 còn hai nhóm xung đột, ghi trong phần bổ sung báo cáo T12.
+REPAIR_CYCLE_1 = NOT_CONSUMED; ALLOWED/USED/REMAINING = 2/0/2 không đổi. Chưa có fixture,
+chưa golden freeze. Production +0/−0; không ghi cặp SHA repair cho thay đổi tài liệu này.
+
 ## 3. Golden cumulative change budget
 
     GOLDEN_BASELINE_SHA = PENDING_OWNER_DATA / MIGRATION_REQUIRED
