@@ -1,4 +1,4 @@
-<title>ETH DCA Tracker</title>
+<title>CoinDCA</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
 <!-- T-09B: Firebase SDK (compat build, global `firebase`) — DEC-020: Anonymous Auth + Cloud Firestore.
      Pin đúng version với devDependency `firebase` trong package.json (test harness phục vụ bản
@@ -220,14 +220,73 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
   .fbar{grid-template-columns:88px minmax(0,1fr) 56px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- Step B (T-13): CoinDCA L-1 dashboard/history/plan/settings IA ---- */
+.wrap{padding-bottom:96px}
+h2{margin-top:26px}
+.view-sec{scroll-margin-top:14px}
+.view-sec:first-of-type{margin-top:18px}
+
+/* dashboard main block: 4 numbers + 1 action, always visible without scroll on desktop */
+.dashmain{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:14px 0}
+.dcard{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:13px 15px;box-shadow:var(--shadow)}
+.dcard .dc-label{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.dcard .dc-value{font-family:"IBM Plex Mono",monospace;font-size:21px;font-weight:600;
+  font-variant-numeric:tabular-nums;letter-spacing:-.015em;line-height:1.15}
+.dcard .dc-sub{font-size:11.5px;color:var(--muted);margin-top:4px}
+.dcard .dc-bar{height:8px;border-radius:4px;background:var(--sunken);overflow:hidden;margin-top:8px}
+.dcard .dc-fill{height:100%;background:var(--accent)}
+.dcard-next{border-color:var(--accent);background:var(--accent-soft)}
+.dcard-next button{margin-top:9px;width:100%}
+
+/* bottom nav + FAB */
+.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;
+  background:var(--surface);border-top:1px solid var(--rule);
+  padding:6px max(8px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-bottom))}
+.bottomnav button{flex:1;border:none;background:none;border-radius:6px;color:var(--muted);
+  font-size:11.5px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bottomnav button[aria-current="true"]{color:var(--accent);font-weight:600}
+.fab{position:fixed;right:16px;bottom:74px;z-index:41;border-radius:999px;
+  background:var(--accent);color:var(--ground);border:none;padding:13px 18px;
+  font-weight:600;box-shadow:var(--shadow)}
+
+/* "+ Ghi giao dịch" sheet */
+#l1Entry{position:relative;border:2px solid var(--accent);background:var(--surface)}
+#l1Entry summary{font-weight:600}
+.txtypes{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 14px}
+.txtype{border-radius:999px;font-size:12.5px}
+.txtype[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+.txtech{margin-top:10px;font-size:11.5px;color:var(--muted)}
+.txtech .form{margin-top:6px}
+#l1NoteHint{font-size:12px;color:var(--warn);min-height:1.4em}
+
+/* history cards */
+.histfilter{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0 14px}
+.histfilter select,.histfilter input{font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+  padding:7px 9px;border-radius:4px;border:1px solid var(--rule);background:var(--sunken);color:var(--ink)}
+.hist-card{border:1px solid var(--rule);border-radius:6px;padding:11px 13px;margin-bottom:9px;
+  background:var(--surface)}
+.hist-opening{border-left:3px solid var(--accent)}
+.hc-top{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.hc-date{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+.hc-main{font-weight:500;margin-top:5px}
+.hc-amount{font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-top:2px}
+.hc-note{font-size:12px;color:var(--ink-soft);margin-top:4px}
+.hc-actions{margin-top:8px;display:flex;gap:7px}
+
+@media (max-width:520px){
+  .dashmain{grid-template-columns:1fr 1fr}
+  .fab{right:12px;bottom:70px;padding:11px 15px;font-size:13px}
+}
 </style>
 
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>ETH DCA Tracker</h1>
-      <p class="sub">Theo dõi vốn, ladder và danh mục theo ETH DCA OS V2.1.5. Bạn nhập giao dịch
-        thật; hệ thống chỉ khuyến nghị, không tự đặt lệnh.</p>
+      <h1>CoinDCA</h1>
+      <p class="sub">Giữ kỷ luật tích luỹ crypto theo kế hoạch DCA. Bạn nhập giao dịch thật (có
+        ngày do bạn chọn); ứng dụng chỉ tính lại đúng những gì đã xảy ra, không khuyến nghị.</p>
     </div>
     <div class="hdr-right">
       <span class="savechip" id="saveChip" title="Trạng thái lưu bền trên Cloud Firestore">—</span>
@@ -237,332 +296,35 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
 
   <div id="banners"></div>
 
-  <nav class="tabs" role="tablist">
-    <button role="tab" aria-selected="true" data-tab="dash">Bảng điều khiển</button>
-    <button role="tab" aria-selected="false" data-tab="entry">Nhập số liệu</button>
-    <button role="tab" aria-selected="false" data-tab="ladder">Ladder</button>
-    <button role="tab" aria-selected="false" data-tab="history">Lịch sử</button>
-    <button role="tab" aria-selected="false" data-tab="setup">Thiết lập</button>
-  </nav>
+  <main id="l1Root"></main>
 
-  <!-- ============ DASHBOARD ============ -->
-  <div class="panel on" id="tab-dash">
-    <div class="hero">
-      <div class="card">
-        <h3>Opportunity Score</h3>
-        <div class="bigscore">
-          <span class="n" id="osVal">—</span><span class="of">/ 100</span>
-        </div>
-        <div class="statechips" id="stateChips"></div>
-        <div style="margin-top:16px" id="factorBars"></div>
-        <div class="subgrid" id="subGrid"></div>
-      </div>
-
-      <div>
-        <div class="card">
-          <h3>Thị trường</h3>
-          <div class="stats" id="marketStats"></div>
-        </div>
-        <div class="action" id="actionBox" style="margin-top:14px"></div>
+  <section class="view-sec" id="view-settings">
+    <h2>Cài đặt</h2>
+    <div class="card">
+      <h3>Nguồn bền (Firebase)</h3>
+      <p class="lede">Sổ kế toán được lưu bền trên Cloud Firestore (<code>ethdca/state</code>). Trình duyệt
+        này được nhận diện bằng một Anonymous UID; chỉ UID ghi trong <code>firestore.rules</code>
+        mới đọc/ghi được sổ.</p>
+      <div class="stats" id="fbBox"></div>
+      <div class="formfoot">
+        <button id="fbCopyUid" class="sm">Chép UID</button>
+        <span class="formmsg" id="fbMsg"></span>
       </div>
     </div>
+    <div id="l1SettingsExtra"></div>
+    <div class="note">
+      <p>CoinDCA L-1 · dữ liệu tổng hợp cho kiểm thử. Điều kiện dùng tiền thật không giới
+        hạn và kiểm chứng E2 độc lập vẫn chưa hoàn tất.</p>
+    </div>
+  </section>
 
-    <div class="sec">
-      <h2>Danh mục</h2>
-      <div class="stats" id="portfolioStats"></div>
-    </div>
-
-    <div class="sec">
-      <h2>Kho vốn</h2>
-      <p class="lede">VND là source of truth cho ngân sách; USDT là đơn vị thực thi.
-        Zone được coi là hoàn thành theo phân bổ VND thực tế, không theo mục tiêu USDT cố định.</p>
-      <div class="stats" id="treasuryStats"></div>
-      <div class="card" style="margin-top:12px">
-        <h3>Ba pool vốn tháng này</h3>
-        <div id="poolBars"></div>
-        <div class="plegend">
-          <span><i style="background:var(--rule)"></i>Available</span>
-          <span><i style="background:var(--warn)"></i>Reserved</span>
-          <span><i style="background:var(--accent)"></i>Deployed</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ ENTRY ============ -->
-  <div class="panel" id="tab-entry">
-    <div class="sec">
-      <h2>Giá đóng cửa hôm nay</h2>
-      <p class="lede">Trang web không gọi được Binance nên bạn nhập giá đóng cửa daily.
-        Chỉ nhập nến ĐÃ ĐÓNG — dùng nến đang chạy là vi phạm luật no-lookahead của spec.</p>
-      <div class="card">
-        <div class="form">
-          <div class="field">
-            <label for="pxDate">Ngày (UTC)</label>
-            <input type="date" id="pxDate">
-          </div>
-          <div class="field">
-            <label for="pxEth">ETHUSDT close</label>
-            <input type="number" id="pxEth" step="any" placeholder="3421.55">
-          </div>
-          <div class="field">
-            <label for="pxBtc">BTCUSDT close</label>
-            <input type="number" id="pxBtc" step="any" placeholder="97250.0">
-          </div>
-          <div class="field">
-            <label for="pxVol">ETH volume</label>
-            <input type="number" id="pxVol" step="any" placeholder="185000">
-            <span class="hint">Volume ngày của ETHUSDT trên Binance</span>
-          </div>
-        </div>
-        <div class="formfoot">
-          <button class="primary" id="pxAdd">Thêm ngày</button>
-          <span class="formmsg" id="pxMsg"></span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec">
-      <h2>Nạp vốn tháng</h2>
-      <p class="lede">Contribution chia theo tỷ lệ Base / Smart / Opportunity của config.
-        Phần Opportunity vượt trần sẽ tự overflow sang Smart của chính tháng đó.</p>
-      <div class="card">
-        <div class="form">
-          <div class="field">
-            <label for="cbMonth">Tháng</label>
-            <input type="month" id="cbMonth">
-          </div>
-          <div class="field">
-            <label for="cbAmt">Số tiền (VND)</label>
-            <input type="number" id="cbAmt" step="any" placeholder="10000000">
-          </div>
-        </div>
-        <div class="formfoot">
-          <button class="primary" id="cbAdd">Nạp</button>
-          <span class="formmsg" id="cbMsg"></span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec">
-      <h2>Giao dịch P2P</h2>
-      <p class="lede">Ghi số thực tế của giao dịch bạn đã khớp — đây là source of truth cho
-        cost basis và funding delay, không phải giá niêm yết trên bảng quảng cáo.</p>
-      <div class="card">
-        <div class="form">
-          <div class="field">
-            <label for="p2pDir">Chiều</label>
-            <select id="p2pDir">
-              <option value="VND_TO_USDT">VND → USDT (mua)</option>
-              <option value="USDT_TO_VND">USDT → VND (bán)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="p2pVnd">VND</label>
-            <input type="number" id="p2pVnd" step="any" placeholder="10000000">
-          </div>
-          <div class="field">
-            <label for="p2pUsdt">USDT</label>
-            <input type="number" id="p2pUsdt" step="any" placeholder="392.5">
-          </div>
-          <div class="field">
-            <label for="p2pFee">Phí (VND)</label>
-            <input type="number" id="p2pFee" step="any" value="0">
-          </div>
-        </div>
-        <div class="formfoot">
-          <button class="primary" id="p2pAdd">Ghi giao dịch</button>
-          <span class="formmsg" id="p2pMsg"></span>
-        </div>
-      </div>
-    </div>
-
-    <div class="sec">
-      <h2>Xác nhận mua ETH</h2>
-      <p class="lede">Portfolio chỉ thay đổi sau khi bạn xác nhận đã mua thật.
-        Giá khuyến nghị và giá khớp thực tế được lưu cả hai để đo implementation shortfall —
-        đó là dữ liệu đối chiếu ngược lại giả định delay của backtest.</p>
-      <div class="card">
-        <div class="form">
-          <div class="field">
-            <label for="buyZone">Zone</label>
-            <select id="buyZone"></select>
-            <span class="hint">Chọn zone để đánh dấu đã fill</span>
-          </div>
-          <div class="field">
-            <label for="buySrc">Nguồn vốn</label>
-            <select id="buySrc">
-              <option value="BASE">Base</option>
-              <option value="SMART">Smart</option>
-              <option value="OPPORTUNITY">Opportunity</option>
-              <option value="MANUAL">Thủ công</option>
-            </select>
-            <span class="hint">Chỉ dùng khi không gắn zone</span>
-          </div>
-          <div class="field">
-            <label for="buyUsdt">USDT chi</label>
-            <input type="number" id="buyUsdt" step="any" placeholder="200">
-          </div>
-          <div class="field">
-            <label for="buyPrice">Giá khớp (USDT/ETH)</label>
-            <input type="number" id="buyPrice" step="any" placeholder="3418.20">
-          </div>
-          <div class="field">
-            <label for="buyRec">Giá khuyến nghị</label>
-            <input type="number" id="buyRec" step="any" placeholder="3400.00">
-            <span class="hint">Bỏ trống nếu mua thủ công</span>
-          </div>
-          <div class="field">
-            <label for="buyFee">Phí (USDT)</label>
-            <input type="number" id="buyFee" step="any" value="0">
-          </div>
-          <div class="field">
-            <label for="buyVndRate">Tỷ giá VND/USDT</label>
-            <input type="number" id="buyVndRate" step="any" placeholder="25400">
-            <span class="hint">Để quy đổi cost basis VND</span>
-          </div>
-        </div>
-        <div class="formfoot">
-          <button class="primary" id="buyAdd">Xác nhận đã mua</button>
-          <span class="formmsg" id="buyMsg"></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ LADDER ============ -->
-  <div class="panel" id="tab-ladder">
-    <div class="sec">
-      <h2>Buy ladder đang mở</h2>
-      <p class="lede">Anchor và spacing là bất biến trong suốt vòng đời ladder — zone không bao
-        giờ được dịch lên trên. Ladder bị hủy khi có hai daily close liên tiếp trên
-        invalidation price.</p>
-      <div id="ladderList"></div>
-    </div>
-
-    <div class="sec">
-      <h2>Tạo ladder mới</h2>
-      <div class="card">
-        <div class="form">
-          <div class="field">
-            <label for="ldType">Loại</label>
-            <select id="ldType">
-              <option value="SMART">Smart</option>
-              <option value="OPPORTUNITY">Opportunity</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="ldAnchor">Anchor (USDT/ETH)</label>
-            <input type="number" id="ldAnchor" step="any">
-            <span class="hint">Mặc định = giá mới nhất</span>
-          </div>
-          <div class="field">
-            <label for="ldCap">Vốn đưa vào (VND)</label>
-            <input type="number" id="ldCap" step="any">
-            <span class="hint" id="ldCapHint"></span>
-          </div>
-        </div>
-        <div class="formfoot">
-          <button class="primary" id="ldAdd">Tạo ladder</button>
-          <span class="formmsg" id="ldMsg"></span>
-        </div>
-      </div>
-      <div class="note">
-        <p><strong>Spacing được tính tự động</strong> từ ADR30 × smart_spacing_factor ×
-          ScoreMultiplier(OSCORE), rồi clamp trong [<span id="spMin"></span>,
-          <span id="spMax"></span>]. Opportunity spacing = Smart spacing × 1.25, clamp [6%, 15%].</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============ HISTORY ============ -->
-  <div class="panel" id="tab-history">
-    <div class="sec">
-      <h2>Giao dịch ETH</h2>
-      <div class="scroller" id="tradeTable"></div>
-    </div>
-    <div class="sec">
-      <h2>Giao dịch P2P</h2>
-      <div class="scroller" id="p2pTable"></div>
-    </div>
-    <div class="sec">
-      <h2>Sổ vốn</h2>
-      <p class="lede">Mọi dịch chuyển vốn đều đi qua ledger, không phải một số dư bị ghi đè —
-        nhờ vậy mới kiểm được TOTAL = AVAILABLE + RESERVED + DEPLOYED tại mọi thời điểm.</p>
-      <div class="scroller" id="ledgerTable"></div>
-    </div>
-  </div>
-
-  <!-- ============ SETUP ============ -->
-  <div class="panel" id="tab-setup">
-    <div class="sec">
-      <h2>Nạp dữ liệu lịch sử</h2>
-      <p class="lede">App cần 365 ngày giá để tính High365, MA200, percentile và RSI.
-        Chạy <code>ethdca export-live</code> trên máy có dữ liệu Binance rồi kéo file
-        <code>results/live_seed.json</code> vào đây.</p>
-      <div class="drop" id="seedDrop">
-        <p style="margin:0 0 10px"><strong>Kéo <code>live_seed.json</code> vào đây</strong></p>
-        <input type="file" id="seedFile" accept="application/json,.json" hidden>
-        <button id="seedPick">Chọn file</button>
-        <p class="formmsg" id="seedMsg" style="margin:10px 0 0"></p>
-      </div>
-    </div>
-
-    <div class="sec">
-      <h2>Đối chiếu engine</h2>
-      <p class="lede">App tính OSCORE bằng JavaScript, còn backtest tính bằng Python. Hai bản cài
-        đặt có thể trôi khỏi nhau, nên mỗi seed mang theo score do Python tính và app so lại —
-        đây là cách phát hiện lệch.</p>
-      <div id="parityBox"></div>
-    </div>
-
-    <div class="sec">
-      <h2>Cấu hình chiến lược</h2>
-      <div class="scroller" id="cfgTable"></div>
-    </div>
-
-    <div class="sec">
-      <h2>Nguồn bền (Firebase)</h2>
-      <p class="lede">Sổ kế toán được lưu bền trên Cloud Firestore (<code>ethdca/state</code>) và
-        dữ liệu tham chiếu ở <code>ethdca/seed</code>. Trình duyệt này được nhận diện bằng một
-        Anonymous UID; chỉ UID ghi trong <code>firestore.rules</code> mới đọc/ghi được sổ.</p>
-      <div class="card">
-        <div class="stats" id="fbBox"></div>
-        <div class="formfoot">
-          <button id="fbCopyUid" class="sm">Chép UID</button>
-          <span class="formmsg" id="fbMsg"></span>
-        </div>
-      </div>
-      <div class="note">
-        <p><strong>Thiết lập lần đầu:</strong> deploy xong, mở app ở trình duyệt sẽ dùng hằng ngày,
-          chép UID ở trên vào <code>firestore.rules</code> (thay <code>OWNER_UID_REQUIRED</code>) rồi
-          deploy lại rules. Từ đó dùng web bình thường, không cần terminal.</p>
-        <p><strong>Đổi máy / đổi trình duyệt / cửa sổ riêng tư</strong> sinh UID mới và sẽ bị từ chối —
-          giới hạn V1 (H-23). Lối thoát: <em>Tải về JSON</em> ở máy cũ, <em>Nạp lại từ JSON</em> ở máy mới
-          (và cập nhật UID trong rules nếu muốn đổi hẳn máy).</p>
-      </div>
-    </div>
-
-    <div class="sec">
-      <h2>Dữ liệu của bạn</h2>
-      <div class="card">
-        <div class="formfoot" style="margin-top:0">
-          <button id="expBtn">Tải về JSON</button>
-          <button id="impBtn">Nạp lại từ JSON</button>
-          <input type="file" id="impFile" accept="application/json,.json" hidden>
-          <button class="danger" id="wipeBtn">Xóa toàn bộ dữ liệu</button>
-          <span class="formmsg" id="dataMsg"></span>
-        </div>
-      </div>
-      <div class="note">
-        <p>Mỗi thao tác ghi sổ được đẩy lên Cloud Firestore ngay và chỉ hiện <strong>Đã lưu bền</strong>
-          khi máy chủ đã xác nhận. Bộ nhớ trình duyệt (localStorage) chỉ là bản sao/cache — mất nó
-          không mất sổ. Nút <em>Tải về JSON</em> cho bạn một bản sao độc lập — nên tải định kỳ, và
-          bắt buộc trước khi đổi máy (H-23).</p>
-      </div>
-    </div>
-  </div>
-
-  <section id="l1Root"></section>
   <footer id="foot"></footer>
 </div>
+
+<nav class="bottomnav" id="bottomNav" role="navigation" aria-label="Điều hướng chính">
+  <button type="button" data-view="dashboard" aria-current="true">Tổng quan</button>
+  <button type="button" data-view="history">Lịch sử</button>
+  <button type="button" data-view="plan">Kế hoạch</button>
+  <button type="button" data-view="settings">Cài đặt</button>
+</nav>
+<button type="button" class="fab" id="fabEntry">+ Ghi giao dịch</button>

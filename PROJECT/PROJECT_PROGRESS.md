@@ -25,7 +25,49 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-05 — **`S035` — MỞ `T-13` (CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao
+2026-09-05 — **`S036` — THI HÀNH `T-13` (CoinDCA L-1 Bước B): `READY → IN_PROGRESS →
+IMPLEMENTED`.** Nhánh `claude/t13-step-b-implementation-8wpnkr`, tách đúng từ `origin/main`
+`5d26bcc` (`branch_authority_check.sh` PASS, 0 phân kỳ). 13/13 REQUIRED check đạt tối thiểu E1
+(`CHECK-T13-01`…`13`); bảy check (`02/03/05/06/07/10/13`) còn cần **Independent E2** theo đúng
+quy ước gate đã đóng băng — `T-13` vì vậy dừng ở `IMPLEMENTED`, **KHÔNG `DONE`**. Toàn bộ
+`AS-01`…`AS-12` và `PR-1`…`PR-6` PASS qua `app_final.html` + Firestore Emulator + UI mới
+(`docs/tasks/T-13-*.md` không đổi một chữ). Chi tiết đầy đủ: `docs/reviews/T13-IMPLEMENTATION-REPORT.md`.
+
+Việc đã làm, gọn trong bốn ý. (1) **Dashboard/Sheet/Lịch sử/Kế hoạch/Cài đặt** thay hoàn toàn
+markup 5-tab V2.1.5 (`webapp/app_shell.html`): bottom-nav 4 điểm đến, FAB "+ Ghi giao dịch" sheet
+9 loại (opening + 8 `event.kind`), Lịch sử dạng thẻ có filter, Kế hoạch tách `monthlyBudgetVnd`/
+`carryInVnd`/`investedThisMonthVnd`, UNKNOWN hiển thị `—` nhất quán + banner thường trực không
+nút ẩn, SELL bị xoá khỏi mọi `<select>` (`#l1Side` chỉ còn `BUY`). (2) **Dọn dead code V2.1.5**:
+`webapp/app_logic.js` xoá toàn bộ OSCORE/ladder/pool/seed-nạp-tay/action-box (`recompute`,
+`renderDash`, `renderLadder`, `renderAction`, `deriveRegime`, `createLadder`/`releaseLadder`/
+`cancelLadder`, v.v.) — **GIỮ NGUYÊN VERBATIM** `persist()`/`renderPersistence()`/
+`validateState()`/hooks Firebase, không sửa một dòng logic đang chạy thật. `webapp/ledger.js`/
+`webapp/engine.js`/`src/eth_dca_os/**`/`pyproject.*` **không đổi một byte**. (3) **Quyết định
+thiết kế ghi lại tường minh** (§2 báo cáo): 4 điểm đến là các khối nối tiếp trong MỘT tài liệu
+cuộn được (không `display:none`), sheet nhập liệu mở sẵn thay vì modal đóng mặc định — bắt buộc
+để `webapp/test_t12_browser.js` (bằng chứng production reachability ĐÃ ĐÓNG BĂNG của `T-12`,
+nằm trong "Do not touch" của `T-13`) tiếp tục chạy **nguyên văn, không sửa một byte** và vẫn
+**17/17 PASS**. (4) **Hồi quy**: `test_t12_ledger.js` 32/32, `test_t12_mutations.js` 7/7 mutant
+KILLED, `test_t12_owner.js` PASS, Python **678/678 PASS** (không đổi `src/`); sáu file test
+V2.1.5 (`test_app.js`, `test_zone.js`, `test_v01_v02_v03.js`, `test_multi_month_invariant.js`,
+`test_t09a_accounting.js`, `test_t09b_persistence.js`) trở thành **NOT_APPLICABLE** — phụ thuộc
+DOM mà chính Step-B spec §12 liệt kê `REMOVE_FROM_L1_PATH` (`#pxAdd`/`#cbAdd`/`#buyAdd`/
+`#ldAdd`/`#osVal`/`#seedFile`…), neo đúng `DEC-041` B; hành vi persistence còn áp dụng vẫn được
+phủ qua chính `test_t12_browser.js` (dùng lại đúng hàm `persist()`/`validateState()` không đổi).
+
+Test mới: `webapp/test_stepb_ui.js` (16/16 PASS) — production reachability của CHÍNH `T-13` qua
+UI mới, không phải production path. Production diff đo tại `git diff --shortstat
+5d26bcc..HEAD -- webapp/app_logic.js webapp/engine.js webapp/app_shell.html webapp/build_app.js
+webapp/ledger_ui.js webapp/ledger.js src/eth_dca_os pyproject.toml pyproject.lock` = **3 file,
++374/−1330** (dưới trần `+1800/−1400`). `CAP-WEBAPP` budget **KHÔNG đổi** (`allowed 2 / used 1 /
+remaining 1`) — lượt thi hành ban đầu không tiêu repair cycle. `H-44`…`H-47` giữ nguyên
+HARDENING, không sửa tự động, không task ID mới. SELL vẫn bị cấm cho dữ liệu thật
+(`H-46`/`F-E2-03` chưa xử lý); Firebase/auth/rules/Hosting không bị chạm (bước C, `H-42` vẫn
+mở). Không mở `V2.2`/Buy Score/Opportunity Score/recommendation engine. Không dữ liệu tài chính
+thật của Owner trong repo. Commit trên nhánh thi hành; **CHƯA push, chưa tạo PR** — chờ chỉ thị
+tiếp theo hoặc Independent E2 (§19/§24 báo cáo).
+
+Trước đó, cùng ngày — **`S035` — MỞ `T-13` (CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao
 dịch/Lịch sử). Trạng thái `NOT_PLANNED → READY`, Completion Gate 13/13 REQUIRED FROZEN, Task
 Mode MAJOR, routing `C / Opus / xhigh`.** Thẩm quyền: chỉ thị phiên trực tiếp "COINDCA — L-1
 STEP B DEFINITION", ghi nhận thành `DEC-047` (`PROJECT/PROJECT_DECISIONS.md`) — đúng khe mở đã

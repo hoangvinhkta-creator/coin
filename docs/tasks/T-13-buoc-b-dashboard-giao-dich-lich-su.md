@@ -2,13 +2,16 @@
 
 ## Metadata
 Status:
-READY
+IMPLEMENTED — E2_REQUIRED
 
 Hiện hành: Task được mở và đưa thẳng lên `READY` trong cùng phiên định nghĩa (`S035`,
 2026-09-05), theo đúng thẩm quyền Owner của chỉ thị phiên "COINDCA — L-1 STEP B DEFINITION"
 (ghi lại thành `DEC-047`, `PROJECT/PROJECT_DECISIONS.md`) — cùng khuôn `T-12` tại `S032`
-(`NOT_PLANNED → READY` trong một phiên, trước khi có phiên thi hành riêng). Phiên này **KHÔNG**
-thi hành: production diff = EMPTY, không chuyển `IN_PROGRESS`.
+(`NOT_PLANNED → READY` trong một phiên, trước khi có phiên thi hành riêng).
+
+`S036` (2026-09-05, cùng ngày): thi hành `READY → IN_PROGRESS → IMPLEMENTED`. 13/13 REQUIRED
+check PASS ở tối thiểu E1; 7 check còn cần Independent E2 trước khi `DONE` (xem § Completion
+Gate và `docs/reviews/T13-IMPLEMENTATION-REPORT.md`). **KHÔNG** `DONE` ở phiên này.
 
 Phase:
 CoinDCA L-1 — bước **B** (dashboard §16 + UX nhập/sửa/xoá + lịch sử §15) của chuỗi A → B → C → D
@@ -362,67 +365,87 @@ tài chính, sửa/xoá, plan/carry, và production reachability thêm **E2 đ�
 ### UX / Product
 
 #### CHECK-T13-01 — IA 4 điểm đến hoạt động đúng, refresh-safe
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
+
+Kết quả implementation S036: PASS (E1) — 4 điểm đến điều hướng bằng scroll-to-anchor + `location.hash`, refresh-safe; markup 5-tab V2.1.5 đã xoá khỏi `app_shell.html`. Xem `docs/reviews/T13-IMPLEMENTATION-REPORT.md` §3.
 
 Yêu cầu: 4 điểm đến (`#/dashboard`, `#/history`, `#/plan`, `#/settings`) điều hướng được, refresh
 giữ đúng màn hình, không có tab/markup V2.1.5 nào còn hiển thị (Step-B spec §12
 `REMOVE_FROM_L1_PATH`).
 
 #### CHECK-T13-02 — Dashboard đúng Dashboard Contract §16, không sai một trường
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-01/AS-08 đối chiếu bit-với-bit `derive()`. Xem báo cáo §4/§12.
 
 Yêu cầu: khối chính 4 số + 1 hành động, khối dưới, banner bắt buộc — đối chiếu **tuyệt đối**
 (tolerance 0) với `derive()` trên fixture `SC-09`/`SC-10`. Không "GO"/"WAIT"/màu tín hiệu ở thẻ
 "Mua kế tiếp" (`DEC-041` B).
 
 #### CHECK-T13-03 — Sheet nhập liệu ánh xạ đúng 8 loại sự kiện
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-02..AS-04/AS-10 (không ô FX riêng lệnh). Xem báo cáo §5.
 
 Yêu cầu: mỗi loại trong bảng Step-B spec §5 sinh đúng `action.type`/`event.kind`/trường bắt buộc;
 `RESERVE` buy thiếu `note` bị chặn tại form; không có ô nhập tỷ giá riêng theo lệnh nào tồn tại
 trong DOM (grep xác nhận).
 
 #### CHECK-T13-04 — Lịch sử: filter/tìm kiếm/chi tiết/UNKNOWN badge đúng
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
+
+Kết quả implementation S036: PASS (E1) — bộ lọc loại/khoảng ngày/tìm ghi chú hoạt động, mặc định không lọc; badge EXTRA/RESERVE/UNKNOWN không rò rỉ nội bộ. Xem báo cáo §6.
 
 Yêu cầu: lọc theo loại/khoảng ngày/tháng lịch hoạt động đúng trên tập dữ liệu tổng hợp ≥ 12 sự
 kiện đủ loại; badge EXTRA/RESERVE hiển thị đúng; badge UNKNOWN không rò rỉ `realizedFxVnd` hay số
 nội bộ nào khác (giữ `H-45` không bị mở rộng — Step-B spec §6).
 
 #### CHECK-T13-05 — Sửa qua UI tính lại đúng, `id`/`seq` không đổi
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-05, `test_t12_browser.js` P-3: id/seq bất biến. Xem báo cáo §7/§12.
 
 Yêu cầu: sửa một sự kiện qua form → `derive()` chạy lại toàn bộ, Tổng quan/Lịch sử khớp ngay;
 `id`/`seq` bất biến (`INV-15`).
 
 #### CHECK-T13-06 — Xoá qua UI: cảnh báo + snapshot bắt buộc trước khi xoá
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-06, `test_t12_browser.js` INV-14: snapshot trước khi xoá xác nhận. Xem báo cáo §7/§12.
 
 Yêu cầu: dialog cảnh báo tường minh xuất hiện; snapshot export tự động được tạo TRƯỚC khi xoá
 thật (`INV-14`, gọi đúng `CoinLedger.destructive()`); sau xoá số liệu như giao dịch chưa từng tồn
 tại; xoá Số dư đầu kỳ có cảnh báo RIÊNG mạnh hơn.
 
 #### CHECK-T13-07 — Kế hoạch/Carry: ba đại lượng tách riêng, không cần tự tính
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `#planCarry` tách ba đại lượng; `test_stepb_ui.js` AS-01/AS-08 khớp `scheduleDays`/carry tolerance 0. Xem báo cáo §8.
 
 Yêu cầu: `monthlyBudgetVnd`/`carryInVnd`/`investedThisMonthVnd` (hoặc `planInvestedVnd`) hiển thị
 tách biệt, không gộp; "Mua kế tiếp" đúng theo `scheduleDays`/carry của fixture `SC-09` (tolerance
 0); sửa `scheduleDays`/`monthlyBudgetVnd` áp dụng đúng từ tháng hiệu lực, không hồi tố (`§11.1`).
 
 #### CHECK-T13-08 — UNKNOWN UX nhất quán, không tự ẩn
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
+
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-07: `—` nhất quán, banner không nút ẩn (0 button trong `#l1Flags`). Xem báo cáo §9.
 
 Yêu cầu: mọi nơi giá vốn VND UNKNOWN hiển thị `—` (không phải 0/trống/NaN); banner
 `UNKNOWN_VND_BASIS` thường trực, không có nút ẩn vĩnh viễn nào tồn tại trong DOM.
 
 #### CHECK-T13-09 — SELL bị ẩn hoàn toàn
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
+
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-10 grep DOM; `#l1Side` chỉ còn `BUY`. Xem báo cáo §11.
 
 Yêu cầu: grep toàn bộ UI mới — không có tuỳ chọn "SELL"/"Bán" ở bất kỳ form/menu nào; không màn
 hình nào hiển thị lãi/lỗ đã thực hiện.
 
 #### CHECK-T13-10 — Không công thức tài chính mới, chỉ gọi API đã đóng băng
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — một lệnh `L.derive()` mỗi `render()` (đọc `ledger_ui.js`); `test_stepb_ui.js` PR-6 grep không phép tính tiền độc lập. Xem báo cáo §10 nguyên tắc kiến trúc.
 
 Yêu cầu: (a) grep UI mới — mọi con số hiển thị truy được nguồn gốc về đúng một lệnh gọi
 `CoinLedger.derive()`; (b) mọi ghi dữ liệu truy được về đúng
@@ -430,7 +453,9 @@ Yêu cầu: (a) grep UI mới — mọi con số hiển thị truy được ngu�
 độc lập với các hàm trên.
 
 #### CHECK-T13-11 — Di động: bottom-nav, ≤ 3 chạm cho hành động phổ biến, không cuộn ngang
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
+
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-09: 390px không cuộn ngang, PLAN từ Tổng quan = 3 lần chạm. Xem báo cáo §10.
 
 Yêu cầu: trên khung hình ≤ 400px, FLOW-1…FLOW-7 (Step-B spec §13) thực hiện được; ghi một giao
 dịch PLAN từ Tổng quan tốn ≤ 3 lần chạm; không phần tử nào gây cuộn ngang.
@@ -438,13 +463,17 @@ dịch PLAN từ Tổng quan tốn ≤ 3 lần chạm; không phần tử nào g
 ### Regression / Production Reachability
 
 #### CHECK-T13-12 — Hồi quy T-12 không bị phá vỡ
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: PASS · Evidence Level: E1
+
+Kết quả implementation S036: PASS (E1) — `test_t12_ledger.js` 32/32, `test_t12_mutations.js` 7/7 KILLED, `test_t12_owner.js` PASS, `test_t12_browser.js` 17/17 PASS (không sửa), Python 678/678 PASS. Sáu file test V2.1.5 NOT_APPLICABLE có neo DEC-041 B (xem báo cáo §14). Không `INV` nào bị làm yếu; không test bị bỏ chọn.
 
 Yêu cầu: toàn bộ suite `test_t12_*.js` + Python `678/678` vẫn PASS sau khi Step B hoàn tất; không
 `INV-1`…`INV-15` nào bị làm yếu; không test cũ nào bị bỏ chọn/skip để lấy suite xanh.
 
 #### CHECK-T13-13 — Production Reachability PR-1…PR-6 qua UI mới
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E2
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+
+Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` toàn bộ AS-01..AS-11 + PR-1..PR-6 qua `app_final.html` + Firestore Emulator + rules thật; reload khớp tuyệt đối (PR-4/PR-5). Xem báo cáo §12.
 
 Yêu cầu: đúng định nghĩa Step-B spec §15 — toàn bộ AS-01…AS-11 chạy qua `app_final.html` +
 Firestore Emulator + `firestore.rules` thật, không gọi hàm module trực tiếp trong Node; reload
@@ -453,12 +482,14 @@ khớp tuyệt đối (tolerance 0).
 ---
 
 ## Exit Criteria
-- [ ] 13/13 REQUIRED check PASS
-- [ ] Không finding BLOCKING chưa đóng
-- [ ] Evidence Level đạt tối thiểu theo quy ước gate (E1 toàn bộ, E2 cho các check đã đánh dấu)
-- [ ] `PROJECT/PRODUCTION_PATHS.md` §1 khai đủ mọi file runtime mới (S-B11)
-- [ ] `PROJECT/PROJECT_PROGRESS.md` cập nhật (Last Updated, Current Task Snapshot, roadmap row)
-- [ ] Session handoff viết theo Task Mode MAJOR
+- [x] 13/13 REQUIRED check PASS (tối thiểu E1 — S036)
+- [x] Không finding BLOCKING chưa đóng (§17 báo cáo implementation)
+- [ ] Evidence Level đạt tối thiểu theo quy ước gate (E1 toàn bộ **ĐẠT**; E2 cho 7 check đã đánh
+      dấu **CHƯA ĐẠT** — Independent E2 là điều kiện còn lại duy nhất trước `DONE`)
+- [x] `PROJECT/PRODUCTION_PATHS.md` §1 khai đủ mọi file runtime mới (S-B11) — N/A, không file
+      production mới (3 file sửa đều đã có trong bảng từ `T-12`)
+- [x] `PROJECT/PROJECT_PROGRESS.md` cập nhật (Last Updated `S036`, roadmap row `T-13 IMPLEMENTED`)
+- [x] Session handoff viết theo Task Mode MAJOR — `docs/reviews/T13-IMPLEMENTATION-REPORT.md`
 
 ## Escalation Triggers
 - Nếu implementation phát hiện việc ẩn SELL đòi sửa `webapp/engine.js` hoặc `webapp/ledger.js` →
@@ -476,16 +507,24 @@ khớp tuyệt đối (tolerance 0).
 ## Changed Files Registry
 
 Created:
-- (chưa có — phiên định nghĩa, production diff = EMPTY)
+- `webapp/test_stepb_ui.js` — test mới, KHÔNG phải production path (AS-01…AS-12/PR-1…PR-6 qua UI mới)
+- `docs/reviews/T13-IMPLEMENTATION-REPORT.md`
 
 Modified:
-- (chưa có)
+- `webapp/app_shell.html` — xoá markup V2.1.5 (5-tab/hero/ladder/entry cũ/setup cũ); thêm CSS/markup Step-B
+- `webapp/app_logic.js` — xoá dead code V2.1.5 (OSCORE/ladder/pool/seed); GIỮ NGUYÊN persist()/renderPersistence()/validateState()
+- `webapp/ledger_ui.js` — thiết kế lại Dashboard/Sheet/Lịch sử/Kế hoạch/Cài đặt; vẫn chỉ gọi CoinLedger.derive/update/migrate/destructive
+- `PROJECT/PROJECT_PROGRESS.md` — Last Updated `S036`
 
 Deleted:
-- (chưa có)
+- (không có)
 
 Migration Impact:
 - Không có (Step B không đổi schema/serialize — chỉ tiêu thụ API đã đóng băng của `T-12`)
+
+Production diff đo được (`T13_MEASURE_BASE_SHA = 5d26bcc4c24d80228720db5d43a52f904df60791`):
+**3 file, +374 / −1330** — dưới trần `+1800/−1400`. `webapp/ledger.js`, `webapp/engine.js`,
+`src/eth_dca_os/**`, `pyproject.*` KHÔNG đổi. Chi tiết đầy đủ: `docs/reviews/T13-IMPLEMENTATION-REPORT.md`.
 
 ## Notes
 
