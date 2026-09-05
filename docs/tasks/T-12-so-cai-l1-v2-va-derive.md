@@ -2,7 +2,11 @@
 
 ## Metadata
 Status:
-BLOCKED
+IN_PROGRESS
+
+Hiện hành S034 sau DEC-045: cả hai nhóm mâu thuẫn đã được Owner disposition; Ready Gate
+tái đánh giá duy nhất 17/17 PASS, BLOCKED → READY → IN_PROGRESS. Tiếp tục implementation.
+Những ghi chú dừng DEC-044/S034 dưới đây là lịch sử, không còn blocker hiện hành.
 
 **Tu chỉnh DEC-044 — 2026-09-05:** Owner duyệt sửa riêng oracle SC-04 thành
 `remainingPlannedBudgetVnd(2026-02) = 11.775.522`, ghi rõ carryInVnd = 4.684.700 và
@@ -552,6 +556,18 @@ Hết cả pre-authorization lẫn pool `CAP-WEBAPP` thì chỉ còn `ACCEPT_AS_
 
 ## Ready Gate
 
+### Tái xác nhận duy nhất sau DEC-045 — S034, 2026-09-05
+
+**17/17 PASS**, đánh giá lại đúng 17 prerequisite dưới đây theo nội dung hiện hành:
+objective/scope/non-goals/touch area giữ nguyên; dependencies đã DONE/waived; semantics
+DEC-042/044/045 đầy đủ; quyền schema/persistence DEC-043; bảo mật/routing/migration tổng hợp
+đã xác định; D4/R3/B3 và router D/max; triggers hiện hữu; 14 check REQUIRED đã hoàn tất và
+FROZEN với đúng các tu chỉnh Owner duyệt. Không cần dữ liệu Owner. Không chạy lại preflight.
+Branch Authority PASS trên `codex/t12-l1-ledger-impl`, base `7d1985a`.
+Chuyển **BLOCKED → READY → IN_PROGRESS** sau đánh giá này. E2 vẫn REQUIRED; chưa golden freeze;
+REPAIR_CYCLE_1 = NOT_CONSUMED. Các bản ghi Ready Gate và discovery stop bên dưới là lịch sử.
+
+
 `governance/core/TASK_READY_GATE_STANDARD.md` § MAJOR — 17/17 xác nhận tại `S032` (2026-09-05):
 
 - [x] Objective rõ ràng — § Objective, neo spec §5/§9/§17/§19/§20
@@ -669,7 +685,9 @@ E1
 
 Evidence:
 Yêu cầu: `vndRelieved = ROUND_VND(usdtOut × usdtCostVnd / usdtQty)`; giải phóng theo bình quân
-**không** làm đổi bình quân; phí USDT vào cả hai giá vốn; bán crypto/bán USDT giải phóng theo
+giữ bình quân lý thuyết **trước** lượng tử VND. Sau ROUND_VND, bình quân dẫn xuất từ
+`(C − vndRelieved) / (Q − usdtOut)`; chênh tỷ số chỉ do phép làm tròn tất định (DEC-045),
+không lưu bình quân cũ, không phần dư ẩn, không tolerance bổ sung; phí USDT vào cả hai giá vốn; bán crypto/bán USDT giải phóng theo
 cùng phương pháp; cạn pool ép `usdtCostVnd = 0` và đẩy phần dư vào `realizedFxVnd`. Số kỳ vọng
 đối chiếu **tuyệt đối** (`tolerance = 0`) với `SC-01`…`SC-04`, `SC-06`. Phủ `INV-3`.
 

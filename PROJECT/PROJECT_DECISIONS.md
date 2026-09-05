@@ -3973,3 +3973,49 @@ Không đổi Firebase/auth/rules/Hosting, kiến trúc kế toán, dữ liệu 
 Kết quả preflight được ghi riêng là kết quả của agent, **không phải một quyết định Owner mới**.
 
 ---
+
+## DEC-045 — T-12: WAC sau ROUND_VND và carry của tháng đã đóng
+
+Date: 2026-09-05 — Owner Decision “T-12 FINAL CONTRACT CONSISTENCY CLARIFICATION”.
+Task: T-12, CAP-WEBAPP, lineage root WP-C1; cùng nhánh `codex/t12-l1-ledger-impl`, phiên S034.
+
+### Decision — Group A
+
+Owner DUYỆT làm rõ: giải phóng WAC theo tỷ lệ giữ bình quân lý thuyết **trước** lượng tử
+VND nguyên. Sau ROUND_VND, nguồn thật là remainingQty = Q − out và
+remainingCostVnd = C − ROUND_VND(out × C / Q); bình quân dẫn xuất bằng remainingCostVnd /
+remainingQty. Chênh lệch tỷ số chỉ được là hệ quả toán học tất định của ROUND_VND.
+SC-04 giữ đúng tuyệt đối Q = 1.099,4 USDT, C = 28.384.700 VND, out = 500 USDT,
+vndRelieved = 12.909.178 VND, Q′ = 599,4 USDT, C′ = 15.475.522 VND.
+Không tolerance cho bình quân, không lưu bình quân cũ, không tài khoản phần dư ẩn, không
+đổi oracle nguyên, không dùng xấp xỉ float làm thẩm quyền. Bảo toàn lượng và VND nguyên
+theo relief canonical; bình quân luôn dẫn xuất. Sửa tối thiểu CHECK-T12-03 và spec §8.
+
+### Decision — Group B
+
+Owner DUYỆT SC-09/SC-10 thành hai lần đánh giá **cùng ledger, không thêm giao dịch**:
+A: SC-09 asOfDate = 2026-03-18; SC-10 = 2026-03-21. Giữ nguyên invested, plan, reserve,
+extra; tháng 3 còn mở, carryOut tháng 3 chưa chốt. Remaining không là carryOut hay projection.
+B: asOfDate = 2026-04-01: carryOut(2026-03) = 8.000.000 và carryIn(2026-04) = 8.000.000.
+Giữ input, monthlyBudget, CAPPED_CARRY, cách ly reserve/extra và CHECK-T12-06.
+
+### Trạng thái và quyền tiếp tục
+
+Cả hai nhóm được phát hiện trong **một** preflight trước implementation do Owner ủy quyền
+(9 CONSISTENT / 3 CONTRACT_CONFLICT). Tại thời điểm sửa: không production implementation,
+chưa commit bộ SC fixture, T12_GOLDEN_ACCOUNTING_BASELINE chưa frozen, REPAIR_CYCLE_1 =
+NOT_CONSUMED. Không tạo task ID, không đổi mục tiêu sản phẩm kế toán, không nới tolerance
+(tolerance = 0 cho mọi oracle nguyên), không đổi budget. DEC-044 và DEC-045 không tiêu repair.
+
+Toàn bộ batch đã disposition: carry SC-04 theo DEC-044; WAC SC-04 và carry SC-09/10 theo
+quyết định này. **Không chạy thêm broad preflight/oracle search.** Sau canonicalization,
+tái đánh giá Ready Gate hiện hữu đúng một lần; 17/17 PASS thì BLOCKED → READY → IN_PROGRESS
+và tiếp tục implementation ngay cùng nhánh/phiên, không hỏi lại. Nếu thiếu prerequisite,
+READY_GATE_FAIL và nêu đúng điều kiện thiếu. Normal implementation tests vẫn được phép.
+
+Commit tài liệu DEC-045 không phải golden freeze. Freeze tại commit implementation đầu chứa
+đủ SC-01…SC-12 canonical sau DEC-044/045. Tiếp tục tới IMPLEMENTED + independent E2 REQUIRED
+(không DONE), hoặc hard-stop hợp lệ. Không đổi Firebase/auth/rules/hosting, UI redesign,
+V2.1.5, dữ liệu Owner, projection, research/Buy Score hay scope.
+
+---

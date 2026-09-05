@@ -447,6 +447,11 @@ Khi chi `usdtOut` để mua ETH:
 
     vndRelieved = ROUND_VND( usdtOut × usdtCostVnd / usdtQty )
 
+Theo DEC-045, bình quân lý thuyết bất biến **trước** lượng tử VND nguyên. Sau ROUND_VND,
+`remainingQty = Q − out`, `remainingCostVnd = C − ROUND_VND(out × C / Q)`; bình quân sau
+lệnh dẫn xuất từ hai số dư này. Chênh tỷ số chỉ là hệ quả tất định của phép làm tròn; không
+lưu bình quân cũ, không tài khoản phần dư ẩn, không nới tolerance = 0 của oracle nguyên.
+
 Giá vốn VND đó **đi vào ETH**. Không có VND nào được tạo ra hay mất đi (`INV-3`).
 
 Vì sao WAC chứ không phải tax lot: L-1 là app cá nhân, một người dùng, **không có nghĩa vụ thuế
@@ -461,7 +466,7 @@ lô** — điều kiện sống còn cho §9. Đây là phương pháp đơn gi�
 |---|---|---|
 | 1 | Nhiều lô P2P khác tỷ giá | WAC trộn tự động (§6.3). Không cần ghép cặp. `SC-04` |
 | 2 | Đã có sẵn USDT đầu kỳ | `openingPosition.usdt = {qty, costVnd}` nạp thẳng vào pool. `SC-01` |
-| 3 | Chỉ dùng một phần USDT | Giải phóng theo tỷ lệ; bình quân **không đổi**. `SC-03` |
+| 3 | Chỉ dùng một phần USDT | Giải phóng theo tỷ lệ giữ bình quân trước lượng tử VND; sau ROUND_VND, bình quân dẫn xuất từ số dư nguyên (§8.2, DEC-045). `SC-03` |
 | 4 | Phí sàn | §7.2 — phí USDT cộng vào `usdtOut` nên vào cả hai giá vốn |
 | 5 | Nguồn gốc USDT không xác định (không cần ghép lô — WAC đã giải quyết ở mục 1; nhưng nếu basis THẬT SỰ không biết) | §8.5 — chính sách STRICT / FAIL-VISIBLE (`DEC-042`) |
 | 6 | Không biết giá vốn VND đầu kỳ | `costVnd = null` → mọi số VND của tài sản đó = `UNKNOWN`, hiển thị `—`. **Không** thay bằng 0, **không** thay bằng tỷ giá thị trường (`INV-11`) |
@@ -1097,7 +1102,9 @@ Trạng thái nền dùng chung cho `SC-01`…`SC-08`:
             planInvested           = 12.000.000
             remainingPlannedBudget =  8.000.000   (EXTRA KHÔNG làm giảm)
             nextPlannedDate = 2026-03-23 · nextPlannedAmount = 8.000.000
-            carryOut(2026-03) = 8.000.000 -> carryIn(2026-04) = min(8.000.000, 20.000.000) = 8.000.000
+            Evaluation A: carryOut(2026-03) CHƯA CHỐT (tháng còn mở; không projection).
+    INPUT B cùng ledger, không thêm event, asOfDate = 2026-04-01 (DEC-045)
+    EXPECT B carryOut(2026-03) = 8.000.000; carryIn(2026-04) = 8.000.000
     INV     INV-9 · §11.5 — hai con số được phép khác nhau
 
 ### SC-10 — Manual reserve deployment
@@ -1110,7 +1117,9 @@ Trạng thái nền dùng chung cho `SC-01`…`SC-08`:
             investedThisMonth      = 21.000.000
             planInvested           = 12.000.000  (KHÔNG ĐỔI)
             remainingPlannedBudget =  8.000.000  (KHÔNG ĐỔI)
-            carryOut(2026-03)      =  8.000.000  (KHÔNG ĐỔI)
+            Evaluation A: carryOut(2026-03) CHƯA CHỐT (tháng còn mở; không projection).
+    INPUT B cùng ledger SC-10, không thêm event, asOfDate = 2026-04-01 (DEC-045)
+    EXPECT B carryOut(2026-03) = 8.000.000; carryIn(2026-04) = 8.000.000
     INV     INV-9 · INV-10 — không score/regime nào được tạo hay định cỡ event này ·
             note BẮT BUỘC (§12.2)
 

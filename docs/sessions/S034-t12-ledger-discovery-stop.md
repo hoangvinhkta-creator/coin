@@ -4,7 +4,7 @@ Session ID: S034
 Task: T-12
 Task Mode: MAJOR
 Project Profile: PRODUCT
-Status: BLOCKED — OWNER_DECISION_REQUIRED
+Status: IN_PROGRESS — DEC-045; Ready Gate 17/17
 Ngày: 2026-09-05
 Nhánh: codex/t12-l1-ledger-impl
 Source HEAD/base: 7d1985aaf306294df49c9508078d5425da10f47e
@@ -74,3 +74,9 @@ Không fixture, không implementation, không golden freeze, không repair tiêu
 Completion Gate evidence; mọi runtime check vẫn NOT_TESTED, E2 chưa thực hiện.
 Không task/artifact mới; sửa thêm PROJECT_DECISIONS và đúng phần SC04 của spec L-1.
 Validators/bảo toàn hợp đồng/commit/push: xem phần bổ sung báo cáo T12, mục cuối.
+
+## Tiếp nối DEC-045 — cùng phiên, 2026-09-05
+
+Owner duyệt cả hai nhóm. Đã sửa tối thiểu spec/CHECK-T12-03 và SC-09/10 thành hai lần đánh giá.
+Không preflight mới. Ready Gate đánh giá đúng một lần 17/17 PASS; BLOCKED → READY → IN_PROGRESS.
+Bắt đầu implementation; chưa fixture commit/golden freeze; REPAIR_CYCLE_1 NOT_CONSUMED.

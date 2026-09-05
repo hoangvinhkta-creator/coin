@@ -1,5 +1,9 @@
 # T-12 Implementation Report
 
+**Hiện hành DEC-045:** đã disposition cả hai nhóm; Ready Gate đánh giá duy nhất 17/17 PASS;
+T-12 IN_PROGRESS. Implementation đang thực hiện; chưa freeze, repair NOT_CONSUMED.
+Các phần discovery stop bên dưới là lịch sử; báo cáo implementation sẽ cập nhật trong cùng file.
+
 **Hiện hành sau DEC-044:** carry SC-04 đã sửa đúng 11.775.522 VND; một lượt preflight đủ 12 SC
 phát hiện hai nhóm CONTRACT_CONFLICT khác. T-12 vẫn BLOCKED, chưa implementation.
 Xem phần **Bổ sung S034 — DEC-044 và lượt golden consistency preflight duy nhất** cuối báo cáo.
