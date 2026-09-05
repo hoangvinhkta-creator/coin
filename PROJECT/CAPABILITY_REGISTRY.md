@@ -16,7 +16,54 @@ Capability được **dẫn xuất** từ các work package đã tồn tại tro
 
 ---
 
-## 1. Vertical Acceptance Slice hiện tại
+## 1. Vertical Acceptance Slice
+
+Lát cắt **ACTIVE** là §1.A (sản phẩm L-1). Lát cắt V2.1.5 ở §1.B là **HISTORICAL / CLOSED** —
+giữ nguyên bản ghi, không xoá. Thay thế này do `DEC-041` mục C thực hiện.
+
+Câu hỏi định tuyến số 1 của `governance/v4/CORE/CAPABILITY_MODEL.md`
+(*"Is it required for the current Vertical Acceptance Slice to run correctly?"*) từ nay được
+chấm **trên §1.A**, KHÔNG phải trên lát cắt validation V2.1.5 đã hoàn tất ở §1.B.
+
+---
+
+### 1.A — LÁT CẮT ACTIVE: sản phẩm CoinDCA L-1 (`DEC-041` C)
+
+    Ngân sách tháng do người dùng đặt
+      -> lịch mua đã lên kế hoạch
+        -> người dùng ghi một giao dịch thật (có NGÀY do người dùng nhập)
+          -> sổ cái + giá vốn tính lại từ (số dư đầu kỳ + toàn bộ trades)
+            -> 4 con số dashboard (ngân sách · đã đầu tư · còn lại · ngày mua kế tiếp)
+              -> lưu bền qua reload/restart
+
+Lát cắt này cắt ngang module (UI → lớp ghi sổ → persistence), đúng định nghĩa Vertical Slice:
+không module nào tự chứng minh được nó.
+
+Trạng thái lát cắt: **CHƯA CHẠY.** Sản phẩm L-1 chưa được đặc tả — pha kế tiếp là
+`L-1 PRODUCT + ACCOUNTING SPEC` (`DEC-041` Consequence). Không phiên nào được thi hành L-1
+trước khi spec đó tồn tại.
+
+    END_TO_END_ACCEPTANCE = PENDING_OWNER_DATA
+
+    MISSING_DATA:
+      ngân sách tháng · ngày lịch DCA · số dư đầu kỳ (crypto đang có, USDT sẵn, giá vốn cũ,
+      asOf) · ít nhất một giao dịch đủ trường (ngày, USDT, price, fee, vndRate) · MỘT con số
+      giá vốn trung bình kỳ vọng để làm oracle
+    REQUIRED_SOURCE:
+      spec L-1 định nghĩa các trường này bằng **ví dụ tổng hợp (synthetic)**
+    OWNER_INPUT_REQUIRED:
+      KHÔNG cần trong pha chuyển tiếp này (`DEC-041` C — Owner amendment)
+
+**Quy tắc riêng tư/dữ liệu (`DEC-041` C, BẮT BUỘC).** KHÔNG commit dữ liệu tài chính thật của
+Owner vào repo: ngân sách tháng thật, số dư đầu kỳ thật, lịch sử giao dịch thật, số dư tài khoản
+riêng tư, oracle giá vốn cá nhân thật. Toạ độ nghiệp vụ mà `CAPABILITY_MODEL.md` §II.1 đòi được
+thoả bằng **ví dụ tổng hợp**; kiểm chứng bằng dữ liệu thật chạy trên input cục bộ/riêng tư hoặc
+fixture đã làm sạch. Đây là lý do `PENDING_OWNER_DATA` ở trên là outcome **hợp lệ** theo
+`CAPABILITY_MODEL.md` §II.2 và không được "làm đầy" bằng dữ liệu bịa.
+
+---
+
+### 1.B — LÁT CẮT HISTORICAL / CLOSED: validation V2.1.5 (giữ nguyên, không xoá)
 
     Dữ liệu thật (Binance)
       -> fetch/lineage có nguồn gốc chứng minh được
@@ -29,7 +76,16 @@ Capability được **dẫn xuất** từ các work package đã tồn tại tro
 Đây là lát cắt mà `T-06` (official run) hiện thực hoá. Nó cắt ngang mọi module — đúng định
 nghĩa Vertical Slice: không module nào tự chứng minh được nó.
 
-Trạng thái lát cắt: **ĐÃ CHẠY ĐÚNG MỘT LẦN — `T-06`, DONE tại `DEC-031` (2026-09-03).** Kết
+**Trạng thái thẩm quyền từ `DEC-041` A/C: HISTORICAL / CLOSED.** Lát cắt này KHÔNG còn là lát
+cắt chấm định tuyến; nó vẫn là authority cho câu hỏi *"V2.1.5 đã được đặc tả và chạy như thế
+nào"*. `docs/spec/*_V2_1_5.md` và `src/eth_dca_os/**` = **frozen historical research authority**:
+vẫn trích dẫn được, KHÔNG còn là spec sản phẩm, KHÔNG được sửa (Master Index §6), KHÔNG được kế
+thừa trạng thái validation. Khiếm khuyết đặc tả đã biết `S-001`/`S-002`/`S-003` (đầu ra dự kiến
+của `WP-D2`, nay `CANCELLED`) được **ghi chú kèm** freeze, không được sửa.
+Giữ nguyên vĩnh viễn: `V2.1.5 validation = FAILED`; `verdict = DO_NOT_BUILD`;
+`can_proceed_to_app = false`; official artifact `T-06`.
+
+Trạng thái chạy (lịch sử): **ĐÃ CHẠY ĐÚNG MỘT LẦN — `T-06`, DONE tại `DEC-031` (2026-09-03).** Kết
 quả đầu-cuối = verdict **`DO_NOT_BUILD`** (Gate 1 FAIL, OOS hard condition FAIL),
 `can_proceed_to_app=false`. Đây là historical governance disposition (Owner chấp nhận
 execution như một historical exception, KHÔNG tạo Ready/Completion Gate hậu nghiệm) — KHÔNG
@@ -54,6 +110,21 @@ coi là đã thoả.
 
 ## 2. Bảng capability
 
+**Ghi chú `DEC-041` (2026-09-05).** Sau khi lát cắt ACTIVE chuyển sang L-1 (§1.A), các capability
+thuộc bộ máy validation V2.1.5 — `CAP-PROV`, `CAP-DATA`, `CAP-ENGINE`, `CAP-PIPELINE`,
+`CAP-MEASURE`, `CAP-ORDER`, `CAP-VERDICT` — chuyển sang **FROZEN RESEARCH (lịch sử đóng)**: giữ
+nguyên trạng thái `DONE`, giữ nguyên mọi con số budget, KHÔNG reset, KHÔNG đụng lại
+(`AGENTS.md` §3 *"Budget does not reset"*). Chúng không còn nằm trên lát cắt định tuyến.
+
+`CAP-WEBAPP` là **lineage còn sống** và là lineage root tự nhiên của công việc L-1
+(allowed 2 / used 0 / remaining 2, Effective Risk `HIGH` — `REVIEW_BUDGET_LEDGER.md` §2.2, không
+đổi). Hai thành viên `WP-C3` và `WP-C4` nay `CANCELLED` (`DEC-041` F).
+`CAP-SPEC` (`WP-D2`) đóng cùng V2.1.5.
+
+**Báo trước `ABSORPTION_LIMIT` (`DEC-041` J):** công việc L-1 dưới `CAP-WEBAPP` nhiều khả năng
+chạm ngưỡng B và D của `CAPABILITY_MODEL.md`. Khi chạm: ghi `ABSORPTION_LIMIT_REACHED` và quay
+lại Owner Decision — **không tự tạo task**.
+
 | Capability | Tên | Lineage root | Owner task hiện hành | Trạng thái | Nằm trên Vertical Slice? |
 |---|---|---|---|---|---|
 | `CAP-PROV` | Nguồn gốc & khả năng tái lập của official run | `WP-A1` | `WP-A1` | DONE — CHECK-A1-11 PASS/E2 vòng BỐN, Owner xác nhận `DEC-028` (2026-09-03) | Đã thoả (GATE-A CLOSED) |
@@ -63,9 +134,9 @@ coi là đã thoả.
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | DONE tại S015 — 9/9 REQUIRED PASS (E1), chủ dự án phê chuẩn | CÓ |
 | `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
 | `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | `WP-B1` **DONE** (`DEC-034`); `WP-B2` **DONE** (`DEC-038`, 2026-09-05 — Owner-authorized Lifecycle Closure, 10/10 REQUIRED PASS, 141 ca test mới, 0 dòng production bị sửa, đóng `R-09` + danh sách "chưa có test" của `S001` thuộc BT §21); `WP-B3` **DONE** (`DEC-037`, 2026-09-05 — Owner-authorized Lifecycle Closure, 8/8 REQUIRED PASS, đóng `F-024`/`F-033`). **Toàn bộ lineage DONE** — `GATE-B = CLOSED` (`DEC-038`) | CÓ (lát cắt đã chạy — T-06 DONE) |
-| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **READY** (`DEC-036` — dependency WP-C2 DONE nay thoả); `WP-C4` PLANNED | KHÔNG (song song) |
+| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; partial fill là khái niệm zone/ladder, không tồn tại dưới L-1. Ghi chú: `DEC-036` từng chuyển `READY` nhưng không được áp vào file task — stale `ST-09`, đóng tại `DEC-041` I); `WP-C4` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; phần dư parity OSCORE → `RE_TRIGGER_CONDITION` trong `HARDENING_BACKLOG.md`, không phải task) | **CÓ — lineage còn sống, lineage root của công việc L-1** (`DEC-041`) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
-| `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | READY | KHÔNG |
+| `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; `DEC-040` từ chối V2.2 và đòi giả thuyết tương lai không kế thừa V2.1.5. `S-001`/`S-002`/`S-003` được ghi chú kèm freeze `DEC-041` A) | KHÔNG — đóng cùng V2.1.5 |
 | `CAP-GOVTOOL` | Validator & tooling governance | `MICRO-GOVDEF-001` | chưa có owner cho phần glob | READY một phần | KHÔNG |
 
 ---

@@ -1364,3 +1364,121 @@ không thể sai), không REQUIRED check nào của một gate đóng băng đò
     - `behavioral_model = LOCAL_HOUR` được đấu nối vào pipeline (xem `H-39`) — khi đó độ phủ
       nhánh của mô hình hành vi trở thành câu hỏi có hậu quả; HOẶC
     - TTL baseline được đổi khỏi 12h.
+
+---
+
+## H-41 — Nhóm lỗi kế toán `B1`–`B10` của `webapp/app_logic.js` — ràng buộc thiết kế cho spec L-1
+
+Capability: `CAP-WEBAPP` · Owner: chưa có (spec L-1 chưa tồn tại) · Phân loại: **CONFIRMED HARDENING** cho `B1`–`B4`; **PROVISIONAL** cho `B5`–`B10`
+Ngày ghi nhận: 2026-09-05 (`DEC-041` K.2, phiên L-1 canonical transition)
+
+Owner tường minh (`DEC-041` K.2): mang nhóm này sang làm **ràng buộc thiết kế L-1**, KHÔNG phải
+đơn sửa lỗi riêng lẻ. Một mục backlog duy nhất, không tách thành mười.
+
+| # | Vị trí | Hiện tượng | Mức bằng chứng |
+|---|---|---|---|
+| `B1` | `webapp/app_logic.js:271` | Fill zone không nhập tỷ giá → `amount = remaining` → mua 1 USDT cũng đánh dấu zone `EXECUTED` và chuyển toàn bộ target R→D | **CONFIRMED** (đọc mã 2026-09-05) |
+| `B2` | `:280-283` | Mua không tỷ giá → `deducted = 0`, pool không bị trừ. Mua vượt `pool.a` → phần dư không trừ vào đâu → "available" ảo | **CONFIRMED** |
+| `B3` | `:129-132` | `currentMonth()` = key tháng **lớn nhất**, không phải tháng lịch | **CONFIRMED** |
+| `B4` | `:287` (và `:168`, `:218`) | Ngày giao dịch = `new Date()` lúc bấm nút — không nhập được ngày thật | **CONFIRMED** |
+| `B5` | toàn bộ | Không edit/delete giao dịch, P2P, contribution, ngày giá | PROVISIONAL |
+| `B6` | — | Không nhập được số dư đầu kỳ | PROVISIONAL |
+| `B7` | `:125` vs `:1432` | `monthKey` giờ local, `today`/`daysSince` UTC → 00:00–07:00 ngày 1 hằng tháng mặc định tháng trước | PROVISIONAL |
+| `B8` | `:1420` | Wipe chỉ `confirm()` một lần rồi ghi state rỗng lên Firestore, không snapshot trước | PROVISIONAL |
+| `B9` | — | VND lưu float (`102000.00000000001`) | PROVISIONAL |
+| `B10` | `webapp/engine.js:21-59` | Rolling window đếm **số dòng**, không theo lịch → bỏ nhập ngày nào thì MA200/High365/ADR30 lệch âm thầm | PROVISIONAL |
+
+**Ba ràng buộc kiến trúc rút ra** (spec L-1 phải trả lời tường minh):
+
+1. `date` do người dùng nhập là **trường bắt buộc** trên mọi giao dịch; mọi ngày theo
+   `Asia/Ho_Chi_Minh` (`B4`, `B7`).
+2. Cost basis / holdings / PnL **TÍNH LẠI từ `(số dư đầu kỳ + toàn bộ trades)`** mỗi lần render,
+   KHÔNG cộng dồn vào state (`B1`, `B2`, `B5`, `B6`). Đây là ràng buộc **kiến trúc**: chỉ mô hình
+   tính-lại mới làm edit/delete an toàn, và nó xoá cả một lớp lỗi cộng dồn thay vì vá từng cái.
+3. Tháng = **tháng lịch**; VND lưu **integer** (`B3`, `B9`).
+
+Danh sách 10 hạng mục mà spec Product/Accounting L-1 phải giải quyết tối thiểu: xem `DEC-041` K.2.
+
+Vì sao KHÔNG BLOCKING **bây giờ**: không có task nào đang mở để chặn, `T-09A` (owner cũ của lớp
+kế toán webapp) đã `DONE`, và `DEC-041` L cấm vá `webapp/` trong pha chuyển tiếp. Đây là ràng
+buộc **đầu vào** của spec kế tiếp, không phải finding chờ sửa trong một gate đang chạy.
+
+**Phân biệt quan trọng:** nhóm này KHÁC `V-01`/`V-02`/`V-03` của `RSK-003` (đã vá tại `T-09A`,
+`RSK-003` ĐÓNG tại `DEC-041` I). `B1`–`B10` **chưa từng được vá**. Vì vậy cảnh báo
+**"dừng dùng app với tiền thật" VẪN CÒN HIỆU LỰC** tới khi pivot L-1 hoàn tất.
+
+    RE_TRIGGER_CONDITION:
+    - phiên `L-1 PRODUCT + ACCOUNTING SPEC` khởi động — khi đó toàn bộ mục này là đầu vào BẮT
+      BUỘC và mỗi hạng mục phải được spec trả lời hoặc bác bỏ tường minh; HOẶC
+    - bất kỳ thay đổi nào chạm `webapp/app_logic.js` được cho phép trở lại; HOẶC
+    - chủ dự án bắt đầu ghi tiền thật vào app trước khi pivot L-1 hoàn tất — khi đó `B1`/`B2`/
+      `B3`/`B4` chuyển sang BLOCKING theo `DEC-011` tiêu chí `BLOCKING V1` mục B.
+
+---
+
+## H-42 — Firebase isolation và xác thực bền vững — product-readiness constraint của L-1
+
+Capability: `CAP-WEBAPP` · Owner: chưa có (spec L-1 chưa tồn tại) · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-05 (`DEC-041` K.1)
+
+Owner **MỞ LẠI** câu hỏi đa thiết bị/recovery vốn bị `DEC-021` (Personal Tool Simplification
+Principle) xếp ngoài phạm vi V1. Lý do mở lại: `DEC-021` ra đời khi app web còn là phụ trợ của
+bộ máy nghiên cứu V2.1.5; dưới L-1 (`DEC-040`) **app CHÍNH LÀ sản phẩm**.
+
+Dưới L-1: **Firebase isolation + xác thực một-chủ-sở-hữu bền vững là PRODUCT-READINESS
+CONSTRAINTS trước khi dùng tiền thật.**
+
+| # | Ràng buộc | Bằng chứng |
+|---|---|---|
+| `FB-1` | Project Firebase dùng chung `tinphatcontent` với app Content. CoinDCA đòi bật Anonymous Auth, mà rules Content dùng `signedIn() = request.auth != null` → **bất kỳ khách vô danh nào** cũng ghi được `users/{uid}`, `contents`, `schedules`, `fb_queue`, `audit_logs` của Content | `DEC-023`; `docs/reviews/T-09B-shared-rules-merge.md` §OBSERVATION |
+| `FB-2` | `firebase.json` khối `hosting` **không có khoá `site`** → `firebase deploy` từ repo này **đè** Hosting site mặc định của Content | `firebase.json` (đọc 2026-09-05); `webapp/README.md` |
+| `FB-3` | `firestore.rules:101` còn placeholder `OWNER_UID_REQUIRED` trong khi production đã deploy UID thật → **deploy lại từ repo sẽ tự khoá chính chủ dự án ra ngoài** | `firestore.rules:101` |
+| `FB-4` | Anonymous UID nằm trong IndexedDB trình duyệt → xoá site data / đổi máy / cửa sổ ẩn danh = **mất quyền truy cập dữ liệu của chính mình**, phải sửa rules + redeploy bằng terminal | `H-23`; `DEC-021` |
+
+Lưu ý phạm vi: rủi ro của `FB-1` rơi vào **app Content**, không phải CoinDCA — nhưng do CoinDCA
+gây ra. `FB-2`/`FB-3` là ràng buộc **vận hành**, không phải lỗi mã.
+
+Hướng cần đánh giá **sau này** (`DEC-041` K.1 — KHÔNG thi hành bây giờ): project Firebase riêng
+cho CoinDCA; không dùng chung ranh giới hosting/rules với Tín Phát Content; Google Sign-in một
+tài khoản hoặc cơ chế xác thực bền tương đương; recovery qua thiết bị / reset trình duyệt;
+snapshot/backup trước mọi thao tác phá huỷ.
+
+Quan hệ với `DEC-021`: `DEC-021` **giữ nguyên hiệu lực lịch sử** cho `T-09B` và cho V1-của-V2.1.5.
+`DEC-041` K.1 mở lại câu hỏi **cho L-1** — không đảo ngược `DEC-021` hồi tố.
+
+Vì sao KHÔNG BLOCKING bây giờ: `T-09B` đã `DONE` với gate FROZEN của chính nó thoả 16/16, và
+`DEC-041` L cấm sửa cấu hình Firebase trong pha chuyển tiếp.
+
+    RE_TRIGGER_CONDITION:
+    - phiên `L-1 PRODUCT + ACCOUNTING SPEC` khởi động — mục này là đầu vào bắt buộc; HOẶC
+    - bất kỳ lần `firebase deploy` nào được thực hiện từ repo (`FB-2`/`FB-3` chuyển sang
+      BLOCKING ngay: một lần deploy sai đè site của Content hoặc tự khoá chủ dự án); HOẶC
+    - chủ dự án bắt đầu ghi tiền thật vào app; HOẶC
+    - app Content ghi nhận bất kỳ document lạ nào do khách vô danh tạo (`FB-1` thành hiện thực).
+
+---
+
+## H-43 — Phần dư parity của `WP-C4`: OSCORE `engine.js` ↔ `score.py` nếu tab Research L-1 được bật
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **PROVISIONAL HARDENING**
+Ngày ghi nhận: 2026-09-05 (`DEC-041` F)
+
+`WP-C4` (mở rộng parity JS/Python) `CANCELLED` tại `DEC-041` F, nhãn `NOT_APPLICABLE_TO_V2_1_5`:
+parity chỉ có nghĩa khi cả hai bản cài đặt còn là authority, mà `src/eth_dca_os/**` nay là frozen
+historical research và các đại lượng trong gate FROZEN của `WP-C4` (regime, ladder, vốn Smart)
+không tồn tại dưới L-1.
+
+**Phần dư không bị mất:** nếu spec L-1 quyết định bật một tab Research hiển thị Buy Score hồi cứu
+(được phép theo ranh giới `DEC-041` B — chỉ DESCRIPTIVE, không recommendation), thì parity của
+**riêng OSCORE** giữa `webapp/engine.js` và `src/eth_dca_os/score.py` có nghĩa trở lại — với
+phạm vi nhỏ hơn `WP-C4` rất nhiều. Kèm theo đó, `B10` (`H-41`) trở thành điều kiện tiên quyết:
+rolling window của `engine.js` đếm số dòng chứ không theo lịch, nên trên dữ liệu nhập tay có lỗ
+ngày thì OSCORE lệch âm thầm dù parity "xanh" trên dữ liệu liên tục.
+
+Đây là **finding, KHÔNG phải task** (`governance/v4/CORE/REVIEW_PROTOCOL.md` § Finding Routing;
+`AGENTS.md` §3 *"A finding is not a task"*). Không tạo task ID thay thế cho `WP-C4`.
+
+    RE_TRIGGER_CONDITION:
+    - spec L-1 quyết định bật tab Research / hiển thị Buy Score hồi cứu; HOẶC
+    - `webapp/engine.js` được giữ lại chạy trên dữ liệu do người dùng nhập tay; HOẶC
+    - một con số OSCORE hiển thị trong app L-1 bị nghi lệch khỏi `score.py`.

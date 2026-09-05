@@ -390,8 +390,28 @@ Chủ dự án xác nhận `DEC-024`: `T-09B: IMPLEMENTED → DONE`. Toàn bộ 
 
     GOLDEN_BASELINE_SHA = PENDING_OWNER_DATA / MIGRATION_REQUIRED
 
-Dự án chưa có Golden baseline canonical: "Golden" ở đây là **official run** (`T-06`), hiện
-`PLANNED` và bị chặn bởi GATE-A lẫn `BLK-001`. Chưa có lần chạy chính thức nào tồn tại.
+Dự án chưa có Golden baseline canonical. "Golden" ở đây là **official run** (`T-06`).
+
+**Cập nhật `DEC-041` I (2026-09-05) — đóng stale `ST-11`.** Câu cũ ở vị trí này ghi `T-06` là
+`PLANNED` và bị chặn bởi `GATE-A` lẫn `BLK-001`; điều đó đã sai từ 2026-09-03: `T-06 = DONE`
+(`DEC-031`, historical governance disposition — KHÔNG phải validation PASS), `GATE-A = CLOSED`
+(`DEC-028`), `BLK-001 = RESOLVED` (`DEC-031`). Official run **đã tồn tại**, verdict =
+`DO_NOT_BUILD`.
+
+Nhận định cốt lõi của mục này thì **VẪN ĐÚNG và phải giữ**: vì Master Index §6 cấm chạy lại
+`T-06`, lát cắt đó KHÔNG trở thành một Golden trace **tái lập được**, nên không capability nào
+được giảm Blast Radius nhờ nó (`RISK_MODEL.md` § Golden Reduction đòi một test chạy lại được).
+
+**Trạng thái lineage sau `DEC-041` A/J.** Các lineage thuộc bộ máy validation V2.1.5 —
+`CAP-PROV`, `CAP-DATA`, `CAP-ENGINE`, `CAP-PIPELINE`, `CAP-MEASURE`, `CAP-ORDER`, `CAP-VERDICT`
+— chuyển sang **FROZEN RESEARCH (lịch sử đóng)**: giữ nguyên mọi con số đã ghi, **KHÔNG reset,
+KHÔNG chuyển, KHÔNG xoá** (`AGENTS.md` §3 *"Budget does not reset"*). `CAP-SPEC` đóng cùng
+V2.1.5 (`WP-D2` `CANCELLED`).
+**`CAP-WEBAPP` là lineage còn sống** và là lineage root tự nhiên của công việc L-1 —
+allowed 2 / used 0 / remaining 2, Effective Risk `HIGH` (§2.2), **không đổi** ở phiên `DEC-041`
+(production diff của phiên = 0 → không tiêu repair cycle, theo tiền lệ §1 và `DEC-012`).
+Báo trước: công việc L-1 dưới `CAP-WEBAPP` nhiều khả năng chạm `ABSORPTION_LIMIT` ngưỡng B/D →
+ghi `ABSORPTION_LIMIT_REACHED` và quay lại Owner, **không tự tạo task** (`DEC-041` J).
 
 Vì vậy Delivery Change Budget tích luỹ hiện được đo từ **baseline capability**
 (`666de14` cho `CAP-PROV`), KHÔNG từ Golden. Đây là phép đo thay thế có ghi rõ giới hạn,

@@ -2,7 +2,16 @@
 
 ## Metadata
 Status:
-READY
+CANCELLED
+
+(`DEC-041` F, 2026-09-05 — nhãn phân loại **`NOT_APPLICABLE_TO_V2_1_5`**. Đầu ra của gói này
+là một đề xuất **V2.2 của V2.1.5**. `DEC-040` từ chối mở V2.2, và chỉ thị Owner đi xa hơn: *"Any
+future timing/reallocation strategy must be treated as a separate research hypothesis with new
+evidence and must not inherit V2.1.5 validation status"* — nghĩa là công việc chiến lược tương
+lai KHÔNG phải V2.2 của V2.1.5, nên tiền đề của gói này không còn.
+`S-001`/`S-002`/`S-003` KHÔNG bị mất: chúng được **ghi chú kèm** tuyên bố freeze tại `DEC-041` A.
+Khiếm khuyết trong một artifact đã đóng băng lịch sử thì được ghi chú, KHÔNG được sửa
+(Master Index §6). KHÔNG thực thi.)
 
 Phase:
 Phase 6 — Lớp D: hoãn được / tuỳ chọn

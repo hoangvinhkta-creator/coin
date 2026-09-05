@@ -2,7 +2,17 @@
 
 ## Metadata
 Status:
-PLANNED
+CANCELLED
+
+(`DEC-041` F, 2026-09-05 — nhãn phân loại **`NOT_APPLICABLE_TO_V2_1_5`**. Parity chỉ có nghĩa
+khi CẢ HAI bản cài đặt còn là authority. Dưới L-1, `src/eth_dca_os/**` là **frozen historical
+research** (`DEC-041` A) và `webapp/engine.js` hạ xuống optional/descriptive; các đại lượng
+trong Completion Gate đã FROZEN (regime, ladder, vốn Smart) không còn tồn tại ở tầng sản phẩm.
+Completion Gate **vẫn FROZEN, không bị sửa hay làm yếu**.
+Phần dư KHÔNG bị mất: nếu tab Research của L-1 được bật, parity OSCORE
+`webapp/engine.js` ↔ `src/eth_dca_os/score.py` có nghĩa trở lại — ghi thành
+`RE_TRIGGER_CONDITION` trong `PROJECT/HARDENING_BACKLOG.md`, là **finding, KHÔNG phải task**
+(`governance/v4/CORE/REVIEW_PROTOCOL.md` § Finding Routing). KHÔNG thực thi.)
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật

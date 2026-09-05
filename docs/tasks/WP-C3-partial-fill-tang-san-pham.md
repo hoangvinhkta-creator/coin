@@ -2,7 +2,17 @@
 
 ## Metadata
 Status:
-PLANNED
+CANCELLED
+
+(`DEC-041` F, 2026-09-05 — nhãn phân loại **`NOT_APPLICABLE_TO_V2_1_5`**. "Partial fill" là
+khái niệm zone/ladder: một zone có `target_vnd` được fill một phần. Dưới hướng sản phẩm L-1
+(`DEC-040`) không có zone, không có ladder, không có target per-zone — một giao dịch chỉ là một
+giao dịch với số tiền bất kỳ. Completion Gate **vẫn FROZEN 2026-08-23, không bị sửa hay làm
+yếu**; nó chỉ không còn đối tượng để áp. Mối lo nghiệp vụ "mua ít hơn kế hoạch" được mô hình
+`trades[]` của L-1 hấp thụ tự nhiên, không cần cơ chế riêng.
+Ghi chú state: `DEC-036` từng chuyển gói này `BLOCKED → READY` nhưng chỉ áp vào
+`PROJECT_PROGRESS.md` và `CAPABILITY_REGISTRY.md`, **sót file task này** — stale `ST-09`, đóng
+tại `DEC-041` I. KHÔNG thực thi. KHÔNG tạo task ID thay thế.)
 
 Phase:
 Phase 5 — Lớp C: bắt buộc sửa trước khi đưa vào dùng thật

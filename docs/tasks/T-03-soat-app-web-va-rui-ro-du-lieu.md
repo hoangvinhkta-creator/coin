@@ -2,7 +2,17 @@
 
 ## Metadata
 Status:
-VERIFYING
+DONE
+
+(`DEC-041` I, 2026-09-05 — Owner-authorized Lifecycle Closure. `VERIFYING → DONE` dựa **hoàn
+toàn trên bằng chứng đã có sẵn**, không chạy thêm việc nào: 5/5 REQUIRED PASS ở `E1`
+(`CHECK-03-01` PASS tại `WP-C1` 2026-09-02; `03-02`, `03-03`, `03-04`, `03-06`), RECOMMENDED
+`CHECK-03-05` PASS ở `E0`; không REQUIRED check nào ở `FAIL`/`BLOCKED`/`NOT_TESTED`
+(`governance/core/TASK_COMPLETION_GATE_STANDARD.md`). Exit Criteria 5/5 thoả, gồm điều kiện mà
+mục "Cập nhật WP-C1" ở cuối file này nêu: đã xác nhận `docs/reviews/S001-audit-findings.md` đủ
+vai trò của `docs/reviews/S001-audit-findings-webapp.md` dự kiến ban đầu — file đó phủ
+`V-01`/`V-02`/`V-03` cùng `F-024`/`F-027`, đủ trường Severity / Evidence / Evidence Level /
+Recommended Fix / Suggested Task. `RSK-003` ĐÓNG theo đó. Production diff của lượt đóng = 0.)
 
 Phase:
 Phase 1 — Discovery & Baseline

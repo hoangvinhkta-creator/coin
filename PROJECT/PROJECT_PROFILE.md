@@ -14,13 +14,51 @@ Chủ dự án + agent phiên S000
 
 ## Bối cảnh dự án
 
-Tên dự án:
+Tên sản phẩm (canonical, `DEC-041` E):
+**CoinDCA**
+
+Tên kỹ thuật legacy (giữ nguyên, KHÔNG mass rename):
+`eth_dca_os` và các namespace/đường dẫn/artifact lịch sử giữ nguyên. `DEC-041` E chỉ đổi phần
+nhận diện hướng ra sản phẩm; khớp `SHARED_PRODUCT_ROADMAP.md` §2.2(3) và §9.
+
+Tên dự án trước 2026-09-05 (lịch sử):
 ETH DCA Operating System — V2.1.5
 
-Mục tiêu cuối của chủ dự án:
-Một công cụ chạy trên trình duyệt, dùng như bảng tính, để theo dõi quá trình hold/trade coin
-và phát cảnh báo dựa trên các chỉ báo phân tích đã được đặc tả trong bộ spec
-(`docs/spec/01_PRODUCT_SPEC_V2_1_5.md` và `docs/spec/02_STRATEGY_SPEC_V2_1_5.md`).
+Mục tiêu cuối của chủ dự án (`DEC-041` E — thay bản trước đó):
+Một công cụ chạy trên trình duyệt, dùng cá nhân, để **giữ kỷ luật tích luỹ crypto theo kế hoạch
+DCA**: đặt ngân sách tháng, theo lịch mua, ghi giao dịch thật (có ngày do người dùng nhập), và
+biết chính xác giá vốn / tài sản đang nắm. Bốn con số trung tâm: **ngân sách tháng · đã đầu tư ·
+còn lại · ngày mua kế tiếp**.
+
+Đây là hướng **L-1** do `DEC-040` chọn. Yêu cầu sản phẩm sẽ đến từ **spec L-1** (chưa tồn tại,
+pha kế tiếp), KHÔNG đến từ `docs/spec/*_V2_1_5.md`.
+
+Mục tiêu cuối trước 2026-09-05 (lịch sử, KHÔNG còn là nguồn yêu cầu):
+Công cụ theo dõi hold/trade coin và phát cảnh báo dựa trên chỉ báo đã đặc tả trong
+`docs/spec/01_PRODUCT_SPEC_V2_1_5.md` và `docs/spec/02_STRATEGY_SPEC_V2_1_5.md`. Bộ spec đó nay
+là **frozen historical research authority** (`DEC-041` A): vẫn trích dẫn được cho câu hỏi
+"V2.1.5 đã được đặc tả và chạy thế nào", KHÔNG còn là spec sản phẩm.
+
+## Quyền phát triển — tách app khỏi chiến lược (`DEC-041` B)
+
+    can_proceed_to_app      = false   # V2.1.5, production (src/eth_dca_os/verdict.py).
+                                      # Kết quả đóng băng của verdict DO_NOT_BUILD.
+                                      # KHÔNG đổi, KHÔNG đổi tên.
+    app_development_allowed = true    # Tầng PROJECT, do Owner đặt tại DEC-041.
+                                      # KHÔNG phải đầu ra của backtest.
+
+`app_development_allowed = true` có nghĩa **duy nhất**: phát triển ứng dụng CoinDCA L-1 được
+phép tiến hành **mà không dùng V2.1.5 như một recommendation engine đã được kiểm chứng**. Nó
+**KHÔNG** đổi official verdict, **KHÔNG** đổi `can_proceed_to_app`, **KHÔNG** mở productization
+chiến lược.
+
+Biện minh canonical nằm trong chính spec, không cần sửa spec:
+`docs/spec/05_IMPLEMENTATION_PLAN_V2_1_5.md` §5 dòng `DO NOT BUILD` = *"Dừng productization
+**chiến lược**. **Chọn benchmark đơn giản hơn** hoặc thiết kế lại thành version mới."* — L-1
+chính là hành động bắt buộc spec chỉ định. "App MVP" mà IM §7/§9 chặn được chính bảng §5 (dòng
+`BUILD`) định nghĩa là app *"dùng đúng strategy engine đã khóa"* — L-1 không phải app đó.
+
+Ranh giới ĐƯỢC PHÉP / KHÔNG ĐƯỢC PHÉP: xem `DEC-041` mục B (bắt buộc đọc trước khi mở phạm vi).
 
 Trạng thái hiện tại:
 Đang build dở. Repo đã có backtest engine Python (`src/eth_dca_os/`, 26 module) và một bản
@@ -198,8 +236,15 @@ Các mục NOT_APPLICABLE trên được ghi nhận có lý do theo yêu cầu c
    `validate_routing.py`.
 3. **Backup/DR.** `16_BACKUP_DISASTER_RECOVERY.md` là bắt buộc. Công cụ không được phép
    phát hành khi chưa có đường xuất/nhập dữ liệu và cơ chế chống mất lịch sử giao dịch.
-4. **Data model.** `03_DATA_MODEL_RULES.md` bắt buộc; schema phải bám
-   `docs/spec/04_DATA_MODEL_V2_1_5.md`.
+4. **Data model.** `03_DATA_MODEL_RULES.md` bắt buộc. Schema bám **spec L-1** (chưa tồn tại —
+   pha kế tiếp `L-1 PRODUCT + ACCOUNTING SPEC`).
+   Ràng buộc cũ *"schema phải bám `docs/spec/04_DATA_MODEL_V2_1_5.md`"* được **gỡ bỏ** tại
+   `DEC-041` E: `04_DATA_MODEL_V2_1_5.md` nay là frozen historical research authority, không
+   còn ràng buộc data model cho công việc mới.
+5. **Riêng tư dữ liệu (`DEC-041` C).** KHÔNG commit dữ liệu tài chính thật của chủ dự án vào
+   repo: ngân sách tháng thật, số dư đầu kỳ thật, lịch sử giao dịch thật, số dư tài khoản riêng
+   tư, oracle giá vốn cá nhân thật. Spec định nghĩa trường bắt buộc bằng **ví dụ tổng hợp**;
+   kiểm chứng dữ liệu thật chạy trên input cục bộ/riêng tư hoặc fixture đã làm sạch.
 
 ## Provider Mapping (xác nhận tại S000)
 

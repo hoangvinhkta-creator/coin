@@ -36,7 +36,7 @@ This document may be committed to both repositories immediately on **2026-09-02*
 The following are coordination/naming decisions and may be used immediately without changing current implementation scope:
 
 1. Product name going forward: **CoinDCA**.
-2. Current verified strategy remains **ETH Strategy V2.1.5**.
+2. ETH Strategy V2.1.5 was evaluated and **FAILED validation** (official verdict `DO_NOT_BUILD`, coin repo `DEC-031`, 2026-09-03). It is a **frozen historical research authority**, not the active product strategy. CoinDCA's product direction is **L-1** — a simpler DCA/benchmark discipline (`DEC-040`, 2026-09-05). Corrected by `DEC-041` H; see the Reconciliation block in §12.
 3. Existing technical names such as `eth_dca_os`, existing state keys, Firestore paths, tests, IDs, task names, and historical artifacts are **legacy-compatible technical identifiers** and must not be mass-renamed merely for branding.
 4. Finance and CoinDCA remain separate repositories and separate capability ownership boundaries for now.
 5. Finance's visual language is the reference direction for future cross-product design convergence.
@@ -98,11 +98,17 @@ Finance may display crypto assets, but it should not own CoinDCA's strategy engi
 
 CoinDCA is the source of truth for **crypto accumulation strategy and strategy-specific accounting**.
 
-For the current product generation:
+For the current product generation (corrected by `DEC-041` H — see §12 Reconciliation):
 
 - Product: **CoinDCA**.
-- Active strategy: **ETH Strategy V2.1.5**.
-- ETH remains the strategy asset currently implemented and validated.
+- Active strategy: **none.** Product direction = **L-1**, a simpler DCA/benchmark discipline
+  (`DEC-040`). ETH Strategy V2.1.5 = **frozen historical research authority**; validation
+  **FAILED**; verdict `DO_NOT_BUILD`; `can_proceed_to_app = false` permanently.
+- ETH remains the asset the L-1 ledger tracks. It is **not** a validated strategy asset.
+
+The ownership list immediately below was written for the V2.1.5 product generation. Under L-1,
+`Buy Score`, `regime`, `buy zones/ladders` and `ETH strategy recommendations` are **superseded**
+— retained here only as a record of the previous generation.
 - BTC or other market series may be used as signals/reference data without implying that a BTC/SOL/ADA strategy exists.
 
 Expected ownership includes:
@@ -607,9 +613,48 @@ When starting new work from this roadmap:
 
 ---
 
-## 12. Current checkpoint — 2026-09-02
+## 12. Current checkpoint
+
+### Reconciliation — 2026-09-05 (`DEC-041`)
+
+This roadmap predates coin-repo `DEC-031` (official verdict `DO_NOT_BUILD`) and `DEC-040`
+(Owner selects **L-1**). Per §2.3 (last paragraph) and §12 below, the coin repository's canonical
+authority wins, and the conflict is reconciled **explicitly** here rather than by silently
+changing scope.
+
+**Superseded for CoinDCA** (no longer implementation-authoritative):
+
+- §2.2(2) — "current verified strategy" (corrected in place above);
+- §3.2 — "Active strategy: ETH Strategy V2.1.5" and "validated" (corrected in place above);
+- §3.2 ownership list — `Buy Score`, `regime`, `buy zones/ladders`,
+  `ETH strategy recommendations`;
+- §5.2 — `Buy Score`, `regime`, `GO/WAIT`, `ladder status` as CoinDCA identity;
+- Stage 1, "CoinDCA Stream — V1 production completion", items 3–6 and its `Conceptual path`
+  block (`Real market data → … → Buy Score / regime → recommendation / budget → web`) — this
+  defined V1 as V2.1.5 strategy productization, which `DO_NOT_BUILD` prohibits;
+- §10 — "Given the **validated** crypto strategy…" (false premise);
+- §12 CoinDCA checkpoint — "Current active strategy: ETH Strategy V2.1.5".
+
+**Unchanged and still in force:** §7 priority order (its item 1, *prevent incorrect
+financial/accounting results*, is L-1's top priority too); §8 idea intake; §9 non-goals; §11
+agent start rule; §2.2(3) and §9 prohibition on mass-renaming legacy technical identifiers
+(`eth_dca_os` and friends stay); and **all Finance-stream content**, which this reconciliation
+does not touch.
+
+**Active CoinDCA direction:** a personal DCA-discipline ledger — monthly budget · purchase
+schedule · user-dated trade recording · cost basis recomputed from (opening balance + trades) ·
+durable persistence. Buy Score may appear only as **descriptive, retrospective** research, never
+as a recommendation.
+
+Authority: coin repo `PROJECT/PROJECT_DECISIONS.md` `DEC-041`
+(report: `docs/reviews/L1-CANONICAL-TRANSITION-PROPOSAL.md`).
+
+---
+
+### Checkpoint — 2026-09-02 (historical)
 
 This checkpoint is descriptive and must not override newer repository evidence.
+Superseded in part by the Reconciliation block above.
 
 ### CoinDCA
 

@@ -2,7 +2,11 @@
 
 Ngày: 2026-08-23
 Nguồn: kết quả S001 (đã được chủ dự án chấp nhận ở trạng thái **S001 PASS WITH FINDINGS**)
-Trạng thái: **CHƯA ÁP DỤNG — CHỜ PHÊ DUYỆT**
+Trạng thái: **ĐÃ PHÊ DUYỆT VÀ ĐÃ ÁP DỤNG** — `DEC-007` (2026-08-23, kèm bốn điều kiện); bảng
+roadmap chuẩn trong `PROJECT/PROJECT_PROGRESS.md` đã mang thay đổi này (mục
+"Roadmap Change Applied — RCP-001"). Header cũ ghi "CHƯA ÁP DỤNG — CHỜ PHÊ DUYỆT" là stale
+`ST-10`, đóng tại `DEC-041` I (2026-09-05). Nội dung đề xuất bên dưới GIỮ NGUYÊN làm bản ghi
+lịch sử — không sửa.
 
 Theo `governance/core/00_SESSION_ORCHESTRATION.md` mục "Roadmap Change Rule", tài liệu này
 trình bày thay đổi lộ trình trước khi thực hiện. Bảng roadmap chuẩn trong

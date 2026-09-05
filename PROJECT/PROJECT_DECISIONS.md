@@ -171,6 +171,43 @@ T-05 (cần quyết định của chủ dự án) và sau đó là T-07 (đọc 
 
 ---
 
+### Trạng thái cuối — DEC-005 SUPERSEDED_BY_DEC-041 (2026-09-05)
+
+Khối này được **ghi thêm**, KHÔNG sửa một chữ nào ở trên (Owner: *"Preserve historical record.
+Do not rewrite DEC-005 history."*). Cùng khuôn với cách `DEC-035` ghi kết quả của chính nó.
+
+    DEC-005:  PENDING -> SUPERSEDED_BY_DEC-041
+
+**`PA-2` KHÔNG resolve `DEC-005`.** Owner tường minh: *"Do NOT record DEC-005 as resolved by
+PA-2."* Bốn dữ kiện canonical, ghi để không bị đọc sai về sau:
+
+1. `DEC-035` phê duyệt **`PA-A`** (phân xử HẸP chỉ cho `WP-C2`), **không phải `PA-2`**. Câu
+   *"thực tế đã là mô hình vận hành từ `T-09A`/`T-09B`/`DEC-021`"* nằm trong phần mô tả phương án
+   **`PA-B` đã bị loại**, không nằm trong quyết định. `PA-2` do đó KHÔNG được đối xử như đã phê
+   duyệt một cách hồi tố.
+2. Bộ *"tiêu chí phân định rõ ràng"* mà chính `DEC-005` đòi cho `PA-2` **chưa bao giờ được viết**
+   ở bất kỳ đâu trong repo.
+3. Câu hỏi của `DEC-005` là câu hỏi **TIỀN-VERDICT** (*"phạm vi công cụ được phép xây trước khi
+   có verdict"*). Cả hai điều kiện `Can Revisit After` ở trên đã xảy ra: verdict tồn tại
+   (`DO_NOT_BUILD`, `DEC-031`) và `T-07` đã thực thi (`DEC-040`). Cửa sổ tiền-verdict đã đóng.
+4. `DEC-040` chọn **L-1**, nên bề mặt quyết định gốc của `DEC-005` không còn là đường sản phẩm
+   hoạt động.
+
+Nghĩa chính xác: `DEC-005` **KHÔNG được `PA-2` trả lời**; bề mặt quyết định gốc của nó bị hướng
+đi sản phẩm L-1 **supersede**.
+
+Phạm vi L-1 từ nay do `DEC-041` mục B chi phối (`app_development_allowed = true` + ranh giới
+ĐƯỢC PHÉP / KHÔNG ĐƯỢC PHÉP). Ranh giới đó **chính là** bộ tiêu chí phân định mà `PA-2` hình
+dung nhưng chưa bao giờ được viết — nay được viết, và neo vào L-1 chứ không vào cửa verdict.
+
+Hệ quả: `T-05` (task tồn tại chỉ để quyết định `DEC-005`) → `CANCELLED`, nhãn
+`SUPERSEDED_BY_DEC-041`. `T-08` không còn bị `DEC-005` chặn; nó `DEFERRED` với nhãn
+`REDEFINE_FOR_L1`, và **mọi capability nhắc lịch/thông báo của L-1 trong tương lai phải do spec
+sản phẩm L-1 chi phối, KHÔNG được kế thừa dependency đã chết vào bề mặt quyết định `T-08`
+V2.1.5** (`DEC-041` G).
+
+---
+
 ## DEC-006 — Source of Truth cho compliance audit là V2.1.5, không phải V2.1.3
 
 Date:
@@ -526,6 +563,30 @@ Impact:
 Can Revisit After:
 Khi có người thứ hai dùng công cụ, hoặc khi công cụ được phát hành cho người khác — khi đó
 OD-1 hết hiệu lực và các nhóm finding bị loại ở trên phải được định tuyến lại toàn bộ.
+
+---
+
+### Trạng thái cập nhật — DEC-011 SUPERSEDED MỘT PHẦN bởi DEC-041 (2026-09-05)
+
+Khối này được **ghi thêm**, KHÔNG sửa một chữ nào ở trên (`DEC-011` là Owner Decision,
+append-only theo `STATE_AUTHORITY.md`).
+
+| Mục của `DEC-011` | Trạng thái sau `DEC-041` D |
+|---|---|
+| V1 Acceptance điểm 4 — *"Buy Score / regime / budget / recommendation được hiển thị"* | **SUPERSEDED** → thay bằng *"Ngân sách tháng · đã đầu tư · còn lại · ngày mua kế tiếp được hiển thị."* Dưới L-1, Buy Score/regime hạ xuống research DESCRIPTIVE và `recommendation` không tồn tại |
+| V1 Acceptance điểm 2 (dữ liệu ETH thật) và điểm 3 (pipeline end-to-end) | `NOT_APPLICABLE_TO_L1` — pipeline 18 bước V2.1.5 không nằm trên đường sản phẩm L-1. Giữ hiệu lực cho mọi đánh giá lịch sử V2.1.5 |
+| Tiêu chí `BLOCKING V1` mục **A** (*recommendation/Buy Score sai*) | `NOT_APPLICABLE_TO_L1` — trở thành vacuous khi không còn recommendation |
+| Tiêu chí `BLOCKING V1` mục **D** (*dữ liệu thị trường thật qua pipeline đúng*) | `NOT_APPLICABLE_TO_L1`, trừ khi tab Research được bật |
+
+**GIỮ NGUYÊN, không đổi một chữ:** `OD-1` PRODUCT INTENT (cá nhân, một người dùng, dùng hằng
+ngày); **"Ràng buộc đối xứng"** (*"KHÔNG được hạ một finding chỉ vì 'dự án cá nhân'. Phải chứng
+minh nó không ảnh hưởng A–F."*); V1 Acceptance điểm **1, 5, 6, 7, 8, 9, 10**; tiêu chí
+`BLOCKING V1` mục **B, C, E, F**.
+
+Điểm 5/6/7 (*ghi giao dịch thực tế · holdings/average cost/monthly budget/purchase history cập
+nhật đúng · dữ liệu tồn tại sau reload/restart*) **chính là mô tả sản phẩm L-1** — chúng mạnh
+lên chứ không yếu đi. Mục `BLOCKING V1` **B** (sai tiền/ngân sách/giá vốn/holding) và **C**
+(mất/hỏng lịch sử giao dịch) là lõi của L-1 và là căn cứ kích hoạt E2 theo `DEC-041` J.
 
 ---
 
@@ -3232,5 +3293,363 @@ thái, không sửa mã).
 
 Review/repair budget: không tiêu — `T-07` không phải work package có Completion Gate/budget
 riêng (Tier `DUYET`), và production diff của quyết định này = 0.
+
+---
+
+## DEC-041 — L-1 CANONICAL TRANSITION: đóng băng V2.1.5 làm research authority; tách quyền phát triển app khỏi quyền productization chiến lược
+
+Date:
+2026-09-05 (Owner Decision, qua chat, phản hồi `docs/reviews/L1-CANONICAL-TRANSITION-PROPOSAL.md`,
+nhánh `claude/coindca-l1-transition-prep-32ynvi`)
+
+Task:
+Không thuộc task nào. Đây là MỘT quyết định chuyển pha/đối chiếu canonical sau `DEC-040`.
+Owner tường minh: *"This is ONE phase-transition/reconciliation decision. Do not expand it into
+additional DEC IDs or task IDs."*
+
+Báo cáo nền:
+`docs/reviews/L1-CANONICAL-TRANSITION-PROPOSAL.md`
+
+---
+
+## A. V2.1.5 = FROZEN HISTORICAL RESEARCH AUTHORITY
+
+`docs/spec/*_V2_1_5.md` và `src/eth_dca_os/**` từ nay là **frozen historical research
+authority**:
+
+1. **Vẫn là authority** cho câu hỏi *"V2.1.5 đã được đặc tả và chạy như thế nào"* — trích dẫn
+   được, không bị hạ giá trị, không xoá.
+2. **KHÔNG còn là spec sản phẩm** — không còn là nguồn yêu cầu sản phẩm, tiêu chí chấp nhận,
+   hay ràng buộc data model cho công việc mới.
+3. **Không sửa.** Master Index §6 cấm vá tại chỗ; freeze này củng cố lệnh cấm đó. Owner tường
+   minh: *"Do not modify docs/spec/ to insert post-run conclusions. Record the freeze only at
+   the appropriate PROJECT authority layer."* Vì vậy tuyên bố freeze được ghi ở tầng `PROJECT/`
+   (`PROJECT_PROFILE.md`, `CAPABILITY_REGISTRY.md`), **không** ghi vào `docs/spec/`.
+   `docs/spec/` diff = 0.
+4. **Không kế thừa.** Đúng nguyên văn `DEC-040`: *"must not inherit V2.1.5 validation status"*.
+5. Freeze mang theo danh sách khiếm khuyết đặc tả đã biết `S-001`, `S-002`, `S-003` (vốn là đầu
+   ra dự kiến của `WP-D2`) — được **ghi chú kèm**, KHÔNG được sửa.
+
+**GIỮ NGUYÊN VĨNH VIỄN, không đổi một chữ:**
+
+    V2.1.5 validation            = FAILED
+    T-06 official verdict        = DO_NOT_BUILD
+    can_proceed_to_app (V2.1.5)  = false
+    official T-06 artifacts      = giữ nguyên (docs/T06_OFFICIAL_EVIDENCE_RECORD.md)
+    official tag / historical evidence = giữ nguyên
+
+## B. TÁCH HAI QUYỀN — app vs chiến lược
+
+    can_proceed_to_app      = false   [production, src/eth_dca_os/verdict.py, KHÔNG đổi,
+                                       KHÔNG đổi tên trong phiên này]
+    app_development_allowed = true    [PROJECT/PROJECT_PROFILE.md, do Owner đặt, KHÔNG phải
+                                       đầu ra backtest]
+
+**Biện minh canonical — nằm ngay trong chính spec V2.1.5, không cần sửa spec.**
+`docs/spec/05_IMPLEMENTATION_PLAN_V2_1_5.md` §5, dòng `DO NOT BUILD`, nguyên văn:
+*"Dừng productization **chiến lược**. Chọn benchmark đơn giản hơn hoặc thiết kế lại thành
+version mới."*
+
+1. Lệnh dừng có định ngữ — *"productization **chiến lược**"*, không phải "dừng mọi việc app".
+2. *"Chọn benchmark đơn giản hơn"* là **hành động BẮT BUỘC** mà spec tự chỉ định cho verdict
+   `DO_NOT_BUILD`. L-1 CHÍNH LÀ hành động đó → làm L-1 là **tuân thủ** IM §5, không phải lách.
+3. "App MVP" mà IM §7/§9 chặn được chính bảng §5 (dòng `BUILD`) định nghĩa là app *"single-user
+   **dùng đúng strategy engine đã khóa**"*. Sản phẩm L-1 không phải app đó.
+
+**Ý nghĩa GIỚI HẠN của `app_development_allowed = true`** (nguyên văn Owner): *"CoinDCA L-1
+application development may proceed without using V2.1.5 as a validated recommendation engine.
+It must NOT be interpreted as changing the official verdict."*
+
+**Ranh giới thi hành (chống trượt dần):**
+
+    ĐƯỢC PHÉP dưới L-1:
+      ngân sách/lịch/kỷ luật DCA · ghi-sửa-xoá giao dịch có ngày người dùng nhập ·
+      giá vốn & holdings tính lại từ (số dư đầu kỳ + trades) · treasury VND/USDT + P2P ·
+      quỹ dự phòng giải ngân THỦ CÔNG có ghi lý do · persistence/backup/export-import ·
+      đối chiếu lịch sử DESCRIPTIVE (giá mua TB thực tế vs kế hoạch DCA thuần) ·
+      hiển thị hồi cứu Buy Score có nhãn DESCRIPTIVE
+
+    KHÔNG ĐƯỢC PHÉP (vẫn thuộc can_proceed_to_app = false):
+      recommendation/GO-WAIT/Action box · ladder/zone/unlock/spacing sinh ra hành động ·
+      bất kỳ tự động hoá nào kích hoạt hoặc gợi ý MUA từ một score/regime ·
+      quỹ dự phòng tự giải ngân theo tín hiệu · tuyên bố bất kỳ edge nào ·
+      dùng lại trạng thái validation của V2.1.5
+
+## C. VERTICAL ACCEPTANCE SLICE — thay lát cắt hoạt động
+
+Lát cắt V2.1.5 (`Dữ liệu thật → 18 bước → Gate 1/2/3 → VERDICT`) chuyển sang **HISTORICAL /
+CLOSED** — giữ nguyên bản ghi, không xoá. Lát cắt **ACTIVE** từ nay là lát cắt sản phẩm L-1:
+
+    Ngân sách tháng do người dùng đặt
+      -> lịch mua đã lên kế hoạch
+        -> người dùng ghi một giao dịch thật (có NGÀY do người dùng nhập)
+          -> sổ cái + giá vốn tính lại từ (số dư đầu kỳ + toàn bộ trades)
+            -> 4 con số dashboard (ngân sách · đã đầu tư · còn lại · ngày mua kế tiếp)
+              -> lưu bền qua reload/restart
+
+Câu hỏi định tuyến số 1 của `governance/v4/CORE/CAPABILITY_MODEL.md` từ nay được chấm **trên
+lát cắt L-1**, không phải trên lát cắt validation V2.1.5 đã hoàn tất.
+
+    END_TO_END_ACCEPTANCE = PENDING_OWNER_DATA
+
+**Quy tắc riêng tư/dữ liệu (Owner amendment, BẮT BUỘC):** KHÔNG commit dữ liệu tài chính thật
+của Owner vào repo — ngân sách tháng thật, số dư đầu kỳ thật, lịch sử giao dịch thật, số dư tài
+khoản riêng tư, oracle giá vốn cá nhân thật. Spec L-1 tương lai định nghĩa các trường bắt buộc
+bằng **ví dụ tổng hợp (synthetic)**; kiểm chứng bằng dữ liệu thật chạy trên input cục bộ/riêng
+tư hoặc fixture đã được làm sạch. Quyết định này KHÔNG đòi Owner cấp số liệu thật.
+
+Không thiết kế data model L-1 trong quyết định này.
+
+## D. SUPERSEDE MỘT PHẦN `DEC-011` (không sửa tại chỗ — `DEC-011` append-only)
+
+| Mục của `DEC-011` | Trạng thái mới |
+|---|---|
+| V1 Acceptance điểm 4 — *"Buy Score / regime / budget / recommendation được hiển thị"* | **SUPERSEDED BY DEC-041** → thay bằng: *"Ngân sách tháng · đã đầu tư · còn lại · ngày mua kế tiếp được hiển thị."* |
+| V1 Acceptance điểm 2, 3 (dữ liệu ETH thật; pipeline end-to-end) | `NOT_APPLICABLE_TO_L1` — giữ hiệu lực cho mọi đánh giá lịch sử V2.1.5 |
+| Tiêu chí `BLOCKING V1` mục A (*recommendation/Buy Score sai*) | `NOT_APPLICABLE_TO_L1` |
+| Tiêu chí `BLOCKING V1` mục D (*dữ liệu thị trường thật qua pipeline đúng*) | `NOT_APPLICABLE_TO_L1` trừ khi tab Research được bật |
+
+**GIỮ NGUYÊN, không đổi một chữ:** `OD-1` PRODUCT INTENT (cá nhân, một người dùng, dùng hằng
+ngày); "Ràng buộc đối xứng" (*"KHÔNG được hạ một finding chỉ vì 'dự án cá nhân'"*); V1
+Acceptance điểm 1, 5, 6, 7, 8, 9, 10; tiêu chí `BLOCKING V1` mục **B, C, E, F**. Mục B (sai
+tiền/ngân sách/giá vốn/holding) và C (mất/hỏng lịch sử giao dịch) là lõi của L-1 và là căn cứ
+kích hoạt E2 theo mục J.
+
+## E. NHẬN DIỆN SẢN PHẨM
+
+Tên sản phẩm canonical: **CoinDCA**.
+
+`PROJECT/PROJECT_PROFILE.md` cập nhật **chỉ phần nhận diện hướng ra sản phẩm** (tên dự án; "Mục
+tiêu cuối"), và bỏ ràng buộc *"schema phải bám `docs/spec/04_DATA_MODEL_V2_1_5.md`"*.
+
+**KHÔNG mass rename** (Owner tường minh): `eth_dca_os`, namespace Python, artifact lịch sử, bằng
+chứng V2.1.5 đã đóng băng, đường dẫn file. Namespace kỹ thuật legacy được phép giữ nguyên —
+khớp `SHARED_PRODUCT_ROADMAP.md` §2.2(3) và §9.
+
+**GIỮ profile = PRODUCT** (`DEC-001` không đổi). Owner tường minh: *"Do not downgrade the
+project profile merely to avoid governance."*
+
+## F. PHÂN LOẠI CÔNG VIỆC ROADMAP CŨ
+
+Owner phê duyệt phân loại L-1. **Không hạng mục nào được thực thi. Không task ID thay thế nào
+được tạo.** Spec L-1 tương lai sẽ quyết định capability nào được tái dụng / định nghĩa lại / bỏ.
+
+| Hạng mục | Phân loại L-1 (DEC-041) | Trạng thái vòng đời ánh xạ | Lý do |
+|---|---|---|---|
+| `T-08` | `REDEFINE_FOR_L1` | `DEFERRED` | Nhu cầu "được nhắc" sống sót; nội dung "cảnh báo theo chỉ báo" là khái niệm V2.1.5, không sống sót |
+| `T-10` | `REDEFINE_FOR_L1` | `DEFERRED` | Như `T-08`; chuỗi phụ thuộc cũ (`WP-C4`) không còn nghĩa |
+| `T-11` | `NOT_APPLICABLE_TO_V2_1_5` | `CANCELLED` | Điều kiện gồm `verdict = BUILD`, mà `DEC-040` §E xác lập không bao giờ thoả được nữa dưới V2.1.5 |
+| `WP-C3` | `NOT_APPLICABLE_TO_V2_1_5` | `CANCELLED` | "Partial fill" là khái niệm zone/ladder; dưới L-1 không có zone/ladder. Mối lo nghiệp vụ được mô hình `trades[]` của L-1 hấp thụ tự nhiên |
+| `WP-C4` | `NOT_APPLICABLE_TO_V2_1_5` | `CANCELLED` | Parity chỉ có nghĩa khi cả hai bản cài đặt còn là authority; `src/eth_dca_os/` nay là research đóng băng |
+| `WP-D2` | `NOT_APPLICABLE_TO_V2_1_5` | `CANCELLED` | Đầu ra là đề xuất V2.2-của-V2.1.5; `DEC-040` từ chối V2.2 và đòi mọi giả thuyết tương lai phải độc lập, không kế thừa V2.1.5 |
+
+**Về ánh xạ trạng thái:** `NOT_APPLICABLE_TO_V2_1_5` và `REDEFINE_FOR_L1` là **nhãn phân loại
+của `DEC-041`**, KHÔNG phải trạng thái vòng đời. `governance/v4/CORE/STATE_AUTHORITY.md`
+§ "No Undefined States" cấm phát minh enum mới, và nhãn chứa giá trị dự án ("V2.1.5") không được
+phép đưa vào CORE (`AGENTS.md` §2). Vì vậy mỗi hạng mục mang **một trạng thái vòng đời hợp lệ**
+(`CANCELLED`/`DEFERRED` — cả hai đã có trong `CLAUDE.md` § Task Lifecycle và trong Tick Mapping
+của `governance/core/ROADMAP_SYNC_STANDARD.md`) **cộng** nhãn phân loại `DEC-041` ghi kèm.
+
+**Hệ quả tất định — `T-05`:** `T-05` (`DUYỆT — phạm vi công cụ trước verdict`) tồn tại **chỉ để**
+quyết định `DEC-005`. Mục G supersede `DEC-005`, nên đầu ra duy nhất của `T-05` không còn.
+`T-05: PLANNED → CANCELLED`, nhãn `SUPERSEDED_BY_DEC-041`. Đây là hệ quả trực tiếp của mục G,
+không phải một quyết định phạm vi mới và không tạo ID nào.
+
+**Phần dư của `WP-C4` không bị mất:** nếu tab Research của L-1 được bật, parity OSCORE
+`webapp/engine.js` ↔ `src/eth_dca_os/score.py` mới có nghĩa trở lại. Ghi thành
+`RE_TRIGGER_CONDITION` trong `PROJECT/HARDENING_BACKLOG.md`, **KHÔNG** phải task
+(`REVIEW_PROTOCOL.md`: finding không phải task).
+
+## G. `DEC-005` — SUPERSEDED (Owner amendment)
+
+    DEC-005:  PENDING -> SUPERSEDED_BY_DEC-041
+
+**`PA-2` KHÔNG resolve `DEC-005`, và KHÔNG được ghi là đã resolve.** Nguyên văn Owner: *"Do NOT
+record DEC-005 as resolved by PA-2."*
+
+Sự thật canonical, ghi để không bị đọc sai về sau:
+1. `DEC-035` phê duyệt **`PA-A`** (phân xử HẸP chỉ cho `WP-C2`), **không phải `PA-2`**. Câu
+   *"thực tế đã là mô hình vận hành từ `T-09A`/`T-09B`/`DEC-021`"* nằm bên trong phần mô tả
+   phương án **`PA-B` đã bị loại**, không phải trong quyết định.
+2. `PA-2` do đó **không được đối xử như đã phê duyệt** một cách hồi tố.
+3. Bộ *"tiêu chí phân định rõ ràng"* mà chính `DEC-005` đòi cho `PA-2` **chưa bao giờ được viết**
+   ở bất kỳ đâu trong repo.
+4. Bề mặt quyết định gốc của `DEC-005` thuộc đường **tiền-verdict / productization V2.1.5**.
+   `DEC-040` đã chọn L-1, nên bề mặt đó không còn là đường sản phẩm hoạt động.
+
+Nghĩa chính xác: **`DEC-005` KHÔNG được `PA-2` trả lời. Bề mặt quyết định gốc của nó bị hướng đi
+sản phẩm L-1 supersede.** Giữ nguyên bản ghi lịch sử; KHÔNG viết lại lịch sử `DEC-005`.
+
+Ranh giới ở mục B **là** bộ tiêu chí phân định mà `PA-2` hình dung nhưng chưa bao giờ được viết
+— nay được viết, và neo vào L-1 chứ không vào cửa verdict.
+
+**Ràng buộc kế thừa (Owner tường minh):** mọi capability nhắc lịch/thông báo của L-1 trong tương
+lai phải do **spec sản phẩm L-1** chi phối, và **không được kế thừa một dependency đã chết** vào
+bề mặt quyết định `T-08` V2.1.5 đã lỗi thời.
+
+## H. `SHARED_PRODUCT_ROADMAP.md` — đối chiếu tối thiểu
+
+Tài liệu này không nằm trong bảng thẩm quyền `AGENTS.md` §1; §2.3 đoạn cuối tự khai *"the active
+repository's canonical authority wins… The conflict should then be reconciled explicitly"*; §12
+tự khai *"must not override newer repository evidence"*. Vì vậy **không viết lại tài liệu**, chỉ:
+
+1. Đính chính hai khẳng định **sai sự thật** (không phải "mở khoá"): §2.2(2) từ `verified`;
+   §3.2 từ `Active` / `validated`.
+2. Chèn một khối `Reconciliation — 2026-09-05 (DEC-041)` liệt kê phần bị supersede cho CoinDCA
+   (§2.2(2); §3.2 và danh sách ownership `Buy Score`/`regime`/`buy zones/ladders`/`ETH strategy
+   recommendations`; §5.2 `ladder status`/`GO_WAIT`; Stage 1 "CoinDCA Stream — V1 production
+   completion" mục 3–6 và khối `Conceptual path`; §10; §12) và phần **GIỮ NGUYÊN** (§7 thứ tự ưu
+   tiên, §8 idea intake, §9 non-goals, §11 agent start rule, và **toàn bộ nội dung Finance**).
+
+KHÔNG đụng bất kỳ nội dung Finance nào (repo khác, ngoài phạm vi).
+
+## I. ĐỐI CHIẾU TRẠNG THÁI CŨ (stale state)
+
+Thi hành các `DEC` đã tồn tại — **không phải quyết định mới, không task ID nào được tạo**
+(`CAPABILITY_MODEL.md` § "Reasons That Are NEVER Sufficient To Create A New Task").
+
+`ST-01`…`ST-05` (Current Task / Current Phase / Next Recommended Task / Current Task Snapshot /
+Recent Decisions) · `ST-08` (`T-11`) · `ST-09` (file task `WP-C3` còn `PLANNED` — `DEC-036` sót
+không áp) · `ST-10` (header `RCP-001` còn "CHƯA ÁP DỤNG" dù `DEC-007` đã duyệt và đã áp) ·
+`ST-11` (`REVIEW_BUDGET_LEDGER.md` §3 còn ghi `T-06` là `PLANNED`).
+
+Sau đó chạy `python governance/scripts/governance/sync_easy_roadmap.py`
+(`ROADMAP_SYNC_STANDARD.md`; `LO_TRINH_DE_HIEU.md` là file sinh, cấm sửa tay).
+
+**`ST-12` KHÔNG thi hành**: đánh số phiên (`S014` trùng hai phiên; thiếu `S007`/`S008`/`S021`)
+không có `DEC` nào đứng sau và không cần thiết để mô tả đúng trạng thái L-1 hiện tại. Owner
+tường minh: *"Do not rewrite historical session records merely for cosmetic consistency."*
+Ghi nhận tại đây là đủ; không đổi tên file, không sửa biên bản lịch sử.
+
+**`T-03` / `RSK-003` (Owner ký riêng):**
+
+    T-03:     VERIFYING -> DONE
+    RSK-003:  ĐÓNG
+
+Chỉ vì bằng chứng **đã có sẵn** trong repo đủ điều kiện, **không** phải vì chạy thêm việc mới.
+Đã đối chiếu trước khi ghi: 5/5 REQUIRED check `PASS` ở `E1` (`CHECK-03-01` PASS tại `WP-C1`
+2026-09-02; `CHECK-03-02`, `03-03`, `03-04`, `03-06`), `RECOMMENDED CHECK-03-05` PASS ở `E0`;
+không REQUIRED check nào ở `FAIL`/`BLOCKED`/`NOT_TESTED`
+(`governance/core/TASK_COMPLETION_GATE_STANDARD.md`). Exit Criteria 5/5 thoả, gồm điều kiện mà
+chính file `T-03` nêu: xác nhận `docs/reviews/S001-audit-findings.md` đã đủ vai trò của
+`docs/reviews/S001-audit-findings-webapp.md` dự kiến ban đầu — đã kiểm: file này phủ `V-01`/
+`V-02`/`V-03` cùng `F-024`/`F-027`, đủ trường Severity / Evidence / Evidence Level /
+Recommended Fix / Suggested Task. **Không chạy lại việc gì để đóng vòng đời.**
+
+## J. GOVERNANCE CHO L-1
+
+- **Một spec sản phẩm canonical**: spec L-1 (chưa tồn tại, ≤ 5 trang) thay `docs/spec/*_V2_1_5.md`
+  ở vai trò nguồn yêu cầu.
+- **Một bề mặt tiến độ/state**: `PROJECT/PROJECT_PROGRESS.md` (+ `LO_TRINH_DE_HIEU.md` sinh ra).
+- **Decision log chỉ cho Owner decision thật**: `PROJECT/PROJECT_DECISIONS.md`.
+- **Giữ lineage quyết định canonical**; **giữ `PROJECT/REVIEW_BUDGET_LEDGER.md`** theo yêu cầu
+  của `AGENTS.md` §3 (*"Budget does not reset"*). **KHÔNG reset lineage budget đang có.** Các
+  lineage thuộc research đóng băng theo mục A (`CAP-PROV`, `CAP-DATA`, `CAP-ENGINE`,
+  `CAP-PIPELINE`, `CAP-MEASURE`, `CAP-ORDER`, `CAP-VERDICT`) chuyển sang **lịch sử đóng**, giữ
+  nguyên con số, không đụng lại. `CAP-WEBAPP` là lineage còn sống (allowed 2 / used 0 /
+  remaining 2, Effective Risk `HIGH`) — số không đổi.
+- **E2 bắt buộc khi cần**, cho: tính đúng tài chính, bất biến sổ cái, migration, persistence.
+- **Công việc UI L-1 thông thường KHÔNG tự động kế thừa bộ máy strategy-validation của V2.1.5.**
+  Hard floor `Tier ≥ C` / `Effort ≥ high` gắn với category `accounting_financial`, không gắn với
+  "công việc trong `webapp/`": việc UI không chạm lớp tính tiền thì không mang category đó.
+  Ngược lại, cost basis / ledger / persistence / migration **vẫn** `Tier ≥ C`.
+- **`finding != task`.** **Dọn stale state không tạo task ID.**
+- **KHÔNG hạ profile dự án** để né governance.
+
+**Báo trước — `ABSORPTION_LIMIT`:** công việc L-1 dưới lineage `CAP-WEBAPP` nhiều khả năng chạm
+ngưỡng B (>3 hạng mục hấp thụ vào baseline đã duyệt) và D (kéo việc ngoài vertical slice) của
+`CAPABILITY_MODEL.md`. Khi chạm: ghi `ABSORPTION_LIMIT_REACHED` và **quay lại Owner Decision —
+không tự tạo task**.
+
+## K. RÀNG BUỘC TRIỂN KHAI L-1 (ghi nhận — KHÔNG sửa gì trong quyết định này)
+
+### K.1 Firebase / Auth — Owner MỞ LẠI câu hỏi recovery
+
+Owner mở lại vấn đề đa thiết bị/recovery vốn bị `DEC-021` xếp ngoài phạm vi V1. Dưới L-1,
+**Firebase isolation + xác thực một-chủ-sở-hữu bền vững là PRODUCT-READINESS CONSTRAINTS trước
+khi dùng tiền thật.**
+
+    FB-1  project Firebase dùng chung `tinphatcontent` với app Content; bật Anonymous Auth
+          khiến rules Content (`signedIn() = request.auth != null`) mở cửa ghi cho khách vô danh
+    FB-2  `firebase.json` khối hosting không có khoá `site` -> deploy đè Hosting site của Content
+    FB-3  `firestore.rules:101` còn placeholder `OWNER_UID_REQUIRED` -> deploy lại từ repo tự
+          khoá chính Owner ra ngoài
+    FB-4  Anonymous UID nằm trong IndexedDB -> xoá site data / đổi máy / cửa sổ ẩn danh = mất
+          quyền truy cập dữ liệu của chính mình (H-23)
+
+Hướng cần đánh giá **sau này** (KHÔNG thi hành bây giờ): project Firebase riêng cho CoinDCA;
+không dùng chung ranh giới hosting/rules với Tín Phát Content; Google Sign-in một tài khoản hoặc
+cơ chế xác thực bền tương đương; recovery qua thiết bị/reset trình duyệt; snapshot/backup trước
+mọi thao tác phá huỷ.
+
+**KHÔNG thi hành bất kỳ mục nào trong phiên này. KHÔNG sửa cấu hình Firebase.**
+Quan hệ với `DEC-021`: `DEC-021` giữ nguyên hiệu lực lịch sử cho `T-09B`/V1-của-V2.1.5; `DEC-041`
+mở lại câu hỏi **cho L-1**, nơi app là sản phẩm chứ không còn là phụ trợ.
+
+### K.2 Kế toán — `B1`..`B10` là ràng buộc thiết kế, KHÔNG phải đơn sửa lỗi riêng lẻ
+
+`B1`–`B4` đã xác minh trực tiếp trên mã (`webapp/app_logic.js:271`, `:280-283`, `:129-132`,
+`:287`); `B5`–`B10` theo tài liệu audit đầu vào, chưa kiểm chứng độc lập.
+
+Spec Product/Accounting L-1 kế tiếp **phải giải quyết tường minh, tối thiểu**:
+
+    - ngày giao dịch do người dùng nhập
+    - ngữ nghĩa thời gian Asia/Ho_Chi_Minh
+    - ngữ nghĩa tháng lịch
+    - số dư đầu kỳ (opening balance)
+    - sổ cái an toàn với edit/delete
+    - biểu diễn VND dạng integer
+    - ngữ nghĩa treasury VND <-> USDT
+    - ngữ nghĩa asset trade USDT -> crypto
+    - tính lại cost basis
+    - migration / bảo toàn dữ liệu đang có
+
+**KHÔNG vá `webapp/app_logic.js` trong phiên chuyển tiếp này.**
+
+Cảnh báo **"dừng dùng app với tiền thật" VẪN CÒN HIỆU LỰC** cho tới khi pivot L-1 hoàn tất.
+Phân biệt: escalation của `RSK-003` đã gỡ tại `WP-C1`/`T-09A` cho hai lỗi ladder `V-01`/`V-02`;
+`B1`–`B10` là **nhóm khác**, chưa từng được vá.
+
+## L. PHẠM VI — những gì quyết định này KHÔNG làm
+
+KHÔNG: sửa `src/`; sửa `tests/`; sửa `webapp/`; sửa `docs/spec/`; thi hành L-1; vá `B1`–`B10`;
+đổi Firebase; tạo `V2.2`; rerun `T-06`; chạy thí nghiệm chiến lược; hồi sinh productization
+V2.1.5; tạo task ID mới; mở/thực thi `T-08`/`T-10`/`WP-C3`/`WP-C4`/`WP-D2`; branch cleanup;
+chạm dữ liệu tài chính thật của Owner; đổi tên `can_proceed_to_app`; đổi verdict; merge/push
+`main`; thiết kế data model L-1.
+
+**Production diff = EMPTY** (`git diff --shortstat origin/main -- src/eth_dca_os webapp
+pyproject.toml pyproject.lock` → rỗng).
+
+Review/repair budget: **không tiêu** — quyết định chỉ đổi trạng thái/thẩm quyền, production diff
+của nó = 0; theo tiền lệ đã ghi tại `REVIEW_BUDGET_LEDGER.md` §1 và `DEC-012`, hạng mục có
+production diff = 0 không tiêu repair cycle. Không lineage budget nào bị reset.
+
+## Reason
+
+`DEC-040` chọn L-1 nhưng tường minh **không** thực thi thay đổi downstream (*"Do not implement
+downstream product changes in this session. STOP after T-07 lifecycle closure."*). Hệ quả: repo
+giữ nguyên toàn bộ giả định productization V2.1.5 trong khi hướng sản phẩm đã đổi. Rà soát
+(`docs/reviews/L1-CANONICAL-TRANSITION-PROPOSAL.md`) tìm ra 18 điều khoản mâu thuẫn, trong đó
+điều khoản **chặn thật sự** là Vertical Acceptance Slice tại `CAPABILITY_REGISTRY.md` §1: vì
+`CAPABILITY_MODEL.md` chấm mọi công việc mới trên lát cắt đang hoạt động, và lát cắt đó vẫn là
+lát cắt validation V2.1.5 đã hoàn tất và bị cấm chạy lại, nên **không một hạng mục L-1 nào định
+tuyến được** cho tới khi lát cắt được thay. Quyết định này gỡ đúng ràng buộc đó cùng các bề mặt
+thẩm quyền đi kèm, ở mức nhỏ nhất, và không mở bất kỳ công việc nào.
+
+## Consequence
+
+**Đường sản phẩm hoạt động** = CoinDCA L-1 (sổ cái DCA + lịch + giá vốn). **Productization chiến
+lược V2.1.5** = cấm vĩnh viễn, đóng băng làm research authority.
+
+`T-03: VERIFYING → DONE`; `RSK-003` ĐÓNG. `T-05`, `T-11`, `WP-C3`, `WP-C4`, `WP-D2` → `CANCELLED`;
+`T-08`, `T-10` → `DEFERRED`. `DEC-005: PENDING → SUPERSEDED_BY_DEC-041`.
+`app_development_allowed = true` ở tầng PROJECT; `can_proceed_to_app = false` không đổi.
+
+**Pha kế tiếp = L-1 PRODUCT + ACCOUNTING SPEC.** Nó phải định nghĩa mô hình sự thật tài chính
+**trước** khi thi hành UI. Owner tường minh: *"DO NOT start implementation… Do not start it in
+this session."* Không phiên nào được bắt đầu thi hành L-1 trước khi spec đó tồn tại.
+
+Task ID mới: **0**. Registry trước = sau (28 roadmap ID / 22 task file).
 
 ---

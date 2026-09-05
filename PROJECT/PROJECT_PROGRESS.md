@@ -732,42 +732,42 @@ Overall Status:
 IN_PROGRESS
 
 Current Phase:
-Phase 2 — Lớp A (bắt buộc sửa trước official run) **HOÀN TẤT**. Cả bảy gói lớp A đã DONE:
-WP-A1, WP-A2, WP-A3, WP-A4, WP-A5, WP-A6, WP-A7 (+ WP-D1 lớp D). **`GATE-A = CLOSED`**
-(`DEC-028`, 2026-09-03). Kế tiếp trên đường găng: gỡ `BLK-001` — điều kiện DUY NHẤT còn lại
-của `T-06` (`T-06 = GATE-A ∧ BLK-001`, theo `RCP-002` điểm 9, đã áp dụng; `T-05` KHÔNG phải
-điều kiện của `T-06` — xác nhận tại `DEC-029`, đóng inconsistency trước đó). `T-05`/`DEC-005`
-vẫn `PENDING`, nhưng chỉ chặn `T-08` và `WP-C2`, không nằm trên đường tới `T-06`.
+**PHA CHUYỂN TIẾP L-1 — HOÀN TẤT (`DEC-041`, 2026-09-05).**
+Toàn bộ bộ máy validation V2.1.5 đã đóng: `GATE-A = CLOSED` (`DEC-028`), `GATE-B = CLOSED`
+(`DEC-038`), `BLK-001 = RESOLVED` (`DEC-031`), `T-06 = DONE` với verdict official
+`DO_NOT_BUILD`, `T-07 = DONE` với hướng đi **L-1** (`DEC-040`).
+`DEC-041` đã thực hiện chuyển tiếp canonical: V2.1.5 = **frozen historical research authority**;
+Vertical Acceptance Slice ACTIVE đổi sang **sản phẩm CoinDCA L-1**
+(`CAPABILITY_REGISTRY.md` §1.A); `app_development_allowed = true` ở tầng PROJECT trong khi
+`can_proceed_to_app = false` giữ nguyên vĩnh viễn.
 
 Current Task:
-`WP-B1` — `IN_PROGRESS` (phiên hiện tại, nhánh `claude/wp-b1-verdict-correctness-j9d390`).
-HAI vòng fresh Independent E2 liên tiếp, mỗi vòng tìm ra lỗ hở thật trong CÙNG cơ chế
-`E2-B1-F01`(FS-08 fail-open)/`E2-B1-F02`(officiality không chặn verdict) — vòng 1 sửa
-None/NaN + progression flag, vòng 2 (review đúng bản sửa vòng 1) sửa thêm `±inf`/`bool` +
-nhãn verdict. Cả hai batch trong `failure_signals.py`/`pipeline.py`, 70 regression test mới
-tổng cộng (`tests/test_wp_b1_e2_fresh_fail_repair.py` +
-`tests/test_wp_b1_e2_fresh_fail_repair_v2.py`) → `CHECK-B1-01`/`CHECK-B1-07` phục hồi
-`FAIL → PASS` cả hai lần. **9/10 REQUIRED PASS** (01,02,03,04,05,06,07,08,10); chỉ còn
-`CHECK-B1-09` (cần một phiên Independent E2 MỚI, vòng 3 — không tự chạy trong phiên này). DỪNG
-đúng phạm vi WP-B1 theo chỉ thị phiên — không mở WP-B2/WP-B3, không mở GATE-B, không chạy T-07,
-không merge `main`, không tự chạy CHECK-B1-09, không rerun T-06, không đổi threshold/strategy.
+**KHÔNG CÓ task nào đang chạy.** Không mở/thực thi hạng mục nào.
+(`WP-B1` đã `DONE` tại `DEC-034` — trường này trước đây còn ghi `IN_PROGRESS`, là stale `ST-01`,
+đóng tại `DEC-041` I.)
 
 Current Task Mode:
-MAJOR
+— (không có task đang chạy)
 
 Next Recommended Task:
-**WP-A6** nay đã đủ dependency (WP-A3 ✅ + WP-A4 ✅ + WP-A7 ✅) và là mắt xích tiếp theo
-trên đường găng; nó cũng phải trả lời H-15 (zone TRIGGERED trong chu kỳ INVALID).
-Các gói READY khác: **WP-A5** (đủ dependency từ S004; cùng sửa `pipeline.py` với WP-A2 đã
-push xong), **WP-A1** (chờ quyết định của chủ dự án về budget/legacy gate — KHÔNG mở được
-bằng agent), **WP-C1** (song song, độc lập — xem "Song song" bên dưới), **WP-D2**.
+**KHÔNG PHẢI task — pha kế tiếp là `L-1 PRODUCT + ACCOUNTING SPEC`** (`DEC-041` Consequence).
+Nó phải định nghĩa **mô hình sự thật tài chính TRƯỚC** khi thi hành UI, và phải giải quyết tường
+minh 10 ràng buộc kế toán liệt kê tại `DEC-041` K.2 (ngày do người dùng nhập ·
+`Asia/Ho_Chi_Minh` · tháng lịch · số dư đầu kỳ · sổ cái an toàn với edit/delete · VND integer ·
+treasury VND↔USDT · asset trade USDT→crypto · tính lại cost basis · migration).
+Owner tường minh: **KHÔNG bắt đầu thi hành L-1** trước khi spec đó tồn tại.
 
-Hai quyết định từng chặn ở đây nay đã ĐÓNG cả hai (2026-09-01, phiên Integration):
-`DEC-013` (integration → phương án A, trunk = `main`, integration SHA `febc2ec`) và
-`DEC-016`/`DEC-017` (`F-S009-01` → REOPEN WP-A4 một repair cycle; budget CAP-DATA
-allowed 2 / used 0 / remaining 2). `DEC-016` **đã được THI HÀNH tại S010**: chu kỳ 1 tiêu
-xong, `used` = 1, `remaining` = 1 (`REVIEW_BUDGET_LEDGER.md` §2.1). Không mở chu kỳ #2.
-Branch authority từ đây: mọi phiên mới branch từ `origin/main` sau khi fetch.
+Không hạng mục roadmap cũ nào được mở: `T-08`/`T-10` = `DEFERRED` (`REDEFINE_FOR_L1`);
+`T-05`/`T-11`/`WP-C3`/`WP-C4`/`WP-D2` = `CANCELLED` (`NOT_APPLICABLE_TO_V2_1_5` /
+`SUPERSEDED_BY_DEC-041`). Spec L-1 sẽ quyết định capability nào được tái dụng, định nghĩa lại,
+hay bỏ. **Không tạo task ID thay thế.**
+
+(Trước `DEC-041`, trường này còn đề xuất `WP-A6`/`WP-A1` — cả hai đã `DONE` từ 2026-09-03; stale
+`ST-03`, đóng tại `DEC-041` I.)
+
+Branch authority: mọi phiên mới branch từ `origin/main` sau khi fetch. Baseline đo
+budget/production diff là **`origin/main` sau fetch**, KHÔNG phải ref `main` cục bộ
+(xem `docs/reviews/L1-CANONICAL-TRANSITION-PROPOSAL.md` §13.1).
 
 ## Overall Roadmap
 
@@ -796,9 +796,9 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-00 | Mở dự án và dựng bộ điều hành | Chọn profile, khởi tạo trạng thái dự án, lập kế hoạch khảo sát và lộ trình sơ bộ | C | xhigh | Không phụ thuộc. Mở đường cho T-01 |
 | DONE | T-01 | Kiểm kê hiện trạng toàn repo | Biết chính xác dự án đang có gì và đang đứng ở đâu, trước khi đụng vào bất cứ thứ gì | C | xhigh | Sau T-00. Chế độ AUDIT read-only |
 | DONE | T-02 | Đối chiếu engine Python với spec | Xác minh bộ máy tính toán làm đúng như đặc tả, vì verdict sẽ dựa vào nó | C | xhigh | Sau T-01. Song song được với T-03 |
-| VERIFYING | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. **CHECK-03-01 PASS tại WP-C1 (2026-09-02)** — gỡ BLOCKED; tất cả REQUIRED/RECOMMENDED check đều PASS. Chuyển DONE cần phiên riêng xác nhận Exit Criteria đầy đủ |
+| DONE | T-03 | Soát app web và rủi ro mất dữ liệu | Xác nhận 3 lỗi kế toán nghi vấn và đánh giá nguy cơ mất lịch sử giao dịch thật | C | high | Sau T-01. **CHECK-03-01 PASS tại WP-C1 (2026-09-02)** — gỡ BLOCKED; tất cả REQUIRED/RECOMMENDED check đều PASS. Chuyển DONE cần phiên riêng xác nhận Exit Criteria đầy đủ · **`DEC-041` (2026-09-05)**: `VERIFYING → DONE`. Bằng chứng ĐÃ CÓ SẴN, không chạy thêm việc: 5/5 REQUIRED PASS ở E1 (`CHECK-03-01` PASS tại `WP-C1` 2026-09-02; `03-02`,`03-03`,`03-04`,`03-06`), RECOMMENDED `03-05` PASS E0, không check nào FAIL/BLOCKED/NOT_TESTED. Exit Criteria 5/5 thoả — gồm xác nhận `docs/reviews/S001-audit-findings.md` đủ vai trò của `S001-audit-findings-webapp.md` dự kiến. **`RSK-003` ĐÓNG** theo đó. Owner ký tại `DEC-041` I |
 | DONE | T-04 | Chốt lộ trình và đóng băng tiêu chí | Soạn Ready Gate + Completion Gate cho 15 work package của RCP-001, đóng băng trước khi thực thi | C | xhigh | Sau T-01, T-02, T-03. HOÀN TẤT tại S002 — 15 file task đã đóng băng gate |
-| PLANNED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới `T-06`/verdict (`RCP-002` điểm 9, đã áp dụng; xác nhận `DEC-029`) — chỉ chặn T-08 và WP-C2 |
+| CANCELLED | T-05 | DUYỆT — phạm vi công cụ trước verdict | Chủ dự án quyết định được xây tới đâu khi cổng verdict chưa mở | DUYET | - | Sau T-04. KHÔNG nằm trên đường găng tới `T-06`/verdict (`RCP-002` điểm 9, đã áp dụng; xác nhận `DEC-029`) — chỉ chặn T-08 và WP-C2 · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn `SUPERSEDED_BY_DEC-041`. `T-05` tồn tại CHỈ để quyết định `DEC-005`; `DEC-041` G supersede `DEC-005`, nên đầu ra duy nhất của `T-05` không còn. Hệ quả tất định của mục G, không phải quyết định phạm vi mới, không tạo ID |
 | DONE | WP-A1 | Chứng minh nguồn gốc và khả năng tái lập của lần chạy chính thức | Để sau này còn chứng minh được kết quả chạy từ dữ liệu thật, đúng môi trường, và tái lập lại được | C | xhigh | Sau T-04. Song song với WP-A2, WP-A3, WP-C1. Thay thế T-06A cũ (đóng F-005, F-007, F-009, F-010, F-011). S017 (`DEC-027`, `OWNER_EXTENSION` +1): ba hạng mục `LEGACY_GATE_DISPOSITION_REQUIRED` đã ĐÓNG — `F-E2A1-03` (official run bị TỪ CHỐI khi không phân giải được provenance, 0 artifact; non-official ghi `provenance_resolved`/`provenance_unresolved` tường minh), `F-E2A1R3-03` (case 13: `dev_limit` → `official_reason='dev_limit_set'` tại cả `run_gate1/2/3`), `F-E2A1R3-06`+`F-E2A1-08` (docs-only, production diff = 0). `CAP-PROV`: allowed 3 / used 3 / remaining 0. **CHECK-A1-11 = PASS/E2 tại E2 vòng BỐN** (`docs/reviews/E2-WP-A1-CHECK-A1-11-round4.md`, HEAD `990a6bb`, artifact `d24db30`/`6ca82f7`) — reviewer độc lập tự dựng venv sạch/non-editable, positive control từ git checkout thật, 17 probe eligibility, mutation testing xác nhận oracle hợp lệ, payload sha256 trước/sau repair giống hệt, full suite 377/377 (2 lần chạy độc lập). Bốn finding mới (N-01..N-04) đều HARDENING/docs-only, không BLOCKING. **DONE do Owner xác nhận tại Owner Checkpoint 2026-09-03 (`DEC-028`)**, đóng luôn `GATE-A`. Ràng buộc vận hành cho T-06: official run phải chạy từ canonical git checkout có lockfile hợp lệ, provenance không phân giải được thì fail loudly/fail closed. Biên bản: `docs/sessions/S017-wp-a1-repair-cycle-cuoi.md` |
 | DONE | WP-A2 | Bật các hạng mục đã viết nhưng pipeline chưa chạy | Báo cáo chính thức hiện thiếu nhiều mục mà đặc tả bắt buộc phải có, dù code đã đúng | C | high | **DONE tại S006** (10/10 REQUIRED PASS; đấu nối thuần tuý — 4 module chỉ-đọc 0 dòng đổi; chiến lược + Benchmark A không đổi 159/159 trường) (đóng F-003, F-004, F-012, F-013, F-014). Tier C route tự nhiên sau MICRO-GOVDEF-001, xác nhận lại tại S006 |
 | DONE | WP-A3 | Sửa vòng đời trạng thái thị trường và ladder khẩn cấp | Vốn có thể bị khoá vĩnh viễn khi thị trường hồi phục một phần rồi yếu lại | D | max | Sau T-04. HOÀN TẤT tại S003 (đóng F-001, F-021, F-022, F-030; 10/10 REQUIRED PASS, E2 PASS) |
@@ -813,15 +813,15 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | **DONE (`DEC-040`, 2026-09-05)** — Owner chọn **L-1 (benchmark đơn giản hơn)**, đúng một trong hai lựa chọn canonical của Implementation Plan §5 dòng `DO NOT BUILD`. Ý nghĩa hẹp: bước DUYỆT đã thực thi, hướng đi = quay về DCA/benchmark đơn giản; KHÔNG có nghĩa V2.1.5 PASS hay dự án kết thúc. Giữ nguyên tuyệt đối: `T-06 = DONE` (`DEC-031`, verdict `DO_NOT_BUILD`); `V2.1.5 validation = FAILED` (vĩnh viễn); `can_proceed_to_app = false`. `T-11` vẫn `BLOCKED` — dưới V2.1.5, điều kiện `verdict=BUILD` không bao giờ thoả nữa (đã đóng lại bằng L-1); một verdict `BUILD` từ chiến lược/version khác trong tương lai (nếu có) phải tự đủ điều kiện, không kế thừa trạng thái validation của V2.1.5. `DEC-005` không đổi, vẫn `PENDING`. Không mở `V2.2`/`WP-D2`, không mở `WP-C3`/`WP-C4`/`T-08` trong quyết định này. Trước đó `READY` tại `DEC-038`; Owner phản hồi Decision Brief lần đầu tại `DEC-039` (giữ `L-0`, uỷ quyền phiên SPIKE evidence-investigation RQ-1/RQ-3/RQ-4/RQ-5, `docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md`) trước khi chọn L-1 ở quyết định này |
 | DONE | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | **DONE 2026-09-02** (8/8 REQUIRED PASS, E1). V-01 XÁC NHẬN, V-02 XÁC NHẬN, V-03 BÁC BỎ (an toàn tình cờ, HARDENING). Harness khôi phục (F-027 đóng). Gỡ BLOCKED cho T-03 (CHECK-03-01 PASS) |
 | DONE | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-036`** (2026-09-04). Đóng `F-006`. 8/8 REQUIRED PASS (`CHECK-C2-01`…`08`, E1 trừ `CHECK-C2-07` E0 theo gate FROZEN). Một enum `ExecutionState` (sáu giá trị ST §16/§19) + một hàm thuần `derive_execution_state` đo tại bước 12b BT §19; KHÔNG có class `StateMachine`. Lưu vết: `execution_state_timeline` (ghi-khi-đổi — hình dạng `previous_state`/`new_state` cho `WP-B3`) và `market_snapshots` (mỗi accounting day, `execution_state` NOT NULL, DM §4). `FUNDING_REQUIRED` = NOT_APPLICABLE theo `ADR-001`. **Backtest bit-for-bit không đổi** (`sha256 e0492a58…`); diff production 1 file +128/−0 thuần thêm mới; full suite 494/494. Mở `WP-B3`/`WP-C3` sang `READY`. `GATE-B` vẫn chưa mở. Trước đó IMPLEMENTED tại `S024`, READY tại `DEC-035` |
-| READY | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | **READY tại `DEC-036`** (2026-09-04) — dependency `WP-C2 DONE` nay thoả (Dependencies của WP-C3 chỉ liệt kê T-04 DONE + WP-C2 DONE). Chưa mở/thực thi (đóng F-020) |
-| PLANNED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) |
-| PLANNED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 |
+| CANCELLED | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | **READY tại `DEC-036`** (2026-09-04) — dependency `WP-C2 DONE` nay thoả (Dependencies của WP-C3 chỉ liệt kê T-04 DONE + WP-C2 DONE). Chưa mở/thực thi (đóng F-020) · **`DEC-041` (2026-09-05)**: `READY → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. "Partial fill" là khái niệm zone/ladder (một zone có `target_vnd` được fill một phần); dưới L-1 không có zone/ladder, một giao dịch chỉ là một giao dịch với số tiền bất kỳ. Completion Gate FROZEN 2026-08-23 viết theo zone → không áp được. Mối lo nghiệp vụ được mô hình `trades[]` của L-1 hấp thụ tự nhiên. Ghi chú: file task còn `PLANNED` do `DEC-036` sót không áp (stale `ST-09`) — đóng tại đây |
+| CANCELLED | WP-C4 | Mở rộng phạm vi đối chiếu giữa hai bản cài đặt (Python/JS) | Hai bản cài đặt có thể trôi khỏi nhau khi thêm tính năng mới vào JS | C | xhigh | Sau WP-A3, WP-A4, WP-A6, **WP-A7** (không khoá parity vào hành vi Smart capital đã xác nhận là sai). Chặn T-10, T-11 (đóng F-008) · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Parity chỉ có nghĩa khi CẢ HAI bản cài đặt còn là authority; `src/eth_dca_os/` nay là frozen research (`DEC-041` A) và các đại lượng trong gate FROZEN (regime, ladder, vốn Smart) biến mất dưới L-1. Phần dư (parity OSCORE `engine.js` ↔ `score.py` nếu tab Research được bật) ghi thành `RE_TRIGGER_CONDITION` trong `HARDENING_BACKLOG.md` — **finding, KHÔNG phải task** |
+| DEFERRED | T-08 | Đặc tả lớp cảnh báo | Viết đặc tả còn thiếu cho tính năng cảnh báo mà chủ dự án muốn | C | xhigh | Sau T-05 · **`DEC-041` (2026-09-05)**: `PLANNED → DEFERRED`, nhãn **`REDEFINE_FOR_L1`**. Nhu cầu "được nhắc" sống sót; nội dung "cảnh báo theo chỉ báo" là khái niệm V2.1.5, KHÔNG sống sót. Mọi capability nhắc lịch/thông báo L-1 tương lai do **spec L-1** chi phối và **không được kế thừa dependency đã chết** vào bề mặt quyết định `T-08` V2.1.5. KHÔNG thực thi. KHÔNG tạo task ID thay thế |
 | DONE | T-09A | Sửa lỗi kế toán trong app web | Vá lỗi WP-C1 xác nhận là có thật (V-01, V-02), trước khi app được dùng với tiền thật | C | high | **Phạm vi xác định tại WP-C1 (2026-09-02)**: (1) sửa `releaseLadder()` (`webapp/app_logic.js:302-322`) dùng đúng tháng gốc của ladder thay vì `currentMonth()`; (2) `reserveFor()`/`createLadder()` (`webapp/app_logic.js:289-297,324-335`) phải nhân giới hạn theo `view.smartUnlock`/`view.oppUnlock` trước khi cho reserve. V-03 BÁC BỎ nên không bắt buộc sửa, có thể cân nhắc thêm check `data_quality` tường minh như HARDENING phòng thủ (không bắt buộc). Sau WP-C1 (DONE). **IMPLEMENTED 2026-09-02** — 12/12 REQUIRED PASS (E1), V-01 và V-02 không còn tái hiện, batch review PASS 0 BLOCKING; Task Spec `docs/tasks/T-09A-sua-loi-ke-toan-app-web.md`. **DONE 2026-09-02** theo Owner Decision `DEC-018` (`OD-WEBAPP-01`) — Completion Gate giữ nguyên 12/12 REQUIRED PASS (E1), không sửa câu chữ/ngữ nghĩa |
 | DONE | T-09B | Dựng lưu trữ dữ liệu bền (Firebase) | Chống mất lịch sử giao dịch — rủi ro lớn nhất của công cụ hiện tại | D | xhigh | **DONE 2026-09-03 (`DEC-024`)** — 16/16 REQUIRED PASS E1 (emulator + production CHECK-01/02/03/04/14 trên `tinphatcontent.web.app` thật). Sau T-04, WP-C1 (DONE), T-09A (DONE). Nên làm trước T-10. **Nền tảng persistence = Firebase — FIXED OWNER CONSTRAINT (`DEC-019`)**. Kiến trúc baseline `DEC-020`/`DEC-021`: Firebase Hosting → Firebase Anonymous Auth → Cloud Firestore (document `ethdca/state` + `ethdca/seed`). Task Spec: `docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md` (Task ID mới = 0). **`DEC-021` (Personal Tool Simplification Principle) đóng `OD-C` = R2 (SIMPLIFIED PERSONAL-TOOL RECOVERY)**: cross-device/cross-browser/lost-identity recovery KHÔNG phải V1 requirement (`H-23`, OUT OF SCOPE V1); `CHECK-T09B-04` tái phạm vi xuống same-browser-profile qua audit trail tường minh (OLD → OWNER PRODUCT INTENT CHANGE → NEW), KHÔNG phải bug fix. Ready Gate **15/15 ĐẠT**. Completion Gate 16/16 REQUIRED **FROZEN** 2026-09-02. **`T-09B: PLANNED → READY`.** Không còn Owner Decision nào chặn. `CAP-WEBAPP` budget KHÔNG đổi: 2/0/2 — chưa tiêu, chuyển READY không phải implementation. **S014 (2026-09-02): `READY → IN_PROGRESS → IMPLEMENTED`** — 16/16 REQUIRED PASS (E1, Firebase Emulator Suite), batch review PASS 0 BLOCKING, `H-29..H-32`; production commit `a19d3ad`, test `0d4917a`. **Chưa `DONE`**: project Firebase thật chưa tồn tại (REAL FIREBASE SETUP REQUIRED — `webapp/README.md`), chuyển `DONE` là hành vi chủ dự án. Budget 2/0/2 không đổi |
-| PLANNED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 |
+| DEFERRED | T-10 | Triển khai lớp cảnh báo | Đưa cảnh báo theo chỉ báo vào app — thứ chủ dự án muốn nhất | C | xhigh | Sau T-08, T-09B, WP-C4 · **`DEC-041` (2026-09-05)**: `PLANNED → DEFERRED`, nhãn **`REDEFINE_FOR_L1`**. Như `T-08`; chuỗi phụ thuộc cũ (`T-08`, `WP-C4`) không còn nghĩa vì `WP-C4` nay `CANCELLED`. Xếp lịch SAU khi spec L-1 tồn tại. KHÔNG thực thi |
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
-| READY | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) |
-| PLANNED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD |
+| CANCELLED | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) · **`DEC-041` (2026-09-05)**: `READY → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Đầu ra là đề xuất **V2.2-của-V2.1.5**; `DEC-040` từ chối mở V2.2 và đòi mọi giả thuyết chiến lược tương lai phải độc lập, KHÔNG kế thừa trạng thái validation V2.1.5 — nên tiền đề của `WP-D2` không còn. `S-001`/`S-002`/`S-003` được **ghi chú kèm** freeze `DEC-041` A (khiếm khuyết trong artifact đóng băng thì ghi chú, không sửa — Master Index §6) |
+| CANCELLED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Điều kiện của `T-11` gồm `verdict = BUILD`, mà `DEC-040` §E xác lập điều kiện này KHÔNG BAO GIỜ thoả được nữa dưới V2.1.5. Đóng luôn mâu thuẫn trạng thái cũ (`PLANNED` ở bảng vs `BLOCKED` ở `DEC-040` §D — stale `ST-08`). Verdict `BUILD` từ chiến lược/version khác trong tương lai phải tự đủ điều kiện từ đầu |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -935,6 +935,17 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 ```
 
 ## Current Task Snapshot
+
+**KHÔNG CÓ task đang chạy** (`DEC-041`, 2026-09-05). Pha kế tiếp là
+`L-1 PRODUCT + ACCOUNTING SPEC` — chưa bắt đầu, và KHÔNG được bắt đầu thi hành L-1 trước khi
+spec đó tồn tại.
+
+Snapshot bên dưới là **bản ghi lịch sử của S005** (`WP-D1`, 2026-08-24), giữ nguyên để truy vết.
+Trước `DEC-041` nó bị đọc nhầm thành snapshot hiện hành — stale `ST-04`, đóng tại `DEC-041` I.
+
+---
+
+### Snapshot lịch sử — S005
 
 Task:
 WP-D1 — Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả (S005)
@@ -1222,7 +1233,19 @@ nhưng parity chỉ phủ OSCORE tổng — chưa phủ unlock, spacing, phân b
 regime. Mỗi tính năng port thêm sang JS sẽ mở rộng bề mặt trôi nhanh hơn khả năng phát hiện.
 Giảm thiểu: **WP-C4** (RCP-001) — mở rộng phạm vi parity trước khi port thêm.
 
-### RSK-003 — Ba lỗi kế toán trong app web (mức: CAO — hai trong ba XÁC NHẬN LÀ LỖI THẬT) — WP-C1 XÁC NHẬN (E1)
+### RSK-003 — ĐÓNG (`DEC-041`, 2026-09-05) — Ba lỗi kế toán trong app web — WP-C1 XÁC NHẬN (E1)
+
+**Trạng thái: ĐÓNG.** Owner ký tại `DEC-041` I cùng `T-03: VERIFYING → DONE`. Risk này gắn với
+`T-09A` (DONE, `DEC-018`) và `T-03` (nay DONE); hai đường làm sai sổ `V-01`/`V-02` đã bị chặn và
+có test hồi quy giữ chúng; `V-03` BÁC BỎ, `H-18` giữ DEFERRED. Điều kiện duy nhất còn treo trước
+đây là chữ ký Owner cho `T-03` — nay đã có. Lịch sử bên dưới GIỮ NGUYÊN, không xoá.
+
+**KHÔNG kéo theo:** cảnh báo *"dừng dùng app với tiền thật"* **VẪN CÒN HIỆU LỰC** tới khi pivot
+L-1 hoàn tất — vì nhóm lỗi `B1`–`B10` (`DEC-041` K.2) là **nhóm KHÁC** `V-01`/`V-02`/`V-03` và
+chưa từng được vá. Đóng `RSK-003` KHÔNG có nghĩa app đã an toàn để ghi tiền thật.
+
+---
+
 Ghi nhận ban đầu từ việc đọc code: (a) hàm chọn tháng hiện hành trả về tháng có key lớn nhất
 chứ không phải tháng của ladder, nên release vốn có thể trả nhầm pool khi có nhiều tháng;
 (b) mức unlock không giới hạn số vốn được reserve; (c) trạng thái dữ liệu INVALID không chặn
@@ -1570,8 +1593,32 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 - DEC-017 — `OD-DATA-02`: `CAP-DATA` Effective Risk = **HIGH**; hạn mức repair budget
   allowed 2 / used 0 / remaining 2 (khai hạn mức, KHÔNG reset). Bản sửa `F-S009-01` sẽ là
   repair cycle **#1**
+- DEC-018 … DEC-025 — Lifecycle/authority cho `T-09A`, `T-09B` (Firebase = ràng buộc kiến trúc
+  cố định `DEC-019`; `DEC-021` Personal Tool Simplification Principle; `DEC-023` Firebase
+  project DÙNG CHUNG `tinphatcontent`), và `WP-A5` DONE
+- DEC-026 … DEC-030 — `WP-B1` lát cắt pre-T06 + budget `CAP-VERDICT`; `WP-A1` OWNER_EXTENSION và
+  DONE (`GATE-A = CLOSED`, `DEC-028`); integration `DEC-029`; `DEC-030` `T-05` KHÔNG phải
+  prerequisite của `T-06`
+- **DEC-031** — `T-06: PLANNED → DONE` (historical governance disposition, KHÔNG phải validation
+  PASS). Official verdict = **`DO_NOT_BUILD`**. `BLK-001: ACTIVE → RESOLVED`
+- DEC-032 … DEC-037 — integration closure; `DEC-033` ngưỡng FS-02/07/12; `WP-B1` DONE
+  (`DEC-034`); **`DEC-035` = PA-A** (phân xử HẸP chỉ cho `WP-C2` — **KHÔNG phải PA-2**;
+  `DEC-005` vẫn PENDING lúc đó); `WP-C2` DONE (`DEC-036`); `WP-B3` DONE (`DEC-037`)
+- **DEC-038** — `WP-B2` DONE → **`GATE-B = CLOSED`**; `T-07: PLANNED → READY`
+- DEC-039 — Owner giữ `L-0`/`T-07 READY`, uỷ quyền phiên SPIKE RQ evidence-investigation
+- **DEC-040** — Owner Decision `T-07`: chọn **L-1** (benchmark đơn giản hơn); `T-07: READY → DONE`.
+  Giữ nguyên: V2.1.5 = FAILED, verdict = `DO_NOT_BUILD`, `can_proceed_to_app = false`
+- **DEC-041** — **L-1 CANONICAL TRANSITION** (2026-09-05). V2.1.5 = **frozen historical research
+  authority**; Vertical Acceptance Slice ACTIVE → **sản phẩm CoinDCA L-1**;
+  `app_development_allowed = true` ở tầng PROJECT (`can_proceed_to_app = false` KHÔNG đổi);
+  `DEC-005: PENDING → SUPERSEDED_BY_DEC-041` (**PA-2 KHÔNG resolve `DEC-005`**);
+  `T-03 → DONE` + `RSK-003` ĐÓNG; `T-05`/`T-11`/`WP-C3`/`WP-C4`/`WP-D2` → `CANCELLED`;
+  `T-08`/`T-10` → `DEFERRED` (`REDEFINE_FOR_L1`); supersede một phần `DEC-011`;
+  Owner MỞ LẠI câu hỏi Firebase isolation / recovery đa thiết bị làm
+  **product-readiness constraint** của L-1. Production diff = 0. Task ID mới = 0
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
+(Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
 
 ## Session History
 - S022 — DEC-029 INTEGRATION CLOSURE (`DEC-032`) — 2026-09-03 — branch

@@ -1,5 +1,33 @@
 # L-1 CANONICAL TRANSITION PROPOSAL
 
+> ## TRẠNG THÁI: ĐÃ ĐƯỢC OWNER DUYỆT VÀ THI HÀNH — `DEC-041` (2026-09-05)
+>
+> Owner đã duyệt A–L kèm amendment. Quyết định canonical:
+> `PROJECT/PROJECT_DECISIONS.md` → **`DEC-041`**. Tài liệu này giữ nguyên vai trò **báo cáo
+> phân tích nền**; nó KHÔNG phải authority. Khi tài liệu này và `DEC-041` khác nhau, **`DEC-041`
+> thắng**.
+>
+> **Ba điểm Owner quyết KHÁC khuyến nghị của báo cáo — đọc §8 với lưu ý này:**
+>
+> 1. **`DEC-005`** — báo cáo §8 khuyến nghị GIỮ `PENDING`; Owner chọn phương án thay thế nêu tại
+>    §8.4 điểm 4: **`DEC-005: PENDING → SUPERSEDED_BY_DEC-041`**. Lý do Owner nêu trùng với L3
+>    của báo cáo (bề mặt quyết định gốc thuộc đường tiền-verdict, không còn là đường sản phẩm
+>    hoạt động), và Owner giữ nguyên kết luận cốt lõi của §8: **`PA-2` KHÔNG resolve `DEC-005`**
+>    và không được ghi là đã resolve.
+> 2. **Tên dự án (§5.2, CF-04)** — báo cáo đề xuất DEFER; Owner chọn **đổi ngay** phần nhận diện
+>    hướng ra sản phẩm sang **CoinDCA** (không mass rename namespace kỹ thuật).
+> 3. **Firebase / recovery đa thiết bị (§10.1 FB-4)** — báo cáo nêu là câu hỏi để Owner cân nhắc;
+>    Owner **MỞ LẠI** dứt khoát, xếp Firebase isolation + xác thực bền vững là
+>    **product-readiness constraint** của L-1 (`DEC-041` K.1).
+>
+> **Hai hệ quả tất định phát sinh khi thi hành, không có trong báo cáo gốc:**
+> `T-05 → CANCELLED` (nhãn `SUPERSEDED_BY_DEC-041` — `T-05` tồn tại chỉ để quyết định `DEC-005`),
+> và nhãn phân loại `NOT_APPLICABLE_TO_V2_1_5` / `REDEFINE_FOR_L1` được **ánh xạ** sang trạng
+> thái vòng đời hợp lệ (`CANCELLED` / `DEFERRED`) vì `STATE_AUTHORITY.md` § "No Undefined States"
+> cấm phát minh enum mới — xem `DEC-041` F.
+
+---
+
 Ngày: 2026-09-05
 Nhánh: `claude/coindca-l1-transition-prep-32ynvi`
 SOURCE: `origin/main` = `867ea9f907212a8c6d92fe7b5a29879a52049ecf` (khớp kỳ vọng của chỉ thị phiên)
