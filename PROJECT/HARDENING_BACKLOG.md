@@ -1281,3 +1281,86 @@ tình trạng đã ghi ở `H-08`).
     - một quyết định governance dựa trực tiếp vào `count_roadmap_task_ids` (ví dụ tranh chấp
       chống-sinh-sôi task, hoặc một phiên audit đếm SET A trước/sau); HOẶC
     - vòng đời task được sửa đổi, làm danh sách trạng thái hợp lệ đổi lần nữa.
+---
+
+## H-39 — Hai kịch bản robustness Gate 3 mà Impl Plan §8 ghi là BẮT BUỘC chưa có đường chạy trong pipeline
+
+Capability: `CAP-PIPELINE` · Owner: `WP-A2` (đã `DONE`) — repair cần `OWNER_ASSIGNMENT_REQUIRED` · Phân loại: **CONFIRMED HARDENING** (ánh xạ vào risk đã đăng ký `RSK-007`)
+Ngày ghi nhận: 2026-09-05 (phiên thực thi `WP-B2`)
+
+Backtest §5 khai một stress scenario riêng — *"P2P-unavailable-in-crash ... action trở thành
+MISSED. Scenario này báo cáo riêng, không trộn vào denominator của manifest ma sát tất định"* —
+và Backtest §6 khai behavioral simulation là robustness của Gate 3 (`N = 1000 simulations, seed
+cố định. Báo cáo median, P10, P90`). Implementation Plan §8 (Phase 8 — Gate 3) nói thẳng:
+*"Chạy behavioral robustness và stress P2P-unavailable"*.
+
+Cả hai cờ TỒN TẠI và HOẠT ĐỘNG ĐÚNG trong engine (`ExecutionConfig.behavioral_model`,
+`ExecutionConfig.p2p_unavailable_in_crash`; `engine.create_action`), nhưng **không đường
+production nào bật chúng**:
+
+- `manifests.GATE3_GRID` chỉ biến thiên `user_delay_seconds`, `funding_policy`,
+  `funding_delay_seconds`, `spot_fee_rate`, `slippage_bps`. Ba trường `action_ttl_seconds`,
+  `behavioral_model`, `p2p_unavailable_in_crash` được chép nguyên từ `gate3_realistic`
+  trong `generate_gate3_manifest.variant()` (14 config tất định), và với 100 config lấy mẫu thì `add()` chỉ truyền năm chiều của lưới nên ba trường kia rơi về mặc định của `ExecutionConfig` — cùng giá trị `12h / OFF / False` cho **cả 114 config**.
+- `pipeline.run_gate3` chỉ chạy các config của manifest đó; không nhánh nào tạo run behavioral
+  hay run stress P2P.
+
+Bằng chứng E1 (phiên `WP-B2`): `grep -rn "behavioral_model\|p2p_unavailable" src/` cho thấy
+hai cờ chỉ xuất hiện ở `config.py` (khai báo + mặc định), `engine.py` (tiêu thụ) và
+`manifests.py` (chép giá trị `realistic`); không nơi nào gán giá trị bật. Hai test của `WP-B2`
+(`test_b2_04c`…`test_b2_04f`, `test_b2_05c`) chứng minh hành vi engine ĐÚNG khi cờ được bật —
+tức khiếm khuyết nằm ở khâu ĐẤU NỐI pipeline, không ở engine.
+
+Cùng họ với `F-003`/`F-004` (Benchmark B/C/D và chẩn đoán §2.3/§2.4 đã cài nhưng pipeline
+không gọi) mà `WP-A2` đã đóng; đây là phần còn sót của **cùng một risk đã đăng ký**:
+`RSK-007` — *"Pipeline không chạy nhiều hạng mục mà spec ghi là bắt buộc cho official run"*.
+
+Vì sao KHÔNG được xử lý thành BLOCKING trong phiên này:
+
+1. **Ngoài capability của `WP-B2`.** `WP-B2` thuộc `CAP-VERDICT` và Expected Touch Area của nó
+   là `tests/` + `docs/CONVENTIONS.md`; `Out of Scope` cấm sửa `src/eth_dca_os/`. Theo
+   `REVIEW_PROTOCOL.md` § Finding Routing, đây là `OUT_OF_SCOPE` → định tuyến về owner, và
+   `OUT_OF_SCOPE` **không** nghĩa là "task mới".
+2. **Sửa bây giờ sẽ đụng vào một kết quả đã official.** Backtest §22 và Master Index §6 cấm đổi
+   phương pháp/manifest sau khi đã thấy kết quả official, và `T-06` đã `DONE` với verdict
+   `DO_NOT_BUILD`. Bổ sung hai lượt chạy Gate 3 rồi báo cáo lại chính là "chạy lại để làm đẹp"
+   mà spec cấm. Hướng đúng theo §22 là đưa vào **V2.2** (`WP-D2`), không vá tại chỗ.
+3. **Không đổi verdict.** Verdict hiện tại là `DO_NOT_BUILD` vì Gate/Failure Signal đã fail;
+   thêm hai lượt robustness chỉ có thể giữ nguyên hoặc làm xấu thêm, không thể mở
+   `can_proceed_to_app`.
+
+    RE_TRIGGER_CONDITION:
+    - `V2.2` được mở (`WP-D2` soạn đề xuất) — khi đó hai kịch bản này phải nằm trong đặc tả
+      Gate 3 của V2.2 và trong pipeline ngay từ đầu; HOẶC
+    - chủ dự án cho phép một lượt chạy Gate 3 mới với thẩm quyền tường minh (không phải rerun
+      official `T-06`); HOẶC
+    - `RSK-007` được đưa ra rà soát lại và phần dư của nó cần đóng.
+
+## H-40 — Nhánh "proxy 07:00 vượt TTL → MISSED" của BT §6 không tới lượt chạy ở TTL baseline
+
+Capability: `CAP-ENGINE` · Owner: `WP-A3` (đã `DONE`) · Phân loại: **CONFIRMED HARDENING** (quan sát về độ phủ nhánh, không phải lỗi hành vi)
+Ngày ghi nhận: 2026-09-05 (phiên thực thi `WP-B2`)
+
+Backtest §6 quy định nhánh 45% của giờ đêm: *"thực thi tại OPEN của nến 15m đầu tiên tại hoặc
+sau 07:00 local **nếu vẫn còn TTL**"* — tức có một nhánh MISSED khi `seconds_to_7am > TTL`.
+
+Với `action_ttl_seconds = 12h` (baseline BT §6, và là giá trị của **cả 114 config** Gate 3 vì
+`GATE3_GRID` không biến thiên trường này), nhánh đó không thể tới lượt: giờ đêm là 23:00–06:59,
+nên `seconds_to_7am` tối đa là **8h** (tại 23:00) — luôn nhỏ hơn 12h. Nhánh chỉ sống khi TTL bị
+hạ xuống dưới 8h, một chiều mà lưới Gate 3 đóng băng không mở.
+
+Cùng họ với `H-36` (nhánh `ACTION_TTL_EXPIRED` không tới lượt khi `action_ttl_seconds` là bội số
+của nến 15m): một nhánh spec có thật, cài đúng, nhưng không gian cấu hình production hiện tại
+không chạm tới. `WP-B2` kiểm nhánh này ở TẦNG HÀM (`execution.behavioral_delay_seconds`,
+`test_b2_04f_night_proxy_becomes_missed_when_it_would_outlive_the_ttl`) và ghi rõ giới hạn đó
+thay vì tuyên bố một độ phủ mà đường production không có.
+
+Vì sao KHÔNG BLOCKING: không có hậu quả nghiệp vụ nào ở cấu hình hiện tại (nhánh không chạy nên
+không thể sai), không REQUIRED check nào của một gate đóng băng đòi nó, và mở nhánh đòi đổi
+`GATE3_GRID` — tức đổi manifest ma sát đã đóng băng, điều BT §22 cấm sau khi có kết quả official.
+
+    RE_TRIGGER_CONDITION:
+    - `action_ttl_seconds` được đưa vào không gian biến thiên của một manifest Gate 3 (V2.2); HOẶC
+    - `behavioral_model = LOCAL_HOUR` được đấu nối vào pipeline (xem `H-39`) — khi đó độ phủ
+      nhánh của mô hình hành vi trở thành câu hỏi có hậu quả; HOẶC
+    - TTL baseline được đổi khỏi 12h.

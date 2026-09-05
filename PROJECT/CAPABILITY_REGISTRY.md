@@ -62,7 +62,7 @@ coi là đã thoả.
 | `CAP-PIPELINE` | Đấu nối hạng mục bắt buộc vào pipeline | `WP-A2` | `WP-A2` | DONE | CÓ |
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | DONE tại S015 — 9/9 REQUIRED PASS (E1), chủ dự án phê chuẩn | CÓ |
 | `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
-| `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | `WP-B1` DONE; `WP-B2` READY; `WP-B3` **DONE** (`DEC-037`, 2026-09-05 — Owner-authorized Lifecycle Closure, 8/8 REQUIRED PASS, đóng `F-024`/`F-033`) | CÓ (lát cắt đã chạy — T-06 DONE) |
+| `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | `WP-B1` DONE; `WP-B2` **IMPLEMENTED** (`S026`, 2026-09-05 — 10/10 REQUIRED PASS, 141 ca test mới, 0 dòng production bị sửa, đóng `R-09` + danh sách "chưa có test" của `S001` thuộc BT §21; chờ Owner-authorized Lifecycle Closure); `WP-B3` **DONE** (`DEC-037`, 2026-09-05 — Owner-authorized Lifecycle Closure, 8/8 REQUIRED PASS, đóng `F-024`/`F-033`) | CÓ (lát cắt đã chạy — T-06 DONE) |
 | `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4` | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **READY** (`DEC-036` — dependency WP-C2 DONE nay thoả); `WP-C4` PLANNED | KHÔNG (song song) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
 | `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | READY | KHÔNG |
