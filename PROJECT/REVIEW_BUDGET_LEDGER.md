@@ -671,3 +671,17 @@ Do đó:
 Không rà soát độc lập (E2) nào được tiêu — Completion Gate của `WP-C2` không đòi E2; quyết định
 dựa trên báo cáo implementer đã có (`docs/reviews/WP-C2-IMPLEMENTATION-REPORT.md`), không phải
 một vòng review mới. Chi tiết quyết định: `PROJECT/PROJECT_DECISIONS.md` `DEC-036`.
+
+## T-12 — S034, repair cycle 1 theo DEC-043 (2026-09-05)
+
+REPAIR_CYCLE_1 = CONSUMED / đang thi hành trong một batch. BASE =
+`c610a299ed6b66dea3cd63372a0943967c93e95d`; HEAD sẽ ghi sau commit sửa.
+CAP-WEBAPP: ALLOWED 2 / USED 0 → 1 / REMAINING 2 → 1. Không reset lineage WP-C1.
+
+Trigger thực tế: hai REQUIRED check có test đỏ sau golden freeze: CHECK-T12-10
+(SC-12 thiếu báo cáo chỉ số legacy/lý do/đường sửa UNKNOWN) và CHECK-T12-06
+(§11.1: sửa schedule của version cũ làm hồi tố lịch). Log: t12-pre-repair trong bằng chứng T12.
+Đủ mọi điều kiện DEC-043: cùng scope/capability/gate, không đổi semantics/spec/oracle,
+không kiến trúc mới, không Firebase/auth, không task mới, 5 file production tích lũy,
+diff dưới +1600/-450; không làm yếu test. Hai lỗi sửa cùng chu kỳ, không cấp chu kỳ thứ hai.
+DEC-044/045 không tiêu repair; sửa oracle tính tay/harness không phải production repair.

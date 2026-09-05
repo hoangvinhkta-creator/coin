@@ -224,7 +224,17 @@
   function update(state, action, meta) {
     const s = canonical(state);
     if (action.type === 'opening') s.openingPosition = clone(action.value);
-    else if (action.type === 'plan') s.plan = clone(action.value);
+    else if (action.type === 'plan') {
+      const next = clone(action.value); planCheck(next);
+      for (const old of s.plan.versions) {
+        const retained = next.versions.find(p => p.id === old.id);
+        if (!retained || retained.effectiveFrom !== old.effectiveFrom || JSON.stringify(retained.scheduleDays) !== JSON.stringify(old.scheduleDays)) fail('Không đổi lịch của version cũ; thêm version về sau');
+      }
+      for (const p of next.versions.filter(p => !s.plan.versions.some(old => old.id === p.id))) {
+        if (s.plan.versions.length && (!meta.today || p.effectiveFrom < meta.today.slice(0, 7))) fail('Version lịch mới chỉ áp dụng từ tháng thay đổi trở đi');
+      }
+      s.plan = next;
+    }
     else if (action.type === 'delete') { if (!s.events.some(e => e.id === action.id)) fail('Event không tồn tại'); s.events = s.events.filter(e => e.id !== action.id); }
     else if (action.type === 'event') {
       const old = action.id ? s.events.find(e => e.id === action.id) : null;
@@ -267,7 +277,12 @@
       if (errors.length) return { ok: false, errors, deltas };
       candidate.LEGACY_ARCHIVE = { label: 'LEGACY_ARCHIVE — READ ONLY', raw: clone(legacy) };
       candidate.RESEARCH_ONLY = { extraDays: clone(legacy.extraDays || []), history: clone(seed && seed.history || []) };
-      return { ok: true, state: candidate, deltas, warnings: d.flags.includes('UNKNOWN_VND_BASIS') ? ['W-1', 'UNKNOWN_VND_BASIS'] : [] };
+      const unknownBasis = candidate.events.filter(e => e.kind === 'TRADE' && d.eventEffects[e.id].vndRelieved === null).map(e => ({
+        legacyIndex: e.note.slice('Migration '.length), eventId: e.id,
+        reason: 'USDT pool thiếu giá vốn VND đã biết; không suy tỷ giá từ legacy hay PRICE.',
+        correction: 'Sửa openingPosition.usdt.costVnd tường minh hoặc bổ sung event TREASURY còn thiếu; không nhập FX riêng từng lệnh.'
+      }));
+      return { ok: true, state: candidate, deltas, unknownBasis, warnings: d.flags.includes('UNKNOWN_VND_BASIS') ? ['W-1', 'UNKNOWN_VND_BASIS'] : [] };
     } catch (e) { errors.push(e.message); return { ok: false, errors, deltas }; }
   }
   // Hooks are production snapshot/confirmation/persistence adapters, not an alternate write path.

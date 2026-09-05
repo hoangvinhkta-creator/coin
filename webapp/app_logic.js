@@ -457,6 +457,7 @@
       canWrite: function () { return P.phase === "ONLINE" && !P.saving && !P.diverged; },
       commit: function (next) {
         next = CoinLedger.canonical(next);
+        CoinLedger.derive(next.openingPosition, next.plan, next.events, CoinLedger.clock().today);
         next.rev = Math.max(state.rev || 0, P.durableRev || 0);
         state = next; touch();
       }
@@ -880,7 +881,9 @@
    *  (`ladders[].month` được phép vắng — historical state giữ nguyên, CHECK-T09B-15). */
   function validateState(o) {
     if (o && o.schema === CoinLedger.SCHEMA) {
-      try { CoinLedger.canonical(o); return { ok: true }; }
+      try { var c = CoinLedger.canonical(o);
+        CoinLedger.derive(c.openingPosition, c.plan, c.events, CoinLedger.clock().today);
+        return { ok: true }; }
       catch (e) { return { ok: false, reason: e.message }; }
     }
     var bad = function (r) { return { ok: false, reason: r }; };

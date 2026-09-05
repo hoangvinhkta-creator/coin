@@ -23,3 +23,6 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 webapp/emulator-test.log
+
+# T-12 — fixture tài chính thật chỉ chạy local (spec L-1 §22.1)
+private/
