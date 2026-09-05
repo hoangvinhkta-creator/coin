@@ -3653,3 +3653,113 @@ this session."* Không phiên nào được bắt đầu thi hành L-1 trước 
 Task ID mới: **0**. Registry trước = sau (28 roadmap ID / 22 task file).
 
 ---
+
+## DEC-042 — Owner Decision: DUYỆT CoinDCA L-1 Product + Accounting Spec
+
+Date:
+2026-09-05 (Owner Decision, qua chat, phản hồi `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md`
+soạn tại `docs/sessions/S030-l1-product-accounting-spec.md`, nhánh `claude/coindca-l1-spec-xzdl62`)
+
+Task:
+Không thuộc task ID nào — quyết định đóng vòng đời spec, đúng khuôn `DEC-040`/`DEC-041`.
+
+## Owner Response (dẫn nguyên bốn quyết định kế toán, tóm lược đầy đủ ở dưới)
+
+    OWNER DECISION — COINDCA L-1 PRODUCT + ACCOUNTING SPEC
+    Approve the L-1 Product + Accounting Spec subject to the decisions below.
+    1. DCA SCHEDULE: fixed monthly budget + user-configurable scheduleDays, default [3,13,23].
+    2. MISSED-MONTH RULE: CAPPED_CARRY, cap = 1 × monthlyBudget.
+    3. RESERVE: separate from normal DCA budget; user-controlled; explicit balance; manual
+       contribution; deployed only by explicit Owner action with reason/note; never triggered by
+       Buy Score/regime/Opportunity Score/Crash/V2.1.5 signal; recorded source = RESERVE; must not
+       silently reduce normal DCA adherence.
+    4. VND COST BASIS WHEN P2P PROVENANCE INCOMPLETE: STRICT/FAIL-VISIBLE. USDT is an asset with
+       its own VND cost basis; known acquisitions pool into one WAC; exact lot-to-trade linkage
+       NOT required. When basis is genuinely unavailable: do NOT use current FX, trade-date FX,
+       zero, or a fabricated implied rate; do NOT create a hidden per-trade FX fallback. Instead:
+       preserve quantity and known USDT-denominated cost; propagate affected VND basis as UNKNOWN;
+       surface visibly. Owner may later supply a valid basis via an explicit correction/opening-
+       position action.
+    5. DEVIATION-1 (spec length > DEC-041 J's ~5-page guidance): APPROVED. Not permission for
+       future scope expansion. Add/maintain a compact implementation-oriented summary at the
+       beginning of the SAME spec (product definition, financial truth model, core entities,
+       Owner-approved decisions, invariant index, golden-scenario index, MVP acceptance slice).
+       Do not create another governance framework merely to summarize it.
+    6. Approves core truth architecture (openingPosition + events -> deterministic recomputation
+       -> derived state; edit/delete/late-entry/no incremental drift), currency/date semantics
+       (VND integer, user-entered business date, Asia/Ho_Chi_Minh, calendar month, UNKNOWN never
+       silently zero), Research/Strategy classification (RESEARCH_ONLY/NOT_IN_L1_MVP, no Research
+       tab merely because research code exists), Firebase readiness constraint (no implementation
+       this session), and Owner-data privacy (no real financial data committed).
+    11. Apply these decisions to the canonical spec. Record spec closure using the next valid DEC
+        ID only if canonical governance requires an Owner decision record. Do not invent task IDs
+        yet. Do not implement ledger v2/migration/UI/Firebase/auth/Buy Score research/notifications
+        this session. Production diff must remain EMPTY. Commit/push only
+        claude/coindca-l1-spec-xzdl62. Do NOT merge main.
+
+## Decision
+
+**A. Spec DUYỆT — `CANONICAL — APPROVED`.** `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md`
+chuyển từ `DRAFT — PENDING_OWNER_DECISIONS` sang `CANONICAL — APPROVED`, thay `docs/spec/*_V2_1_5.md`
+đúng vai trò nguồn yêu cầu sản phẩm cho công việc L-1 (`DEC-041` J). Bốn câu ở §21 nay là
+**Owner-Approved Decisions**, không còn là câu hỏi mở:
+
+    OD-L1-1  DCA schedule       -> monthlyBudget cố định + scheduleDays, mặc định [3,13,23]
+    OD-L1-2  Carry              -> CAPPED_CARRY, carryCapMonths = 1
+    OD-L1-3  Reserve            -> tách hẳn khỏi ngân sách DCA, giải ngân chỉ thủ công + note
+    OD-L1-4  Giá vốn VND (P2P thiếu) -> STRICT/FAIL-VISIBLE: WAC một pool, UNKNOWN khi thiếu,
+                                        KHÔNG có ô nhập tỷ giá riêng theo từng lệnh
+
+**B. Thay đổi nội dung do câu 4 áp đặt.** Owner **KHÔNG** duyệt khuyến nghị ban đầu của spec ở
+`OD-L1-4` nguyên vẹn: cơ chế `vndRateOverride` (ô nhập tỷ giá tuỳ chọn trên từng lệnh) bị Owner
+tường minh cấm (*"Do NOT create a hidden per-trade FX fallback"*). Trường này đã bị **loại khỏi
+schema `TRADE`** (spec §5.3); mọi tham chiếu liên quan ở §8.3–8.5, §11, §17.4, §19 (SC-12), §20
+(`INV-11`), §21 đã được viết lại theo đúng chính sách STRICT/FAIL-VISIBLE của Owner: giá vốn VND
+không xác định lan truyền thành `UNKNOWN` và chỉ sửa được qua thao tác sửa `openingPosition`
+tường minh — không qua fallback ẩn theo từng giao dịch.
+
+**C. Migration (§17.4) tách hai tầng, đúng ý Owner.** Vì Owner nói rõ *"Owner may LATER supply...
+through an explicit correction/opening-position action"* (ngụ ý migration không cần chặn chờ số
+đó), spec tách `M-1`…`M-4` (điều kiện DỪNG — dữ liệu mâu thuẫn về SỐ LƯỢNG) khỏi `W-1` (điều kiện
+TIẾP TỤC kèm cờ — chỉ thiếu GIÁ VỐN, migration hoàn tất với `UNKNOWN_VND_BASIS` hiển thị thường
+trực). `SC-12` viết lại từ "migration DỪNG" thành "migration HOÀN TẤT, gắn cờ, không bịa số".
+
+**D. `DEVIATION-1` — DUYỆT có điều kiện.** Owner duyệt spec dài hơn kỳ vọng `DEC-041` J ("≤ 5
+trang"), với điều kiện: (i) giữ **một** tài liệu canonical duy nhất, không tách pack nhiều tài
+liệu; (ii) thêm một **Tóm tắt Thi hành** ở đầu chính spec đó — đã thêm (`docs/spec-l1/...` mục
+"Tóm tắt Thi hành (Executive Summary)", ngay sau header, trước §0), gồm đúng bảy nội dung Owner
+liệt kê: định nghĩa sản phẩm, mô hình sự thật tài chính, thực thể lõi, quyết định đã duyệt, chỉ
+mục invariant, chỉ mục golden scenario, lát cắt chấp nhận MVP. Owner tường minh: **đây không phải
+giấy phép mở rộng phạm vi về sau** — bản spec chi tiết vẫn là thẩm quyền kế toán canonical.
+
+**E. Không hạng mục nào được mở.** Đúng chỉ thị Owner: không tạo task ID, không thi hành ledger
+v2/migration/UI/Firebase/auth/Buy Score research/notifications trong phiên này. `docs/spec/`,
+`src/`, `tests/`, `webapp/`, `firebase.json`, `firestore.rules`, `pyproject.*` diff = 0.
+
+## Reason
+
+`DEC-041` J đặt điều kiện tiên quyết: phải có spec L-1 **trước khi** bất kỳ công việc thi hành nào
+được mở. `S030` (`docs/sessions/S030-l1-product-accounting-spec.md`) soạn bản spec đó và để lại
+đúng bốn quyết định thay đổi ngữ nghĩa kế toán/sản phẩm cho Owner, cộng một sai lệch cần định
+đoạt (`DEVIATION-1`). Quyết định này là hành động DUYỆT tương ứng — cùng khuôn với `DEC-040`
+DUYỆT hướng đi và `DEC-041` DUYỆT chuyển tiếp canonical. Không có rule canonical nào cấm Owner
+duyệt một spec kèm sửa đổi nội dung (ở đây: bác bỏ cơ chế `vndRateOverride`, siết chính sách
+migration) — điều này nằm trong thẩm quyền `STATE_AUTHORITY.md` giao Owner quyết định phạm vi/
+ngữ nghĩa sản phẩm.
+
+## Consequence
+
+`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md`: `DRAFT — PENDING_OWNER_DECISIONS` →
+`CANONICAL — APPROVED`. Bốn câu §21: `PENDING` → **Owner-Approved Decisions (`DEC-042`)**.
+`DEVIATION-1`: ghi nhận chờ → **DUYỆT có điều kiện** (Tóm tắt Thi hành đã thêm).
+
+Không task ID mới. Không thay đổi trạng thái task/roadmap nào trong `PROJECT_PROGRESS.md` —
+`DEC-042` chỉ đóng vòng đời spec, không mở bước A/B/C/D của §24. Việc mở task ID cho bước A
+(Ledger/Data Model v2) thuộc một phiên riêng sau `DEC-042`, không phải hệ quả tự động.
+
+Production diff = 0 (`git diff --shortstat origin/main -- src/eth_dca_os webapp pyproject.toml
+pyproject.lock` → rỗng; `docs/spec/`, `tests/`, `firebase.json`, `firestore.rules` cũng rỗng).
+Review/repair budget: không tiêu, theo đúng tiền lệ `DEC-041`/`DEC-012` cho hạng mục production
+diff = 0.
+
+---

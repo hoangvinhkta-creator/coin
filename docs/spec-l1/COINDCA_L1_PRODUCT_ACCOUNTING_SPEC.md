@@ -2,9 +2,57 @@
 
 **SINGLE-USER • MANUAL ENTRY • VND ACCOUNTING / USDT EXECUTION • EVENT-SOURCED LEDGER**
 
-Status: `DRAFT — PENDING_OWNER_DECISIONS` (4 câu hỏi ở §21)
-Thẩm quyền nền: `DEC-040`, `DEC-041` (A, B, C, D, J, K), `H-41`, `H-42`
-Ngày soạn: 2026-09-05
+Status: `CANONICAL — APPROVED` (Owner Decision `DEC-042`, 2026-09-05; các câu hỏi §21 đã QUYẾT)
+Thẩm quyền nền: `DEC-040`, `DEC-041` (A, B, C, D, J, K), `DEC-042`, `H-41`, `H-42`
+Ngày soạn: 2026-09-05 · Ngày duyệt: 2026-09-05 (`DEC-042`)
+
+## Tóm tắt Thi hành (Executive Summary)
+
+**Owner Decision `DEC-042` chấp thuận DEVIATION-1** (spec dài hơn kỳ vọng "≤ 5 trang" của
+`DEC-041` J) với điều kiện: giữ **một** tài liệu canonical duy nhất, không dựng khung governance
+mới để tóm tắt nó. Mục này là bản tóm tắt đó — chỉ để định hướng cài đặt; **chi tiết và ràng buộc
+chuẩn nằm ở các mục đánh số bên dưới**, mục này không tự đứng làm thẩm quyền.
+
+**Định nghĩa sản phẩm (§1).** Sổ cái + công cụ lập kế hoạch tích luỹ crypto cá nhân, một người
+dùng: đặt ngân sách/lịch DCA, ghi giao dịch P2P và crypto thật (ngày người dùng nhập), biết chính
+xác giá vốn và holdings. Không dự đoán giá, không recommendation, không tự động hoá (§3).
+
+**Mô hình sự thật tài chính (§4, §9).** `openingPosition + events[]` → **tính lại toàn bộ** mỗi
+lần render; không biến cộng dồn. Sự kiện là nguồn thẩm quyền; mọi holdings/giá vốn/ngân sách là
+dẫn xuất và không được lưu (`INV-1`).
+
+**Thực thể lõi (§5).** `plan` (versioned) · `openingPosition` (tối đa một) · `events[]` đa hình:
+`TREASURY` (P2P VND↔USDT) · `TRADE` (USDT↔crypto) · `RESERVE` (nạp/rút quỹ dự phòng) · `PRICE`
+(định giá hiển thị, không phải dữ liệu tài chính).
+
+**Quyết định đã duyệt (`DEC-042`, chi tiết §21):**
+
+| # | Câu hỏi | Quyết định |
+|---|---|---|
+| `OD-L1-1` | Mô hình lịch DCA | Số tiền cố định/tháng + `scheduleDays` (mặc định `[3, 13, 23]`) |
+| `OD-L1-2` | Ngân sách chưa dùng hết | `CAPPED_CARRY`, `carryCapMonths = 1` |
+| `OD-L1-3` | Quỹ dự phòng | Tách hẳn khỏi ngân sách DCA; chỉ giải ngân thủ công, không tính vào tuân thủ kế hoạch |
+| `OD-L1-4` | Giá vốn VND khi thiếu nguồn gốc P2P | STRICT / FAIL-VISIBLE: WAC trên một pool USDT; khi basis thật sự không biết → lan truyền `UNKNOWN`, **không** bịa tỷ giá, **không** có ô override theo từng lệnh |
+
+**Chỉ mục Invariant (§20, chi tiết đầy đủ ở đó):** `INV-1` chỉ dẫn xuất · `INV-2` tất định ·
+`INV-3` bảo toàn giá vốn · `INV-4` không âm · `INV-5` tiền là số nguyên · `INV-6` ngày sạch (chỉ
+`businessDate` vào phép tính) · `INV-7` ranh giới đầu kỳ · `INV-8` P2P không phải đầu tư ·
+`INV-9` cách ly dự phòng · `INV-10` tín hiệu không được chạm tiền · `INV-11` không biết ≠ 0, và
+không có fallback tỷ giá ẩn theo từng lệnh · `INV-12` migration nguyên tử · `INV-13` làm tròn đối
+chiếu được · `INV-14` snapshot trước phá huỷ · `INV-15` định danh ổn định.
+
+**Chỉ mục Golden Scenario (§19, chi tiết đầy đủ ở đó):** `SC-01` số dư đầu kỳ · `SC-02` P2P
+VND→USDT · `SC-03` mua ETH bằng USDT · `SC-04` nhiều tỷ giá P2P rồi mua ETH · `SC-05` sửa giao
+dịch cũ · `SC-06` xoá giao dịch · `SC-07` nhập muộn theo ngày thật · `SC-08` ranh giới tháng
+`Asia/Ho_Chi_Minh` · `SC-09` mua thêm ngoài kế hoạch · `SC-10` giải ngân dự phòng thủ công ·
+`SC-11` dữ liệu tháng tương lai · `SC-12` migration với giá vốn không xác định → hoàn tất kèm
+cờ `UNKNOWN`, không hoá thành số bịa (§17.4).
+
+**Lát cắt chấp nhận MVP (§22):** ngân sách tháng → lịch mua đã lên kế hoạch → giao dịch thật có
+ngày người dùng nhập → sổ cái + giá vốn tính lại → 4 con số dashboard (ngân sách · đã đầu tư ·
+còn lại · ngày mua kế tiếp) → lưu bền qua reload/restart. Điều kiện chấp nhận đầy đủ: `A-1`…`A-6`.
+
+---
 
 ---
 
@@ -24,11 +72,13 @@ Hệ quả bắt buộc: mô hình dữ liệu dưới đây được rút ra t�
 V2.1.5 đang tồn tại. Cấu trúc `Base` / `Smart` / `Opportunity`, `ladder`, `zone`, `oppFund`
 **không** được giữ lại chỉ vì chúng đã tồn tại; §17 nói rõ số phận từng cái.
 
-**Ghi nhận sai lệch có chủ đích (`DEVIATION-1`).** `DEC-041` J đặt kỳ vọng spec L-1 *"≤ 5 trang"*.
-Tài liệu này dài hơn. Lý do: bề mặt deliverable (24 mục + 12 kịch bản kế toán) do chính chỉ thị
-phiên của Owner quy định, và mô hình giá vốn hai tiền tệ không thể đặc tả đủ chặt để cài đặt
-trong 5 trang. Tinh thần của `DEC-041` J — **một** tài liệu yêu cầu canonical thay cho pack 6
-tài liệu của V2.1.5 — được giữ nguyên. Ghi ở đây để Owner định đoạt, không tự cho là đã được duyệt.
+**`DEVIATION-1` — ĐÃ DUYỆT (`DEC-042`).** `DEC-041` J đặt kỳ vọng spec L-1 *"≤ 5 trang"*; tài
+liệu này dài hơn vì bề mặt deliverable (24 mục + 12 kịch bản kế toán) do chính chỉ thị phiên của
+Owner quy định, và mô hình giá vốn hai tiền tệ không thể đặc tả đủ chặt trong 5 trang. Owner đã
+duyệt sai lệch này với điều kiện: giữ **một** tài liệu canonical duy nhất (không tách thành pack
+nhiều tài liệu như V2.1.5), và bổ sung một **tóm tắt thi hành gọn** ở đầu chính tài liệu này —
+xem mục "Tóm tắt Thi hành" ngay phía trên §0. **Đây không phải giấy phép mở rộng phạm vi về sau**
+(nguyên văn Owner); bản spec chi tiết hiện tại là thẩm quyền kế toán canonical.
 
 ---
 
@@ -142,7 +192,7 @@ plan: {
       asset:         "ETH",             // L-1 MVP: một tài sản
       monthlyBudgetVnd: integer,        // đồng
       scheduleDays:  [3, 13, 23],       // ngày trong tháng, 1..31, tăng dần, không trùng
-      carryPolicy:   "CAPPED_CARRY",    // FORFEIT | CARRY | CAPPED_CARRY  -- OWNER DECISION 2
+      carryPolicy:   "CAPPED_CARRY",    // FORFEIT | CARRY | CAPPED_CARRY  -- DEC-042 câu 2 (QUYẾT)
       carryCapMonths: 1                 // chỉ có nghĩa khi CAPPED_CARRY
     }
   ],
@@ -211,10 +261,13 @@ Trường chung của **mọi** event:
   usdtNotional: integer,          // USDT khớp lệnh, chưa gồm phí
   feeUsdt:      integer,          // phí tính bằng USDT; 0 nếu phí đã trừ vào lượng nhận
   qty:          integer,          // lượng crypto THỰC NHẬN (đã trừ phí bằng coin) 1e-8
-  source: "PLAN" | "EXTRA" | "RESERVE",
-  vndRateOverride: integer | null // đồng/USDT; xem §8.5 -- OWNER DECISION 4
+  source: "PLAN" | "EXTRA" | "RESERVE"
 }
 ```
+
+**Không có trường tỷ giá nhập tay trên từng lệnh.** Giá vốn VND của một `TRADE` luôn đến từ
+pool USDT (§8), không bao giờ từ một con số gõ riêng cho lệnh đó — đây là quyết định canonical
+của `DEC-042` §4 (*"Do NOT create a hidden per-trade FX fallback"*).
 
 `kind = "RESERVE"`:
 
@@ -409,7 +462,7 @@ lô** — điều kiện sống còn cho §9. Đây là phương pháp đơn gi�
 | 2 | Đã có sẵn USDT đầu kỳ | `openingPosition.usdt = {qty, costVnd}` nạp thẳng vào pool. `SC-01` |
 | 3 | Chỉ dùng một phần USDT | Giải phóng theo tỷ lệ; bình quân **không đổi**. `SC-03` |
 | 4 | Phí sàn | §7.2 — phí USDT cộng vào `usdtOut` nên vào cả hai giá vốn |
-| 5 | Không truy được lô P2P | §8.5 — OWNER DECISION 4 |
+| 5 | Nguồn gốc USDT không xác định (không cần ghép lô — WAC đã giải quyết ở mục 1; nhưng nếu basis THẬT SỰ không biết) | §8.5 — chính sách STRICT / FAIL-VISIBLE (`DEC-042`) |
 | 6 | Không biết giá vốn VND đầu kỳ | `costVnd = null` → mọi số VND của tài sản đó = `UNKNOWN`, hiển thị `—`. **Không** thay bằng 0, **không** thay bằng tỷ giá thị trường (`INV-11`) |
 
 ### 8.4 Pool thiếu USDT — thất bại phải NHÌN THẤY ĐƯỢC
@@ -419,26 +472,44 @@ Khi replay gặp `usdtOut > usdtQty` (thường do thiếu một event P2P chưa
 1. Trạng thái dẫn xuất được đánh dấu `LEDGER_INCONSISTENT`, kèm **id và ngày của event đầu tiên
    gây ra**;
 2. dashboard hiện banner cảnh báo thường trực, **không** ẩn được;
-3. giá vốn VND của tài sản bị đánh dấu `APPROXIMATE`;
-4. phần USDT thiếu được quy VND theo chính sách ở §8.5;
-5. app **không** tự sửa dữ liệu, **không** tự thêm event bù.
+3. phần USDT bị thiếu (`usdtOut` vượt `usdtQty`) được xử lý theo đúng §8.5: **không** suy diễn
+   tỷ giá nào cho phần thiếu — giá vốn VND của phần đó là `UNKNOWN`, lan truyền theo `INV-11`;
+   phần đã được pool phủ vẫn tính bằng bình quân như bình thường;
+4. app **không** tự sửa dữ liệu, **không** tự thêm event bù, **không** tự bịa một tỷ giá cho
+   riêng lệnh gây thiếu hụt (`DEC-042` §4 — cấm fallback FX ẩn theo từng lệnh).
 
 Đây là hiện thực hoá `DEC-011` Owner Acceptance điểm 9 (`DEC-041` D giữ nguyên): sai tiền phải
 `fail visibly`.
 
-### 8.5 Khi không truy được lô P2P — OWNER DECISION 4
+### 8.5 Khi giá vốn VND không xác định — chính sách STRICT / FAIL-VISIBLE (`DEC-042`, QUYẾT ĐỊNH)
 
-Bề mặt quyết định đầy đủ ở §21 câu 4. Khuyến nghị của spec:
+**Mô hình canonical**, đúng nguyên văn Owner Decision `DEC-042` §4: USDT là một tài sản có giá
+vốn VND riêng. Các khoản mua USDT đã biết (P2P, opening) đi vào **một** pool WAC duy nhất (§8.2).
+Khi USDT được chi để mua crypto: lượng USDT rời pool; giá vốn VND tương ứng được giải phóng theo
+bình quân của pool (§8.2); giá vốn đó trở thành một phần giá vốn VND của crypto. **Không cần**
+ghép chính xác lô P2P với lệnh mua — WAC đã tự giải quyết (§8.3-1).
 
-**`POOL_AVERAGE` là mặc định; `vndRateOverride` là ô nhập tuỳ chọn trên từng lệnh.**
+**Khi giá vốn VND của USDT thật sự không biết** (ví dụ: số dư USDT đầu kỳ không rõ giá vốn lịch
+sử — `openingPosition.usdt.costVnd = null`, hoặc phần USDT thiếu ở §8.4), spec **CẤM**:
 
-- Bình thường: bỏ trống `vndRateOverride` → dùng `usdtAvgVnd` của pool.
-- Khi pool thiếu (§8.4) hoặc người dùng biết chắc tỷ giá thật của lô đó: nhập
-  `vndRateOverride` → **chỉ phần USDT không được pool phủ** được quy theo tỷ giá đó; phần được
-  phủ vẫn theo bình quân.
-- Pool rỗng và không có override → `ethCostVnd` của phần đó = `UNKNOWN`, lan truyền theo
-  `INV-11`. **Không** lấy tỷ giá thị trường (đó là `N-9`/`INV-11` và là cửa sau đưa dữ liệu thị
-  trường vào giá vốn).
+- dùng tỷ giá thị trường hiện tại;
+- dùng tỷ giá thị trường tại ngày giao dịch crypto;
+- dùng 0;
+- bịa một tỷ giá lịch sử ngụ ý (implied historical rate);
+- tạo bất kỳ ô nhập tỷ giá nào theo từng lệnh để "vá" trường hợp này (**cấm hidden per-trade FX
+  fallback** — đây là lý do trường `vndRateOverride` bị loại khỏi schema `TRADE` ở §5.3).
+
+**Thay vào đó, spec YÊU CẦU:**
+
+1. giữ nguyên số lượng USDT/crypto — không đụng tới phần định lượng;
+2. giữ nguyên phần giá vốn USDT đã biết (`ethCostUsdt` không bị ảnh hưởng);
+3. lan truyền phần giá vốn VND bị ảnh hưởng thành `UNKNOWN` (`INV-11`);
+4. hiển thị điều kiện này **thấy được** — banner + cờ `UNKNOWN_VND_BASIS` (§16.4), không âm thầm.
+
+**Đường sửa duy nhất:** Owner có thể sau đó cung cấp giá vốn VND đúng của USDT đầu kỳ qua một
+**thao tác sửa `openingPosition` tường minh** (§14, §15 — đã sẵn có, sửa được) hoặc bằng cách bổ
+sung event `TREASURY` còn thiếu nếu nguyên nhân là dữ liệu chưa nhập đủ. Đây **không** phải một
+event mới, không phải một cơ chế mới — chỉ là dùng đúng khả năng sửa/nhập đã có trong sổ.
 
 ---
 
@@ -568,14 +639,21 @@ dùng gõ đại một ngày khác cho qua.
 
 ## 11. Monthly DCA Plan
 
-### 11.1 Mô hình — OWNER DECISION 1
+### 11.1 Mô hình — QUYẾT ĐỊNH (`DEC-042`, câu 1)
 
-Khuyến nghị: **số tiền cố định hằng tháng + danh sách ngày trong tháng** (`scheduleDays`).
+**QUYẾT ĐỊNH: số tiền cố định hằng tháng + danh sách ngày trong tháng** (`scheduleDays`), mặc
+định `[3, 13, 23]`. Owner đổi `scheduleDays` được, chỉ áp dụng **về sau** (không hồi tố — một
+version `plan` mới với `effectiveFrom` ở tháng thay đổi, §5.1).
 
     plannedPerSlot = SPLIT_VND(monthlyBudgetVnd, scheduleDays.length)   // §10.5
 
 Một cơ chế duy nhất phủ được cả nhu cầu "hằng tuần" (`[1, 8, 15, 22]`) lẫn "ngày tuỳ chọn", nên
-spec **không** thêm cơ chế lịch thứ hai. **Không** có timing thuật toán (`N-3`, `INV-10`).
+spec **không** thêm cơ chế lịch thứ hai. **Không** có timing thuật toán (`N-3`, `INV-10`) — lịch
+tất định hoàn toàn theo `scheduleDays`, không đổi theo Buy Score, regime hay tín hiệu thị trường.
+
+**Ràng buộc tường minh của Owner:** `plannedPerSlot`/`plannedAmount` **phải** dẫn xuất từ chính
+`plan` (§5.1, §10.5) — **không** được ghép hay tính lại qua các pool `Base`/`Smart`/`Opportunity`
+cũ của V2.1.5. Các pool đó đã `DROP_LEGACY_ONLY` tại §17.2 và không tồn tại trong schema L-1.
 
 ### 11.2 Các đại lượng
 
@@ -610,16 +688,22 @@ tách làm hai lần, nhập muộn — mỗi cái đều phá ghép cặp) và 
 lưu, tức là một nguồn sự thật cạnh tranh (`INV-1`). Mô hình theo số tiền không lưu gì cả và tự
 sinh ra hành vi bắt kịp trong tháng một cách tự nhiên.
 
-### 11.4 Carry — OWNER DECISION 2
+### 11.4 Carry — QUYẾT ĐỊNH (`DEC-042`, câu 2)
 
-Bề mặt quyết định ở §21 câu 2. Công thức của phương án khuyến nghị (`CAPPED_CARRY`,
-`carryCapMonths = 1`):
+**QUYẾT ĐỊNH: `CAPPED_CARRY`, `carryCapMonths = 1`** (carry tối đa = một tháng ngân sách bình
+thường). Công thức:
 
     carryOut(m)  = max(0, plannedBudgetVnd(m) − planInvestedVnd(m))     // CHỈ tháng đã đóng
     carryIn(m)   = min( carryOut(m−1), monthlyBudgetVnd(m) × carryCapMonths )
 
 Ràng buộc: `carry` chỉ tích luỹ từ các tháng `≥ plan.startMonth` và `≥ openingPosition.asOf`.
 Tháng hiện tại và tháng tương lai **không** sinh `carryOut` (chúng chưa đóng).
+
+**Ràng buộc tường minh của Owner:** cài đặt phải giữ **tách biệt** ba đại lượng — ngân sách
+tháng hiện hành (`monthlyBudgetVnd`), phần carry-forward (`carryInVnd`), và số tiền đã đầu tư
+thật (`investedThisMonthVnd`/`planInvestedVnd`) — **không** được gộp thành một số dư mờ. Ba
+trường này đã tách sẵn trong `DerivedState.month` (§9.2); đây là xác nhận, không phải thay đổi
+schema.
 
 ### 11.5 Mua thêm ngoài kế hoạch ảnh hưởng thế nào
 
@@ -646,7 +730,9 @@ phép khác nhau.
     vốn dự phòng (reserve)     -- vốn cơ động, tiêu khi NGƯỜI DÙNG quyết định
 
 Hai thứ này **không** thông nhau. `reserve` không được cấp vốn từ ngân sách chưa tiêu, và giải
-ngân `reserve` không bù cho một tháng đã hụt kế hoạch (`INV-9`). Đây là OWNER DECISION 3.
+ngân `reserve` không bù cho một tháng đã hụt kế hoạch (`INV-9`). **QUYẾT ĐỊNH (`DEC-042`, câu
+3):** tách bạch hoàn toàn — quỹ dự phòng do người dùng điều khiển, nạp thủ công, và giải ngân
+**không** tính vào tuân thủ kế hoạch DCA.
 
 ### 12.2 Reserve là một EARMARK dẫn xuất, không phải một ví riêng
 
@@ -671,10 +757,11 @@ trên `note` bắt buộc của chính lệnh mua.
 
 ### 12.3 Cấm tuyệt đối
 
-**Không** score, regime, ladder, crash rule, hay bất kỳ đại lượng dẫn xuất nào được tạo, gợi ý,
-hay định cỡ một `TRADE BUY` `source = RESERVE`. Giải ngân dự phòng **chỉ** tồn tại như một event
-do người dùng nhập tay (`INV-10`, `DEC-041` B). Ngữ nghĩa `Opportunity Score` / `Crash` của
-V2.1.5 **không** được mang sang dưới bất kỳ tên gọi nào.
+**Không** Buy Score, regime, ladder, Opportunity Score, Crash logic, hay bất kỳ tín hiệu/đại
+lượng dẫn xuất nào của V2.1.5 được tạo, gợi ý, hay định cỡ một `TRADE BUY` `source = RESERVE`
+(`DEC-042` §3, nguyên văn). Giải ngân dự phòng **chỉ** tồn tại như một event do người dùng nhập
+tay (`INV-10`, `DEC-041` B). Ngữ nghĩa `Opportunity Score` / `Crash` của V2.1.5 **không** được
+mang sang dưới bất kỳ tên gọi nào.
 
 ---
 
@@ -845,17 +932,33 @@ Ngoại lệ có chủ đích: `costVnd` **không** đối chiếu, vì công th
 và lệch là điều **được kỳ vọng**. Chênh lệch được báo cáo cho Owner như một con số cần biết,
 không phải một điều kiện thất bại.
 
-### 17.4 Điều kiện thất bại — phải THẤY ĐƯỢC
+### 17.4 Hai loại kết quả bất thường — DỪNG hẳn, hay TIẾP TỤC kèm cờ THẤY ĐƯỢC
 
-Migration **dừng, không ghi gì**, và xuất báo cáo khi:
+`DEC-042` §4 phân biệt rõ hai việc: (a) dữ liệu **không toàn vẹn** (số lượng có thể sai) — migration
+phải **dừng**; (b) chỉ **giá vốn VND không xác định** được (số lượng vẫn đúng) — migration
+**hoàn tất**, không hoá thân trường thiếu thành một số bịa, nhưng cờ lên **thấy được** để Owner
+sửa sau qua `openingPosition` (§8.5). Owner tường minh: *"Owner may later supply a valid opening
+USDT VND basis through an explicit correction/opening-position action"* — nghĩa là migration
+không cần chờ số đó mới hoàn tất.
+
+**A. Điều kiện DỪNG — migration không ghi gì, xuất báo cáo:**
 
 | # | Điều kiện |
 |---|---|
 | `M-1` | một event thiếu `businessDate` mà Owner không xác nhận |
-| `M-2` | một `TRADE` không truy được giá vốn VND: không có phủ pool, không có `vndRateOverride` (§8.5) |
-| `M-3` | replay làm `usdtQty` hoặc `ethQty` âm ở bất kỳ bước nào |
-| `M-4` | đối chiếu §17.3 vượt ngưỡng |
-| `M-5` | tồn tại ladder/zone có `filled_vnd > 0` — nghĩa là `B1`/`B2` đã phát tác và số tiền pool không đáng tin |
+| `M-2` | replay làm `usdtQty` hoặc `ethQty` âm ở bất kỳ bước nào — dữ liệu tự mâu thuẫn về SỐ LƯỢNG, không chỉ thiếu giá vốn |
+| `M-3` | đối chiếu §17.3 vượt ngưỡng |
+| `M-4` | tồn tại ladder/zone có `filled_vnd > 0` — nghĩa là `B1`/`B2` đã phát tác và số tiền pool không đáng tin |
+
+**B. Điều kiện TIẾP TỤC kèm cờ — migration hoàn tất, không dừng:**
+
+| # | Điều kiện | Xử lý |
+|---|---|---|
+| `W-1` | một `TRADE` hoặc `openingPosition` có phần USDT chi ra mà giá vốn VND không truy được (không có phủ pool, không có opening cost) | nhập số lượng bình thường; `ethCostVnd`/`usdtCostVnd` phần đó = `UNKNOWN` (§8.5); ghi vào báo cáo migration **và** cờ `UNKNOWN_VND_BASIS` trên dashboard; **không** dừng, **không** bịa tỷ giá |
+
+Đây **không** làm yếu nguyên tắc "migration phải fail visibly khi ý nghĩa tài chính mơ hồ": một
+con số bị đánh dấu `UNKNOWN` và hiển thị thường trực **là** thất bại thấy được — chỉ khác ở chỗ
+nó không chặn quyền truy cập vào phần dữ liệu còn lại (số lượng) mà spec **biết chắc** là đúng.
 
 ### 17.5 Tính nguyên tử
 
@@ -1020,16 +1123,28 @@ Trạng thái nền dùng chung cho `SC-01`…`SC-08`:
             flags chứa "FUTURE_DATED_EVENTS" · dòng lịch sử có badge
     INV     §10.6 — một đường tính duy nhất, cảnh báo thấy được thay cho việc chặn
 
-### SC-12 — Migration with ambiguous legacy data → fail visibly
+### SC-12 — Migration with unknown VND cost basis → complete, flagged, not fabricated
 
     INPUT   legacy state có: trades[3] = { ts: "2026-01-09T…Z", usdt: 300, price: 2400,
                                            eth: 0,125, vndRate: null, vndCost: 0 }
-            và KHÔNG có bản ghi p2p nào phủ được lượng USDT đó
-    EXPECT  migration DỪNG với M-2 (không truy được giá vốn VND)
-            báo cáo nêu: chỉ số legacy (`trades[3]`), trường thiếu (`vndRate`/không phủ pool),
-            và hai lối đi của Owner: nhập `vndRateOverride`, hoặc bổ sung event P2P còn thiếu
-            KHÔNG ghi gì vào sổ mới · dữ liệu legacy KHÔNG bị đụng · snapshot đã tồn tại
-    INV     INV-12 (nguyên tử) · INV-11 (thiếu ≠ 0) · INV-14 · §17.4
+            và KHÔNG có bản ghi p2p nào phủ được lượng USDT đó (số lượng ETH/USDT vẫn nhất quán —
+            KHÔNG có pool nào âm, chỉ THIẾU nguồn gốc giá vốn VND của khoản USDT đó)
+    EXPECT  migration HOÀN TẤT theo `W-1` (§17.4-B) — KHÔNG dừng, vì đây là thiếu GIÁ VỐN, không
+            phải mâu thuẫn SỐ LƯỢNG:
+              ethQty và usdtQty nhập đúng, không đổi
+              ethCostUsdt nhập đúng (khoản USDT đã biết, không phụ thuộc VND)
+              phần ethCostVnd tương ứng với 300 USDT này = UNKNOWN, lan truyền theo INV-11
+              KHÔNG dùng tỷ giá hiện tại, KHÔNG dùng tỷ giá ngày giao dịch, KHÔNG dùng 0,
+              KHÔNG có ô nhập tỷ giá riêng cho lệnh này (DEC-042 §4 — cấm hidden per-trade
+              FX fallback; vì vậy trường vndRateOverride không tồn tại, xem §5.3)
+            báo cáo migration nêu rõ: chỉ số legacy (`trades[3]`), lý do (không phủ pool P2P),
+            và đường sửa DUY NHẤT: Owner sửa/bổ sung `openingPosition.usdt.costVnd` hoặc nhập
+            thêm event P2P còn thiếu — qua đúng cơ chế edit đã có (§14, §15), KHÔNG qua fallback
+            theo từng lệnh
+            dashboard hiện cờ `UNKNOWN_VND_BASIS` thường trực (§16.4) cho tới khi Owner sửa
+            dữ liệu legacy KHÔNG bị đụng · snapshot đã tồn tại (INV-14)
+    INV     INV-11 (thiếu ≠ 0, không fallback ẩn) · INV-12 (nguyên tử — sổ mới được ghi TRỌN VẸN,
+            không một phần) · INV-14 · §17.4-B
 
 ---
 
@@ -1047,7 +1162,7 @@ Trạng thái nền dùng chung cho `SC-01`…`SC-08`:
 | `INV-8` | **P2P không phải đầu tư.** Không `TREASURY` event nào đóng góp vào `investedThisMonth`, `planInvested`, `assetQty`, hay `assetCost*` |
 | `INV-9` | **Cách ly dự phòng.** Không `RESERVE` event nào và không `TRADE` có `source ∈ {EXTRA, RESERVE}` nào làm đổi `planInvested`, `remainingPlannedBudget`, hay `carryOut` |
 | `INV-10` | **Tín hiệu không được chạm tiền.** Không chỉ báo, score, regime, hay giá nào được tạo, sửa, hay định cỡ bất kỳ event nào. Event chỉ sinh ra từ thao tác nhập tay của người dùng |
-| `INV-11` | **Không biết ≠ 0.** Một đại lượng không biết hiển thị `—` và lan truyền thành `UNKNOWN`; không bao giờ bị thay bằng 0 hay bằng một tỷ giá thị trường |
+| `INV-11` | **Không biết ≠ 0, không fallback ẩn.** Một đại lượng không biết hiển thị `—` và lan truyền thành `UNKNOWN`; không bao giờ bị thay bằng 0, tỷ giá thị trường, hay bất kỳ tỷ giá nào nhập riêng theo từng lệnh (`DEC-042` §4 — cấm hidden per-trade FX fallback) |
 | `INV-12` | **Migration nguyên tử.** Migration ghi toàn bộ sổ mới hoặc không ghi gì |
 | `INV-13` | **Làm tròn đối chiếu được.** Một khoản VND chia thành `n` phần luôn cộng lại **đúng bằng** khoản gốc |
 | `INV-14` | **Snapshot trước khi phá huỷ.** `import`, `wipe`, `migration` mỗi cái ghi một snapshot export đầy đủ **trước** khi đụng durable state |
@@ -1055,79 +1170,89 @@ Trạng thái nền dùng chung cho `SC-01`…`SC-08`:
 
 ---
 
-## 21. Owner Decisions Required
+## 21. Owner-Approved Decisions (`DEC-042`)
 
-Bốn câu. Mỗi câu **thay đổi ngữ nghĩa kế toán hoặc sản phẩm**; không câu nào hỏi về chi tiết cài đặt.
+Bốn câu, **đã QUYẾT** bằng Owner Decision `DEC-042` (2026-09-05). Giữ nguyên bảng phương án và
+lập luận làm hồ sơ thể chế; mục "QUYẾT ĐỊNH" là kết quả cuối, canonical, không còn là câu hỏi mở.
 
-### OD-L1-1 — Mô hình lịch DCA
+### OD-L1-1 — Mô hình lịch DCA — **QUYẾT ĐỊNH: Phương án A**
 
 | Phương án | Nội dung |
 |---|---|
-| **A (khuyến nghị)** | Số tiền cố định hằng tháng + `scheduleDays` (ví dụ `[3, 13, 23]`); mỗi mốc = `monthlyBudget / số mốc` |
+| **A — ĐÃ CHỌN** | Số tiền cố định hằng tháng + `scheduleDays` (mặc định `[3, 13, 23]`); mỗi mốc = `monthlyBudget / số mốc` |
 | B | Số tiền cố định hằng tháng, **một** mốc duy nhất |
 | C | Lịch hằng tuần (thứ trong tuần) |
 
-**Khuyến nghị: A.** Nó phủ được B (`scheduleDays = [3]`) và gần đúng C (`[1, 8, 15, 22]`) bằng
+Lý do (giữ làm hồ sơ): A phủ được B (`scheduleDays = [3]`) và gần đúng C (`[1, 8, 15, 22]`) bằng
 **một** cơ chế, nên spec không phải mang hai bộ lịch. C thật sự (thứ trong tuần) làm số mốc thay
-đổi giữa các tháng (4 hoặc 5), khiến `plannedPerSlot` không ổn định và ngân sách tháng bị lệch —
-phải thêm luật riêng cho tháng 5 tuần.
+đổi giữa các tháng (4 hoặc 5), khiến `plannedPerSlot` không ổn định.
 
-**Hệ quả nếu chọn khác:** C buộc thêm quy tắc chuẩn hoá ngân sách theo số tuần trong tháng, và
-làm §11.3 phức tạp hơn.
+**Ý nghĩa quyết định:** ngân sách tháng là ràng buộc tài chính; `scheduleDays` định ngày thực thi
+đã lên kế hoạch; lịch **tất định**; Buy Score/regime/tín hiệu thị trường **không** đổi lịch;
+Owner đổi `scheduleDays` được, **chỉ về sau** (§11.1). `plannedAmount` dẫn xuất từ `plan`, không
+ghép với pool Base/Smart/Opportunity cũ (§11.1, §17.2).
 
-### OD-L1-2 — Ngân sách tháng chưa dùng hết
+### OD-L1-2 — Ngân sách tháng chưa dùng hết — **QUYẾT ĐỊNH: `CAPPED_CARRY`**
 
 | Phương án | Nội dung |
 |---|---|
 | `FORFEIT` | Phần chưa dùng **mất**; mỗi tháng bắt đầu lại từ `monthlyBudget` |
 | `CARRY` | Phần chưa dùng chuyển sang tháng sau **không giới hạn** |
-| **`CAPPED_CARRY` (khuyến nghị)** | Chuyển sang tháng sau nhưng `carryIn ≤ 1 × monthlyBudget` |
+| **`CAPPED_CARRY` — ĐÃ CHỌN** | Chuyển sang tháng sau nhưng `carryIn ≤ 1 × monthlyBudget` (`carryCapMonths = 1`) |
 
-**Khuyến nghị: `CAPPED_CARRY`, `carryCapMonths = 1`.**
+Lý do (giữ làm hồ sơ): `FORFEIT` phạt oan chính hành vi mà L-1 sinh ra để hỗ trợ — nhập giao dịch
+muộn. `CARRY` không giới hạn để tồn đọng lớn dần rồi biến thành một cú xuống tiền dựa trên thời
+điểm — đúng thứ L-1 từ chối trở thành (`N-3`). `CAPPED_CARRY` cứu được một tháng lỡ mà không biến
+kế hoạch thành công cụ timing.
 
-`FORFEIT` phạt oan chính hành vi mà L-1 sinh ra để hỗ trợ — nhập giao dịch muộn — và âm thầm
-xoá "nợ kỷ luật". `CARRY` không chặn để tồn đọng lớn dần, và tới lúc "bù" thì khoản bù trở thành
-một cú xuống tiền một lần dựa trên thời điểm — đúng thứ L-1 từ chối trở thành (`N-3`).
-`CAPPED_CARRY` giữ một tháng lỡ vẫn cứu được mà không biến kế hoạch thành công cụ timing.
+**Ý nghĩa quyết định:** phần ngân sách chưa dùng có thể carry-forward, nhưng carry tích luỹ
+**không bao giờ** vượt một tháng ngân sách bình thường; phần vượt cap hết hiệu lực khỏi kế hoạch.
+Đây là **luật kỷ luật**, không phải cơ chế timing thị trường. Cài đặt phải giữ tách biệt: ngân
+sách tháng hiện hành · carry-forward · số tiền đã đầu tư thật (§11.4) — không gộp thành một số dư
+mờ.
 
-**Hệ quả:** đây là **chính sách của chủ sở hữu**, không phải mặc định kỹ thuật; spec **không**
-tự chốt. Nếu Owner chọn `FORFEIT` hoặc `CARRY`, chỉ `plan.carryPolicy` đổi — §11.4 đã tham số hoá
-sẵn cả ba.
-
-### OD-L1-3 — Cách đối xử với quỹ dự phòng
+### OD-L1-3 — Cách đối xử với quỹ dự phòng — **QUYẾT ĐỊNH: Phương án A**
 
 | Phương án | Nội dung |
 |---|---|
-| **A (khuyến nghị)** | Quỹ **tách hẳn** khỏi ngân sách DCA; nạp thủ công; giải ngân **không** tính vào tuân thủ kế hoạch |
+| **A — ĐÃ CHỌN** | Quỹ **tách hẳn** khỏi ngân sách DCA; nạp thủ công; giải ngân **không** tính vào tuân thủ kế hoạch |
 | B | Quỹ được cấp vốn bằng ngân sách tháng chưa dùng (điểm đến của carry) |
 | C | Giải ngân quỹ **tính** vào tuân thủ kế hoạch (coi như bù tháng hụt) |
 
-**Khuyến nghị: A.** Nó giữ **một** thước đo kỷ luật duy nhất (`planInvested`), nên "tôi có theo
-đúng kế hoạch không" luôn có một câu trả lời. B trộn hai câu hỏi vào nhau và ràng câu này với
-`OD-L1-2`. C khiến một lần giải ngân dự phòng làm một tháng lỡ **trông như** đạt kế hoạch, tức
-là thước đo kỷ luật tự nói dối.
+Lý do (giữ làm hồ sơ): A giữ **một** thước đo kỷ luật duy nhất (`planInvested`). B trộn hai câu
+hỏi vào nhau và ràng buộc chéo với `OD-L1-2`. C khiến một lần giải ngân dự phòng làm một tháng lỡ
+**trông như** đạt kế hoạch — thước đo kỷ luật tự nói dối.
 
-**Hệ quả:** với A, `investedThisMonth` và `planInvested` được phép khác nhau, và dashboard phải
-hiện phần tách khi chúng khác (§16.1 ô 2).
+**Ý nghĩa quyết định:** quỹ dự phòng do người dùng điều khiển hoàn toàn; có số dư tường minh; có
+thể nhận đóng góp thủ công; chỉ được giải ngân bằng hành động tường minh của Owner, **bắt buộc**
+kèm lý do/ghi chú (`source = RESERVE`, §12.2); **không bao giờ** được Buy Score, regime,
+Opportunity Score, Crash logic, hay bất kỳ tín hiệu V2.1.5 nào tự động kích hoạt (`INV-10`,
+§12.3). Giải ngân dự phòng **không** âm thầm làm giảm mức tuân thủ DCA thông thường — `investedThisMonth`
+và `planInvested` được phép khác nhau và dashboard hiện phần tách khi chúng khác (§16.1 ô 2).
 
-### OD-L1-4 — Giá vốn VND khi không truy được lô P2P
+### OD-L1-4 — Giá vốn VND khi nguồn gốc P2P không đầy đủ — **QUYẾT ĐỊNH: STRICT / FAIL-VISIBLE**
 
-| Phương án | Nội dung |
-|---|---|
-| **A (khuyến nghị)** | `POOL_AVERAGE` — dùng bình quân gia quyền của pool USDT tại thời điểm chi |
-| B | `MANUAL_RATE` — người dùng **luôn** phải gõ tỷ giá VND/USDT trên mỗi lệnh mua |
-| C | `MARKET_RATE` — app lấy tỷ giá thị trường tại ngày giao dịch |
+**Mô hình canonical (đã quyết, không còn là phương án cạnh tranh):** USDT là một tài sản có giá
+vốn VND riêng. Các khoản mua USDT đã biết đi vào **một** pool WAC (§8.2). Khi USDT được chi để
+mua crypto: lượng USDT rời pool; giá vốn VND tương ứng được giải phóng theo bình quân của pool;
+giá vốn đó trở thành một phần giá vốn VND của crypto. **Không cần** ghép chính xác lô P2P với
+lệnh mua.
 
-**Khuyến nghị: A, kèm ô `vndRateOverride` tuỳ chọn** dùng khi pool thiếu hoặc khi Owner biết chắc
-tỷ giá thật của lô đó (§8.5).
+**Khi giá vốn VND của USDT thật sự không biết** (ví dụ số dư USDT đầu kỳ không rõ giá vốn lịch
+sử) — spec **CẤM** dùng tỷ giá thị trường hiện tại, tỷ giá ngày giao dịch crypto, số 0, hoặc bịa
+một tỷ giá lịch sử ngụ ý. **CẤM** tạo bất kỳ ô nhập tỷ giá riêng theo từng lệnh để vá trường hợp
+này (không có `vndRateOverride` trong schema, §5.3).
 
-B đúng khi người dùng nhớ, nhưng nó bắt gõ một con số ở **mọi** lệnh, kể cả khi sổ đã biết câu
-trả lời — và một lần gõ sai thì im lặng vào thẳng giá vốn. C đưa một phụ thuộc dữ liệu ngoài vào
-**giá vốn**, tức là một con số lịch sử bất biến bỗng phụ thuộc nguồn giá; đó cũng chính là loại
-trôi âm thầm của `B10`. Cả hai đều vi phạm tinh thần `INV-10`.
+**Thay vào đó:** giữ nguyên số lượng USDT/crypto; giữ nguyên phần giá vốn USDT đã biết; lan
+truyền phần giá vốn VND bị ảnh hưởng thành `UNKNOWN` (`INV-11`); hiển thị điều kiện này **thấy
+được** trên dashboard (§16.4, cờ `UNKNOWN_VND_BASIS`). Owner sửa sau bằng cách cập nhật
+`openingPosition` một cách tường minh (§8.5, §14, §15) — không phải qua một fallback ẩn theo
+từng giao dịch.
 
-**Hệ quả:** với A, khi pool rỗng và Owner không gõ override, giá vốn VND là `UNKNOWN` và hiển thị
-`—` — spec chấp nhận **thiếu số** thay vì **số bịa**.
+Lý do (giữ làm hồ sơ so với hai phương án bị loại): `MANUAL_RATE` bắt gõ một con số ở **mọi**
+lệnh kể cả khi sổ đã biết câu trả lời, và một lần gõ sai thì im lặng vào thẳng giá vốn.
+`MARKET_RATE` đưa một phụ thuộc dữ liệu ngoài vào giá vốn — một con số lịch sử bất biến bỗng phụ
+thuộc nguồn giá, đúng loại trôi âm thầm của `B10`. Cả hai vi phạm tinh thần `INV-10`.
 
 ---
 
@@ -1208,7 +1333,9 @@ mới được ghi vào repo, không kèm số liệu.
 ## 24. Proposed Implementation Sequence
 
 **KHÔNG task ID nào được tạo trong tài liệu này** (`DEC-041` J, `AGENTS.md` §3 — *"A finding is
-not a task"*). Đây là **thứ tự đề xuất**, chờ Owner định đoạt sau khi trả lời §21.
+not a task"*). Bốn câu Owner Decision ở §21 đã được trả lời (`DEC-042`); đây vẫn chỉ là **thứ tự
+đề xuất** — việc mở task ID cho bước A thuộc một phiên riêng, không phải hệ quả tự động của
+`DEC-042`.
 
 | Bước | Nội dung | Vì sao đứng ở đây |
 |---|---|---|
@@ -1234,7 +1361,7 @@ Mỗi hạng mục phải được spec **trả lời hoặc bác bỏ tường 
 
 | # | Hiện tượng | Được giải quyết ở |
 |---|---|---|
-| `B1` | Fill zone không tỷ giá → `amount = remaining`, zone `EXECUTED` sai | §17.2 — ladder/zone `DROP_LEGACY_ONLY`; khái niệm không tồn tại dưới L-1. `M-5` chặn migration khi zone đã phát tác |
+| `B1` | Fill zone không tỷ giá → `amount = remaining`, zone `EXECUTED` sai | §17.2 — ladder/zone `DROP_LEGACY_ONLY`; khái niệm không tồn tại dưới L-1. `M-4` chặn migration khi zone đã phát tác |
 | `B2` | Mua không tỷ giá → `deducted = 0`, "available" ảo | §9 (không cộng dồn) + §11.2 (`planInvested` là dẫn xuất từ `vndRelieved`, không từ pool) |
 | `B3` | `currentMonth()` = khoá tháng lớn nhất | §10.3 — tháng lịch từ `asOfDate`. `SC-08` |
 | `B4` | Ngày giao dịch = lúc bấm nút | §10.1 — `businessDate` người dùng nhập, bắt buộc. `SC-07` |
