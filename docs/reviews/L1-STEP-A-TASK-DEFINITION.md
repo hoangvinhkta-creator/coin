@@ -29,8 +29,10 @@ Trạng thái lịch sử V2.1.5 **giữ nguyên, không đụng một chữ** (
 `branch_authority_check.sh` báo `BRANCH AUTHORITY: FAIL — attached branch has no upstream`. Đây là
 **tình trạng nhánh mới chưa push**, không phải divergence: `ahead of default = 0`,
 `divergence LOC = 0`, `INTEGRATION_DECISION_REQUIRED = NO`, worktree CLEAN, production diff EMPTY,
-và `HEAD == origin/main == 91cfbba`. Upstream được thiết lập ở lệnh `git push -u` cuối phiên. Không
-có state nào bị đọc từ nhánh cũ.
+và `HEAD == origin/main == 91cfbba`. Upstream được thiết lập ở lệnh `git push -u` cuối phiên; chạy
+lại sau push cho **`BRANCH AUTHORITY: PASS`** (`behind upstream = 0`, `ahead of default = 1`,
+`production diff = EMPTY`, `INTEGRATION_DECISION_REQUIRED = NO`). Không có state nào bị đọc từ
+nhánh cũ.
 
 ## 2. Proposed Task — ĐÃ TẠO, đúng MỘT ID
 

@@ -91,8 +91,10 @@ proposal mới = 0; `OWNER_ASSIGNMENT_REQUIRED` mới = 0.
 
 Ghi chú `branch_authority_check.sh`: báo `FAIL — attached branch has no upstream`, đúng với một
 nhánh mới chưa push (`ahead = 0`, `divergence LOC = 0`, `INTEGRATION_DECISION_REQUIRED = NO`,
-worktree CLEAN, `HEAD == origin/main`). Upstream được đặt ở `git push -u` cuối phiên. Không state
-nào bị đọc từ nhánh lạc hậu.
+worktree CLEAN, `HEAD == origin/main`). Upstream được đặt ở `git push -u` cuối phiên; chạy lại
+sau push: **`BRANCH AUTHORITY: PASS`** (`behind upstream = 0`, `ahead of default = 1`,
+`divergence LOC = 1497` — toàn bộ là `docs/` + `PROJECT/`, `production diff = EMPTY`,
+`INTEGRATION_DECISION_REQUIRED = NO`). Không state nào bị đọc từ nhánh lạc hậu.
 
 ## 7. Bước kế tiếp
 
