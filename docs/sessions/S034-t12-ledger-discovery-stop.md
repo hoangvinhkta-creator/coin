@@ -1,15 +1,22 @@
-# S034 — T-12 dừng tại DISCOVER do mâu thuẫn SC-04/carry
+# S034 — T-12: discovery stop, DEC-044/045 và implementation L-1
 
 Session ID: S034
 Task: T-12
 Task Mode: MAJOR
 Project Profile: PRODUCT
-Status: IN_PROGRESS — DEC-045; Ready Gate 17/17
+Status: IMPLEMENTED — E2_REQUIRED; Ready Gate17/17
 Ngày: 2026-09-05
 Nhánh: codex/t12-l1-ledger-impl
 Source HEAD/base: 7d1985aaf306294df49c9508078d5425da10f47e
 
-## Kết quả
+## Hiện hành sau implementation/repair
+
+T-12 IMPLEMENTED; full Python 678/678 PASS, mọi E1 kế toán và17 nhóm browser PASS.
+Golden`c610a29`; repair`2a2ab3f`, 1 chu kỳ CONSUMED (pool 2/1/1). Report hiện hành29 mục
+tại docs/reviews/T12-IMPLEMENTATION-REPORT.md. Không E2 tự ký, không DONE, không dùng tiền thật.
+Các mục tiếp theo ghi lịch sử discovery trước implementation.
+
+## Kết quả lịch sử
 
 Đã đọc yêu cầu, chạy Branch Authority PASS trước state, đọc canonical T-12/spec và kiểm tra mã
 app/persistence hiện tại. Số học phân số xác minh SC-04 không thể vừa remaining 7.090.822 VND
@@ -80,3 +87,26 @@ Validators/bảo toàn hợp đồng/commit/push: xem phần bổ sung báo cáo
 Owner duyệt cả hai nhóm. Đã sửa tối thiểu spec/CHECK-T12-03 và SC-09/10 thành hai lần đánh giá.
 Không preflight mới. Ready Gate đánh giá đúng một lần 17/17 PASS; BLOCKED → READY → IN_PROGRESS.
 Bắt đầu implementation; chưa fixture commit/golden freeze; REPAIR_CYCLE_1 NOT_CONSUMED.
+
+## Implementation và repair trong cùng phiên
+
+DEC-045 doc commit2cf0e7c, không golden. T12_GOLDEN_ACCOUNTING_BASELINE=c610a299ed6b66dea3cd63372a0943967c93e95d.
+32 test unit PASS (12SC/15INV/5bổ sung); 7 mutation KILLED; 17 nhóm browser PASS.
+Một repair cycle BASEc610a29→HEAD2a2ab3f52c38eb30a0a8e0ee1791a95254ee9847 sửa CHECK06/10.
+Npm baseline6 script exit0; npm sau exit1 (luồngseedlegacy); đã chạy đủ6 script độc lập và
+liệt kê22 phạm vi N/A trong report, không skip/deselect/sửa test. Python collected 678/passed 678, failed/errors/skipped/xfail/xpass0, exit0.
+Còn lại: independent E2 cho9 check, rồi Owner closure; không chu kỳ thứ hai tự cấp.
+
+## Handoff cuối phiên
+
+T-12 IMPLEMENTED, Completion Gate matrix5 PASS +9 E2_REQUIRED. SC: 12/12, INV: 15/15,
+mutation: 7/7 KILLED, P1…P6 PASS; 17 nhóm browser gồm ACK/REST/reload/restart/M1…M4/W1/offline/
+reject/retry/stale/corrupt. Python 678/678 PASS, exit0. Npm baseline6 script exit0; sau6 script
+exit1 ở seedlegacy, không skip; report liệt kê22 phạm vi N/A và evidence thay thế phần persistence.
+Validators có ý nghĩa PASS; evidence/taskcompletion vẫn vacuous0 record (H-08), đã đối chiếu
+14 check/E2surface/golden hash trực tiếp. Registry23 file/30 ID không đổi.
+
+Nhánh duy nhất codex/t12-l1-ledger-impl; base7d1985a; đo budget91cfbba; golden c610a29;
+repairproductionHEAD2a2ab3f. Reviewer đọc AGENTS.md, Branch Authority rồi canonical state/task/
+spec DEC-042/044/045, report29 mục và rawlogs; chạy lại independent E2. Không DONE/dữ liệu
+Owner/Firebase deployment. Không cần hỏi lại về DEC-044/045 hay readiness.

@@ -1424,6 +1424,12 @@ owner là `T-12` (`docs/tasks/T-12-so-cai-l1-v2-va-derive.md`, `READY`), phân l
 | `B9` | `COVERED_BY_STEP_A` | `CHECK-T12-07` (`INV-5`) |
 | `B10` | `OUTSIDE_STEP_A` / `RETRIGGER_LATER` | rolling window `engine.js` ngoài đường tiền L-1; re-trigger giữ nguyên ở `H-43` |
 
+**S034 implementation (DEC-045):** Step A đã có E1 tại `2a2ab3f`: B1/B2 không còn
+đường ghi ladder/pool legacy, M4 chặn migration; B3/B4/B7 được SC07/08/11 kiểm; B5/B6
+edit/delete/opening qua UI; B8 snapshot trước thao tác phá hủy và M1…M4 không ghi durable;
+B9 integer BigInt/decimal validation. SC12/12, INV15/15 và P1…P6 PASS E1.
+E2 chưa có, chưa đóng T-12/H-41; B10/H-43 và H-42 giữ nguyên re-trigger/phạm vi.
+
 Mục `H-41` **KHÔNG đóng** tại đây: nó chỉ đóng khi `T-12` `DONE` với bằng chứng gate, và `B10`
 ở lại backlog với re-trigger nguyên vẹn. Hai re-trigger còn lại bên dưới vẫn còn hiệu lực.
 

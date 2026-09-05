@@ -1,0 +1,11 @@
+-- initial banners: SỔ MỚIChưa có bản bền nào trên Firestore cho UID này. Thao tác đầu tiên sẽ tạo. Có dữ liệu cũ? Nạp lại từ JSON ở tab Thi
+-- save chip before seed: CHƯA LƯU
+/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269
+    if (Date.now() - t0 > (timeout || 20000)) throw new Error('waitSaved timeout; now ' + JSON.stringify(st));
+                                                    ^
+
+Error: waitSaved timeout; now {"phase":"ONLINE","detail":"","uid":"Nua8YPTCCcSeW65Ttyo4cPAhH60Y","projectId":"demo-ethdca","rev":0,"durableRev":null,"saving":false,"unconfirmed":false,"lastError":null,"seedPending":false,"seedDurable":false,"diverged":false,"mirrorShown":false,"hasSeed":false}
+    at Object.waitSaved (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269:53)
+    at async /Users/hoangvinh/Documents/coin/webapp/test_app.js:36:3
+
+Node.js v24.19.0

@@ -2,50 +2,19 @@
 
 ## Metadata
 Status:
-IN_PROGRESS
+IMPLEMENTED
 
-Hiện hành S034 sau DEC-045: cả hai nhóm mâu thuẫn đã được Owner disposition; Ready Gate
-tái đánh giá duy nhất 17/17 PASS, BLOCKED → READY → IN_PROGRESS. Tiếp tục implementation.
-Những ghi chú dừng DEC-044/S034 dưới đây là lịch sử, không còn blocker hiện hành.
+Hiện hành S034 sau DEC-045: Ready Gate đánh giá duy nhất 17/17 PASS;
+BLOCKED → READY → IN_PROGRESS. Implementation/repair tại `2a2ab3f`; SC12/12, INV15/15,
+mutation7/7 và P1…P6 PASS E1. Full Python regression 678/678 PASS; IN_PROGRESS → IMPLEMENTED, chưa DONE.
+Golden frozen `c610a299ed6b66dea3cd63372a0943967c93e95d`, fixture không đổi sau freeze.
+REPAIR_CYCLE_1 CONSUMED theo DEC-043; CAP-WEBAPP2/1/1. Independent E2 REQUIRED.
 
-**Tu chỉnh DEC-044 — 2026-09-05:** Owner duyệt sửa riêng oracle SC-04 thành
-`remainingPlannedBudgetVnd(2026-02) = 11.775.522`, ghi rõ carryInVnd = 4.684.700 và
-plannedBudgetVnd = 24.684.700; input/WAC/DEC-042/tolerance/budget không đổi.
-Xung đột carry SC-04 của S034 đã được đóng ở tầng hợp đồng. Chỉ được chuyển READY/IN_PROGRESS
-sau một lượt preflight đủ SC-01…SC-12 không còn CONTRACT_CONFLICT và Ready Gate 17/17 PASS.
-Không fixture/baseline nào đã được tạo, không tiêu repair cycle. Chi tiết: DEC-044 và
-báo cáo T12 phần bổ sung về preflight.
-
-**Kết quả preflight sau DEC-044:** 9 CONSISTENT / 3 CONTRACT_CONFLICT, gom hai nhóm:
-(A) SC-04 số dư integer làm bình quân sau ROUND_VND lệch rất nhỏ, trái mệnh đề bất biến exact
-của CHECK-T12-03; (B) SC-09/SC-10 có carryOut tháng 3 trong EXPECT của asOfDate vẫn tháng 3.
-Giữ BLOCKED — OWNER_DECISION_REQUIRED; chưa đủ điều kiện tái xác nhận 17/17 hay bắt đầu mã.
-Bằng chứng và đề xuất gộp ở phần bổ sung cuối báo cáo T12. Không đổi các check/SC còn lại.
-
-**S034 — 2026-09-05: `OWNER_DECISION_REQUIRED`, dừng tại DISCOVER trước implementation.**
-Ready Gate 17/17 của S033 là bản ghi lịch sử; phiên này **không tái xác nhận được 17/17** vì
-hợp đồng SC-04 mâu thuẫn với công thức carry canonical. Không chuyển `IN_PROGRESS`, không tạo
-fixture, không có `T12_GOLDEN_ACCOUNTING_BASELINE_SHA`, không tiêu repair cycle.
-Bằng chứng số học E1 và `COMPLETION GATE CHANGE PROPOSAL` chờ Owner ở
-`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §3/§29. Task `READY → BLOCKED` theo quyền hard-stop
-của § Implementation authority; 14 REQUIRED check giữ nguyên câu chữ và `NOT_TESTED`.
-
-Lịch sử: READY — 2026-09-05. Task được mở tại phiên `S032` theo thẩm quyền `DEC-042` § Consequence
-(*"Việc mở task ID cho bước A (Ledger/Data Model v2) thuộc một phiên riêng sau `DEC-042`"*).
-Đây là bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24.
-Toàn bộ 17 mục MAJOR Ready Gate được xác nhận trong chính file này (§ Ready Gate).
-**KHÔNG có phiên thi hành nào được bắt đầu trước khi Completion Gate dưới đây đóng băng** —
-gate đóng băng cùng ngày tạo file, xem `Completion Gate Freeze`.
-
-**Amended 2026-09-05 (`S033`, Owner Decision `DEC-043`).** Owner xác nhận `T-12` là ĐÚNG MỘT
-capability kế toán L-1 bước A và duyệt ba tu chỉnh: (1) phạm vi kiến trúc persistence tối thiểu
-bên trong ranh giới `ethdca/state` đã có; (2) tách bạch `T12_GOLDEN_ACCOUNTING_BASELINE` (tổng
-hợp) khỏi `OWNER_LOCAL_ACCEPTANCE` (dữ liệu thật) và khỏi `GOLDEN_BASELINE_SHA` tầng dự án
-(`H-10`, `T-06`); (3) pre-authorize **một** repair cycle có điều kiện cho `T-12`, rút từ pool
-`CAP-WEBAPP` hiện có. Task **giữ nguyên `READY`** (§ Ready Gate § Tái xác nhận `DEC-043`).
-**14 REQUIRED check (`CHECK-T12-01`…`-14`) KHÔNG bị sửa một chữ.** Chi tiết từng tu chỉnh nằm
-tại đúng mục nó thuộc về: § Persistence boundary, § Change budget, § Budget review/repair,
-§ Stop conditions.
+Lịch sử thẩm quyền: task mở/Ready Gate17/17 và14REQUIRED FROZEN tại S032; DEC-043 cấp
+persistence bounded và1repair; S034 dừng SC04carry tại2642c8e; DEC-044 sửa carry rồi một
+preflight cho9CONSISTENT/3CONTRACT_CONFLICT; DEC-045 duyệt GroupA WACquantization và
+GroupB SC09/10closedmonth. Không broad preflight sau DEC-045. Báo cáo hiện hành và lịch sử:
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §1–29/phụ lục.
 
 Phase:
 CoinDCA L-1 — bước A (sự thật tài chính) của chuỗi A → B → C → D (spec §24)
@@ -497,10 +466,13 @@ Vượt trần production **hoặc** thêm file production ngoài danh sách →
 
 ## Budget review/repair — MỘT chu kỳ pre-authorized có điều kiện (`DEC-043`)
 
+Hiện hành S034: REPAIR_CYCLE_1 CONSUMED, BASE `c610a29`, HEAD `2a2ab3f`; CHECK-T12-06/10
+đỏ rồi xanh trong một batch, không đổi golden/tolerance/spec. Xem budget ledger và report §22.
+
     Lineage root          = WP-C1  (CAP-WEBAPP)
     ALLOWED (capability)  = 2 repair cycle   (Owner Decision DEC-018 / OD-WEBAPP-01)
-    USED                  = 0
-    REMAINING             = 2
+    USED                  = 1
+    REMAINING             = 1
     T-12 PRE-AUTHORIZED   = 1 repair cycle, RÚT TỪ pool CAP-WEBAPP hiện có
                             (KHÔNG cộng thêm budget, KHÔNG tạo lineage mới — DEC-043, 2026-09-05)
 
@@ -633,7 +605,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -646,18 +618,20 @@ Yêu cầu: durable state mang `schema = "coindca.ledger/2"`; chứa đúng `pla
 không phép dẫn xuất nào đọc. Bằng chứng: quét khoá trên payload durable thật + danh sách khoá bị
 cấm.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-02 — `openingPosition + events -> derive()` tất định
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -667,18 +641,20 @@ Yêu cầu: `derive()` là hàm thuần (không `new Date()` bên trong, không 
 tập event cho cùng `DerivedState` dưới ≥ 100 hoán vị thứ tự nhập và ≥ 2 `TZ` tiến trình khác
 nhau. Phủ `INV-2`, `INV-6`. Golden: `SC-04`, `SC-07`, `SC-08`.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-03 — Giá vốn VND: WAC trên một pool USDT, đúng số
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -691,18 +667,20 @@ không lưu bình quân cũ, không phần dư ẩn, không tolerance bổ sung;
 cùng phương pháp; cạn pool ép `usdtCostVnd = 0` và đẩy phần dư vào `realizedFxVnd`. Số kỳ vọng
 đối chiếu **tuyệt đối** (`tolerance = 0`) với `SC-01`…`SC-04`, `SC-06`. Phủ `INV-3`.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-04 — `UNKNOWN` lan truyền thấy được, không bao giờ bị ép về 0
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -714,18 +692,20 @@ Yêu cầu: `openingPosition.usdt.costVnd = null` (và phần USDT thiếu phủ
 **không tồn tại** trường tỷ giá nhập theo từng lệnh (`vndRateOverride` hoặc tương đương).
 Phủ `INV-11`. Golden: `SC-12`.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-05 — Sửa / xoá / nhập muộn tính lại đúng, không trôi
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -736,18 +716,20 @@ Yêu cầu: sửa giữ `id`+`seq`, cập nhật `updatedAt`, chạy lại toàn
 được xếp theo `businessDate` chứ không theo lúc nhập. Phủ `INV-1`, `INV-15`. Golden: `SC-05`,
 `SC-06`, `SC-07`.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-06 — Ngày nghiệp vụ, `Asia/Ho_Chi_Minh`, tháng lịch
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -759,18 +741,20 @@ toàn bộ mã hỏi giờ hệ thống và nó trả ngày theo `Asia/Ho_Chi_Mi
 Bằng chứng gồm grep chứng minh không còn `getMonth()`/`toISOString()` trong đường tính tiền.
 Phủ `INV-6`. Golden: `SC-08`, `SC-11`. Đóng `B3`, `B4`, `B7` của `H-41`.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-07 — Số nguyên VND, làm tròn đối chiếu được, thứ tự tất định
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -780,11 +764,13 @@ Yêu cầu: quét đệ quy payload durable — 0 giá trị float ở trường
 với `n = 1..12` trên ≥ 50 giá trị: `Σ phần == x` tuyệt đối; `ORDER = (businessDate ASC, seq ASC)`
 được kiểm bằng test. Phủ `INV-5`, `INV-13`. Đóng `B9`.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ### Golden / Invariant coverage
 
@@ -793,7 +779,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -803,18 +789,20 @@ Yêu cầu: **12/12** golden scenario của spec §19 chạy được và PASS, 
 kỳ vọng đã đóng băng ở spec (không nới `tolerance`, không làm tròn để khớp). Báo cáo phải in
 bảng SC × (kỳ vọng / thực tế). Ngữ nghĩa và số kỳ vọng của SC **không được viết lại**.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 #### CHECK-T12-09 — `INV-1`…`INV-15` được phủ, không bất biến REQUIRED nào bỏ trống
 Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -825,11 +813,13 @@ biến bị phá (chứng minh bằng mutation/nghịch đảo có chủ đích 
 `INV-4`, `INV-9`, `INV-11`, `INV-12`, `INV-14`). Không được để một `INV` chỉ "được phủ gián
 tiếp" bởi một SC mà không có phép khẳng định trực tiếp.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ### Migration
 
@@ -838,7 +828,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -854,11 +844,13 @@ Yêu cầu, trên fixture legacy **tổng hợp**:
 (g) dữ liệu legacy không bị xoá; `ledger[]` chỉ đọc;
 (h) không `Base`/`Smart`/`Opportunity`/`ladder`/`zone`/`score` nào lọt vào sự thật tài chính L-1.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ### Persistence
 
@@ -867,7 +859,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -878,11 +870,13 @@ tuyệt đối**; payload durable không chứa khoá dẫn xuất bị cấm (`
 `derivedSnapshot` thì import **bỏ qua** khối đó (kiểm bằng file export bị sửa tay). Sổ nằm trong
 document `ethdca/state` đã được `firestore.rules` allow-list — **không** tạo document mới.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ### Production reachability
 
@@ -891,7 +885,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+E2_REQUIRED
 
 Evidence Level:
 E1
@@ -903,11 +897,13 @@ nêu **số event thật** và **số case** đã chạy qua đường productio
 Mọi file runtime MỚI được khai vào `PROJECT/PRODUCTION_PATHS.md` §1 (khiếm khuyết `H-32` không
 được lặp lại).
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ### Regression
 
@@ -916,7 +912,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -929,11 +925,13 @@ file, từng ca — **không** được xoá/skip/deselect hàng loạt để l�
 `NOT_APPLICABLE` phải được liệt kê đích danh trong báo cáo. Không test nào của `src/eth_dca_os`
 được đổi.
 
+Kết quả implementation S034: E1 PASS: Python 678/678, exit0; npm baseline exit0, npm sau exit1 tại seed legacy; 22 phạm vi N/A được neo DEC-041/042 từng ca, persistence còn áp dụng PASS qua UI L-1. Report §20.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ### Ranh giới sản phẩm
 
@@ -942,7 +940,7 @@ Priority:
 REQUIRED
 
 Status:
-NOT_TESTED
+PASS
 
 Evidence Level:
 E1
@@ -954,11 +952,13 @@ dữ liệu chỉ báo và event `PRICE` → phần tiền của `DerivedState` 
 hiệu nào tạo/gợi ý/định cỡ một `TRADE`, đặc biệt `source = RESERVE` (bắt buộc có `note` do người
 dùng nhập). Phủ `INV-10`. Neo: `DEC-041` B, `DEC-042` §3, spec §12.3.
 
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21.
+
 Executed By:
-—
+GPT-6 Astra / S034 — implementer E1
 
 Timestamp:
-—
+2026-09-05
 
 ---
 
@@ -968,13 +968,13 @@ Timestamp:
 - [ ] Evidence level thoả: `E1` toàn bộ; `E2` độc lập PASS cho khối tính đúng tài chính
       (xem § Evidence / E2)
 - [ ] 0 defect nghiêm trọng chưa xử lý; 0 finding BLOCKING còn mở có đường production hiện hành
-- [ ] Regression áp dụng được PASS, không REQUIRED check nào bị xoá/làm yếu
-- [ ] `PROJECT/PRODUCTION_PATHS.md` khai đủ mọi file runtime mới
-- [ ] `PROJECT/PROJECT_PROGRESS.md` cập nhật; `sync_easy_roadmap.py` chạy lại;
+- [x] Regression áp dụng được PASS, không REQUIRED check nào bị xoá/làm yếu
+- [x] `PROJECT/PRODUCTION_PATHS.md` khai đủ mọi file runtime mới
+- [x] `PROJECT/PROJECT_PROGRESS.md` cập nhật; `sync_easy_roadmap.py` chạy lại;
       `validate_routing.py` + `validate_easy_roadmap.py` PASS
-- [ ] `PROJECT/REVIEW_BUDGET_LEDGER.md` cập nhật (diff đo bằng lệnh, không cộng tay)
-- [ ] `H-41` được cập nhật: hạng mục nào đã đóng bằng kiến trúc, hạng mục nào còn lại
-- [ ] Session handoff được viết (`MAJOR` bắt buộc)
+- [x] `PROJECT/REVIEW_BUDGET_LEDGER.md` cập nhật (diff đo bằng lệnh, không cộng tay)
+- [x] `H-41` được cập nhật: hạng mục nào đã đóng bằng kiến trúc, hạng mục nào còn lại
+- [x] Session handoff được viết (`MAJOR` bắt buộc)
 - [ ] Owner đóng vòng đời (`IMPLEMENTED → DONE`) — xem § Owner closure authority
 
 ## Evidence / E2
@@ -1092,29 +1092,34 @@ Sau khi `T-12` `DONE`, `H-41` được cập nhật (không xoá): `B1`–`B9` �
 
 ## Subtasks (chỉ dẫn thi hành, không phải hợp đồng)
 
-- [ ] 12.1 Schema `coindca.ledger/2` + validator schema (§5)
-- [ ] 12.2 `derive()` + pool USDT WAC + holdings + cờ (§6, §7, §8, §9)
-- [ ] 12.3 Lớp kế hoạch tháng: `plannedPerSlot`, carry, `planInvested`, `next*` (§10.5, §11)
-- [ ] 12.4 Reserve như earmark dẫn xuất (§12)
-- [ ] 12.5 Sửa / xoá cứng / nhập muộn + snapshot (§15)
-- [ ] 12.6 Migration `ethdca.tracker/1` → `coindca.ledger/2` + đối chiếu §17.3 + hai tầng §17.4
-- [ ] 12.7 Persistence: serialize/khôi phục/version trong `ethdca/state` (§9.4, `INV-12`, `INV-14`)
-- [ ] 12.8 Adapter tối thiểu để app dùng được sổ mới (reachability `P-1`…`P-6`)
-- [ ] 12.9 Golden test `SC-01`…`SC-12`
-- [ ] 12.10 Test nhắm đích `INV-1`…`INV-15`
-- [ ] 12.11 Khai file production mới vào `PRODUCTION_PATHS.md`; cập nhật `PROJECT/` state
+- [x] 12.1 Schema `coindca.ledger/2` + validator schema (§5)
+- [x] 12.2 `derive()` + pool USDT WAC + holdings + cờ (§6, §7, §8, §9)
+- [x] 12.3 Lớp kế hoạch tháng: `plannedPerSlot`, carry, `planInvested`, `next*` (§10.5, §11)
+- [x] 12.4 Reserve như earmark dẫn xuất (§12)
+- [x] 12.5 Sửa / xoá cứng / nhập muộn + snapshot (§15)
+- [x] 12.6 Migration `ethdca.tracker/1` → `coindca.ledger/2` + đối chiếu §17.3 + hai tầng §17.4
+- [x] 12.7 Persistence: serialize/khôi phục/version trong `ethdca/state` (§9.4, `INV-12`, `INV-14`)
+- [x] 12.8 Adapter tối thiểu để app dùng được sổ mới (reachability `P-1`…`P-6`)
+- [x] 12.9 Golden test `SC-01`…`SC-12`
+- [x] 12.10 Test nhắm đích `INV-1`…`INV-15`
+- [x] 12.11 Khai file production mới vào `PRODUCTION_PATHS.md`; cập nhật `PROJECT/` state
 - [ ] 12.12 Phiên E2 độc lập (không do người thi hành tự chạy)
 
 ## Changed Files Registry
 
 Created:
-- (điền khi thi hành)
+- webapp/ledger.js, webapp/ledger_ui.js
+- webapp/test_t12_fixtures.js, test_t12_ledger.js, test_t12_mutations.js, test_t12_browser.js, test_t12_owner.js
+- tests/fixtures/t12/{owner-acceptance.schema.json,owner-example.synthetic.json}
+- docs/reviews/evidence/T12/ (log tổng hợp)
 
 Modified:
-- (điền khi thi hành)
+- webapp/app_logic.js, webapp/app_shell.html, webapp/build_app.js, .gitignore
+- PROJECT state/decision/capability/budget/productionpaths/hardening/derivedroadmap
+- spec L-1 theo DEC-044/045; task này, report T12 và session S034
 
 Deleted:
-- (điền khi thi hành)
+- Không có file nào bị xóa
 
 Migration Impact:
 - Đổi schema durable `ethdca.tracker/1` → `coindca.ledger/2` bên trong document `ethdca/state`.

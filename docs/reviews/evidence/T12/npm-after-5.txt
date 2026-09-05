@@ -1,0 +1,13 @@
+
+=== CA 1 — release đa tháng: ownership isolation / active backing / upper bound ===
+/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269
+    if (Date.now() - t0 > (timeout || 20000)) throw new Error('waitSaved timeout; now ' + JSON.stringify(st));
+                                                    ^
+
+Error: waitSaved timeout; now {"phase":"ONLINE","detail":"","uid":"OLBVvvoF36LF1efNTi0WTMKEW1T5","projectId":"demo-ethdca","rev":0,"durableRev":null,"saving":false,"unconfirmed":false,"lastError":null,"seedPending":false,"seedDurable":false,"diverged":false,"mirrorShown":false,"hasSeed":false}
+    at waitSaved (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269:53)
+    at async Object.newPage (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:307:7)
+    at async caseMultiMonthRelease (/Users/hoangvinh/Documents/coin/webapp/test_t09a_accounting.js:62:28)
+    at async /Users/hoangvinh/Documents/coin/webapp/test_t09a_accounting.js:331:5
+
+Node.js v24.19.0

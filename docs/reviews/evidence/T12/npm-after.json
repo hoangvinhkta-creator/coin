@@ -1,0 +1,44 @@
+[
+  {
+    "command": "npm test",
+    "exit": 1,
+    "seconds": 21.53,
+    "log": "/tmp/t12-regression-0.txt"
+  },
+  {
+    "command": "node test_app.js",
+    "exit": 1,
+    "seconds": 21.29,
+    "log": "/tmp/t12-regression-1.txt"
+  },
+  {
+    "command": "node test_zone.js",
+    "exit": 1,
+    "seconds": 21.27,
+    "log": "/tmp/t12-regression-2.txt"
+  },
+  {
+    "command": "node test_v01_v02_v03.js",
+    "exit": 1,
+    "seconds": 21.28,
+    "log": "/tmp/t12-regression-3.txt"
+  },
+  {
+    "command": "node test_multi_month_invariant.js",
+    "exit": 1,
+    "seconds": 21.22,
+    "log": "/tmp/t12-regression-4.txt"
+  },
+  {
+    "command": "node test_t09a_accounting.js",
+    "exit": 1,
+    "seconds": 22.84,
+    "log": "/tmp/t12-regression-5.txt"
+  },
+  {
+    "command": "node test_t09b_persistence.js",
+    "exit": 1,
+    "seconds": 21.99,
+    "log": "/tmp/t12-regression-6.txt"
+  }
+]

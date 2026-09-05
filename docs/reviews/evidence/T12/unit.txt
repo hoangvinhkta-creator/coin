@@ -1,0 +1,40 @@
+✔ SC-01 oracle số nguyên tolerance=0 (1.236458ms)
+✔ SC-02 oracle số nguyên tolerance=0 (0.222ms)
+✔ SC-03 oracle số nguyên tolerance=0 (5.183375ms)
+✔ SC-04 oracle số nguyên tolerance=0 (0.603791ms)
+✔ SC-05 oracle số nguyên tolerance=0 (0.160792ms)
+✔ SC-06 oracle số nguyên tolerance=0 (0.139666ms)
+✔ SC-07 oracle số nguyên tolerance=0 (0.123458ms)
+✔ SC-08 oracle số nguyên tolerance=0 (4.191792ms)
+✔ SC-09 oracle số nguyên tolerance=0 (0.374833ms)
+✔ SC-10 oracle số nguyên tolerance=0 (0.203833ms)
+✔ SC-11 oracle số nguyên tolerance=0 (0.098333ms)
+✔ SC-12 oracle số nguyên tolerance=0 (0.472416ms)
+✔ INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot (0.478708ms)
+✔ INV-2 150 hoán vị + hai process TZ cho cùng ledger (66.594667ms)
+✔ INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND (0.296125ms)
+✔ INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW (0.256041ms)
+✔ INV-5 integer schema, boundary validation và decimal nhập chính xác (0.491333ms)
+✔ INV-6 metadata không đi vào tiền và SC-08 một clock canonical (0.327375ms)
+✔ INV-7 từ chối event trước opening và sửa opening vượt event (0.311292ms)
+✔ INV-8 P2P chỉ chuyển tài sản tiền tệ, không đầu tư (0.062166ms)
+✔ INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm (0.185458ms)
+✔ INV-10 PRICE không chạm tiền; không ENGINE trong module (0.694625ms)
+✔ INV-11 null UNKNOWN lan truyền và không có kế hoạch (0.148708ms)
+✔ INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên (0.862333ms)
+✔ INV-13 SPLIT_VND 80 ngân sách × n1..12, phần cuối nhận dư (0.658958ms)
+✔ INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi (0.385417ms)
+✔ INV-15 20 edits giữ id/seq; delete/create không reuse (1.342375ms)
+✔ SC-05/06/07 qua update thật khớp fixture replay (0.463542ms)
+✔ Calendar plan versions, clamp tháng nhuận, next amount biết được (0.078708ms)
+✔ CHECK-T12-10 SC-12 báo chỉ số legacy, lý do W1 và đường sửa explicit (0.168708ms)
+✔ CHECK-T12-06 đổi schedule chỉ bằng version về sau (0.263458ms)
+✔ Migration P2P hai chân actual gồm fee; đối chiếu VND/cost và float delta (0.160583ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 125.580375

@@ -1,0 +1,584 @@
+
+> test
+> node test_app.js && node test_zone.js && node test_v01_v02_v03.js && node test_multi_month_invariant.js && node test_t09a_accounting.js && node test_t09b_persistence.js
+
+-- initial banners: SỔ MỚIChưa có bản bền nào trên Firestore cho UID này. Thao tác đầu tiên sẽ tạo. Có dữ liệu cũ? Nạp lại từ JSON ở tab Thi
+-- save chip before seed: CHƯA LƯU
+-- seed msg: Đã nạp 420 ngày. Đối chiếu engine: khớp (lệch tối đa 5.3e-11)
+-- OSCORE: 30.7
+-- chips: STRESSEDGOODSmart unlock 0.0%Opp unlock 0.0%
+-- parity: Ngày đối chiếu40so với score Python trong seedLệch lớn nhất5.31e-11ngày 2026-06-07Kết quảKHỚPhai bản cài đặt đồng thuận
+-- Smart unlock sau tiền đề T-09A: 100.00%
+-- contribution: Base 5.000.000 · Smart 3.000.000 · Opp 2.000.000
+-- p2p: Tỷ giá thực hiện 25.445 ₫/USDT.
+-- cap hint: Smart available 3.000.000 ₫ · Opp 2.000.000 ₫
+-- ladder: Đã tạo ladder SMART với spacing 9.68%.
+-- zone rows: 3
+-- buy: Đã ghi 0,729927 ETH · shortfall +74 bps
+-- portfolio: ETH nắm giữ0,7299271 lệnh muaGiá trị thị trường$243,54theo giá 2026-07-11Vốn đã bỏ$150,003.810.000 ₫PnL+$93,5462.4%Giá vốn TB$205,505.219.700 ₫/ETH
+-- treasury: VND available5.000.000 ₫chưa đổi sang USDTUSDT available$46,50sẵn sàng thực thiETH holdings0,729927đã xác nhận muaOpportunity Fund2.000.000 ₫available 2.000.000
+-- action: READY TO BUYSMART zone 0 · 990.000 ₫ ≈ $38,91Giá 333,65 đã chạm mục tiêu 333,65. Thực hiện lệnh trên sàn rồi ghi lại ở tab Nhập số liệu, nhớ chọn đúng
+-- base pool total: 5000000 (expect 5,000,000)
+-- smart pool a/r/d: 0 3000000 0 total 3000000
+-- oppFund total: 2000000
+-- treasury vnd/usdt: 5000000 46.50
+-- eth: 0.7299270072992701 trades: 1 ledger: 6
+-- any negative pool: false
+-- trade rows: 1
+-- ledger rows: 6
+-- after reload OSCORE: 85.3
+-- after reload eth: 0.7299270072992701 trades: 1
+-- after reload save chip: Đã lưu bền · rev 17
+-- embedded state/template in page: false (expect false)
+
+no page errors
+-- Smart unlock sau tiền đề T-09A: 100.00%
+-- zone options: ["— không gắn zone —","● S0 @ 333,65 · 990.000 ₫","S1 @ 301,36 · 990.000 ₫","S2 @ 269,06 · 1.020.000 ₫"]
+-- buy msg: Đã ghi 0,190745 ETH · shortfall +0 bps · SMART zone 0 → EXECUTED
+-- zone statuses: 0:EXECUTED/990000 1:ACTIVE/0 2:ACTIVE/0
+-- smart pool a/r/d: 0 2010000 990000
+-- total preserved: 3000000 (expect 3000000)
+-- partial msg: Đã ghi 0,050000 ETH · SMART zone 1 → PARTIALLY_FILLED
+-- after partial: 0:EXECUTED/990000 1:PARTIALLY_FILLED/254450 2:ACTIVE/0
+-- smart a/r/d: 0 1755550 1244450
+-- total: 3000000
+-- invalidation price: 398.24
+-- ladder after 2 closes above inv: INVALIDATED | zones: EXECUTED,PARTIALLY_FILLED,CANCELLED
+-- smart a/r/d after release: 1755550 0 1244450
+-- total after release: 3000000
+-- trade rows: 2
+
+no errors
+
+=== V-02 — unlock vs reserve ===
+  chips sau khi nạp seed: STRESSEDGOODSmart unlock 0.0%Opp unlock 0.0%
+  Smart unlock hiện tại: 0 %
+  ok: đọc được Smart unlock % từ UI
+  Smart available sau contribution: 3000000 (30% của 10.000.000)
+  ldMsg: Vượt phần đã unlock (0.0%): tối đa 0 ₫ được reserve lúc này (Strategy §12).
+  smart pool sau reserve — a: 3000000 r: 0
+  --- KẾT LUẬN V-02 ---
+  BÁC BỎ: reserve bị chặn hoặc giới hạn đúng theo mức unlock đo được.
+  ok: không có page error trong kịch bản V-02: 
+
+=== V-03 — INVALID vs tạo ladder ===
+  chips sau 5 ngày nhập tay: NORMALINVALIDSmart unlock —Opp unlock —
+  ok: data_quality hiển thị INVALID với 5 ngày lịch sử
+  Smart available trước khi thử tạo ladder: 3000000
+  ldMsg: Chưa đủ lịch sử để tính ADR30.
+  ladder được tạo: false | tổng số ladder: 0
+  --- KẾT LUẬN V-03 ---
+  BÁC BỎ (về mặt hành vi quan sát được): ladder KHÔNG được tạo khi INVALID. Message thực tế: "Chưa đủ lịch sử để tính ADR30.". LƯU Ý QUAN TRỌNG: đọc app_logic.js:324-335 xác nhận createLadder() không hề kiểm tra `data_quality` một cách tường minh — block quan sát được ở đây đến từ guard `!Number.isFinite(sp)` (ADR30 cần 30 ngày liên tục, engine.js smartSpacing), guard này TÌNH CỜ trùng với vùng INVALID (INVALID cần <7 ngày lịch sử để mọi sub-factor NaN, ADR30 cần >=30 ngày — hai điều kiện không giao nhau theo toán học của engine.js, nên INVALID và "đủ dữ liệu để tính spacing" không bao giờ cùng đúng). Hành vi hiện tại AN TOÀN nhưng KHÔNG PHẢI do một kiểm tra INVALID tường minh — đây là HARDENING finding, không phải lý do để hạ kết luận BÁC BỎ.
+  ok: không có page error trong kịch bản V-03: 
+
+=== V-01 — release đa tháng có trả đúng pool không ===
+  Smart unlock sau chuỗi ngày giảm: 100.00%
+  ldMsg (tạo ladder LA, tháng A): Đã tạo ladder SMART với spacing 9.68%.
+  Tháng A (2026-06) sau reserve LA — a: 2000000 r: 1000000
+  ok: reserve 1.000.000 đã trừ vào tháng A (2026-06)
+  ldMsg (tạo ladder LB, tháng B): Đã tạo ladder SMART với spacing 9.68%.
+  Tháng B (2026-07) sau reserve LB (trước khi huỷ LA) — a: 1000000 r: 2000000 (currentMonth() giờ trỏ về đây vì key lớn hơn)
+  Tháng A (2026-06) SAU khi huỷ LA — a: 3000000 r: 0 | LA.status: CANCELLED
+  Tháng B (2026-07) SAU khi huỷ LA — a: 1000000 r: 2000000 | LB.status: ACTIVE (LB KHÔNG hề bị huỷ hay đụng tới trong kịch bản)
+  --- KẾT LUẬN V-01 ---
+  BÁC BỎ: vốn release quay đúng về tháng A; tháng B/LB không bị ảnh hưởng. Số liệu: {"monthA_afterReserve":{"a":2000000,"r":1000000,"d":0},"monthA_afterRelease":{"a":3000000,"r":0,"d":0},"monthB_beforeReleaseA":{"a":1000000,"r":2000000,"d":0},"monthB_afterRelease":{"a":1000000,"r":2000000,"d":0}}
+  ok: không có page error trong kịch bản V-01: 
+
+=== TÓM TẮT E1 ===
+V-01 (release đa tháng sai pool): BÁC BỎ
+V-02 (unlock không giới hạn reserve): BÁC BỎ
+V-03 (INVALID không chặn tạo ladder): BÁC BỎ (hành vi quan sát được — xem ghi chú kiến trúc ở trên)
+
+Tất cả assertion kỹ thuật PASS. Kết luận trên là bằng chứng E1 chạy thật.
+Smart unlock sau chuỗi ngày giảm: 100.00% (OSCORE 85.28)
+  ok: Smart unlock đạt 100% — reserve toàn bộ Smart available của tháng là HỢP LỆ theo Strategy §12
+--- Sau contribution tháng 1 (2026-06) ---
+  ok: TOTAL smart tháng 1 = 3.000.000 đúng bằng 30% contribution
+  ok: smart pool tháng 1 không âm (a=3000000 r=0 d=0)
+ldMsg: Đã tạo ladder SMART với spacing 9.68%.
+--- Sau tạo ladder (reserve toàn bộ Smart tháng 1) ---
+  smart pool: {"a":0,"r":3000000,"d":0}
+  ok: TOTAL smart tháng 1 vẫn = 3.000.000 sau reserve (a->r, không đổi tổng)
+  ok: smart pool tháng 1 sau reserve không âm (a=0 r=3000000 d=0)
+p2pMsg: Tỷ giá thực hiện 25.445 ₫/USDT.
+buyMsg (fill toàn phần zone 0): Đã ghi 0,190745 ETH · shortfall +0 bps · SMART zone 0 → EXECUTED
+--- Sau fill toàn phần zone 0 ---
+  smart pool: {"a":0,"r":2010000,"d":990000}
+  ok: TOTAL smart tháng 1 vẫn = 3.000.000 sau fill toàn phần (r->d, không đổi tổng)
+  ok: smart pool tháng 1 sau fill toàn phần không âm (a=0 r=2010000 d=990000)
+buyMsg (fill một phần zone 1): Đã ghi 0,050000 ETH · SMART zone 1 → PARTIALLY_FILLED
+--- Sau fill một phần zone 1 ---
+  smart pool: {"a":0,"r":1755550,"d":1244450}
+  ok: TOTAL smart tháng 1 vẫn = 3.000.000 sau fill một phần
+  ok: smart pool tháng 1 sau fill một phần không âm (a=0 r=1755550 d=1244450)
+--- Sau contribution tháng 2 (2026-07) — currentMonth() giờ là tháng 2 ---
+  smart tháng 1: {"a":0,"r":1755550,"d":1244450}
+  smart tháng 2: {"a":2400000,"r":0,"d":0}
+  ok: TOTAL smart tháng 1 không đổi khi tháng 2 mở ra
+  ok: TOTAL smart tháng 2 = 30% của 8.000.000
+  ok: smart pool tháng 1 không âm (a=0 r=1755550 d=1244450)
+  ok: smart pool tháng 2 không âm (a=2400000 r=0 d=0)
+invalidation price: 572.9165064495593
+--- Sau invalidation + release tự động ---
+  ladder status: INVALIDATED | zones: 0:EXECUTED,1:PARTIALLY_FILLED,2:CANCELLED
+  smart tháng 1 (2026-06): {"a":1755550,"r":0,"d":1244450}
+  smart tháng 2 (2026-07): {"a":2400000,"r":0,"d":0}
+  ok: smart pool tháng 1 sau invalidation/release không âm (a=1755550 r=0 d=1244450)
+  ok: smart pool tháng 2 sau invalidation/release không âm (a=2400000 r=0 d=0)
+  ok: TOTAL smart tháng 1 (tự thân, a+r+d) vẫn = 3.000.000 sau release — không tiền nào bị nhân bản/mất theo phép cộng thô
+  ok: TOTAL smart tháng 2 (tự thân, a+r+d) không đổi — phần release chỉ dịch chuyển RESERVED<->AVAILABLE trong nội bộ tháng 2, không đổi tổng của tháng 2
+  reserved còn kẹt ở tháng 1 sau release (phải về 0 nếu đúng): 0
+  reserved tháng 1 TRƯỚC release: 1755550
+
+--- KẾT LUẬN CHECK-C1-06 (bất biến kế toán đa tháng) ---
+Bất biến thô "TOTAL(tháng) = A+R+D không đổi trừ contribution mới, không pool âm" GIỮ ĐÚNG ở CẢ HAI tháng qua toàn bộ chuỗi full-fill -> partial-fill -> contribution tháng mới -> invalidation -> release.
+Không quan sát thấy dấu hiệu kẹt vốn/lệch tháng trong lần chạy này.
+  ok: không có page error trong toàn bộ kịch bản: 
+
+Tất cả assertion PASS. Bất biến TOTAL=A+R+D + non-negative giữ đúng qua toàn bộ kịch bản đa tháng (E1).
+
+=== CA 1 — release đa tháng: ownership isolation / active backing / upper bound ===
+  OSCORE sau chuỗi ngày giảm: 85.284 | Smart unlock: 100.000%
+  ok: dựng được trạng thái có Smart unlock > 0 qua đường nhập giá thật
+  ldMsg (LA, tháng A 2026-05, cap = 3000000.00 ): Đã tạo ladder SMART với spacing 9.68%.
+  ok: LA được tạo ở tháng A
+  ok: LA mang tháng sở hữu tường minh = 2026-05 (thực tế: 2026-05)
+  ldMsg (LB, tháng B 2026-06): Đã tạo ladder SMART với spacing 9.68%.
+  ok: LB mang tháng sở hữu = 2026-06
+  trước huỷ LA — A: {"a":0,"r":3000000,"d":0} B: {"a":0,"r":3000000,"d":0} C: {"a":3000000,"r":0,"d":0}
+  ok: reserve của LA nằm ở tháng A
+  ok: tháng C (currentMonth) chưa reserve gì
+  sau huỷ LA  — A: {"a":3000000,"r":0,"d":0} B: {"a":0,"r":3000000,"d":0} C: {"a":3000000,"r":0,"d":0}
+  ok: A: reserved tháng A về 0 sau khi LA bị huỷ (không kẹt vốn)
+  ok: A: vốn của LA quay về available của CHÍNH tháng A
+  ok: A: pool tháng B KHÔNG bị đụng tới bởi release của ladder tháng A
+  ok: A: pool tháng C (currentMonth) KHÔNG nhận nhầm vốn của tháng A
+  ok: B: LB vẫn ACTIVE
+  ok: B — reserved tháng 2026-06 (3000000) đủ backing cho ladder ACTIVE của chính tháng đó (3000000)
+  ok: B — reserved tháng 2026-05 (0) đủ backing cho ladder ACTIVE của chính tháng đó (0)
+  ledger RELEASE: [{"ts":"2026-09-05T12:27:50.993Z","pool":"SMART","type":"RELEASE","vnd":3000000,"month":"2026-05","ladder":"L1-mtocywc4","reason":"LADDER_RELEASE"}]
+  ok: C: đúng một bút toán RELEASE, ghi nhận tháng sở hữu 2026-05
+  ok: C: RELEASE ghi đúng số thực sự dịch chuyển (3000000)
+  ok: C: không có shortfall — reserve của owner đủ
+  ok: D — TOTAL smart 2026-05 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-05 không âm (a=3000000 r=0 d=0)
+  ok: D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-06 không âm (a=0 r=3000000 d=0)
+  ok: D — TOTAL smart 2026-07 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-07 không âm (a=3000000 r=0 d=0)
+  ok: C: ladder đã CANCELLED không release lần thứ hai
+  ok: không có page error: 
+
+=== CA 2 — fill zone khi currentMonth() đã sang tháng khác ===
+  ok: tạo được ladder tháng A: Đã tạo ladder SMART với spacing 9.68%.
+  buyMsg: Đã ghi 0,190923 ETH · shortfall +0 bps · SMART zone 0 → EXECUTED
+  ok: zone 0 EXECUTED sau fill toàn phần
+  A: {"a":0,"r":2010000,"d":990000} | B: {"a":3000000,"r":0,"d":0}
+  ok: A: DEPLOYED tăng ở tháng SỞ HỮU ladder (2026-05)
+  ok: A: dịch chuyển thuần RESERVED -> DEPLOYED trong tháng A
+  ok: A: pool tháng B (currentMonth) không bị đụng khi fill zone của ladder tháng A
+  ok: D — TOTAL smart 2026-05 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-05 không âm (a=0 r=2010000 d=990000)
+  ok: D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-06 không âm (a=3000000 r=0 d=0)
+  ok: C: chỉ phần CHƯA fill (2010000) được trả về available tháng A
+  ok: C: phần đã deploy không bị trả lại
+  ok: C: không còn reserved kẹt ở tháng A
+  ok: D — TOTAL smart 2026-05 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-05 không âm (a=2010000 r=0 d=990000)
+  ok: D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-06 không âm (a=3000000 r=0 d=0)
+  ok: không có page error: 
+
+=== CA 3 — unlock giới hạn reserve (Strategy §12) ===
+  unlock ban đầu: 0.000% (OSCORE 30.742)
+  ok: seed cho Smart unlock = 0 — đúng tiền đề counterexample V-02
+  ldMsg (cap = 100% available, unlock 0%): Vượt phần đã unlock (0.0%): tối đa 0 ₫ được reserve lúc này (Strategy §12).
+  ok: V-02: bị từ chối với lý do vượt phần đã unlock
+  ok: V-02: không ladder nào được tạo
+  ok: V-02: pool không bị đụng tới khi reserve bị từ chối (fail closed, không side effect)
+  unlock sau 3 ngày giảm: 16.9748%
+  ok: dựng được trạng thái unlock cục bộ (0 < unlock < 1): 0.16974821379030963
+  ldMsg (cap = 101% hạn mức): Vượt phần đã unlock (17.0%): tối đa 509.245 ₫ được reserve lúc này (Strategy §12).
+  ok: biên trên: cap vượt 1% hạn mức bị từ chối
+  ok: biên trên: không ladder nào được tạo khi vượt
+  ldMsg (cap = 99,9% hạn mức): Đã tạo ladder SMART với spacing 7.49%.
+  ok: biên trên: cap ngay dưới hạn mức được chấp nhận
+  ok: C: reserved (508735.39672955795) không vượt phần đã unlock (509244.6413709289)
+  ldMsg (reserve lần hai vượt phần còn lại): Vượt phần đã unlock (17.0%): tối đa 509 ₫ được reserve lúc này (Strategy §12).
+  ok: hạn mức unlock trừ đi phần đã reserve/deploy trong tháng (capital.py::smart_reservable)
+  ok: C: tổng reserved vẫn không vượt phần đã unlock sau hai lần thử
+  ok: D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: D — smart 2026-06 không âm (a=2491264.603270442 r=508735.39672955795 d=0)
+  ok: không có page error: 
+
+=== CA 4 — kịch bản sạch một tháng (không được đổi hành vi) ===
+  ok: tạo ladder trong tháng hiện hành: Đã tạo ladder SMART với spacing 9.68%.
+  ok: reserve đúng số vào tháng hiện hành
+  ok: F/D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: F/D — smart 2026-06 không âm (a=0 r=3000000 d=0)
+  zones: 0:EXECUTED,1:PARTIALLY_FILLED,2:ACTIVE
+  ok: F: zone 0 EXECUTED sau fill toàn phần
+  ok: F: zone 1 PARTIALLY_FILLED sau fill một phần
+  ok: F/D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: F/D — smart 2026-06 không âm (a=0 r=1515000.6035 d=1484999.3965)
+  ok: F/B — reserved tháng 2026-06 (1515000.6035) đủ backing cho ladder ACTIVE của chính tháng đó (1515000.6035000002)
+  sau huỷ: {"a":1515000.6035,"r":0,"d":1484999.3965}
+  ok: F: toàn bộ phần chưa fill được trả về available, không kẹt
+  ok: F/D — TOTAL smart 2026-06 = 3000000 (đo được 3000000)
+  ok: F/D — smart 2026-06 không âm (a=1515000.6035 r=0 d=1484999.3965)
+  ok: không có page error: 
+
+=== TỔNG KẾT T-09A ===
+assertion đã chạy: 68 | FAIL: 0
+T-09A INVARIANTS: PASS (A ownership · B backing · C upper bound · D conservation · E multi-month · F existing behavior)
+lần mở đầu (rules còn OWNER_UID_REQUIRED): UNRECOGNIZED | uid YC6tZvg0fAPY6RbxuI4jYDH702UZ
+  ok: dựng được Smart unlock > 0 qua nhập giá thật
+  ok: LA tạo được, mang ladder.month = 2026-06: Đã tạo ladder SMART với spacing 9.68%.
+  ok: LB tạo được: Đã tạo ladder SMART với spacing 9.68%.
+  sổ dựng xong: rev 22 | months 2026-05,2026-06 | ladders 2 | trades 3 | p2p 1 | ledger 13 | extraDays 12
+
+=== CHECK-T09B-01 — Firebase durable write thành công (server ack, bản ghi tồn tại phía Firebase) ===
+  ok: rev tăng 1 sau thao tác (22 -> 23)
+  ok: durableRev = rev sau khi máy chủ xác nhận
+  ok: UI báo "Đã lưu bền · rev N" đúng rev: Đã lưu bền · rev 23
+  ok: document ethdca/state tồn tại phía Firebase với rev 23
+  ok: document ethdca/seed tồn tại phía Firebase (420 ngày)
+  ok: bản durable = bản trong bộ nhớ, bit-exact
+  msg: Base 500 · Smart 300 · Opp 0 (overflow 200 sang Smart)
+  => CHECK-T09B-01: PASS
+
+=== CHECK-T09B-02 — App load đúng state từ Firebase — so từng trường MUST_PERSIST tầng 1 ===
+  ok: state nạp lên bằng đúng bản đã ghi ở CHECK-01 (0 lệch)
+  ok: trường schema bằng nhau
+  ok: trường rev bằng nhau
+  ok: trường months bằng nhau
+  ok: trường oppFund bằng nhau
+  ok: trường treasury bằng nhau
+  ok: trường eth bằng nhau
+  ok: trường costUsdt bằng nhau
+  ok: trường costVnd bằng nhau
+  ok: trường ladders bằng nhau
+  ok: trường trades bằng nhau
+  ok: trường p2p bằng nhau
+  ok: trường ledger bằng nhau
+  ok: trường extraDays bằng nhau
+  ok: seed nạp từ ethdca/seed -> OSCORE hiển thị
+  ok: không page error: 
+  => CHECK-T09B-02: PASS
+
+=== CHECK-T09B-05 — Purchase History (trades[]) bảo toàn — số phần tử, thứ tự, từng trường kể cả null ===
+  ok: trades[] đủ 3 phần tử
+  ok: trades[0].ts = "2026-09-05T12:28:05.972Z"
+  ok: trades[0].src = "SMART"
+  ok: trades[0].usdt = 23.3678
+  ok: trades[0].price = 203.99
+  ok: trades[0].recPrice = 204
+  ok: trades[0].eth = 0.11455365459091131
+  ok: trades[0].fee = 0
+  ok: trades[0].vndRate = 25445
+  ok: trades[0].vndCost = 594593.671
+  ok: trades[0].shortfallBps = -0.4901960784309267
+  ok: trades[0].zone = "SMART-0"
+  ok: trades[1].ts = "2026-09-05T12:28:06.155Z"
+  ok: trades[1].src = "SMART"
+  ok: trades[1].usdt = 11.6722
+  ok: trades[1].price = 200
+  ok: trades[1].recPrice = null
+  ok: trades[1].eth = 0.058361
+  ok: trades[1].fee = 0
+  ok: trades[1].vndRate = 25445
+  ok: trades[1].vndCost = 296999.129
+  ok: trades[1].shortfallBps = null
+  ok: trades[1].zone = "SMART-1"
+  ok: trades[2].ts = "2026-09-05T12:28:06.355Z"
+  ok: trades[2].src = "MANUAL"
+  ok: trades[2].usdt = 5
+  ok: trades[2].price = 199.5
+  ok: trades[2].recPrice = null
+  ok: trades[2].eth = 0.02506265664160401
+  ok: trades[2].fee = 0
+  ok: trades[2].vndRate = null
+  ok: trades[2].vndCost = 0
+  ok: trades[2].shortfallBps = null
+  ok: trades[2].zone = null
+  ok: có phần tử với recPrice/zone/vndRate = null — null được giữ nguyên, không bị xoá
+  => CHECK-T09B-05: PASS
+
+=== CHECK-T09B-06 — Holdings / average cost bảo toàn — eth, costUsdt, costVnd bằng đúng bit ===
+  ok: eth = 0.19797731123251533 (Object.is)
+  ok: costUsdt = 40.04 (Object.is)
+  ok: costVnd = 891592.8 (Object.is)
+  ok: holdings/cost khác 0 (ca kiểm có ý nghĩa)
+  => CHECK-T09B-06: PASS
+
+=== CHECK-T09B-07 — Accounting pools / reserve / release / available bảo toàn; TOTAL = A+R+D giữ nguyên ===
+  ok: 2026-05.contribution = 10000000
+  ok: 2026-05.oppAdded = 2000000
+  ok: 2026-05.oppOverflow = 0
+  ok: 2026-05.base.a = 5000000
+  ok: 2026-05.base.r = 0
+  ok: 2026-05.base.d = 0
+  ok: 2026-05.smart.a = 3000000
+  ok: 2026-05.smart.r = 0
+  ok: 2026-05.smart.d = 0
+  ok: 2026-06.contribution = 10001000
+  ok: 2026-06.oppAdded = 2000000
+  ok: 2026-06.oppOverflow = 200
+  ok: 2026-06.base.a = 5000500
+  ok: 2026-06.base.r = 0
+  ok: 2026-06.base.d = 0
+  ok: 2026-06.smart.a = 1200500
+  ok: 2026-06.smart.r = 909000.871
+  ok: 2026-06.smart.d = 890999.129
+  ok: oppFund.a = 4000000
+  ok: oppFund.r = 0
+  ok: oppFund.d = 0
+  ok: treasury.vnd = 15001000
+  ok: treasury.usdt = 156.46
+  ok: trước — 2026-05: TOTAL = A+R+D (10000000) = contribution 10000000
+  ok: trước — 2026-05 pool không âm
+  ok: trước — 2026-05 pool không âm
+  ok: trước — 2026-05: reserved đủ backing ladder ACTIVE của tháng
+  ok: trước — 2026-06: TOTAL = A+R+D (10001000) = contribution 10001000
+  ok: trước — 2026-06 pool không âm
+  ok: trước — 2026-06 pool không âm
+  ok: trước — 2026-06: reserved đủ backing ladder ACTIVE của tháng
+  ok: trước — oppFund = Σ oppAdded
+  ok: sau — 2026-05: TOTAL = A+R+D (10000000) = contribution 10000000
+  ok: sau — 2026-05 pool không âm
+  ok: sau — 2026-05 pool không âm
+  ok: sau — 2026-05: reserved đủ backing ladder ACTIVE của tháng
+  ok: sau — 2026-06: TOTAL = A+R+D (10001000) = contribution 10001000
+  ok: sau — 2026-06 pool không âm
+  ok: sau — 2026-06 pool không âm
+  ok: sau — 2026-06: reserved đủ backing ladder ACTIVE của tháng
+  ok: sau — oppFund = Σ oppAdded
+  ok: ca có reserved > 0 và deployed > 0 (reserve/deploy/release đều đã xảy ra)
+  => CHECK-T09B-07: PASS
+
+=== CHECK-T09B-08 — Active ladders + ladder.month + zones (filled_vnd/released_vnd, kể cả 0) bảo toàn ===
+  ok: ladders[] đủ 2 phần tử
+  ok: ladders[0].month = 2026-06
+  ok: ladders[0].id = "L1-mtocz8cn"
+  ok: ladders[0].type = "SMART"
+  ok: ladders[0].created = "2026-09-05T12:28:05.255Z"
+  ok: ladders[0].status = "ACTIVE"
+  ok: ladders[0].anchor_price = 480
+  ok: ladders[0].spacing_pct = 0.0967880275516243
+  ok: ladders[0].score_at_creation = 85.28440281297081
+  ok: ladders[0].eligible_capital_vnd = 1800000
+  ok: ladders[0].invalidation_price = 572.9165064495593
+  ok: ladders[0].consecutive_invalidation_closes = 0
+  ok: ladders[0].zones[0].index = 0
+  ok: ladders[0].zones[0].target_price = 480
+  ok: ladders[0].zones[0].allocation_pct = 0.33
+  ok: ladders[0].zones[0].target_vnd = 594000
+  ok: ladders[0].zones[0].status = "EXECUTED"
+  ok: ladders[0].zones[0].filled_vnd = 594000
+  ok: ladders[0].zones[0].released_vnd = undefined
+  ok: ladders[0].zones[1].index = 1
+  ok: ladders[0].zones[1].target_price = 433.54174677522036
+  ok: ladders[0].zones[1].allocation_pct = 0.33
+  ok: ladders[0].zones[1].target_vnd = 594000
+  ok: ladders[0].zones[1].status = "PARTIALLY_FILLED"
+  ok: ladders[0].zones[1].filled_vnd = 296999.129
+  ok: ladders[0].zones[1].released_vnd = undefined
+  ok: ladders[0].zones[2].index = 2
+  ok: ladders[0].zones[2].target_price = 387.08349355044066
+  ok: ladders[0].zones[2].allocation_pct = 0.34
+  ok: ladders[0].zones[2].target_vnd = 612000
+  ok: ladders[0].zones[2].status = "ACTIVE"
+  ok: ladders[0].zones[2].filled_vnd = 0
+  ok: ladders[0].zones[2].released_vnd = undefined
+  ok: ladders[1].month = 2026-06
+  ok: ladders[1].id = "L2-mtocz8o8"
+  ok: ladders[1].type = "SMART"
+  ok: ladders[1].created = "2026-09-05T12:28:05.672Z"
+  ok: ladders[1].status = "CANCELLED"
+  ok: ladders[1].anchor_price = 470
+  ok: ladders[1].spacing_pct = 0.0967880275516243
+  ok: ladders[1].score_at_creation = 85.28440281297081
+  ok: ladders[1].eligible_capital_vnd = 900000
+  ok: ladders[1].invalidation_price = 560.9807458985268
+  ok: ladders[1].consecutive_invalidation_closes = 0
+  ok: ladders[1].zones[0].index = 0
+  ok: ladders[1].zones[0].target_price = 470
+  ok: ladders[1].zones[0].allocation_pct = 0.33
+  ok: ladders[1].zones[0].target_vnd = 0
+  ok: ladders[1].zones[0].status = "CANCELLED"
+  ok: ladders[1].zones[0].filled_vnd = 0
+  ok: ladders[1].zones[0].released_vnd = 297000
+  ok: ladders[1].zones[1].index = 1
+  ok: ladders[1].zones[1].target_price = 424.5096270507366
+  ok: ladders[1].zones[1].allocation_pct = 0.33
+  ok: ladders[1].zones[1].target_vnd = 0
+  ok: ladders[1].zones[1].status = "CANCELLED"
+  ok: ladders[1].zones[1].filled_vnd = 0
+  ok: ladders[1].zones[1].released_vnd = 297000
+  ok: ladders[1].zones[2].index = 2
+  ok: ladders[1].zones[2].target_price = 379.01925410147317
+  ok: ladders[1].zones[2].allocation_pct = 0.34
+  ok: ladders[1].zones[2].target_vnd = 0
+  ok: ladders[1].zones[2].status = "CANCELLED"
+  ok: ladders[1].zones[2].filled_vnd = 0
+  ok: ladders[1].zones[2].released_vnd = 306000
+  ok: có zone với filled_vnd: 0 — khoá giá trị 0 không bị xoá
+  ok: có ladder ACTIVE và ladder CANCELLED với released_vnd > 0
+  => CHECK-T09B-08: PASS
+
+=== CHECK-T09B-04 — Đóng/mở lại trình duyệt cùng profile (IndexedDB còn) — state phục hồi, bất biến T-09A giữ ===
+  ok: cùng Anonymous UID sau khi mở lại: YC6tZvg0fAPY6RbxuI4jYDH702UZ
+  ok: rev nạp lên = rev bền 23
+  ok: state kế toán phục hồi đầy đủ, bit-exact
+  ok: sau mở lại — 2026-05: TOTAL = A+R+D (10000000) = contribution 10000000
+  ok: sau mở lại — 2026-05 pool không âm
+  ok: sau mở lại — 2026-05 pool không âm
+  ok: sau mở lại — 2026-05: reserved đủ backing ladder ACTIVE của tháng
+  ok: sau mở lại — 2026-06: TOTAL = A+R+D (10001000) = contribution 10001000
+  ok: sau mở lại — 2026-06 pool không âm
+  ok: sau mở lại — 2026-06 pool không âm
+  ok: sau mở lại — 2026-06: reserved đủ backing ladder ACTIVE của tháng
+  ok: sau mở lại — oppFund = Σ oppAdded
+  ok: seed phục hồi -> OSCORE hiển thị
+  ok: tiếp tục ghi sổ được sau khi mở lại (rev 24 bền)
+  => CHECK-T09B-04: PASS
+
+=== CHECK-T09B-03 — Xoá localStorage + sessionStorage vẫn recover được state từ Firebase ===
+  ok: localStorage + sessionStorage trống
+  ok: identity (IndexedDB) còn nguyên: cùng UID
+  ok: state kế toán phục hồi đầy đủ từ Firestore, bit-exact
+  ok: seed phục hồi từ ethdca/seed
+  ok: không có banner lệch bản (mirror đã bị xoá, nguồn bền là sự thật)
+  => CHECK-T09B-03: PASS
+
+=== CHECK-T09B-14 — Workflow cá nhân: mở app, nhập giá đóng cửa, ghi giao dịch, đóng, mở lại — chỉ trình duyệt ===
+  ok: nhập giá đóng cửa qua UI: Đã thêm 2026-07-12.
+  ok: ghi giao dịch qua UI: Đã ghi 0,015132 ETH
+  ok: hai thao tác -> hai rev, đều đã bền
+  ok: mở lại: rev 26
+  ok: giá đóng cửa vừa nhập còn nguyên
+  ok: giao dịch vừa ghi còn nguyên trong Purchase History
+  ok: tab Lịch sử hiện đủ 4 lệnh
+  => CHECK-T09B-14: PASS
+
+=== CHECK-T09B-10 — Firebase write failure visible — rules từ chối ghi, và mất mạng ===
+  ok: lệnh ghi bị từ chối: lastError = permission-denied
+  ok: durableRev giữ 26, rev cục bộ 27
+  ok: chip KHÔNG hàm ý đã lưu: "CHƯA LƯU — permission-denied"
+  ok: banner "GHI THẤT BẠI" hiện
+  ok: bản local (rev 27) vẫn còn trong localStorage để cứu
+  ok: phía Firebase KHÔNG đổi (rev 26)
+  ok: nút Lưu lại được bật
+  ok: Lưu lại thành công sau khi rules cho phép: rev 27 bền
+  ok: chip về "Đã lưu bền", banner lỗi biến mất
+  ok: không ack: trạng thái visible (unconfirmed=true, lastError=null), durableRev giữ 27
+  ok: không lúc nào chip hàm ý đã lưu khi mất mạng: ["Đang lưu lên Firestore…","CHƯA XÁC NHẬN — máy chủ chưa trả lời"]
+  ok: chip: "CHƯA XÁC NHẬN — máy chủ chưa trả lời"
+  ok: banner "CHƯA XÁC NHẬN"/"GHI THẤT BẠI" hiện
+  ok: phía Firebase chưa nhận bản mới
+  ok: bản local (rev 28) vẫn còn để cứu
+  ok: có mạng lại: tự ghi lại thành công, rev 28 bền
+  => CHECK-T09B-10: PASS
+
+=== CHECK-T09B-16 — localStorage.rev > durable.rev — mirror không âm thầm thành sổ; chọn tường minh ===
+  ok: sổ chính thức = nguồn bền (rev 28), KHÔNG phải mirror rev 33
+  ok: app đánh dấu có bản mirror mới hơn
+  ok: banner lệch bản hiện, kèm hai nút chọn
+  ok: mirror đã được thay bằng bản bền
+  ok: bản mirror mới hơn được cất riêng (rev 33), không mất
+  ok: Bỏ bản trên máy: banner tắt, stash xoá
+  ok: nguồn bền không đổi
+  ok: lệch bản lại được phát hiện (rev 33)
+  ok: đẩy lên: bản bền nay là rev 34 (> 33)
+  ok: nội dung bản trên máy đã thành bản bền (treasury +123456)
+  ok: banner tắt sau khi chọn
+  ok: tab stale bị từ chối: lastError=stale-durable, máy chủ đang ở rev 35
+  ok: phía Firebase vẫn là bản của tab A (rev 35), không bị tab stale ghi đè
+  ok: tab B hiện rõ: không ghi đè, chưa lưu bền
+  ok: mirror cũ hơn bị thay bằng bản bền (rev 35), không banner
+  => CHECK-T09B-16: PASS
+
+=== CHECK-T09B-11 — Firebase read failure visible — UID lạ bị rules từ chối; Firestore không với tới; Auth thất bại ===
+  ok: UID mới NFLequPnWLZZFnuaqByzavOc5vZb -> phase UNRECOGNIZED (không phải ONLINE với sổ rỗng)
+  ok: banner "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ/TRÌNH DUYỆT NÀY"
+  ok: không dùng chung thông điệp với lỗi mạng
+  ok: không hiện sổ rỗng như sổ hợp lệ: chưa nạp gì
+  ok: ghi sổ bị chặn: "Không ghi sổ — nguồn bền: không nhận diện thiết bị. Xem banner đầu trang."
+  ok: phía Firebase không đổi (sổ thật còn nguyên)
+  ok: chip: KHÔNG GHI SỔ — không nhận diện thiết bị
+  ok: không page error: 
+  ok: phase OFFLINE (unavailable)
+  ok: banner đỏ "KHÔNG ĐỌC ĐƯỢC NGUỒN BỀN"
+  ok: mirror hiển thị nhưng ĐÁNH DẤU chưa xác nhận
+  ok: ghi sổ bị chặn khi OFFLINE
+  ok: phase AUTH_FAILED (auth/network-request-failed)
+  ok: banner "KHÔNG XÁC THỰC ĐƯỢC"
+  ok: ghi sổ bị chặn khi AUTH_FAILED
+  ok: chip: KHÔNG GHI SỔ — xác thực thất bại
+  ok: phase UNCONFIGURED khi config còn REQUIRED
+  ok: banner "CHƯA CẤU HÌNH FIREBASE"
+  ok: ghi sổ bị chặn khi UNCONFIGURED
+  ok: mở lại bình thường: sổ nguyên vẹn rev 35
+  => CHECK-T09B-11: PASS
+
+=== CHECK-T09B-15 — Ladder không mang `month` (pre-T09A) sống sót round-trip; banner THÁNG SỞ HỮU SUY LUẬN vẫn hiện ===
+  ok: nạp được sổ lịch sử (không bị coi là corrupt)
+  ok: banner "THÁNG SỞ HỮU SUY LUẬN" hiện
+  ok: sau khi nạp: không ladder nào bị backfill month
+  ok: sau khi ghi lên lại: ladders[] vẫn KHÔNG có `month` (không backfill)
+  ok: banner vẫn hiện sau round-trip
+  ok: ladder lịch sử nguyên vẹn sau round-trip
+  => CHECK-T09B-15: PASS
+
+=== CHECK-T09B-12 — Durable state malformed/corrupt không thành accounting state; bản durable không bị ghi đè ===
+  ok: (a) thiếu `schema`: phase CORRUPT — thiếu hoặc sai `schema` (null)
+  ok: (a) thiếu `schema`: lý do nêu đúng lỗi
+  ok: (a) thiếu `schema`: không nạp thành accounting state (rev 0)
+  ok: (a) thiếu `schema`: banner đỏ, nói rõ không ghi đè
+  ok: (a) thiếu `schema`: ghi sổ bị chặn
+  ok: (a) thiếu `schema`: bản durable KHÔNG bị ghi đè
+  ok: (a) thiếu `schema`: chip "KHÔNG GHI SỔ — nguồn bền không hợp lệ"
+  ok: (b) `months` sai kiểu (mảng): phase CORRUPT — `months` sai kiểu
+  ok: (b) `months` sai kiểu (mảng): lý do nêu đúng lỗi
+  ok: (b) `months` sai kiểu (mảng): không nạp thành accounting state (rev 0)
+  ok: (b) `months` sai kiểu (mảng): banner đỏ, nói rõ không ghi đè
+  ok: (b) `months` sai kiểu (mảng): ghi sổ bị chặn
+  ok: (b) `months` sai kiểu (mảng): bản durable KHÔNG bị ghi đè
+  ok: (b) `months` sai kiểu (mảng): chip "KHÔNG GHI SỔ — nguồn bền không hợp lệ"
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: phase CORRUPT — tháng 2026-06: TOTAL = A+R+D bị vi phạm (base+smart+oppAdded = 10255000 ≠ contribution 10005000)
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: lý do nêu đúng lỗi
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: không nạp thành accounting state (rev 0)
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: banner đỏ, nói rõ không ghi đè
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: ghi sổ bị chặn
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: bản durable KHÔNG bị ghi đè
+  ok: (c) đủ khoá nhưng TOTAL = A+R+D bị vi phạm: chip "KHÔNG GHI SỔ — nguồn bền không hợp lệ"
+  ok: (d) reserved âm: phase CORRUPT — pool base/smart tháng 2026-06 thiếu a/r/d, không hữu hạn hoặc âm
+  ok: (d) reserved âm: lý do nêu đúng lỗi
+  ok: (d) reserved âm: không nạp thành accounting state (rev 0)
+  ok: (d) reserved âm: banner đỏ, nói rõ không ghi đè
+  ok: (d) reserved âm: ghi sổ bị chặn
+  ok: (d) reserved âm: bản durable KHÔNG bị ghi đè
+  ok: (d) reserved âm: chip "KHÔNG GHI SỔ — nguồn bền không hợp lệ"
+  ok: khôi phục bản hợp lệ -> ONLINE lại bình thường
+  => CHECK-T09B-12: PASS
+
+=== TỔNG KẾT T-09B (file này) ===
+  CHECK-T09B-01: PASS — Firebase durable write thành công (server ack, bản ghi tồn tại phía Firebase)
+  CHECK-T09B-02: PASS — App load đúng state từ Firebase — so từng trường MUST_PERSIST tầng 1
+  CHECK-T09B-03: PASS — Xoá localStorage + sessionStorage vẫn recover được state từ Firebase
+  CHECK-T09B-04: PASS — Đóng/mở lại trình duyệt cùng profile (IndexedDB còn) — state phục hồi, bất biến T-09A giữ
+  CHECK-T09B-05: PASS — Purchase History (trades[]) bảo toàn — số phần tử, thứ tự, từng trường kể cả null
+  CHECK-T09B-06: PASS — Holdings / average cost bảo toàn — eth, costUsdt, costVnd bằng đúng bit
+  CHECK-T09B-07: PASS — Accounting pools / reserve / release / available bảo toàn; TOTAL = A+R+D giữ nguyên
+  CHECK-T09B-08: PASS — Active ladders + ladder.month + zones (filled_vnd/released_vnd, kể cả 0) bảo toàn
+  CHECK-T09B-10: PASS — Firebase write failure visible — rules từ chối ghi, và mất mạng
+  CHECK-T09B-11: PASS — Firebase read failure visible — UID lạ bị rules từ chối; Firestore không với tới; Auth thất bại
+  CHECK-T09B-12: PASS — Durable state malformed/corrupt không thành accounting state; bản durable không bị ghi đè
+  CHECK-T09B-14: PASS — Workflow cá nhân: mở app, nhập giá đóng cửa, ghi giao dịch, đóng, mở lại — chỉ trình duyệt
+  CHECK-T09B-15: PASS — Ladder không mang `month` (pre-T09A) sống sót round-trip; banner THÁNG SỞ HỮU SUY LUẬN vẫn hiện
+  CHECK-T09B-16: PASS — localStorage.rev > durable.rev — mirror không âm thầm thành sổ; chọn tường minh
+  CHECK-T09B-09: xem test_t09a_accounting.js + test_multi_month_invariant.js + test_v01_v02_v03.js (readState = durable)
+  CHECK-T09B-13: xem `npm --prefix webapp test` + `git diff --stat -- webapp/engine.js`
+assertion đã chạy: 285 | FAIL: 0 | page errors: 0
+T-09B PERSISTENCE: PASS (14/14 check trong file này, E1 trên Firebase Emulator Suite)

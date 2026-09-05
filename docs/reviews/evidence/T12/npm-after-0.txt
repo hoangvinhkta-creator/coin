@@ -1,0 +1,15 @@
+
+> test
+> node test_app.js && node test_zone.js && node test_v01_v02_v03.js && node test_multi_month_invariant.js && node test_t09a_accounting.js && node test_t09b_persistence.js
+
+-- initial banners: SỔ MỚIChưa có bản bền nào trên Firestore cho UID này. Thao tác đầu tiên sẽ tạo. Có dữ liệu cũ? Nạp lại từ JSON ở tab Thi
+-- save chip before seed: CHƯA LƯU
+/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269
+    if (Date.now() - t0 > (timeout || 20000)) throw new Error('waitSaved timeout; now ' + JSON.stringify(st));
+                                                    ^
+
+Error: waitSaved timeout; now {"phase":"ONLINE","detail":"","uid":"VUn5u3JjKMQEMDIOSyCfyosUwn8Y","projectId":"demo-ethdca","rev":0,"durableRev":null,"saving":false,"unconfirmed":false,"lastError":null,"seedPending":false,"seedDurable":false,"diverged":false,"mirrorShown":false,"hasSeed":false}
+    at Object.waitSaved (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269:53)
+    at async /Users/hoangvinh/Documents/coin/webapp/test_app.js:36:3
+
+Node.js v24.19.0

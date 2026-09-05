@@ -1,0 +1,124 @@
+PASS P-1/P-2 Bundle thật; opening + 8 event qua UI; 2 treasury, 2 PLAN, EXTRA, RESERVE contribution/buy, PRICE.
+PASS P-3 Sửa giữ id/seq; hard delete có snapshot; nhập muộn ngày 04/02 khi thao tác 21/03.
+PASS P-4 Server ACK mỗi thao tác; REST ethdca/state bit-exact với mirror; oracle số nguyên tolerance=0.
+PASS P-5 Reload tự replay; dashboard/holdings/giá vốn khớp oracle tính tay.
+PASS P-6 Payload durable allowlist canonical; không derived truth.
+PASS INV-1/14 import Snapshot đầy đủ trước import; derivedSnapshot bị bỏ; tiền không trôi.
+PASS SC-12 production Legacy read-only → xác nhận ngày → snapshot → migration W-1 → server ACK → reload, UNKNOWN thấy được.
+PASS Migration M-1 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS Migration M-2 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS Migration M-3 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS Migration M-4 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS INV-14 hủy wipe Hủy sau snapshot vẫn giữ toàn bộ durable.
+PASS Persistence offline Offline chỉ xem mirror, không ghi; online reload lấy server.
+PASS Persistence rejected write/retry Permission denied không báo đã lưu; REST không đổi; retry sau khôi phục rules có ACK.
+PASS Persistence stale rev Tab cũ không ghi đè server revision mới hơn.
+PASS Persistence corrupt/version Unknown schema bị khóa, xuất raw đầy đủ, không wipe/backfill.
+PASS Persistence browser restart Đóng/mở Chrome cùng profile giữ Anonymous UID; load server bit-exact.
+{
+  "results": [
+    {
+      "name": "P-1/P-2",
+      "status": "PASS",
+      "detail": "Bundle thật; opening + 8 event qua UI; 2 treasury, 2 PLAN, EXTRA, RESERVE contribution/buy, PRICE."
+    },
+    {
+      "name": "P-3",
+      "status": "PASS",
+      "detail": "Sửa giữ id/seq; hard delete có snapshot; nhập muộn ngày 04/02 khi thao tác 21/03."
+    },
+    {
+      "name": "P-4",
+      "status": "PASS",
+      "detail": "Server ACK mỗi thao tác; REST ethdca/state bit-exact với mirror; oracle số nguyên tolerance=0."
+    },
+    {
+      "name": "P-5",
+      "status": "PASS",
+      "detail": "Reload tự replay; dashboard/holdings/giá vốn khớp oracle tính tay."
+    },
+    {
+      "name": "P-6",
+      "status": "PASS",
+      "detail": "Payload durable allowlist canonical; không derived truth."
+    },
+    {
+      "name": "INV-1/14 import",
+      "status": "PASS",
+      "detail": "Snapshot đầy đủ trước import; derivedSnapshot bị bỏ; tiền không trôi."
+    },
+    {
+      "name": "SC-12 production",
+      "status": "PASS",
+      "detail": "Legacy read-only → xác nhận ngày → snapshot → migration W-1 → server ACK → reload, UNKNOWN thấy được."
+    },
+    {
+      "name": "Migration M-1",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "Migration M-2",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "Migration M-3",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "Migration M-4",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "INV-14 hủy wipe",
+      "status": "PASS",
+      "detail": "Hủy sau snapshot vẫn giữ toàn bộ durable."
+    },
+    {
+      "name": "Persistence offline",
+      "status": "PASS",
+      "detail": "Offline chỉ xem mirror, không ghi; online reload lấy server."
+    },
+    {
+      "name": "Persistence rejected write/retry",
+      "status": "PASS",
+      "detail": "Permission denied không báo đã lưu; REST không đổi; retry sau khôi phục rules có ACK."
+    },
+    {
+      "name": "Persistence stale rev",
+      "status": "PASS",
+      "detail": "Tab cũ không ghi đè server revision mới hơn."
+    },
+    {
+      "name": "Persistence corrupt/version",
+      "status": "PASS",
+      "detail": "Unknown schema bị khóa, xuất raw đầy đủ, không wipe/backfill."
+    },
+    {
+      "name": "Persistence browser restart",
+      "status": "PASS",
+      "detail": "Đóng/mở Chrome cùng profile giữ Anonymous UID; load server bit-exact."
+    }
+  ],
+  "oracle": {
+    "holdings.ETH.qty": 104000000,
+    "holdings.ETH.costUsdt": 2550600000,
+    "holdings.ETH.costVnd": 64351292,
+    "usdt.qty": 249400000,
+    "usdt.costVnd": 6248708,
+    "reserve.balance": 7494504,
+    "month.monthlyBudgetVnd": 20000000,
+    "month.carryInVnd": 10659700,
+    "month.plannedBudgetVnd": 30659700,
+    "month.investedThisMonthVnd": 5010992,
+    "month.planInvestedVnd": 0,
+    "month.remainingPlannedBudgetVnd": 30659700,
+    "month.nextPlannedDate": "2026-03-23",
+    "month.nextPlannedAmountVnd": 20000000
+  },
+  "realEventsCreated": 10,
+  "errors": []
+}

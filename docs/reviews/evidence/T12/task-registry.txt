@@ -1,0 +1,61 @@
+# task registry snapshot @ working tree
+
+## task definition files
+docs/tasks/T-01-kiem-ke-hien-trang.md
+docs/tasks/T-02-doi-chieu-engine-voi-spec.md
+docs/tasks/T-03-soat-app-web-va-rui-ro-du-lieu.md
+docs/tasks/T-04-chot-lo-trinh-va-dong-bang-tieu-chi.md
+docs/tasks/T-09A-sua-loi-ke-toan-app-web.md
+docs/tasks/T-09B-dung-luu-tru-du-lieu-ben.md
+docs/tasks/T-12-so-cai-l1-v2-va-derive.md
+docs/tasks/WP-A1-provenance-va-tai-lap.md
+docs/tasks/WP-A2-dau-noi-hang-muc-vao-pipeline.md
+docs/tasks/WP-A3-regime-va-vong-doi-ladder.md
+docs/tasks/WP-A4-ngu-nghia-du-lieu-xau.md
+docs/tasks/WP-A5-instrumentation-failure-signal.md
+docs/tasks/WP-A6-thu-tu-xu-ly-18-buoc.md
+docs/tasks/WP-A7-pham-vi-ke-toan-smart-theo-thang.md
+docs/tasks/WP-B1-chinh-sach-verdict-va-stopping-rule.md
+docs/tasks/WP-B2-bo-sung-test-requirement-con-thieu.md
+docs/tasks/WP-B3-audit-trail-decision-log.md
+docs/tasks/WP-C1-xac-minh-webapp-va-khoi-phuc-harness.md
+docs/tasks/WP-C2-execution-state-machine.md
+docs/tasks/WP-C3-partial-fill-tang-san-pham.md
+docs/tasks/WP-C4-mo-rong-parity-js-python.md
+docs/tasks/WP-D1-no-ky-thuat-khong-anh-huong-hanh-vi.md
+docs/tasks/WP-D2-de-xuat-v2-2-cho-khiem-khuyet-dac-ta.md
+
+count_task_files = 23
+
+## task IDs in the roadmap table
+T-00
+T-01
+T-02
+T-03
+T-04
+T-05
+T-06
+T-07
+T-08
+T-09A
+T-09B
+T-10
+T-11
+WP-A1
+WP-A2
+WP-A3
+WP-A4
+WP-A5
+WP-A6
+WP-A7
+WP-B1
+WP-B2
+WP-B3
+WP-C1
+WP-C2
+WP-C3
+WP-C4
+WP-D1
+WP-D2
+
+count_roadmap_task_ids = 29

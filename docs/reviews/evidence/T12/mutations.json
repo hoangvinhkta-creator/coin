@@ -1,0 +1,113 @@
+{
+  "baseline": "c610a29",
+  "total": 7,
+  "killed": 7,
+  "survivors": 0,
+  "results": [
+    {
+      "id": "INV-1",
+      "from": "return s;\n  }\n  function derive",
+      "to": "return Object.assign(s, { costVnd: 42 });\n  }\n  function derive",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot (7.56875ms)",
+        "✖ failing tests:",
+        "✖ INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot (7.56875ms)",
+        "  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+        "    actual: { schema: 'coindca.ledger/2', rev: 0, nextSeq: 5, plan: { startMonth: '2026-01', versions: [Array] }, openingPosition: { asOf: '2026-01-01', assets: [Array], usdt: [Object], vnd: [Object], reserveVnd: 0, note: 'Số dư tổng hợp SC-01; VND 100 triệu chỉ phục vụ P2P tổng hợp.' }, events: [ [Object], [Object], [Object], [Object] ], costVnd: 42 },",
+        "    expected: { schema: 'coindca.ledger/2', rev: 0, nextSeq: 5, plan: { startMonth: '2026-01', versions: [Array] }, openingPosition: { asOf: '2026-01-01', assets: [Array], usdt: [Object], vnd: [Object], reserveVnd: 0, note: 'Số dư tổng hợp SC-01; VND 100 triệu chỉ phục vụ P2P tổng hợp.' }, events: [ [Object], [Object], [Object], [Object] ] },"
+      ]
+    },
+    {
+      "id": "INV-3",
+      "from": "return exact(sign * ((2n * n + d) / (2n * d)));",
+      "to": "return exact(sign * (n / d));",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND (6.878125ms)",
+        "✖ failing tests:",
+        "✖ INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND (6.878125ms)",
+        "  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+        "    actual: 2,",
+        "    expected: 3,"
+      ]
+    },
+    {
+      "id": "INV-4",
+      "from": "if (out > usdt.qty) inconsistent(e);",
+      "to": "/* mutant: lose deficit flag */",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW (8.464375ms)",
+        "✖ failing tests:",
+        "✖ INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW (8.464375ms)",
+        "  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:",
+        "    actual: false,",
+        "    expected: true,"
+      ]
+    },
+    {
+      "id": "INV-9",
+      "from": "if (e.source === 'PLAN') planSpent[m]",
+      "to": "if (e.source !== 'PRICE') planSpent[m]",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm (6.947333ms)",
+        "✖ failing tests:",
+        "✖ INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm (6.947333ms)",
+        "  AssertionError [ERR_ASSERTION]: planInvestedVnd",
+        "    actual: 21000000,",
+        "    expected: 12000000,"
+      ]
+    },
+    {
+      "id": "INV-11",
+      "from": "return cost === null || total <= 0 || qty > total ? null",
+      "to": "return cost === null || total <= 0 || qty > total ? 0",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-11 null UNKNOWN lan truyền và không có kế hoạch (6.693792ms)",
+        "✖ failing tests:",
+        "✖ INV-11 null UNKNOWN lan truyền và không có kế hoạch (6.693792ms)",
+        "  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+        "    actual: 30000000,",
+        "    expected: null,"
+      ]
+    },
+    {
+      "id": "INV-12",
+      "from": "if (!result.ok) return result;",
+      "to": "if (!result.ok) { await hooks.commit(current); return result; }",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên (1.173792ms)",
+        "✖ failing tests:",
+        "✖ INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên (1.173792ms)",
+        "  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+        "    actual: 1,",
+        "    expected: 0,"
+      ]
+    },
+    {
+      "id": "INV-14",
+      "from": "await hooks.snapshot(clone(current));",
+      "to": "/* mutant: no snapshot */",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "✖ INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi (1.340833ms)",
+        "✖ failing tests:",
+        "✖ INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi (1.340833ms)",
+        "  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+        "    actual: [ 'confirm', 'import', 'commit' ],",
+        "    expected: [ 'snapshot', 'confirm', 'import', 'commit' ],"
+      ]
+    }
+  ]
+}

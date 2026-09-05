@@ -1,177 +1,255 @@
-# T-12 Implementation Report
+# T-12 Implementation Report — S034
 
-**Hiện hành DEC-045:** đã disposition cả hai nhóm; Ready Gate đánh giá duy nhất 17/17 PASS;
-T-12 IN_PROGRESS. Implementation đang thực hiện; chưa freeze, repair NOT_CONSUMED.
-Các phần discovery stop bên dưới là lịch sử; báo cáo implementation sẽ cập nhật trong cùng file.
-
-**Hiện hành sau DEC-044:** carry SC-04 đã sửa đúng 11.775.522 VND; một lượt preflight đủ 12 SC
-phát hiện hai nhóm CONTRACT_CONFLICT khác. T-12 vẫn BLOCKED, chưa implementation.
-Xem phần **Bổ sung S034 — DEC-044 và lượt golden consistency preflight duy nhất** cuối báo cáo.
-Phần 1–29 dưới đây giữ bản ghi lịch sử của lượt S034 trước DEC-044.
-
-Báo cáo phiên S034 — 2026-09-05. Kết quả: **OWNER_DECISION_REQUIRED**, dừng trước implementation.
+Hiện hành sau DEC-045 và implementation/repair. Phần 1–29 là báo cáo implementation hiện tại;
+phụ lục cuối giữ dấu vết hai lần discovery stop. Toàn bộ dữ liệu test là tổng hợp.
 
 ## 1. Executive Summary
 
-T-12 **chưa được thi hành**. `STATUS = OWNER_DECISION_REQUIRED`; task `READY → BLOCKED` ở DISCOVER. SC-04 yêu cầu remainingPlannedBudget(2026-02) = 7.090.822 VND, nhưng §11.2/§11.4 và DEC-042 bắt buộc 11.775.522 VND (carryIn = 4.684.700 VND).
+Đã dựng sổ cái L-1 `coindca.ledger/2` trên đường app hiện có, thay nguồn thật cộng dồn bằng
+`openingPosition + plan + events → derive`. 12/12 SC, 15/15 INV, 7/7 mutation bị diệt;
+P-1…P-6 PASS trên bundle thật với 10 event được tạo qua UI và server ACK/REST/reload.
+Migration W-1 hiển thị UNKNOWN; M-1…M-4 không ghi durable. Một repair cycle DEC-043 đã dùng.
 
-Đây là xung đột hợp đồng, không phải lỗi implementation hay lỗi công cụ. Không sửa spec/gate, không tạo fixture để ép xanh, không tiêu repair cycle.
+**Trạng thái: IMPLEMENTED + E2_REQUIRED. Full Python regression 678/678 PASS, exit 0.**
+Không tự chứng nhận E2, không DONE, không mở quyền ghi tiền thật.
 
 ## 2. Source / Branch / Base
 
-Ngày: 2026-09-05. Agent thực thi: Codex / GPT-6 Astra. Nhánh: `codex/t12-l1-ledger-impl`.
+Model thực thi: GPT-6 Astra / max theo yêu cầu Owner; cùng phiên S034, nhánh
+`codex/t12-l1-ledger-impl`. Base được Owner chỉ định: `7d1985aaf306294df49c9508078d5425da10f47e`.
+Mốc đo task: `91cfbba5e3af01d432c64369bb5a286f6461ab6a`.
+DEC-045 documentation commit: `2cf0e7c` (không golden). Golden: c610a299ed6b66dea3cd63372a0943967c93e95d.
+Repair HEAD: 2a2ab3f52c38eb30a0a8e0ee1791a95254ee9847. Không chuyển nhánh, không đổi main, không đọc `data/`.
 
-`HEAD = origin/main = 7d1985aaf306294df49c9508078d5425da10f47e`. Kiểm tra ban đầu PASS, tracked worktree CLEAN, ahead 0, behind upstream 0. Fetch trong sandbox ban đầu thất bại (`STALE_REMOTE`); `git fetch origin --prune` ngoài sandbox sau đó exit 0 và xác nhận base không đổi. Nhánh remote T-12 chưa tồn tại lúc kiểm tra trước commit. `data/` là untracked có sẵn, không đọc nội dung, không đưa vào commit.
-
-Runtime kiểm chứng số học: Python 3.9.6; Node v24.19.0. Không chạy emulator, không truy cập Firebase thật.
+Node v24.19.0; Python 3.11.16 trong `.venv`; Chrome hệ thống; Playwright 1.56.1;
+Firebase SDK 12.18.0 / CLI 15.28.2 đúng package-lock. JRE Temurin 21 trong /tmp phục vụ emulator.
+Không sửa dependency lock. npm ci/JRE download được chạy ngoài sandbox sau lỗi DNS trong sandbox.
+Emulator chỉ project `demo-ethdca`, Auth :9099, Firestore :8080. Không Firebase production/deploy.
 
 ## 3. Ready Gate
 
-17/17 là evidence lịch sử của S033. Phiên này **không tái xác nhận được Ready Gate 17/17**: không thể thực hiện đồng thời yêu cầu kế toán canonical và oracle SC-04. Không áp dụng `READY → IN_PROGRESS`. Quyền dừng nằm tại T-12 § Stop conditions: một số kỳ vọng SC mâu thuẫn spec → `OWNER_DECISION_REQUIRED` + `COMPLETION GATE CHANGE PROPOSAL`.
-
-Các quyền persistence/dữ liệu của DEC-043 vẫn đủ; dữ liệu thật không phải blocker. Routing đã tính lại: D/max, 3.1/3.65; validator routing PASS trên 20 MAJOR task.
-
-### Bằng chứng mâu thuẫn — E1 số học, không phải test production
-
-SC-01…SC-04 nối tiếp nhau theo ma trận SC của task. Kế hoạch chung bắt đầu 2026-01; opening 2026-01-01; ngân sách 20.000.000; CAPPED_CARRY cap 1. SC-03 ghi planInvested tháng 1 = 15.315.300. Khi tính tháng 2, tháng 1 đã đóng.
-
-| Đại lượng | Theo §11.2/§11.4 | SC-04 |
-|---|---:|---:|
-| carryOut tháng 1 | 4.684.700 | không ghi |
-| carryIn tháng 2 | 4.684.700 | không ghi |
-| plannedBudget tháng 2 | 24.684.700 | không ghi |
-| planInvested tháng 2 | 12.909.178 | 12.909.178 |
-| remainingPlannedBudget tháng 2 | **11.775.522** | **7.090.822** |
-
-Phép tính tái lập, chỉ dùng số nguyên/phân số, không phụ thuộc FX, đồng hồ, dữ liệu thật hoặc implementation:
-
-```python
-from fractions import Fraction
-budget = 20_000_000
-jan_invested = 15_315_300
-x = Fraction(500) * 28_384_700 / Fraction(10994, 10)
-relieved = (2*x.numerator + x.denominator) // (2*x.denominator)
-carry = min(max(0, budget-jan_invested), budget)
-remaining = max(0, budget+carry-relieved)
-print(relieved, carry, remaining, remaining-7_090_822)
-assert relieved == 12_909_178
-assert carry == 4_684_700
-assert remaining == 11_775_522
-assert remaining != 7_090_822
-```
-
-Đã chạy công thức tương đương trong phiên: `12909178 4684700 11775522 4684700`, exit 0. Con số WAC 12.909.178 của SC-04 đúng; mâu thuẫn nằm ở carry. Không tồn tại asOfDate thuộc tháng 2 vừa giữ tháng 1 chưa đóng. Không thể đổi plan.startMonth, opening.asOf hoặc thêm một trade tháng 1 để ép kỳ vọng mà vẫn giữ nguyên fixture nối SC-03.
-
-`CHECK-T12-08` đòi đúng tuyệt đối SC-04 trong khi `CHECK-T12-06`, Scope S-A10 và DEC-042 đòi carry canonical. Chưa chạy các check production; không ghi FAIL implementation giả.
+DEC-045 ghi cả Group A và Group B, đúng ID kế tiếp DEC-044. Tái đánh giá 17 prerequisite
+hiện hữu **đúng một lần**, 17/17 PASS; ghi tại task §Ready Gate.
+`BLOCKED → READY → IN_PROGRESS`; không broad preflight mới.
+Routing tính lại D/max (3.1/3.65), không manual override. Quyền persistence = DEC-043;
+ngữ nghĩa/oracle = DEC-042/044/045. Dữ liệu Owner không là prerequisite.
 
 ## 4. Pre-Implementation Production Map
 
-Đã đọc mã hiện tại:
+Trước thay đổi: `build_app.js` ghép shell + Firebase config + ENGINE + app_logic.
+`emptyState()` tạo ethdca.tracker/1; addP2P/addBuy/contribution sửa treasury/eth/cost trực tiếp;
+UI cũ gắn zone/ladder/score. `initPersistence()` đọc server, `persist()` transaction kiểm rev
+trước tx.set vào ethdca/state, localStorage chỉ mirror. Import/wipe thiếu snapshot.
 
-| Đường | Hiện trạng |
-|---|---|
-| build_app.js → app_final.html / public/index.html | Ghép shell + Firebase config + engine + app_logic |
-| app_logic.js:20 emptyState | ethdca.tracker/1; accumulator eth/costUsdt/costVnd/treasury, pools và ledger legacy |
-| app_logic.js:129 currentMonth | Chọn khoá tháng lớn nhất |
-| app_logic.js:454 render | Hiển thị từ state/view legacy |
-| app_logic.js:870 validateState | Chỉ nhận schema legacy |
-| app_logic.js:972 persist | Snapshot state → runTransaction → ethdca/state; kiểm rev trước tx.set; ghi nhận server ack |
-| app_logic.js:1165 initPersistence | Đọc ethdca/state và ethdca/seed với source: server, kiểm state |
-| test_firebase_harness.js | Playwright + SDK thật + Firestore/Auth emulator, rules repo; REST đối chứng |
-
-Đây là bản đồ từ đọc mã (E0), chưa phải trace P-1…P-6. Chưa có L-1 API/derive trong production.
+Sau thay đổi: bundle thêm ledger.js và ledger_ui.js. app_logic khởi tạo L-1, validate trước
+nhận nguồn bền, render adapter L-1, giữ nguyên transaction/rev/ACK/retry. Những handler tài chính
+legacy bị khóa, render/recompute chiến lược không còn đường vào L-1. Mã legacy giữ làm lịch sử,
+không được dùng để tạo truth mới hay giữ test cũ xanh.
 
 ## 5. Capability Boundary
 
-Giữ đúng T-12 / CAP-WEBAPP / lineage WP-C1. Bước A theo spec §24; B/C/D chưa mở. Không hấp thụ hạng mục, không task ID mới, không sửa research/strategy/Firebase/auth/Hosting. Xung đột được chuyển về Owner của chính T-12; không tạo task từ finding.
+Chỉ T-12 / CAP-WEBAPP, lineage root WP-C1; không task/capability mới.
+Hai module mới khai trong PROJECT/PRODUCTION_PATHS.md. Không đổi engine.js, src/eth_dca_os,
+docs/spec, pyproject*, Firebase config/rules/hosting/auth. Kế hoạch hoàn toàn từ Owner; không
+Research/Buy Score, notification, projection hay residual account ẩn. Adapter dùng class CSS
+hiện hữu, chỉ thêm các trường nghiệp vụ cần thiết; không thi hành bước B/C/D của L-1.
 
 ## 6. Change Budget
 
-Production **0 file, +0/−0**. Trần giữ +1.600/−450 và ≤7 file. Mốc đo task vẫn `91cfbba5e3af01d432c64369bb5a286f6461ab6a`; base phiên `7d1985a…` không thay thế nó. Không có diff production nên không tiêu budget.
+Task cap +1600/-450, tối đa 7 production file. Đo từ 91cfbba bằng danh sách production đã khai,
+không tính test/docs/build artifact. Production thực tế 5 file, +460/-7.
+Diff chi tiết §24; không CHANGE_BUDGET_EXCEEDED. Không dùng golden kế toán làm mốc đo budget.
+CAP-WEBAPP allowed2/used1/remaining1; T-12 chỉ được dùng 1 chu kỳ theo DEC-043, nay đã dùng.
 
 ## 7. Implemented Data Model
 
-NOT_TESTED / chưa cài đặt. Không schema mới xuống durable. Hợp đồng coindca.ledger/2 giữ nguyên.
+`schema, rev, nextSeq, plan, openingPosition, events` là durable L-1. `nextSeq` chỉ cấp thứ tự,
+không là tiền; edit giữ id/seq/createdAt, delete không hạ watermark, create dùng UUID.
+Event allowlist TREASURY/TRADE/RESERVE/PRICE; opening và event có validator riêng.
+VND nguyên, micro-USDT, ETH 1e-8; giới hạn 9×10^15. Payload dư field hoặc kiểu sai bị từ chối;
+`derivedSnapshot` bị bỏ. Legacy archive/RESEARCH_ONLY được giữ có nhãn, không được derive đọc.
 
 ## 8. derive() Semantics
 
-Chưa cài đặt. Contract mở ở SC-04/carry như §3; không chọn một phía bằng mã. Không tạo nguồn sự thật cạnh tranh.
+Hàm thuần nhận opening, plan, events, asOfDate; clone/sort businessDate+seq, không mutate input,
+không đồng hồ hay ENGINE. Replay một lượt cho quantities/cost/eventEffects; kế hoạch tính riêng
+từ relief của các BUY theo tháng. Holdings có cả future event; tháng hiện tại không lấy khóa
+tháng lớn nhất. Derived có exact ratios numerator/denominator dạng chuỗi BigInt; UI mới chuyển
+sang thập phân để hiển thị. Không average float làm thẩm quyền.
 
 ## 9. USDT WAC / VND Cost Basis
 
-Chưa cài đặt. Số học WAC riêng của SC-04 đã kiểm: ROUND_HALF_UP(500 × 28.384.700 / 1.099,4) = 12.909.178 VND. Đây không phải bằng chứng CHECK-T12-03 PASS.
+Relief = ROUND_VND(out×cost/qty) bằng BigInt trung gian, round-half-up tất định. Phí BUY vào
+out và hai cost basis; SELL ETH giảm cost theo tỷ lệ, USDT nhận về nhập pool theo WAC hiện có;
+pool rỗng không bịa basis. USDT_TO_VND giải phóng WAC và tính realizedFxVnd dẫn xuất.
+Full drain ép cost về0; conservation và ROUND được kiểm cả pool3USDT/cost10VND.
+SC-04 giữ relief12.909.178, qty599,4USDT/cost15.475.522VND; average sau ROUND lấy đúng hai số dư
+theo DEC-045, không ép tỷ số cũ bằng tolerance.
 
 ## 10. UNKNOWN Semantics
 
-Chưa cài đặt/chưa test. DEC-042 STRICT/FAIL-VISIBLE giữ nguyên; không thêm FX fallback, không chuyển UNKNOWN thành 0.
+`null` là UNKNOWN, hiển thị `—`; cộng/trừ với UNKNOWN tiếp tục UNKNOWN. Thiếu basis USDT
+không đổi lượng/giá vốn USDT của ETH. Prefix thiếu USDT ghi LEDGER_INCONSISTENT + id/ngày đầu
+tiên dù inflow muộn làm số dư cuối dương. Reserve rút âm cũng có cờ. Không event bù, không
+FX riêng per-trade, không đọc PRICE để sửa cost. Báo cáo W-1 liệt kê chỉ số legacy, lý do
+USDT basis thiếu và đường sửa openingPosition.usdt.costVnd hoặc TREASURY còn thiếu.
 
 ## 11. Date / Month / Ordering
 
-Chưa cài đặt. Mâu thuẫn chính cần Owner là carry tháng 1 sang tháng 2. Khi viết fixture về sau, SC-09/SC-10 cần ghi rõ phép kiểm carryOut tháng 3 được đánh giá ở thời điểm tháng đã đóng; input hiện nêu 18/03 và 21/03. Đây là điểm cần làm rõ thời điểm đánh giá, không kết luận thêm lỗi số học hay tự sửa scenario.
+Một clock L-1 trả instant metadata và today Asia/Ho_Chi_Minh; derive không hỏi giờ.
+Ngày nghiệp vụ dùng chuỗi và slice; calendar tháng/leap day viết bằng số nguyên. 150 hoán vị
+và hai process TZ UTC/America/Los_Angeles cho output bằng nhau. SC-08 qua instant UTC sang
+01/03. Carry chỉ chốt tháng đóng; SC-09/10 cùng ledger đánh giá A trong tháng3 và B ngày01/04.
+Schedule cũ không sửa hồi tố; version mới áp dụng từ tháng thay đổi trở đi. Split80 ngân sách
+×n1..12 bảo toàn tuyệt đối, phần cuối nhận dư.
 
 ## 12. Edit / Delete / Late Entry
 
-NOT_TESTED. Chưa thêm API edit/hard-delete/late-entry. Yêu cầu id/seq ổn định và snapshot giữ nguyên.
+UI có businessDate, opening, loại event, BUY/SELL, source, note RESERVE. Mọi edit/delete thay
+source và replay; 20edit giữ identity và createdAt, updatedAt thay đổi. Delete/create không
+reuse seq/id. Opening boundary được kiểm trước lưu. P-3 có sửa qty, xóa một P2P, nhập muộn;
+server/reload khớp oracle tính tay, không phép hoàn tác incremental. Snapshot trước delete và
+xóa opening; form opening/plan nạp đúng giá trị hiện hữu sau reload.
 
 ## 13. Migration
 
-NOT_TESTED. Không chạy migration; không có nguồn dữ liệu thật nào được đọc. M-1…M-4, W-1, bốn phân loại canonical và đối chiếu §17.3 vẫn nguyên vẹn.
+Legacy chỉ đọc khi nạp. Người dùng xác nhận ngày/thứ tự từng dòng, contribution đưa vào opening
+VND hoặc bỏ; không suy businessDate từ ts. P2P cộng/trừ fee thành hai chân actual; trade legacy
+luôn EXTRA, bỏ rate/vndCost/recPrice/zone. Đối chiếu ETH,USDT,VND,costUsdt theo §17.3 và ghi
+float delta; costVnd chỉ báo chênh, không chặn. M1 thiếu xác nhận; M2 prefix âm lượng; M3 lệch
+oracle; M4 filled zone: không ghi. W1 hoàn tất có UNKNOWN và báo cáo từng dòng. Toàn bộ raw
+legacy giữ trong LEGACY_ARCHIVE và snapshot; extraDays/seed.history RESEARCH_ONLY không chạm tiền.
 
 ## 14. Persistence
 
-NOT_TESTED cho T-12. Không đổi serializer, Firestore document, rules, auth hoặc Hosting. Không ghi durable.
+Giữ ethdca/state và transaction revision hiện hữu. Schema detect tất định; canonical + derive
+được kiểm trước nhận/lưu để không mutate state khi source không thể replay. Snapshot JSON đầy
+đủ gồm state/seed, lưu local và tải xuống trước confirm/import/wipe/migration/delete. Hủy/lỗi
+không ghi; storage snapshot lỗi thì dừng trước mutation.
+Server ACK mỗi thao tác, REST độc lập bit-exact; reload + same-profile Chrome restart giữ sổ.
+Đã kiểm reject/retry, offline mirror read-only, stale rev không đè server, corrupt schema khóa
+ghi và export raw. Không triển khai persistence production H-42.
 
 ## 15. T12 Golden Accounting Baseline
 
-**CHƯA TỒN TẠI.** 0 fixture SC được tạo/commit. T12_GOLDEN_ACCOUNTING_BASELINE_SHA là commit SHA theo DEC-043, không phải hash nội dung tuỳ chọn. Commit báo cáo của phiên này không phải freeze point vì không chứa fixture. Không đổi GOLDEN_BASELINE_SHA lịch sử T-06.
+T12_GOLDEN_ACCOUNTING_BASELINE_SHA = `c610a299ed6b66dea3cd63372a0943967c93e95d`.
+Fixture: webapp/test_t12_fixtures.js, đủ SC-01…SC-12, inputs/expected tách khỏi ledger.js.
+SHA256 file = `067de9228e8230cf38f2363f0cb40a8f2e2f7a3b0e77ce0439b9f6a125583509`.
+Không thay fixture sau freeze; SC-04 theo DEC-044/045, SC-09/10 có hai evaluation.
+T12_MEASURE_BASE_SHA và GOLDEN_BASELINE_SHA research V2.1.5 không bị đổi tên/thay thế.
+OWNER_LOCAL_ACCEPTANCE có schema + ví dụ tổng hợp + runner chỉ in PASS/FAIL; chưa chạy dữ liệu
+Owner. private/ đã ignore. Đây không là A-5 acceptance của Owner.
 
 ## 16. SC-01…SC-12 Results
 
-Tất cả **NOT_TESTED** trên production; chưa có golden suite.
+| SC | Kết quả E1 | Oracle nổi bật |
+|---|---|---|
+| SC-01 | PASS | opening ETH0,5, costUSDT1200, costVND30m; pool200/5m |
+| SC-02 | PASS | pool1200/cost30,6m; không đầu tư |
+| SC-03 | PASS | relief15.315.300; ETH0,75; pool599,4/cost15.284.700 |
+| SC-04 | PASS | relief12.909.178; remaining11.775.522; exact post-round ratio |
+| SC-05 | PASS | edit qty0,24 → tổng ETH0,94; cost không trôi |
+| SC-06 | PASS | delete P2P → relief12.750.000, pool99,4/cost2.534.700 |
+| SC-07 | PASS | nhập muộn04/02 đứng trước05/02; invested15.491.014 |
+| SC-08 | PASS | UTC28/02 18:30 → today01/03, carry tháng2 đã đóng |
+| SC-09 | PASS A+B | invested17m/plan12m/remain8m; A chưa carryOut, B carry8m |
+| SC-10 | PASS A+B | reserve6m/invested21m/plan12m; A chưa carryOut, B carry8m |
+| SC-11 | PASS | future holdings, tháng hiện tại không lấy kế hoạch tháng4 |
+| SC-12 | PASS | migration W1, lượng/USDT cost đúng, VND UNKNOWN, raw giữ nguyên |
 
-| SC | Kết quả |
-|---|---|
-| SC-01 | NOT_TESTED |
-| SC-02 | NOT_TESTED |
-| SC-03 | NOT_TESTED |
-| SC-04 | NOT_TESTED; xung đột carry xác minh ở §3 |
-| SC-05 | NOT_TESTED |
-| SC-06 | NOT_TESTED |
-| SC-07 | NOT_TESTED |
-| SC-08 | NOT_TESTED |
-| SC-09 | NOT_TESTED |
-| SC-10 | NOT_TESTED |
-| SC-11 | NOT_TESTED |
-| SC-12 | NOT_TESTED |
-
-Không lấy phép tính chẩn đoán làm SC PASS. Golden baseline chưa được đóng băng.
+Log: evidence/T12/unit.txt. Tolerance integer=0, ratio so tích chéo BigInt, không epsilon.
 
 ## 17. INV-1…INV-15 Coverage
 
-INV-1…INV-15: **0/15 test nhắm đích được tạo/chạy**; tất cả NOT_TESTED. Giữ ma trận frozen; đặc biệt INV-4, INV-7, INV-14, INV-15 không được bỏ khi triển khai lại.
+Mỗi INV có test đích danh trong webapp/test_t12_ledger.js (32 test gồm12 SC+15 INV+5 bổ sung):
+INV1 allowlist/import snapshot; INV2 150permutations+2TZ; INV3 drain/SELL/round/conservation;
+INV4 first prefix deficit/reserve; INV5 integer/range; INV6 metadata; INV7 opening boundary;
+INV8 P2P isolation; INV9 EXTRA/RESERVE plan/carry isolation; INV10 PRICE/noENGINE; INV11 UNKNOWN;
+INV12 M1…M4 atomicity; INV13 80×12split; INV14 snapshot before accept/cancel/fail; INV15 identity.
+Tất cả PASS E1; INV12/14 còn có REST production-harness evidence. E2 chưa thực hiện.
 
 ## 18. Mutation Evidence
 
-NOT_TESTED; **0/7** mutation bắt buộc (INV-1/3/4/9/11/12/14). Không mutation nào được làm yếu.
+webapp/test_t12_mutations.js sửa **source production thật** trong module tạm, chạy test chống
+lại mutant, kiểm exit1 và AssertionError; production working tree không bị mutation.
+7 KILLED / 0 SURVIVED: INV1 thêm durable costVnd; INV3 floor thay ROUND; INV4 bỏ deficit flag;
+INV9 EXTRA/RESERVE vào plan; INV11 UNKNOWN→0; INV12 ghi khi migrationfail; INV14 bỏ snapshot.
+Log evidence/T12/mutations.json chứa exact from/to và assertion thất bại.
 
 ## 19. Production Reachability P-1…P-6
 
-NOT_TESTED; **0 event, 0 case** qua production L-1. Anti-vacuity: không đạt PASS. Harness chưa chạy do hard-stop trước implementation; không dùng demo tách rời thay thế.
+webapp/test_t12_browser.js: app_final thật, SDK thật qua harness hiện có, Firestore emulator
+rules từ repo (chỉ thay UID trong bộ nhớ emulator). 10 event tạo bằng UI, không Node gọi update
+thay đường app; Node derive chỉ đối chứng read-only bên cạnh oracle tính tay và DOM.
+Opening +2 P2P+2 PLAN+EXTRA+RESERVEcontribution+RESERVEbuy+PRICE; sửa/xóa/nhập muộn qua UI.
+
+Oracle cuối: ETH1,04; costUSDT2.550,6; costVND64.351.292; USDT249,4/cost6.248.708;
+reserve7.494.504; tháng3 budget20m/carry10.659.700/planned30.659.700/invested5.010.992/plan0;
+remaining30.659.700; next23/03 amount20m.
+Tính tay: pool sau SC0325.500VND/USDT; sau xóa P2P và lateBUY50, FebBUY500 giải phóng
+1.275.000 và12.750.000. Pool tháng3 trước hai BUY100 =449,4USDT/cost11.259.700; mỗi relief
+2.505.496. Harness ban đầu nhầm25.000; đã sửa oracle **harness mới**, không đổi SC golden/code.
+
+P1…P6 PASS; 17 nhóm kiểm trình duyệt PASS, 0 page error; log evidence/T12/browser.txt.
 
 ## 20. Full Regression
 
-**NOT_TESTED**, do dừng trước implementation, production/test diff = 0. Không chạy npm test hoặc pytest; không deselect/skip/đánh NOT_APPLICABLE bất kỳ test nào. Không rerun T-06.
+Python trước: 678/678 PASS trong baseline canonical WP-B2 (report §16, 1153,20s);
+Python source/tests/lock không đổi trong T-12. Lần chạy hiện tại collected 678, passed 678 / failed 0 / errors 0 / skipped 0 / xfail 0 / xpass 0, exit 0.
+Lần thử đầu thiếu PYTHONPATH gây34collection errors (exit2); đã sửa môi trường bằng PYTHONPATH=src,
+không sửa test/module. Không deselect/skip/xfail thêm. Bằng chứng: evidence/T12/python.txt, python-result.json và python-collected.txt.
+Runner chạy double quiet nên không in dòng summary; 678 dấu PASS khớp 678 ca collected, exit 0.
 
-| Suite | collected | passed | failed | errors | skipped | xfail/xpass | exit code |
-|---|---|---|---|---|---|---|---|
-| npm test | chưa đo | chưa đo | chưa đo | chưa đo | chưa đo | chưa đo | chưa chạy |
-| pytest | chưa đo | chưa đo | chưa đo | chưa đo | chưa đo | chưa đo | chưa chạy |
+Npm trước: xuất source7d1985a vào /tmp, cùng dependency/Chrome/emulator, npmtest chạy nguyên chuỗi
+6 script, exit0. T09A68 assertions/0 fail; T09B285 assertions/14 check/0 fail/0 page error. Các script
+không công bố tổng assertion không được tự suy thành số ca PASS; smoke/zone/v01/multi exit0.
+Log evidence/T12/npm-before.txt.
 
-Không ghi 0 passed/failed thay cho dữ liệu chưa đo.
+Npm sau: npmtest exit1 tại seed legacy; sau đó chạy độc lập đủ6 script, cả6 exit1 ở tiền đề
+seed/luồng cũ, không timeout/deselect/skip. Không gọi đây là suite xanh. Npm không là pytest
+nên collected/pass/skip kiểu pytest = không được runner công bố. Chi tiết từng command/exit
+ở evidence/T12/npm-after.json và npm-after-0…6.txt.
+Các mục không còn áp dụng được liệt kê dưới đây; semantics persistence vẫn áp dụng đã chuyển
+bằng chứng sang harness L-1, không gán N/A cho toàn bộ T09B.
+
+### Từng ca NOT_APPLICABLE theo DEC-041 B/F/K.2, DEC-042 §3/4, spec §17.2
+
+| File / ca cũ | Phần NOT_APPLICABLE | Phần còn áp dụng / evidence L-1 |
+|---|---|---|
+| test_app.js bước1 | seed→OSCORE/parity UI | SDK/server init: P1/P4 |
+| test_app.js bước1b | Smart unlock bằng12ngày giá | INV10 không tín hiệu |
+| test_app.js bước2 | contribution chia Base/Smart/Opp | opening+reserve explicit P2 |
+| test_app.js bước4 | tạo Smart ladder | cấm trong L-1, CHECK14 |
+| test_app.js bước5 | recPrice/per-trade vndRate định giá vốn | BUY thật: SC03/P2 |
+| test_app.js bước6 | actionBox khuyến nghị V2.1.5 | dashboard holdings/treasury P5 |
+| test_app.js bước7 | bất biến pool Base/Smart/Opp | INV3/4/7 và REST P4 |
+| test_zone.js ca fill đầy zone0 | trạng thái EXECUTED và Smart reserve | BUY ledger SC03 |
+| test_zone.js ca partial zone1 | PARTIALLY_FILLED | lượng ETH thực nhận ở schema |
+| test_zone.js ca invalidation |2close→hủy ladder/release | không có hành động tín hiệu |
+| test_v01_v02_v03.js V-01 | release đa tháng về pool chủ ladder | ledger replay SC05…07 |
+| test_v01_v02_v03.js V-02 | unlock giới hạn reserve | reserve manual INV9/10 |
+| test_v01_v02_v03.js V-03 | INVALID chặn tạo ladder | cấm ladder L-1 |
+| test_multi_month_invariant.js ca đa tháng | A/R/D, fill0/1, invalidation trả pool tháng1 | monthly carry và source isolation SC09/10 |
+| test_t09a_accounting.js CA1 | release đa tháng/active backing/upper bound | ledger conservation INV3 |
+| test_t09a_accounting.js CA2 | fill zone khi currentMonth đổi | businessDate/month SC07/08/11 |
+| test_t09a_accounting.js CA3a | unlock0 từ chối reserve | reserve không nhận tín hiệu |
+| test_t09a_accounting.js CA3b | biên unlock cục bộ | reserve không nhận tín hiệu |
+| test_t09a_accounting.js CA4 | sạch một tháng với ladder/full/partial/release | P2…P5 L-1 |
+| test_t09b_persistence.js CHECK07 | pools/release/A+R+D | INV3/4, reserve source event round-trip |
+| test_t09b_persistence.js CHECK08 | active ladders/zones/month | migration M4 + archive |
+| test_t09b_persistence.js CHECK15 | ladder thiếu month/backfill/banner suy luận | legacy raw giữ nguyên, không tham gia tiền |
+
+22 dòng N/A có phạm vi cụ thể; không N/A cả file. Các bước test_app3(P2P),8(history),9(reload),
+10(noembeddedstate) vẫn áp dụng: P2/P3/P5/build guard. T09B01/02/03/04/05/06/10/11/12/14/16
+vẫn áp dụng theo schema mới: serverACK/REST, rawsourcehistory, reload, clear mirror trong
+migration test, browser restart, reject/retry, offline, unrecognized init, corrupt/schema,
+workflow UI và stale rev. T09B09/13 là integration accounting/full-suite: SC/INV và bảng này.
+Không thay đổi bất kỳ test legacy/Python nào; 0 skip/deselect thêm.
 
 ## 21. Frozen Completion Gate Matrix
 
-Ma trận dưới giữ **nguyên văn yêu cầu** từ trường Evidence của từng check; E2 theo § Evidence / E2 của task. `BLOCKED` là kết quả đánh giá giao việc hiện tại; trạng thái test thực tế trong task vẫn **NOT_TESTED**. Không một check nào có evidence implementation hay test artifact mới.
+E1 đã ghi dưới từng check; trạng thái E2_REQUIRED giữ đúng 9 check độc lập, không tự PASS E2.
+Exact requirement bên dưới trích từ task hiện hành sau DEC-044/045, không viết lại cho mã.
 
 ### CHECK-T12-01 — Schema L-1 canonical, không rò rỉ sự thật chiến lược legacy
 
@@ -182,10 +260,8 @@ Yêu cầu: durable state mang `schema = "coindca.ledger/2"`; chứa đúng `pla
 không phép dẫn xuất nào đọc. Bằng chứng: quét khoá trên payload durable thật + danh sách khoá bị
 cấm.
 
-- Evidence yêu cầu: E1.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1. Implementation evidence: ledger.canonical + INV1/5 + P6.
+Trạng thái: **PASS**.
 
 ### CHECK-T12-02 — `openingPosition + events -> derive()` tất định
 
@@ -193,22 +269,20 @@ Yêu cầu: `derive()` là hàm thuần (không `new Date()` bên trong, không 
 tập event cho cùng `DerivedState` dưới ≥ 100 hoán vị thứ tự nhập và ≥ 2 `TZ` tiến trình khác
 nhau. Phủ `INV-2`, `INV-6`. Golden: `SC-04`, `SC-07`, `SC-08`.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: SC01…12, INV2/6; unit.txt.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-03 — Giá vốn VND: WAC trên một pool USDT, đúng số
 
 Yêu cầu: `vndRelieved = ROUND_VND(usdtOut × usdtCostVnd / usdtQty)`; giải phóng theo bình quân
-**không** làm đổi bình quân; phí USDT vào cả hai giá vốn; bán crypto/bán USDT giải phóng theo
+giữ bình quân lý thuyết **trước** lượng tử VND. Sau ROUND_VND, bình quân dẫn xuất từ
+`(C − vndRelieved) / (Q − usdtOut)`; chênh tỷ số chỉ do phép làm tròn tất định (DEC-045),
+không lưu bình quân cũ, không phần dư ẩn, không tolerance bổ sung; phí USDT vào cả hai giá vốn; bán crypto/bán USDT giải phóng theo
 cùng phương pháp; cạn pool ép `usdtCostVnd = 0` và đẩy phần dư vào `realizedFxVnd`. Số kỳ vọng
 đối chiếu **tuyệt đối** (`tolerance = 0`) với `SC-01`…`SC-04`, `SC-06`. Phủ `INV-3`.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: SC01…04/06, INV3; exact ratio+BigInt; unit.txt.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-04 — `UNKNOWN` lan truyền thấy được, không bao giờ bị ép về 0
 
@@ -218,10 +292,8 @@ Yêu cầu: `openingPosition.usdt.costVnd = null` (và phần USDT thiếu phủ
 **không tồn tại** trường tỷ giá nhập theo từng lệnh (`vndRateOverride` hoặc tương đương).
 Phủ `INV-11`. Golden: `SC-12`.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: SC12, INV11, UNKNOWN UI; browser.txt.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-05 — Sửa / xoá / nhập muộn tính lại đúng, không trôi
 
@@ -230,10 +302,8 @@ Yêu cầu: sửa giữ `id`+`seq`, cập nhật `updatedAt`, chạy lại toàn
 được xếp theo `businessDate` chứ không theo lúc nhập. Phủ `INV-1`, `INV-15`. Golden: `SC-05`,
 `SC-06`, `SC-07`.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: SC05/06/07, INV15 và P3/P5; unit/browser.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-06 — Ngày nghiệp vụ, `Asia/Ho_Chi_Minh`, tháng lịch
 
@@ -243,10 +313,8 @@ toàn bộ mã hỏi giờ hệ thống và nó trả ngày theo `Asia/Ho_Chi_Mi
 Bằng chứng gồm grep chứng minh không còn `getMonth()`/`toISOString()` trong đường tính tiền.
 Phủ `INV-6`. Golden: `SC-08`, `SC-11`. Đóng `B3`, `B4`, `B7` của `H-41`.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: SC08/09/10/11, INV6 và version schedule test; unit.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-07 — Số nguyên VND, làm tròn đối chiếu được, thứ tự tất định
 
@@ -254,10 +322,8 @@ Yêu cầu: quét đệ quy payload durable — 0 giá trị float ở trường
 với `n = 1..12` trên ≥ 50 giá trị: `Σ phần == x` tuyệt đối; `ORDER = (businessDate ASC, seq ASC)`
 được kiểm bằng test. Phủ `INV-5`, `INV-13`. Đóng `B9`.
 
-- Evidence yêu cầu: E1.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1. Implementation evidence: INV5/13; 80×12split; P6 canonical payload.
+Trạng thái: **PASS**.
 
 ### CHECK-T12-08 — `SC-01`…`SC-12` PASS trên dữ liệu tổng hợp
 
@@ -265,10 +331,8 @@ Yêu cầu: **12/12** golden scenario của spec §19 chạy được và PASS, 
 kỳ vọng đã đóng băng ở spec (không nới `tolerance`, không làm tròn để khớp). Báo cáo phải in
 bảng SC × (kỳ vọng / thực tế). Ngữ nghĩa và số kỳ vọng của SC **không được viết lại**.
 
-- Evidence yêu cầu: E1.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1. Implementation evidence: 12/12 SC, golden SHA bất biến; unit.txt.
+Trạng thái: **PASS**.
 
 ### CHECK-T12-09 — `INV-1`…`INV-15` được phủ, không bất biến REQUIRED nào bỏ trống
 
@@ -277,10 +341,8 @@ biến bị phá (chứng minh bằng mutation/nghịch đảo có chủ đích 
 `INV-4`, `INV-9`, `INV-11`, `INV-12`, `INV-14`). Không được để một `INV` chỉ "được phủ gián
 tiếp" bởi một SC mà không có phép khẳng định trực tiếp.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: 15/15 INV +7KILLED; mutations.json.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-10 — Hợp đồng migration PASS, gồm dữ liệu mơ hồ
 
@@ -294,10 +356,8 @@ Yêu cầu, trên fixture legacy **tổng hợp**:
 (g) dữ liệu legacy không bị xoá; `ledger[]` chỉ đọc;
 (h) không `Base`/`Smart`/`Opportunity`/`ladder`/`zone`/`score` nào lọt vào sự thật tài chính L-1.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: migration M1…M4 và W1; unit + serverREST browser.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-11 — Round-trip persistence giữ nguyên sự thật sổ cái
 
@@ -306,10 +366,8 @@ tuyệt đối**; payload durable không chứa khoá dẫn xuất bị cấm (`
 `derivedSnapshot` thì import **bỏ qua** khối đó (kiểm bằng file export bị sửa tay). Sổ nằm trong
 document `ethdca/state` đã được `firestore.rules` allow-list — **không** tạo document mới.
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: P4/P5/P6, snapshot/ACK/reload/restart/reject/corrupt; browser.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-12 — Production Reachability PASS
 
@@ -319,10 +377,8 @@ nêu **số event thật** và **số case** đã chạy qua đường productio
 Mọi file runtime MỚI được khai vào `PROJECT/PRODUCTION_PATHS.md` §1 (khiếm khuyết `H-32` không
 được lặp lại).
 
-- Evidence yêu cầu: E1 + E2 độc lập.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1 + independent E2. Implementation evidence: P1…P6,10 event UI +17 nhóm browser.
+Trạng thái: **E2_REQUIRED** (E1 PASS, E2 chưa thực hiện).
 
 ### CHECK-T12-13 — Regression áp dụng được PASS, không test nào bị làm yếu
 
@@ -333,10 +389,8 @@ file, từng ca — **không** được xoá/skip/deselect hàng loạt để l�
 `NOT_APPLICABLE` phải được liệt kê đích danh trong báo cáo. Không test nào của `src/eth_dca_os`
 được đổi.
 
-- Evidence yêu cầu: E1.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
+Evidence level: E1. Implementation evidence: npm before/after +22 dòngN/A; Python 678/678 PASS.
+Trạng thái: **PASS**.
 
 ### CHECK-T12-14 — Không hồi quy productization chiến lược
 
@@ -346,298 +400,98 @@ dữ liệu chỉ báo và event `PRICE` → phần tiền của `DerivedState` 
 hiệu nào tạo/gợi ý/định cỡ một `TRADE`, đặc biệt `source = RESERVE` (bắt buộc có `note` do người
 dùng nhập). Phủ `INV-10`. Neo: `DEC-041` B, `DEC-042` §3, spec §12.3.
 
-- Evidence yêu cầu: E1.
-- Evidence implementation: chưa có.
-- Test/artifact: NOT_TESTED; báo cáo §3 chỉ chứng minh xung đột hợp đồng.
-- Đánh giá: **BLOCKED** — chưa có implementation để kiểm; Owner phải đóng xung đột trước.
-
-
+Evidence level: E1. Implementation evidence: INV10; dead legacy write/render paths; engine diff0.
+Trạng thái: **PASS**.
 
 ## 22. Repair Cycle
 
-`REPAIR_CYCLE_1 = NOT_CONSUMED`. CAP-WEBAPP allowed 2 / used 0 / remaining 2. T-12 pre-authorized 1 chưa dùng. Xung đột đòi quyết định ngữ nghĩa/oracle, nên không đủ điều kiện DEC-043 để dùng repair. Không có failed REQUIRED runtime check, không có bounded repair hay rerun production.
+REPAIR_CYCLE_1 = CONSUMED, đúng DEC-043. BASE `c610a299ed6b66dea3cd63372a0943967c93e95d`; HEAD `2a2ab3f52c38eb30a0a8e0ee1791a95254ee9847`.
+Trigger: CHECK06 cho phép sửa schedule version lịch cũ; CHECK10 thiếu dòng legacy/lý do/
+correction trong report UNKNOWN. Test đỏ29pass/2fail trước sửa ở pre-repair.txt; sau sửa32/32.
+Cùng batch bổ sung adapter: report W1 hiển thị từng dòng, form nạp source hiện hữu, dùng class
+CSS sẵn có; validate replay trước gán state. Không task mới, không phạm vi tiền/kiến trúc mới,
+không golden change, không làm yếu test. Repair diff3 production files, +44/-15.
+Không cấp chu kỳ thứ hai. CAP-WEBAPP2/1/1; DEC044/045 không tiêu repair.
 
 ## 23. Findings / Hardening
 
-Một xung đột hợp đồng đã xác minh: **SC-04 / carry**, Owner hiện hành T-12; phân loại `OWNER_DECISION_REQUIRED` theo Stop conditions tường minh, không tự gắn nhãn CONFIRMED production defect khi chưa có runtime L-1. Không task ID mới. H-41/H-42/H-43 không đóng và không sửa.
-
-H-08 có sẵn: evidence/task_completion dùng glob TASK-*.md nên không phủ task T-/WP-. Chạy validator và báo rõ giới hạn; không sửa tooling ngoài scope, không nhận output 0-record làm PASS có ý nghĩa.
+Hai defect implementation trong repair đã đóng bằng test. Không BLOCKING đã biết còn mở
+; independent E2 vẫn chưa thực hiện. H-41: B1/B2 đóng bằng kiến trúc không có ladder/pool L-1;
+B3…B9 có evidence StepA; H-41 chưa đóng lifecycle vì E2/T12DONE chưa có; B10 giữ re-triggerH43.
+H-42/R1…R5 và A5 Owner acceptance vẫn ngoài task, không mở quyền dùng tiền thật. H-08 validator
+globTASK-* còn vacuous; H-22 task_registry snapshot chưa đếm IMPLEMENTED: ghi hạn chế, không vá.
+Không tạo H/task ID mới cho defect đang nằm trong batch; không dùng findings để reset budget.
 
 ## 24. Production Diff
 
-Lệnh đo bắt buộc:
+Lệnh có thể chạy lại:
 
-```bash
-git diff --shortstat 91cfbba5e3af01d432c64369bb5a286f6461ab6a -- src/eth_dca_os webapp pyproject.toml pyproject.lock
-git diff --shortstat 7d1985aaf306294df49c9508078d5425da10f47e -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+```sh
+git diff --numstat 91cfbba5e3af01d432c64369bb5a286f6461ab6a..HEAD -- \
+  webapp/app_logic.js webapp/app_shell.html webapp/build_app.js webapp/ledger.js webapp/ledger_ui.js
 ```
 
-Kết quả ghi tại §26 sau kiểm chứng. docs/spec/, docs/spec-l1/, tests/, Firebase config/rules phải giữ diff rỗng.
+```text
+28	7	webapp/app_logic.js
+1	0	webapp/app_shell.html
+4	0	webapp/build_app.js
+298	0	webapp/ledger.js
+129	0	webapp/ledger_ui.js
+```
+
+5 file production, +460/-7, dưới cap +1600/-450/7file. src/eth_dca_os, engine.js, docs/spec,
+Firebase/auth/rules/config/hosting và dependency locks diff0. Build outputs/deps/logsignored
+không là thay đổi source. Test/fixtures mới nằm ngoài production path, không tráo phân loại.
 
 ## 25. Files Changed
 
-Tạo:
-
-- docs/reviews/T12-IMPLEMENTATION-REPORT.md — báo cáo bắt buộc và đề xuất chờ Owner.
-- docs/sessions/S034-t12-ledger-discovery-stop.md — handoff MAJOR.
-
-Sửa:
-
-- docs/tasks/T-12-so-cai-l1-v2-va-derive.md — trạng thái BLOCKED, ghi lý do; giữ nguyên toàn bộ gate.
-- PROJECT/PROJECT_PROGRESS.md — trạng thái, blocker, bước tiếp theo, lịch sử phiên.
-- PROJECT/CAPABILITY_REGISTRY.md — trạng thái thành viên T-12.
-- PROJECT/REVIEW_BUDGET_LEDGER.md — chưa tiêu budget, giữ pool.
-- PROJECT/LO_TRINH_DE_HIEU.md — chỉ do generator nếu nội dung dẫn xuất đổi.
-
-Không xoá file. Không nội dung data/ nào được đọc hay commit.
+Production5 file: app_logic.js, app_shell.html, build_app.js, ledger.js, ledger_ui.js.
+Test5 file mới: test_t12_fixtures.js, test_t12_ledger.js, test_t12_mutations.js,
+test_t12_browser.js, test_t12_owner.js. Hai JSON schema/example ở tests/fixtures/t12;
+.gitignore thêm private/ theo spec22.1. Không sửa test Python/legacy.
+Canonical: DEC045 + specL1/CHECK03/SC09/10; PROJECT progress/capability/productionpaths/budget/
+hardening/derivedroadmap; taskT12; cùng report và sessionS034. Rawtestlogs ở evidence/T12.
 
 ## 26. Validators
 
-Đã chạy; mọi lệnh dưới đây exit 0. Không sửa validator.
-
-| Validator | Kết quả thực thi | Phạm vi / giới hạn |
-|---|---|---|
-| structure | PASS | 27 required paths |
-| project_state | PASS | Đọc profile + progress hiện tại |
-| governance | PASS | 7 CORE, 7 PROJECT, 2 adapter, 5 hard-stop, 26 invariant, 3 lineage, 43 hardening, 23 task |
-| routing | PASS | 20 MAJOR, 0 manual override |
-| sync_easy_roadmap | PASS | Generator chạy; nội dung file không đổi vì READY/BLOCKED cùng tick vàng |
-| easy_roadmap | PASS | Khớp trạng thái canonical sau generator |
-| evidence | In PASS, quét 0 record | **KHÔNG nhận là PASS có ý nghĩa** — H-08 có sẵn |
-| task_completion | In PASS, quét 0 DONE | **KHÔNG nhận là PASS có ý nghĩa** — H-08 có sẵn |
-| branch_authority trước commit | PASS | Fetch thành công ngoài sandbox; đúng nhánh, behind 0, ahead 0, production EMPTY |
-
-Branch check dùng `--allow-production-diff --base 91cfbba5e3af01d432c64369bb5a286f6461ab6a`.
-Tracked worktree trước commit DIRTY chỉ do đúng tài liệu đã ghi ở §25; không ghi CLEAN giả.
-Ban đầu trước đọc state tracked worktree CLEAN. `git diff --check` PASS.
-
-Kiểm trực tiếp bổ sung (không thay thế hay sửa validator): 14/14 block Completion Gate và toàn
-bộ phần task sau tiêu đề Completion Gate trùng tuyệt đối với source HEAD; 14 trạng thái vẫn
-NOT_TESTED; báo cáo có 29 mục và 14 yêu cầu nguyên văn. Số học §3 chạy lại PASS cho chẩn đoán.
-
-Đo diff ở cả hai mốc §24: **EMPTY**, 0 production file, +0/−0. Diff trên docs/spec/, docs/spec-l1/,
-tests/, firestore.rules, firebase.json cũng EMPTY. Không chạy full regression (xem §20).
-Task-registry trước/sau: SET A = 30/30 roadmap ID; SET B = 23/23 task file, không ID mới.
-`new_registered_task_ids = 0`; không file proposal mới (đề xuất nằm trong báo cáo này);
-`owner_assignment_required_entries_added = 0`. Không làm tròn lại/đóng băng SC fixture.
+structure PASS (27 paths), project_state PASS, governance PASS (7CORE/7PROJECT/23task),
+routing PASS (20MAJOR/0override), easy_roadmap PASS. evidence/task_completion in PASS nhưng
+quét 0 record (H-08); không là evidence T12. Branch Authority sau fetch PASS: behind0,
+INTEGRATION_DECISION_REQUIRED=NO. Registry23taskfile/30roadmapIDs; không task mới.
+Log: evidence/T12/validators.json, routing.txt, task-registry.txt. Chạy structure/project_state/governance/routing/easy_roadmap/evidence/
+task_completion, Branch Authority và registry snapshot trước/final. Hai script evidence/task
+completion globTASK-* không đọc task thật: PASS tự in không được dùng chứng nhận T12.
+Kiểm riêng14 check tồn tại, E2surface9 check và fixtureSHA không đổi.
 
 ## 27. Lifecycle State
 
-T-12 **BLOCKED — OWNER_DECISION_REQUIRED**. Đi từ READY lịch sử tới BLOCKED trong DISCOVER; không đi qua IN_PROGRESS/IMPLEMENTED/DONE. Bản 17/17 lịch sử và nguyên văn 14 REQUIRED check được bảo toàn. Không tuyên bố hoàn tất capability.
+T-12: BLOCKED → READY → IN_PROGRESS → **IMPLEMENTED**. Ready Gate 17/17;
+E1 của cả 14 check hoàn tất, regression áp dụng được PASS. Completion matrix: 5 PASS +
+9 E2_REQUIRED; không DONE, không GOLDEN_PASS thay cho E2.
+Không còn implementation work được mở trong phiên này; independent E2 là evidence còn thiếu.
 
 ## 28. Independent E2 Required
 
-E2 vẫn bắt buộc, **chưa thực hiện**, không tự chứng nhận. Chưa sẵn sàng bàn giao E2 vì implementation/E1 chưa tồn tại. Reviewer sau này phải phủ CHECK-T12-02/03/04/05/06/09/10/11/12 và đủ tám điểm dò trong task. E2 không phải blocker duy nhất hiện tại.
+Bắt buộc reviewer ở phiên độc lập, từ repo hiện hành: CHECK02/03/04/05/06/09/10/11/12.
+Phủ8 nhóm đối kháng nguyên bản: WAC/drain/round/SELL; UNKNOWN/noFX; edit/delete/late; timezone/
+month; M1…M4/W1/atomic; persistence/export tampered; P1…P6; malformed/missing/range.
+Implementer không tự ký E2; 5 check chỉ cầnE1 không làm giảm thẩm quyền của9 check kia.
 
 ## 29. Exact Next Action
 
-**Owner quyết định đề xuất dưới đây trước khi tiếp tục implementation của chính T-12.** Chưa có quyết định mới được tạo/ghi thay Owner.
+Reviewer độc lập chạy lại implementation từ `2a2ab3f52c38eb30a0a8e0ee1791a95254ee9847` và golden `c610a299ed6b66dea3cd63372a0943967c93e95d`;
+chỉ Owner có quyền IMPLEMENTED→DONE khi gate/evidence đủ. Không cần dữ liệu Owner cho E2
+tổng hợp. Không cấp tiếp repair thứ hai; cần Owner Decision nếu ngoài quyền DEC043.
+Commit/push chỉ codex/t12-l1-ledger-impl; không main, không deploy. Commit báo cáo cuối
+được xác định qua `git log -1` của nhánh, production HEAD giữ `2a2ab3f`.
 
-### COMPLETION GATE CHANGE PROPOSAL — CHƯA DUYỆT
+## Phụ lục — lịch sử discovery stop trước implementation
 
-**Original check:** CHECK-T12-08 bắt buộc 12/12 SC khớp tuyệt đối spec §19; SC-04 currently ghi `remainingPlannedBudget(2026-02) = 7.090.822`. CHECK-T12-06 và S-A10 yêu cầu đúng quy tắc tháng/carry của §11.4.
-
-**Proposed change:** giữ DEC-042/CAPPED_CARRY và mọi input SC-01…SC-04, giữ nguyên phép tính WAC và planInvested tháng 2; sửa đúng kỳ vọng remaining tháng 2 của SC-04 thành **11.775.522 VND**, bổ sung tường minh `carryInVnd = 4.684.700` và `plannedBudgetVnd = 24.684.700`. Không hạ tolerance=0, không xoá check/INV, không đổi ngân sách task.
-
-**Reason:** tính lại đúng công thức đã duyệt; bảng và script §3 cho bằng chứng tái lập.
-
-**Risk:** nếu tự bỏ carry để khớp SC-04, sản phẩm làm mất 4.684.700 VND ngân sách chuyển tiếp. Nếu tự sửa fixture thành 11.775.522 mà Owner chưa duyệt, implementation vi phạm golden contract frozen.
-
-**Impact:** cần Owner cho phép chỉnh spec §19 SC-04 và tham chiếu oracle của CHECK-T12-08. Không cần kiến trúc mới, Firebase/auth, task ID hay repair cycle. Golden fixture commit chưa tồn tại nên chưa có baseline phải sửa lại.
-
-**Required decision:** duyệt hoặc bác đề xuất sửa oracle ở trên. Nếu bác, Owner cần chỉ rõ cách giải quyết để SC-04 và §11.4 đồng thời có hợp đồng thực thi; implementer không tự chọn FORFEIT hoặc đổi input.
-
-Sau quyết định: áp dụng đúng amendment được duyệt, tái xác nhận Ready Gate 17/17, chạy branch authority rồi mới READY → IN_PROGRESS. Tiếp tục loop implementation/E1/E2 đã frozen; không tự mở việc phụ.
-
-## Bổ sung S034 — DEC-044 và lượt golden consistency preflight duy nhất (2026-09-05)
-
-**Kết quả hiện hành: OWNER_DECISION_REQUIRED.** Đã canonicalize sửa carry SC-04 theo DEC-044.
-Một lượt preflight đã đối chiếu đủ 12 SC với DEC-042, spec, 15 INV và 14 CHECK:
-**9 CONSISTENT / 3 CONTRACT_CONFLICT**, gom thành **hai nhóm** bên dưới. T-12 giữ BLOCKED.
-Không implementation, không fixture run, không thí nghiệm mới, không Completion Gate evidence.
-Không tạo fixture hay freeze baseline, không tiêu repair cycle.
-
-### 1. Phạm vi / checkpoint / quyết định đã áp dụng
-
-Source HEAD: `2642c8e9908d63e8bb1f266432d67be073e51c20`.
-Nhánh: `codex/t12-l1-ledger-impl`. Base implementation Owner chỉ định giữ nguyên
-`7d1985aaf306294df49c9508078d5425da10f47e`; mốc đo task vẫn `91cfbba5e3af01d432c64369bb5a286f6461ab6a`.
-Branch Authority chạy trước state: PASS, tracked CLEAN, behind upstream 0, ahead 1;
-fetch trong sandbox lúc mở lượt báo STALE_REMOTE. Kiểm tra có mạng được ghi ở mục validator cuối.
-
-DEC kế tiếp đã kiểm tra từ canonical log là **DEC-044**. Quyết định chỉ sửa oracle carry SC-04:
-carryInVnd = 4.684.700, plannedBudgetVnd = 24.684.700,
-remainingPlannedBudgetVnd = **11.775.522**. Giữ nguyên input/WAC/planInvested tháng 2 = 12.909.178.
-Không áp dụng min/cap của ví dụ tháng 1 thành luật carryOut mới; công thức tổng quát §11.4 giữ nguyên.
-Không sửa SC khác hoặc 14 block Completion Gate. §29 của báo cáo S034 ban đầu ở trên nay
-**đã được Owner duyệt và áp dụng**, không còn là yêu cầu chờ quyết định.
-
-### 2. SC preflight — mỗi SC đúng một phân loại
-
-Đây là phân loại tính nhất quán của hợp đồng, không phải PASS/FAIL của test.
-Các số có dấu `~` trong spec được đọc đúng là giá trị xấp xỉ để diễn giải; không biến chúng
-thành oracle số thực exact, cũng không áp tolerance mới. Khi số nguyên được ghi tường minh,
-phép đối chiếu giữ tuyệt đối.
-
-| SC | Phân loại | Đối chiếu bounded |
-|---|---|---|
-| SC-01 | CONSISTENT | 1.200/0,5 = 2.400 USDT/ETH; 30.000.000/0,5 = 60.000.000 VND/ETH; 5.000.000/200 = 25.000; opening không vào invested. INV-1/7; CHECK-01/03 |
-| SC-02 | CONSISTENT | Pool 1.200 USDT / 30.600.000 VND = 25.500; P2P không vào invested/holdings ETH. INV-3/8; CHECK-03 |
-| SC-03 | CONSISTENT | 600,6 × 25.500 = 15.315.300 nguyên; pool 599,4 / 15.284.700 vẫn chính xác 25.500; ETH 0,75 / 1.800,6 / 45.315.300; remaining 4.684.700. INV-3/5; CHECK-03 |
-| SC-04 | CONTRACT_CONFLICT | Oracle carry **đã đúng** theo DEC-044. Các số WAC nguyên cũng đúng; nhưng chúng không thể đồng thời thoả mệnh đề bình quân không đổi của CHECK-T12-03. Nhóm A bên dưới |
-| SC-05 | CONSISTENT | Đổi riêng qty 0,25→0,24: qty tổng 0,94; costUsdt 2.300,6/costVnd 58.224.478 giữ nguyên; avg 2.447,446808…/61.940.934,04255…; id/seq giữ. INV-1/2/15; CHECK-05. Không tạo xung đột độc lập ngoài nhóm A ở bước replay SC-04 dùng chung |
-| SC-06 | CONSISTENT | Bỏ P2P tháng 2: relief 12.750.000; ETH cost 58.065.300; USDT 99,4/cost 2.534.700; snapshot theo tiền đề. INV-3/14; CHECK-03/05 |
-| SC-07 | CONSISTENT | Replay 03/02→04/02→05/02; relief lần nhập muộn 2.581.836, lần tiếp 12.909.178; invested tháng 2 = 15.491.014; createdAt không ảnh hưởng. INV-2/6/15; CHECK-02/05. Kết luận về thứ tự không tạo xung đột độc lập ngoài nhóm A |
-| SC-08 | CONSISTENT | 28/02 18:30 UTC = 01/03 01:30 Asia/Ho_Chi_Minh; tháng 2 đã đóng, event 01/03 vào tháng 3. INV-2/6; CHECK-02/06 |
-| SC-09 | CONTRACT_CONFLICT | Split [6.666.667,6.666.667,6.666.666], invested 17 triệu, plan 12 triệu, remaining/nextAmount 8 triệu đều đúng. carryOut tháng 3 = 8 triệu không thể là số đã chốt tại asOfDate 18/03. Nhóm B |
-| SC-10 | CONTRACT_CONFLICT | Reserve 6 triệu, invested 21 triệu, plan 12 triệu, remaining 8 triệu đúng. carryOut tháng 3 = 8 triệu không thể là số đã chốt tại asOfDate 21/03. Cùng nhóm B, không tách thành quyết định thứ ba |
-| SC-11 | CONSISTENT | 03/04 nằm sau 15/03; holdings có event, tháng 3 không nhận invested của tháng 4, không carryOut tháng 3, có FUTURE_DATED_EVENTS. INV-6; CHECK-06 |
-| SC-12 | CONSISTENT | 300/2.400 = 0,125 ETH; theo tiền đề explicit qty không âm, chỉ VND basis thiếu: W-1 + UNKNOWN, giữ qty/costUsdt. Điều kiện M-1 xác nhận ngày và M-2 không âm vẫn áp dụng, không được suy ngày từ ts hay bịa opening quantity để vượt gate. INV-11/12/14; CHECK-04/10/11 |
-
-Không dùng SC-09/10 như phần nối của ngân sách tháng 1–2: SC-09 tự ghi rõ carryIn=0, nên không
-có xung đột carryIn với chuỗi SC-01…08. Không kết luận thiếu input chi tiết cho SC-08/09/10/12
-là xung đột: chúng cho phép dựng synthetic input thoả đúng các tiền đề, không cần Owner data.
-
-### 3. Nhóm A — bình quân bất biến chính xác không tương thích số nguyên SC-04
-
-Neo: spec §6.3/§6.5/§7.3/§8.3; CHECK-T12-03 nguyên văn:
-
-> giải phóng theo bình quân **không** làm đổi bình quân
-
-Với chính các số SC-04 (không thêm event giả):
-
-    trước BUY:  Q = 1.099,4 USDT; C = 28.384.700 VND
-    relief = ROUND_HALF_UP(500 × C / Q) = 12.909.178 VND
-    sau BUY:    Q' = 599,4 USDT; C' = 15.475.522 VND
-
-    avg_before = 141923500 / 5497 VND/USDT
-    avg_after  = 77377610 / 2997 VND/USDT
-    avg_after − avg_before = -7330 / 16474509 VND/USDT ≠ 0
-
-Đối chiếu hoàn toàn bằng số nguyên, tránh mọi tranh cãi về sai số float:
-
-    15.475.522 × 10.994 = 170.137.888.868
-    28.384.700 ×  5.994 = 170.137.891.800
-    hai tích chéo KHÔNG bằng nhau (lệch 2.932)
-
-Đây là hệ quả làm tròn VND ở chính oracle canonical, **không phải lỗi WAC của implementation**.
-Mệnh đề giữ bình quân đúng trước làm tròn; sau ROUND_VND, lượng cost còn lại chia cho lượng USDT
-còn lại lệch một phân số rất nhỏ. Không thể vừa giữ các số nguyên đúng, vừa bảo toàn ratio exact.
-Không được tự giữ avg cũ làm một trạng thái nguồn khác; không được dùng tolerance để che lệch.
-
-**Đề xuất chờ Owner:** giữ nguyên tuyệt đối mọi số nguyên/WAC/oracle SC-04, DEC-042, INV-3,
-INV-5 và tolerance=0; làm rõ câu invariant bình quân trong CHECK-T12-03/đoạn spec liên quan là
-bất biến của phép giải phóng **trước làm tròn**, còn tỷ lệ sau event được dẫn xuất đúng từ
-`(C − ROUND_VND(out × C / Q)) / (Q − out)`; sai khác chỉ được là hệ quả tất định của ROUND_VND.
-Đối chiếu relief/cost/qty vẫn exact, không thêm epsilon và không cất avg riêng. Chưa áp dụng.
-
-### 4. Nhóm B — SC-09/SC-10 gán carryOut cho tháng đang mở
-
-Neo: spec §10.6, §11.4, CHECK-T12-06 (*carryOut chỉ chốt cho tháng đã đóng*), đối chứng SC-11.
-
-| asOfDate được chỉ định | currentMonth | 2026-03 đã đóng? | carryOut tháng 3 đã chốt |
-|---|---|---|---|
-| 2026-03-18 (SC-09) | 2026-03 | không | không được sinh |
-| 2026-03-21 (SC-10) | 2026-03 | không | không được sinh |
-| 2026-04-01 (minh hoạ thời điểm hợp lệ) | 2026-04 | có | 8.000.000 nếu giữ cùng events |
-
-**Đã xét cách diễn giải canonical asOfDate.** 8.000.000 là con số đúng **khi tháng đã đóng**.
-Tuy nhiên SC-09/10 đặt asOfDate trong tháng 3 và đưa carryOut=8.000.000 vào cùng khối EXPECT,
-không khai một lượt đánh giá thứ hai ở tháng 4, không gắn nhãn dự phóng. Đổi timezone không làm
-18/03 hoặc 21/03 thành tháng đã đóng. Đọc carryOut như remaining/projection là đổi nghĩa đã
-được §11.4/CHECK-06 khoá; tự thêm một asOfDate tháng 4 để coi oracle hiện tại PASS sẽ ngầm sửa
-contract thời gian của scenario. Vì chỉ thị Owner cấm tự sửa SC khác, phân loại cả hai là
-CONTRACT_CONFLICT cho **kỳ vọng cùng lần đánh giá như đang viết**, không bác số 8.000.000.
-
-**Đề xuất chờ Owner, một tu chỉnh chung cho cả hai SC:** tại asOfDate 18/03 và 21/03, ghi rõ
-carryOut tháng 3 **chưa chốt**; thêm bước đánh giá tường minh cùng ledger với asOfDate=2026-04-01,
-không thêm event, lúc đó carryOut tháng 3/carryIn tháng 4 = 8.000.000. Giữ nguyên input giao dịch,
-ngân sách, reserve/extra isolation và mọi số còn lại. Không cần chức năng projection mới.
-Không thay CHECK-T12-06, không nới tolerance. Chưa áp dụng.
-
-### 5. Đối chiếu toàn bộ INV / CHECK trong đúng preflight
-
-| Bề mặt | Kết luận preflight (không phải evidence kiểm thử) |
-|---|---|
-| INV-1/2/5/6/7/15 | Schema/nguồn truth, integer, ngày và identity không đòi đổi input SC. Nhóm A phải được giải quyết mà không lưu avg riêng hay float tiền |
-| INV-3/4/8 | Các pool số lượng SC01…07 không âm; opening/P2P/buy giữ bảo toàn số nguyên; P2P không vào đầu tư. Chưa thử mutation hay edge case ngoài SC |
-| INV-9/10/13 | Phép cộng/split của SC09/10 đúng; sự tách nguồn đúng. Nhóm B chỉ liên quan thời điểm chốt carry |
-| INV-11/12/14 | SC12 được đọc đúng tiền đề quantity consistent và yêu cầu snapshot/no-write; UNKNOWN không bị 0. Không chạy migration/snapshot để chứng minh |
-| CHECK-01/02/04/05/07/09/10/11/12/13/14 | Không thấy mâu thuẫn độc lập nào khác trong 12 SC được xét; các yêu cầu runtime/mutation/persistence/regression vẫn NOT_TESTED |
-| CHECK-03/08 | Nhóm A: cùng oracle số nguyên SC04 và mệnh đề avg bất biến exact không đồng thời thoả |
-| CHECK-06/08 | Nhóm B: thời điểm EXPECT carryOut trong SC09/10 không đồng thời thoả |
-
-Đây là **một batch cuối cùng trong phạm vi chỉ thị**, không tiếp tục tìm edge case mới,
-không làm thử implementation để dò thêm. Không chứng nhận gate từ việc chỉ đọc contract.
-
-### 6. Phép tính tái lập đã chạy
-
-Một lần Python 3.9.6 dùng fractions.Fraction cho WAC/carry/split, datetime + ZoneInfo cho SC08;
-đọc spec/task để đếm 12 SC, 15 INV và 14 CHECK. Exit 0. Đầu ra chính:
-
-    SC03: relieved=15315300; pool=2997/5,15284700; remaining=4684700
-    SC04: relieved=12909178; costETH=58224478; costUSDT=15475522;
-          carryIn=4684700; plannedBudget=24684700; remaining=11775522
-    SC04 avg_after-avg_before = -7330/16474509; equal=False
-    SC05 avgUsdt=2447.446808510638; avgVnd=61940934.042553194
-    SC06: relief=12750000; costETH=58065300; pool=497/5,2534700
-    SC07: lateRelief=2581836; followingRelief=12909178; investedFeb=15491014
-    SC08: 2026-03-01T01:30:00+07:00
-    SC09: split=[6666667,6666667,6666666]; invested=17000000; plan=12000000
-    SC10: reserve=6000000; invested=21000000; plan=12000000
-    2026-03-18 / 2026-03-21: March closed=False
-    2026-04-01: March closed=True; carryOut=8000000
-    SC11: future=True; March closed=False
-    SC12: 300/2400=1/8; VND basis UNKNOWN theo tiền đề
-
-Phép tính độc lập ngắn để tái lập **hai nhóm**, không là fixture/test implementation:
-
-```python
-from fractions import Fraction as F
-C, Q, out = 28_384_700, F(10994, 10), 500
-x = out*C/Q
-relief = (2*x.numerator+x.denominator)//(2*x.denominator)
-print(relief, F(C-relief)/(Q-out)-F(C)/Q)
-for as_of in ('2026-03-18','2026-03-21','2026-04-01'):
-    print(as_of, '2026-03' < as_of[:7])
-```
-
-### 7. Ready / budget / triển khai / yêu cầu Owner gộp
-
-Điều kiện §4 của chỉ thị mới chưa đạt (còn CONTRACT_CONFLICT), nên **không** tái xác nhận READY
-17/17, không chuyển BLOCKED → READY → IN_PROGRESS. Không bịa READY_GATE_PASS hay đếm test đỏ.
-T-12 giữ BLOCKED — OWNER_DECISION_REQUIRED; 14 REQUIRED check vẫn NOT_TESTED.
-SC04 carry đã đóng bằng DEC-044; không xin Owner duyệt lại việc đó.
-
-**Một yêu cầu Owner duy nhất:** duyệt/bác **cả nhóm A và nhóm B** ở mục 3–4 như một batch
-contract-consistency clarification trước implementation. Quyết định này chưa được cấp;
-DEC-044 chỉ cho phép sửa carry SC04. Không cấp DEC mới thay Owner cho hai nhóm còn lại.
-
-REPAIR_CYCLE_1=NOT_CONSUMED; CAP-WEBAPP 2/0/2; production +0/−0; không fixture/baseline,
-không Firebase/auth/Hosting/research/data thay đổi. Chưa có E2; preflight không phải E2 hay
-Completion Gate evidence. Không chạy npm test/pytest vì chưa implementation; không skip test.
-
-### 8. Validators / bảo toàn hợp đồng / giao nhận
-
-Đã chạy, exit 0: structure PASS (27 paths), project_state PASS, governance PASS (7 CORE,
-7 PROJECT, 2 adapter, 5 hard-stop, 26 invariant, 3 lineage, 43 hardening, 23 task), routing PASS
-(20 MAJOR/0 override), sync_easy_roadmap PASS (không diff), easy_roadmap PASS.
-Evidence/task_completion in PASS nhưng quét 0 record vì H-08 có sẵn; **không** tính là
-PASS có ý nghĩa và không sửa validator ngoài scope.
-
-Kiểm bảo toàn tài liệu đã thực thi: 11/11 SC khác trùng source HEAD, input SC-04 trùng,
-14/14 block Completion Gate (và phần task sau gate) trùng, PROJECT_DECISIONS chỉ append.
-Đây là kiểm diff tài liệu, không phải lượt preflight thứ hai. `git diff --check` PASS.
-Task registry trước/sau giữ SET A=30, SET B=23, ID mới=0, proposal file mới=0,
-owner_assignment_required mới=0. Đề xuất Owner dùng chính báo cáo hiện có.
-
-Branch Authority trước commit với fetch ngoài sandbox: PASS, đúng nhánh, behind=0, ahead=1,
-không INTEGRATION_DECISION_REQUIRED. Tracked DIRTY chỉ đúng 8 tệp tài liệu của lượt này.
-Production diff từ T12_MEASURE_BASE_SHA đến working tree: 0 file, +0/−0.
-Không thay src/, webapp/, tests/, docs/spec/, Firebase/auth/Hosting hoặc pyproject.*.
-
-Tệp đổi trong lượt này: PROJECT_DECISIONS, PROJECT_PROGRESS, CAPABILITY_REGISTRY,
-REVIEW_BUDGET_LEDGER, spec L-1 (chỉ SC04+ghi chú authority), task T-12 (chỉ metadata),
-báo cáo T12 và session S034 hiện có. Không tạo artifact/file mới, không đọc data/.
-Commit/push chỉ nhánh codex/t12-l1-ledger-impl theo quyền đã có; commit tài liệu không phải
-T12_GOLDEN_ACCOUNTING_BASELINE freeze point.
+- S034 tại2642c8e: chưa production/fixture/golden; SC04 remaining7.090.822 mâu thuẫn
+  CAPPED_CARRY11.775.522; BLOCKED/OWNER_DECISION_REQUIRED, repairNOT_CONSUMED.
+- DEC044 tại8407735: sửa carrySC04; một preflight đủ12 SC cho9CONSISTENT/3CONTRACT_CONFLICT,
+  gom GroupA WAC quantization và GroupB SC09/10closedmonth; chưa implementation/golden.
+- DEC045 tại2cf0e7c: Owner duyệt cả hai; integeroracle/tolerance0 không đổi;
+  ReadyGate tái đánh giá đúng1lần17/17, BLOCKED→READY→IN_PROGRESS, không preflight khác.
+Chi tiết bản ghi gốc được bảo toàn ở lịch sử git của chính report và sessionS034; các quyết
+định Owner append-only tại PROJECT_DECISIONS.md.

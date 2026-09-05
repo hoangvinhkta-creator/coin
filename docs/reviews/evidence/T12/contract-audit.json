@@ -1,0 +1,8 @@
+{
+  "requirements_unchanged_since_DEC045": true,
+  "required_checks": 14,
+  "PASS": 5,
+  "E2_REQUIRED": 9,
+  "lifecycle": "IMPLEMENTED",
+  "golden_fixture_unchanged": true
+}

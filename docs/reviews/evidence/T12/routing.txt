@@ -1,0 +1,19 @@
+{
+  "routing_status": "ROUTED",
+  "model_score": 3.1,
+  "base_tier": "D",
+  "tier": "D",
+  "model": "Fable",
+  "effort_score": 3.65,
+  "effort": "max",
+  "model_floors": [
+    "cognitive:D>=4&X>=3",
+    "safety_business:min_C"
+  ],
+  "effort_floors": [
+    "safety_business:min_high"
+  ],
+  "warnings": [
+    "none"
+  ]
+}

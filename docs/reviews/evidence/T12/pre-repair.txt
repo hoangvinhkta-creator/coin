@@ -1,0 +1,77 @@
+✔ SC-01 oracle số nguyên tolerance=0 (1.145542ms)
+✔ SC-02 oracle số nguyên tolerance=0 (0.208375ms)
+✔ SC-03 oracle số nguyên tolerance=0 (5.67525ms)
+✔ SC-04 oracle số nguyên tolerance=0 (0.555084ms)
+✔ SC-05 oracle số nguyên tolerance=0 (0.167708ms)
+✔ SC-06 oracle số nguyên tolerance=0 (0.138208ms)
+✔ SC-07 oracle số nguyên tolerance=0 (0.125625ms)
+✔ SC-08 oracle số nguyên tolerance=0 (4.386166ms)
+✔ SC-09 oracle số nguyên tolerance=0 (0.532042ms)
+✔ SC-10 oracle số nguyên tolerance=0 (0.215042ms)
+✔ SC-11 oracle số nguyên tolerance=0 (0.096916ms)
+✔ SC-12 oracle số nguyên tolerance=0 (0.629916ms)
+✔ INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot (0.62925ms)
+✔ INV-2 150 hoán vị + hai process TZ cho cùng ledger (73.237625ms)
+✔ INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND (0.64775ms)
+✔ INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW (0.508083ms)
+✔ INV-5 integer schema, boundary validation và decimal nhập chính xác (1.103959ms)
+✔ INV-6 metadata không đi vào tiền và SC-08 một clock canonical (0.708125ms)
+✔ INV-7 từ chối event trước opening và sửa opening vượt event (0.551834ms)
+✔ INV-8 P2P chỉ chuyển tài sản tiền tệ, không đầu tư (0.138541ms)
+✔ INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm (0.469ms)
+✔ INV-10 PRICE không chạm tiền; không ENGINE trong module (0.816917ms)
+✔ INV-11 null UNKNOWN lan truyền và không có kế hoạch (0.162167ms)
+✔ INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên (0.67575ms)
+✔ INV-13 SPLIT_VND 80 ngân sách × n1..12, phần cuối nhận dư (0.553125ms)
+✔ INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi (0.366458ms)
+✔ INV-15 20 edits giữ id/seq; delete/create không reuse (2.601292ms)
+✔ SC-05/06/07 qua update thật khớp fixture replay (0.546625ms)
+✔ Calendar plan versions, clamp tháng nhuận, next amount biết được (0.095375ms)
+✖ CHECK-T12-10 SC-12 báo chỉ số legacy, lý do W1 và đường sửa explicit (0.484583ms)
+✖ CHECK-T12-06 đổi schedule chỉ bằng version về sau (0.207459ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 29
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 143.861875
+
+✖ failing tests:
+
+test at webapp/test_t12_ledger.js:161:1
+✖ CHECK-T12-10 SC-12 báo chỉ số legacy, lý do W1 và đường sửa explicit (0.484583ms)
+  AssertionError [ERR_ASSERTION]: cần báo cáo từng giao dịch UNKNOWN
+      at TestContext.<anonymous> (/Users/hoangvinh/Documents/coin/webapp/test_t12_ledger.js:163:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at webapp/test_t12_ledger.js:167:1
+✖ CHECK-T12-06 đổi schedule chỉ bằng version về sau (0.207459ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (/Users/hoangvinh/Documents/coin/webapp/test_t12_ledger.js:169:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /version|lịch/i,
+    operator: 'throws',
+    diff: 'simple'
+  }

@@ -1,0 +1,4 @@
+lần mở đầu (rules còn OWNER_UID_REQUIRED): UNRECOGNIZED | uid 8PtGaFmd4dzmqV9paBIqOiug4iWL
+T-09B PERSISTENCE: ERROR Error: waitSaved timeout; now {"phase":"ONLINE","detail":"","uid":"8PtGaFmd4dzmqV9paBIqOiug4iWL","projectId":"demo-ethdca","rev":0,"durableRev":null,"saving":false,"unconfirmed":false,"lastError":null,"seedPending":false,"seedDurable":false,"diverged":false,"mirrorShown":false,"hasSeed":false}
+    at Object.waitSaved (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269:53)
+    at async /Users/hoangvinh/Documents/coin/webapp/test_t09b_persistence.js:148:52

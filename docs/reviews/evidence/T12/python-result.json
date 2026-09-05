@@ -1,0 +1,13 @@
+{
+  "command": "PYTHONPATH=src .venv/bin/python -m pytest -q",
+  "exitCode": 0,
+  "collected": 678,
+  "passed": 678,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "xfail": 0,
+  "xpass": 0,
+  "countEvidence": "--collect-only: 678; full run: 678 progress dots, 100%, exit 0; double quiet suppresses summary",
+  "initialEnvironmentAttempt": { "exitCode": 2, "collectionErrors": 34, "reason": "PYTHONPATH omitted; eth_dca_os not importable", "resolvedBy": "PYTHONPATH=src, no test/source change" }
+}

@@ -1,0 +1,79 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "structure",
+      "chunk_id": "09cb99",
+      "wall_time_seconds": 0.0000025,
+      "exit_code": 0,
+      "original_token_count": 14,
+      "output": "GOVERNANCE STRUCTURE: PASS\nChecked 27 required paths.\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "project_state",
+      "chunk_id": "7eda00",
+      "wall_time_seconds": 0.000002083,
+      "exit_code": 0,
+      "original_token_count": 5,
+      "output": "PROJECT STATE: PASS\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "governance",
+      "chunk_id": "3a8299",
+      "wall_time_seconds": 4.59e-7,
+      "exit_code": 0,
+      "original_token_count": 157,
+      "output": "GOVERNANCE V4.3: PASS\n  checked entry_point_core_refs = 7\n  checked core_files_checked = 7\n  checked project_files_checked = 7\n  checked adapters_checked = 2\n  checked hard_stops_checked = 5\n  checked source_invariants_checked = 26\n  checked budget_lineage_roots = 3\n  checked hardening_items = 43\n  checked production_path_rows = 15\n  checked task_files_present = 23\n  checked task_files_matching_legacy_glob = 0\n  NOTE: vacuous-pass risk: 23 task file(s) exist but validate_evidence.py and validate_task_completion.py glob 'TASK-*.md' and therefore check 0 records (routed as HARDENING H-08; not a failure of this validator)\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "routing",
+      "chunk_id": "2d4785",
+      "wall_time_seconds": 0.000001791,
+      "exit_code": 0,
+      "original_token_count": 22,
+      "output": "ROUTING VALIDATION: PASS (20 MAJOR task file(s) checked, 0 accepted manual override(s))\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "easy_roadmap",
+      "chunk_id": "80a8ed",
+      "wall_time_seconds": 0.0000015,
+      "exit_code": 0,
+      "original_token_count": 5,
+      "output": "EASY ROADMAP: PASS\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "evidence",
+      "chunk_id": "031862",
+      "wall_time_seconds": 0.000002041,
+      "exit_code": 0,
+      "original_token_count": 18,
+      "output": "EVIDENCE VALIDATION: PASS\nChecked 0 REQUIRED PASS evidence record(s).\n"
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "task_completion",
+      "chunk_id": "e6fbcc",
+      "wall_time_seconds": 0.000001625,
+      "exit_code": 0,
+      "original_token_count": 12,
+      "output": "TASK COMPLETION: PASS\nChecked 0 DONE task(s).\n"
+    }
+  }
+]

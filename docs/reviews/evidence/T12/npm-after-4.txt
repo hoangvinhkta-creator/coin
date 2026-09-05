@@ -1,0 +1,10 @@
+/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269
+    if (Date.now() - t0 > (timeout || 20000)) throw new Error('waitSaved timeout; now ' + JSON.stringify(st));
+                                                    ^
+
+Error: waitSaved timeout; now {"phase":"ONLINE","detail":"","uid":"QEw7yn6ksFNwonFCY0goAYrw6dxe","projectId":"demo-ethdca","rev":0,"durableRev":null,"saving":false,"unconfirmed":false,"lastError":null,"seedPending":false,"seedDurable":false,"diverged":false,"mirrorShown":false,"hasSeed":false}
+    at waitSaved (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269:53)
+    at async Object.newPage (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:307:7)
+    at async /Users/hoangvinh/Documents/coin/webapp/test_multi_month_invariant.js:39:28
+
+Node.js v24.19.0

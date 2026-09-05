@@ -1,0 +1,12 @@
+
+=== V-02 — unlock vs reserve ===
+/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269
+    if (Date.now() - t0 > (timeout || 20000)) throw new Error('waitSaved timeout; now ' + JSON.stringify(st));
+                                                    ^
+
+Error: waitSaved timeout; now {"phase":"ONLINE","detail":"","uid":"gLWxCyCmlqfSRqwJ1GQYV4VgnHd9","projectId":"demo-ethdca","rev":0,"durableRev":null,"saving":false,"unconfirmed":false,"lastError":null,"seedPending":false,"seedDurable":false,"diverged":false,"mirrorShown":false,"hasSeed":false}
+    at Object.waitSaved (/Users/hoangvinh/Documents/coin/webapp/test_firebase_harness.js:269:53)
+    at async testV02 (/Users/hoangvinh/Documents/coin/webapp/test_v01_v02_v03.js:41:3)
+    at async /Users/hoangvinh/Documents/coin/webapp/test_v01_v02_v03.js:269:15
+
+Node.js v24.19.0
