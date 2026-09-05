@@ -1,0 +1,101 @@
+PASS PR-1 App nạp qua app_final.html (bundle của build_app.js) qua HTTP server, không gọi module Node trực tiếp.
+PASS AS-02a Đổi VND→USDT qua sheet mới cập nhật USDT hiện có ngay, không reload.
+PASS AS-02b Hai lệnh Mua ETH · Kế hoạch qua sheet ghi đúng source=PLAN.
+PASS AS-03 Mua EXTRA qua UI: invested tăng, planInvested/remaining/nextPlanned bất biến (INV-9); badge EXTRA hiện ở Lịch sử.
+PASS AS-04 Nạp dự phòng rồi Mua-Từ dự phòng: thiếu note bị chặn tại form (không cần lỗi ledger.js); có note thì lưu, và số dư dự phòng trên Tổng quan khớp bit-với-bit derive().
+PASS AS-05 Sửa giao dịch qua Lịch sử → derive() chạy lại; id/seq bất biến (INV-15).
+PASS AS-06 Xoá qua Lịch sử: snapshot JSON xuất hiện trước khi xoá; sau xoá event biến mất khỏi durable.
+PASS AS-11 Nhập muộn (2026-03-04, xen giữa các giao dịch 03/03..21/03 đã có) ghi được qua sheet không cần thao tác đặc biệt; thứ tự (businessDate,seq) do derive() tự xử lý.
+PASS AS-01/AS-08 Bốn số + hành động kế tiếp trên Tổng quan khớp bit-với-bit derive() (tolerance 0), gồm nextPlannedDate/Amount theo scheduleDays/carry.
+PASS AS-07 Opening với usdt.costVnd=null: giá vốn VND hiện "—", banner UNKNOWN_VND_BASIS thường trực, không nút ẩn vĩnh viễn trong DOM.
+PASS AS-10 Grep toàn bộ DOM: không tuỳ chọn SELL/Bán ở form/menu nào; không hiển thị realized P&L/PnL.
+PASS AS-09 Ở khung hình 390px: không cuộn ngang; ghi một giao dịch PLAN từ Tổng quan tốn đúng 3 lần chạm (FAB, loại, Lưu).
+PASS PR-3 Ít nhất 1 sửa và 1 xoá qua UI mới với snapshot/xác nhận (xem AS-05/AS-06).
+PASS PR-4/PR-5 Toàn bộ ghi lên Firestore Emulator (rules thật), đọc lại từ SERVER; reload → derive() chạy lại → số trên Tổng quan trùng khớp tuyệt đối.
+PASS PR-6 Grep ledger_ui.js: không có phép cộng/trừ/nhân tiền độc lập ngoài derive()/update()/migrate()/destructive() của webapp/ledger.js.
+PASS AS-12/PR-2 Toàn bộ AS-01..AS-11 chạy qua app_final.html + UI mới (tap/điền form thật) + Firestore Emulator + firestore.rules; anti-vacuity: 15 thao tác thật ghi nhận.
+{
+  "results": [
+    {
+      "name": "PR-1",
+      "status": "PASS",
+      "detail": "App nạp qua app_final.html (bundle của build_app.js) qua HTTP server, không gọi module Node trực tiếp."
+    },
+    {
+      "name": "AS-02a",
+      "status": "PASS",
+      "detail": "Đổi VND→USDT qua sheet mới cập nhật USDT hiện có ngay, không reload."
+    },
+    {
+      "name": "AS-02b",
+      "status": "PASS",
+      "detail": "Hai lệnh Mua ETH · Kế hoạch qua sheet ghi đúng source=PLAN."
+    },
+    {
+      "name": "AS-03",
+      "status": "PASS",
+      "detail": "Mua EXTRA qua UI: invested tăng, planInvested/remaining/nextPlanned bất biến (INV-9); badge EXTRA hiện ở Lịch sử."
+    },
+    {
+      "name": "AS-04",
+      "status": "PASS",
+      "detail": "Nạp dự phòng rồi Mua-Từ dự phòng: thiếu note bị chặn tại form (không cần lỗi ledger.js); có note thì lưu, và số dư dự phòng trên Tổng quan khớp bit-với-bit derive()."
+    },
+    {
+      "name": "AS-05",
+      "status": "PASS",
+      "detail": "Sửa giao dịch qua Lịch sử → derive() chạy lại; id/seq bất biến (INV-15)."
+    },
+    {
+      "name": "AS-06",
+      "status": "PASS",
+      "detail": "Xoá qua Lịch sử: snapshot JSON xuất hiện trước khi xoá; sau xoá event biến mất khỏi durable."
+    },
+    {
+      "name": "AS-11",
+      "status": "PASS",
+      "detail": "Nhập muộn (2026-03-04, xen giữa các giao dịch 03/03..21/03 đã có) ghi được qua sheet không cần thao tác đặc biệt; thứ tự (businessDate,seq) do derive() tự xử lý."
+    },
+    {
+      "name": "AS-01/AS-08",
+      "status": "PASS",
+      "detail": "Bốn số + hành động kế tiếp trên Tổng quan khớp bit-với-bit derive() (tolerance 0), gồm nextPlannedDate/Amount theo scheduleDays/carry."
+    },
+    {
+      "name": "AS-07",
+      "status": "PASS",
+      "detail": "Opening với usdt.costVnd=null: giá vốn VND hiện \"—\", banner UNKNOWN_VND_BASIS thường trực, không nút ẩn vĩnh viễn trong DOM."
+    },
+    {
+      "name": "AS-10",
+      "status": "PASS",
+      "detail": "Grep toàn bộ DOM: không tuỳ chọn SELL/Bán ở form/menu nào; không hiển thị realized P&L/PnL."
+    },
+    {
+      "name": "AS-09",
+      "status": "PASS",
+      "detail": "Ở khung hình 390px: không cuộn ngang; ghi một giao dịch PLAN từ Tổng quan tốn đúng 3 lần chạm (FAB, loại, Lưu)."
+    },
+    {
+      "name": "PR-3",
+      "status": "PASS",
+      "detail": "Ít nhất 1 sửa và 1 xoá qua UI mới với snapshot/xác nhận (xem AS-05/AS-06)."
+    },
+    {
+      "name": "PR-4/PR-5",
+      "status": "PASS",
+      "detail": "Toàn bộ ghi lên Firestore Emulator (rules thật), đọc lại từ SERVER; reload → derive() chạy lại → số trên Tổng quan trùng khớp tuyệt đối."
+    },
+    {
+      "name": "PR-6",
+      "status": "PASS",
+      "detail": "Grep ledger_ui.js: không có phép cộng/trừ/nhân tiền độc lập ngoài derive()/update()/migrate()/destructive() của webapp/ledger.js."
+    },
+    {
+      "name": "AS-12/PR-2",
+      "status": "PASS",
+      "detail": "Toàn bộ AS-01..AS-11 chạy qua app_final.html + UI mới (tap/điền form thật) + Firestore Emulator + firestore.rules; anti-vacuity: 15 thao tác thật ghi nhận."
+    }
+  ]
+}
+EXIT=0

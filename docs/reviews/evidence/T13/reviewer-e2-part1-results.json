@@ -1,0 +1,136 @@
+{
+  "results": [
+    {
+      "id": "E2-CARRY-PRECONDITION",
+      "status": "PASS",
+      "detail": "carryIn=14000000 plannedBudget=34000000 nextPlannedDate=2026-03-23 nextPlannedAmountVnd=14000000"
+    },
+    {
+      "id": "CHECK-T13-02/main-4+1",
+      "status": "PASS",
+      "detail": "5/5 thẻ khớp bit-với-bit derive(), gồm nextPlannedAmountVnd=14000000"
+    },
+    {
+      "id": "CHECK-T13-02/carry-subtitle",
+      "status": "PASS",
+      "detail": "phụ đề = \"Gồm 14.000.000 ₫ chuyển từ tháng trước\""
+    },
+    {
+      "id": "CHECK-T13-02/bottom",
+      "status": "PASS",
+      "detail": "{\"Đang nắm giữ (ETH)\":\"0,2\",\"Giá vốn TB (USDT)\":\"2.400\",\"Giá vốn TB (VND)\":\"60.000.000\",\"Định giá hiện tại\":\"—\",\"USDT hiện có\":\"3.520\",\"VND hiện có\":\"0\"}"
+    },
+    {
+      "id": "CHECK-T13-02/no-recommendation",
+      "status": "PASS",
+      "detail": "không GO/WAIT/score/regime/ladder trong toàn bộ innerText"
+    },
+    {
+      "id": "CHECK-T13-07/three-separate",
+      "status": "PASS",
+      "detail": "{\"Ngân sách tháng (chưa gồm carry)\":\"20.000.000 ₫\",\"Carry tháng trước (đã đóng)\":\"14.000.000 ₫\",\"→ Cộng vào ngân sách tháng này\":\"14.000.000 ₫\",\"Đã đầu tư tháng này (tổng)\":\"6.000.000 ₫\",\"Trong đó theo kế hoạch\":\"6.000.000 ₫\"}"
+    },
+    {
+      "id": "CHECK-T13-07/prev-closed-carryout",
+      "status": "PASS",
+      "detail": "carryOut(2026-02)=14000000; carryOut(tháng hiện tại)=null như spec"
+    },
+    {
+      "id": "CHECK-T13-07/next-per-schedule",
+      "status": "PASS",
+      "detail": "nextPlannedDate=2026-03-23 amount=14000000"
+    },
+    {
+      "id": "CHECK-T13-03/no-per-order-fx",
+      "status": "PASS",
+      "detail": "ô tỷ giá duy nhất = l1MarkRate|USDT/VND tham khảo (tùy chọn)"
+    },
+    {
+      "id": "CHECK-T13-03/reserve-note-blocked",
+      "status": "PASS",
+      "detail": "chặn tại form với note toàn khoảng trắng; 0 event RESERVE-buy được ghi"
+    },
+    {
+      "id": "CHECK-T13-03/all-kinds-mapping",
+      "status": "PASS",
+      "detail": "8/8 ánh xạ đúng trên durable state (loại thứ 9 \"Số dư đầu kỳ\" điều hướng tới Kế hoạch, đã dùng ở trên)"
+    },
+    {
+      "id": "CHECK-T13-05/edit-recompute-id-seq",
+      "status": "PASS",
+      "detail": "id/seq bất biến; dashboard khớp derive() ngay sau sửa (không reload)"
+    },
+    {
+      "id": "CHECK-T13-05/edit-survives-reload",
+      "status": "PASS",
+      "detail": "sau reload: qty/seq giữ nguyên, dashboard khớp derive()"
+    },
+    {
+      "id": "CHECK-T13-06/delete-snapshot-first",
+      "status": "PASS",
+      "detail": "snapshot trước khi xoá khớp bit-exact; sau xoá = sổ chưa từng có event; dashboard/lịch sử cập nhật"
+    },
+    {
+      "id": "CHECK-T13-06/delete-survives-reload",
+      "status": "PASS",
+      "detail": "reload sau xoá: durable state bit-exact"
+    },
+    {
+      "id": "CHECK-T13-06/confirm-dialog-exists",
+      "status": "PASS",
+      "detail": "dialog = \"Xóa giao dịch 2026-03-18? Bản đầy đủ đã được xuất trước thao tác này.\"; huỷ => sổ giữ nguyên"
+    },
+    {
+      "id": "CHECK-T13-06/opening-stronger-warning",
+      "status": "PASS",
+      "detail": "dialog riêng cho opening = \"Xóa đầu kỳ có thể làm mất giá vốn đã biết. Bản đầy đủ đã được xuất trước thao tác này.\""
+    },
+    {
+      "id": "PR-4/PR-5-reload-tolerance-0",
+      "status": "PASS",
+      "detail": "Tổng quan + khối dưới + Kế hoạch trùng khớp tuyệt đối trước/sau reload và khớp derive()"
+    },
+    {
+      "id": "PR-4/server-read-back",
+      "status": "PASS",
+      "detail": "8 event trên server; UI khớp derive(server state)"
+    },
+    {
+      "id": "CHECK-T13-10/single-derive-per-render",
+      "status": "PASS",
+      "detail": "1 lệnh derive(); ghi qua 9 lệnh update/migrate/destructive/canonical/empty; 0 ghi thẳng state"
+    },
+    {
+      "id": "CHECK-T13-10/no-independent-money-math",
+      "status": "PASS",
+      "detail": "1 biểu thức số học chạm trường tiền (đã ghi ra file để soi tay): [\"180: m.remainingPlannedBudgetVnd / m.plannedBudgetVnd\"]"
+    },
+    {
+      "id": "SELL/no-option-in-forms",
+      "status": "PASS",
+      "detail": "option side = [\"BUY=Mua\"]; 0 SELL/Bán trong form/menu"
+    },
+    {
+      "id": "SELL/no-realized-pnl",
+      "status": "PASS",
+      "detail": "không màn hình nào hiển thị lãi/lỗ đã thực hiện"
+    },
+    {
+      "id": "SELL/no-url-hash-path",
+      "status": "PASS",
+      "detail": "3 hash tấn công không lộ SELL; router chỉ nhận dashboard|history|plan|settings"
+    },
+    {
+      "id": "SELL/import-json-path",
+      "status": "FAIL",
+      "detail": "SỔ chứa TRADE side=SELL nạp qua UI Cài đặt -> Lịch sử hiển thị nhãn \"Bán\": {\"canonicalAccepts\":true,\"storedDurable\":true,\"uiShowsBan\":true,\"message\":\"Đã cập nhật; chờ xác nhận lưu bền.\"} |  | true !== false | "
+    }
+  ],
+  "sellReach": {
+    "canonicalAccepts": true,
+    "storedDurable": true,
+    "uiShowsBan": true,
+    "message": "Đã cập nhật; chờ xác nhận lưu bền."
+  },
+  "pageErrors": []
+}

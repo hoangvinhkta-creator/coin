@@ -1,0 +1,12 @@
+# T-13 E2 — Python pytest (sau khi sửa shallow clone bằng `git fetch --unshallow`)
+
+$ python3 -m pytest --collect-only -q | (sum per-file counts)
+TOTAL COLLECTED = 678
+
+$ python3 -m pytest -q
+........................................................................ [ 84%]
+........................................................................ [ 95%]
+..............................                                           [100%]
+exit code = 0 (không ký tự F/E nào trong toàn bộ dải tiến trình)
+
+=> 678/678 PASS

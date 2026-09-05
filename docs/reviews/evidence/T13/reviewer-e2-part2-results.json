@@ -1,0 +1,105 @@
+{
+  "results": [
+    {
+      "id": "UNKNOWN/banner+dash",
+      "status": "PASS",
+      "detail": "banner=\"Một số giá vốn VND chưa xác định — xem \"—\" ở Tổng quan/Lịch sử/Kế hoạch, sửa ở Kế hoạch → \"; 0 nút ẩn; Giá vốn TB (VND) = \"—\""
+    },
+    {
+      "id": "UNKNOWN/no-internal-leak",
+      "status": "PASS",
+      "detail": "không rò rỉ số nội bộ (H-45 không bị mở rộng)"
+    },
+    {
+      "id": "UNKNOWN/not-dismissible-by-interaction",
+      "status": "PASS",
+      "detail": "banner thường trực sau reload + 4 lần đổi màn; không key persistence nào ghi trạng thái đã-đọc"
+    },
+    {
+      "id": "HISTORY/build-dataset",
+      "status": "PASS",
+      "detail": "14 event đủ 8 loại + 1 nhập muộn + 1 tương lai"
+    },
+    {
+      "id": "HISTORY/ordering-businessDate-desc-seq-desc",
+      "status": "PASS",
+      "detail": "14 thẻ đúng thứ tự (businessDate DESC, seq DESC); nhập muộn ở vị trí 5 (thứ tự nhập sẽ là 1)"
+    },
+    {
+      "id": "HISTORY/badges-and-future",
+      "status": "PASS",
+      "detail": "badge EXTRA/RESERVE/TƯƠNG LAI đúng trên mọi thẻ; PLAN không badge; banner FUTURE_DATED_EVENTS bật"
+    },
+    {
+      "id": "HISTORY/opening-row-special",
+      "status": "PASS",
+      "detail": "opening tách riêng ở đầu, chỉ có Sửa, không có Xoá"
+    },
+    {
+      "id": "HISTORY/filter-type",
+      "status": "PASS",
+      "detail": "PLAN=3 EXTRA=3 RESERVE_BUY=1 RESERVE=3 TREASURY=3 PRICE=1; reset all=14"
+    },
+    {
+      "id": "HISTORY/filter-daterange-and-search",
+      "status": "PASS",
+      "detail": "khoảng ngày=7; tìm \"gamma\"=1; reset=14; durable state bất biến qua mọi thao tác lọc"
+    },
+    {
+      "id": "HISTORY/filter-does-not-change-dashboard",
+      "status": "PASS",
+      "detail": "lọc theo PLAN không đổi con số Tổng quan (vẫn = derive() trên TOÀN BỘ event)"
+    },
+    {
+      "id": "HISTORY/detail-matches-selected-event",
+      "status": "PASS",
+      "detail": "form chi tiết khớp đúng event được chọn (26ea8965)"
+    },
+    {
+      "id": "DASH/priceMark-validity-16.3",
+      "status": "PASS",
+      "detail": "valuation=null; UI=\"— · giá gần nhất 2026-03-08\"; hiển thị dạng \"N ngày trước\"? false"
+    },
+    {
+      "id": "DASH/priceMark-valid-shows-valuation",
+      "status": "PASS",
+      "detail": "priceMark hợp lệ -> \"889,2 USDT (2026-03-25)\" khớp derive().valuation"
+    },
+    {
+      "id": "NAV/4-destinations+fab",
+      "status": "PASS",
+      "detail": "[\"dashboard=Tổng quan\",\"history=Lịch sử\",\"plan=Kế hoạch\",\"settings=Cài đặt\"]"
+    },
+    {
+      "id": "NAV/hash-survives-refresh",
+      "status": "PASS",
+      "detail": "refresh-safe cho history,plan,settings,dashboard"
+    },
+    {
+      "id": "NAV/back-forward-no-corruption",
+      "status": "PASS",
+      "detail": "sổ bit-exact sau back/forward; page errors=0 (lưu ý: routeTo dùng history.replaceState nên back KHÔNG duyệt giữa 4 điểm đến)"
+    },
+    {
+      "id": "MOBILE/390-no-horizontal-scroll",
+      "status": "PASS",
+      "detail": "scrollWidth=390 ≤ clientWidth=390"
+    },
+    {
+      "id": "MOBILE/touch-targets",
+      "status": "PASS",
+      "detail": "mọi nút điều hướng/FAB/chọn-loại/Sửa-Xoá ≥ 24px ở 390px"
+    },
+    {
+      "id": "MOBILE/plan-purchase-3-taps",
+      "status": "PASS",
+      "detail": "3 lần chạm (FAB → chọn loại → Lưu) ghi được 1 giao dịch PLAN ở 390px"
+    },
+    {
+      "id": "T09B-16/mirror-never-silently-wins",
+      "status": "PASS",
+      "detail": "mirror rev+5 KHÔNG thắng nguồn bền; app báo phân kỳ chờ người dùng chọn (hành vi CHECK-T09B-16 còn nguyên trên UI Step B)"
+    }
+  ],
+  "pageErrors": []
+}

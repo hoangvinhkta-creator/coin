@@ -1,0 +1,8 @@
+{
+  "canonicalAcceptsSELL": true,
+  "sellStoredDurable": true,
+  "renderedCardsContainingBan": [
+    "2026-03-05\nMua ETH (Bán)\n0,1 ETH · 240 USDT\nreviewer SELL\nSửa\nXoá"
+  ],
+  "derivedFlags": []
+}
