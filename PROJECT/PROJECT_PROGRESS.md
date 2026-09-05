@@ -25,9 +25,25 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-05 — **OWNER DECISION `DEC-039` — phản hồi Owner Decision Brief của `T-07`: giữ
-`L-0`/`T-07 = READY` (KHÔNG chuyển `DONE`); uỷ quyền một phiên SPIKE evidence-investigation
-(RQ-1/RQ-3/RQ-4/RQ-5, RQ-2 dùng lại evidence sẵn có).**
+2026-09-05 — **CANONICALIZE Owner-run REPLAY evidence cho RQ-1/RQ-3/RQ-4 (dataset official T-06,
+KHÔNG phải official rerun)** — `STEP_0 = PASS` (reproduce bit-for-bit), 8/8 phép kiểm nhất quán
+cơ học PASS (`docs/reviews/T07-RQ-REPLAY-EVIDENCE-RECORD.md`). Kết quả chính: chỉ **2/9** window
+pre-OOS vượt Control F P95 (`W1`, `W4`), **3/9** vượt Control G P95 (`W1`, `W4`, `W6`); `OOS`
+**thua cả hai control ở cả median lẫn P95**; `OPPORTUNITY+CRASH` gộp chỉ **1,56 %** tổng vốn
+danh nghĩa (giá mua bình quân thấp hơn rõ rệt so với `SMART`/`BASE`, nhưng quy mô quá nhỏ để tạo
+ảnh hưởng portfolio-level); tương quan quan sát (KHÔNG nhân quả) cash_ratio×AE theo 9 window =
+`+0,546` (Pearson). Tái đánh giá: `RQ-2` PARTIALLY ESTABLISHED (thu hẹp — "aggregate thắng"
+đứng vững nhưng "kỹ năng timing ổn định" không được ủng hộ); `RQ-3` ESTABLISHED (như REPLAY);
+`RQ-4` PARTIALLY ESTABLISHED; `RQ-1` NOT ESTABLISHED (nhân quả, không đổi); `RQ-5` PARTIALLY
+ESTABLISHED (cả hai vế cùng nhận thêm bằng chứng). Chi tiết đầy đủ:
+`docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md`. KHÔNG chọn L-1/L-2 thay Owner. `T-07` giữ
+`READY`, không transition. Giữ nguyên tuyệt đối: `official verdict = DO_NOT_BUILD`,
+`V2.1.5 validation = FAILED`, `can_proceed_to_app = false`, `T-11 = BLOCKED`,
+`DEC-005 = PENDING`. Production diff = EMPTY, không task ID mới.
+
+Trước đó, cùng ngày — 2026-09-05 — **OWNER DECISION `DEC-039` — phản hồi Owner Decision Brief của
+`T-07`: giữ `L-0`/`T-07 = READY` (KHÔNG chuyển `DONE`); uỷ quyền một phiên SPIKE
+evidence-investigation (RQ-1/RQ-3/RQ-4/RQ-5, RQ-2 dùng lại evidence sẵn có).**
 Chủ dự án đọc `docs/reviews/T07-OWNER-DECISION-BRIEF.md`, xác nhận bề mặt lựa chọn L-1/L-2 là
 đúng và đủ, nhưng **chưa chọn** giữa hai hướng đó (`L-0` = trạng thái tạm, không phải hướng thứ
 ba). `T-07` giữ nguyên `READY`, không transition. Toàn bộ ràng buộc của `DEC-031`/`DEC-038`
