@@ -3107,3 +3107,130 @@ Review/repair budget (`CAP-VERDICT`): không tiêu — phiên SPIKE là evidence
 diff = 0, không phải implementation/repair cycle.
 
 ---
+
+## DEC-040 — Owner Decision cho `T-07`: chọn **L-1** (benchmark đơn giản hơn); `T-07: READY → DONE`
+
+Date:
+2026-09-05 (Owner Decision, qua chat, phản hồi `docs/reviews/T07-OWNER-DECISION-BRIEF.md` §7/§14
+và `docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md` §10, nhánh `claude/t-07-decision-prep-1oprq1`)
+
+Task:
+`T-07` — DUYỆT: đọc verdict và chọn hướng đi. Đây là lần THỰC THI đầu tiên và duy nhất của
+`T-07` — trước đây chỉ `READY` (`DEC-038`), chưa từng được thực thi.
+
+## Owner Response (dẫn nguyên, làm cơ sở quyết định)
+
+    OWNER DECISION — T-07
+    LUA CHON: L-1
+    T-07: Authorize completion under the canonical L-1 path.
+    INTERPRETATION: V2.1.5 remains FAILED. DO_NOT_BUILD remains unchanged. can_proceed_to_app
+    remains false for V2.1.5.
+    RATIONALE: The new replay evidence materially weakens the hypothesis of a stable timing
+    edge (Control F P95: 2/9 windows; Control G P95: 3/9 windows; OOS loses to both controls
+    at median and P95). Capital-allocation mismatch remains only PARTIALLY_ESTABLISHED and is
+    not sufficient evidence to justify opening V2.2 now.
+    DIRECTION: Return the product direction to a simpler DCA/benchmark-oriented path. Any
+    future timing/reallocation strategy must be treated as a separate research hypothesis with
+    new evidence and must not inherit V2.1.5 validation status.
+    PRESERVE: V2.1.5 = FAILED; verdict = DO_NOT_BUILD; can_proceed_to_app = false for V2.1.5;
+    T-11 remains governed by canonical downstream rules; DEC-005 unchanged unless separately
+    resolved.
+    AUTHORIZE: Record the next canonical Owner decision and complete T-07 according to
+    repository authority. Do not implement downstream product changes in this session. STOP
+    after T-07 lifecycle closure.
+
+## Decision
+
+**A. Lựa chọn canonical.** Chủ dự án chọn **L-1 — benchmark đơn giản hơn**, đúng một trong hai
+lựa chọn đã đóng khung tại `docs/reviews/T07-OWNER-DECISION-BRIEF.md` §7 (lấy nguyên văn từ
+Implementation Plan §5, dòng `DO NOT BUILD`: *"Chọn benchmark đơn giản hơn hoặc thiết kế lại
+thành version mới."*). Owner không chọn L-2 (mở V2.2) — nguyên văn lý do: bằng chứng
+capital-allocation mismatch mới ở mức PARTIALLY_ESTABLISHED, KHÔNG đủ để biện minh mở V2.2 ngay
+bây giờ.
+
+**B. Ý nghĩa chính xác của L-1** (đúng như đã đóng khung TRƯỚC KHI Owner chọn, tại
+`T07-OWNER-DECISION-BRIEF.md` §8 mục L-1 — không viết lại sau khi biết lựa chọn): chấp nhận rằng
+V2.1.5 không tạo được accumulation edge, và hướng đi của dự án là một benchmark/DCA đơn giản hơn
+thay vì tiếp tục một chiến lược timing/reallocation phức tạp hơn dưới V2.1.5.
+
+**C. `T-07: READY → DONE`.** Đây là transition MỘT LẦN, hệ quả trực tiếp của việc Owner tự thực
+thi bước DUYỆT (`STATE_AUTHORITY.md`: `DONE` = Owner hoặc completion authority được chỉ định —
+ở đây chính Owner ra quyết định, đúng thẩm quyền). `T-07` từ nay `DONE`, nghĩa hẹp: **bước DUYỆT
+đã được con người thực thi và chọn hướng đi L-1** — KHÔNG có nghĩa V2.1.5 PASS, KHÔNG có nghĩa
+dự án CoinDCA kết thúc (xem `T07-OWNER-DECISION-BRIEF.md` §6.1 — phân biệt "V2.1.5 trượt
+validation" khỏi "dự án phải bị bỏ"; L-1 chính là bằng chứng sống rằng dự án tiếp tục, chỉ đổi
+chiến lược nền).
+
+**D. Semantic bắt buộc phải giữ nguyên** (đúng theo yêu cầu tường minh của Owner, không đổi một
+chữ):
+
+    T-06 verdict (official, lịch sử)   = DO_NOT_BUILD    [KHÔNG ĐỔI]
+    V2.1.5 validation                  = FAILED          [KHÔNG ĐỔI, VĨNH VIỄN]
+    can_proceed_to_app (cho V2.1.5)    = false            [KHÔNG ĐỔI]
+    T-11                                = BLOCKED          [KHÔNG ĐỔI — xem E]
+    DEC-005                            = PENDING          [KHÔNG ĐỔI — chưa resolve]
+
+**E. `T-11` — vì sao vẫn `BLOCKED` sau khi `T-07 = DONE`.** Điều kiện của `T-11`
+(`PROJECT_PROGRESS.md`) là `T-07 DONE ∧ WP-C2 DONE ∧ WP-C3 DONE ∧ WP-C4 DONE ∧ verdict=BUILD`.
+Sau quyết định này: `T-07 = DONE` (mới thoả), `WP-C2 = DONE` (đã thoả từ `DEC-036`), nhưng
+`WP-C3 = READY` (chưa `DONE`), `WP-C4 = PLANNED` (chưa `DONE`), và quan trọng nhất —
+**`verdict` vẫn `DO_NOT_BUILD`, không phải `BUILD`, dưới V2.1.5**. Một mình điều kiện verdict đã
+đủ giữ `T-11` `BLOCKED` **vô thời hạn dưới V2.1.5** — không chỉ tạm thời chờ dependency. Đúng
+nguyên văn chỉ thị Owner: *"Any future timing/reallocation strategy must be treated as a
+separate research hypothesis with new evidence and must not inherit V2.1.5 validation status"*
+— nghĩa là ngay cả khi `WP-C3`/`WP-C4` sau này `DONE`, `T-11` (dưới đúng tên gọi V2.1.5) vẫn
+không mở được trừ khi có một verdict `BUILD` MỚI từ một chiến lược/version khác, tự nó chạy đủ
+gate theo Master Index §6 — không kế thừa bất kỳ phần nào của trạng thái validation của V2.1.5.
+
+**F. `DEC-005` không bị đụng tới.** Owner tường minh: *"DEC-005 unchanged unless separately
+resolved"*. Quyết định này KHÔNG resolve `DEC-005` — nó vẫn `PENDING`, tiếp tục chặn `T-08` như
+trước, độc lập với việc `T-07` nay `DONE`.
+
+**G. Không mở V2.2, không mở `WP-C3`/`WP-C4`/`T-08` trong quyết định này.** Owner tường minh
+"Do not implement downstream product changes in this session" và "STOP after T-07 lifecycle
+closure" — quyết định này CHỈ đóng `T-07`, không tự động mở bất kỳ công việc lớp C/D nào dù L-1
+về nguyên tắc CHO PHÉP xem xét mở chúng sau này (`T07-OWNER-DECISION-BRIEF.md` §8 mục L-1 —
+"Được phép sau đó" — là một khả năng cho phiên khác, không phải một hành động của quyết định
+này).
+
+## Reason
+
+`docs/reviews/T07-OWNER-DECISION-BRIEF.md` §7 đã đóng khung ĐÚNG hai lựa chọn canonical (L-1/L-2)
+từ nguyên văn Implementation Plan §5 TRƯỚC KHI Owner đọc bất kỳ evidence mới nào — Owner sau đó
+xác nhận bề mặt lựa chọn đó đúng và đủ (`DEC-039`). `docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md`
+§10 (Decision Impact) đã đánh giá evidence mới mà KHÔNG chọn thay Owner — chỉ nêu evidence
+WEAKENS giả thuyết timing edge ổn định và PARTIALLY SUPPORTS (không ESTABLISH) giả thuyết
+capital-allocation mismatch. Owner tự cân nhắc hai đánh giá đó và chọn L-1, đúng thẩm quyền
+`STATE_AUTHORITY.md` (quyết định phạm vi sản phẩm/chiến lược thuộc Owner, không phải agent).
+Không có canonical rule nào cấm Owner chọn L-1 tại thời điểm này — ngược lại, Implementation Plan
+§5 liệt kê L-1 như một hành động HỢP LỆ, không đòi thêm điều kiện tiên quyết nào ngoài verdict đã
+có.
+
+## Consequence
+
+`T-07: READY → DONE`. **Ý nghĩa hẹp**: bước DUYỆT đã thực thi, hướng đi = L-1 (benchmark đơn giản
+hơn). KHÔNG phải: V2.1.5 PASS; verdict đổi; `can_proceed_to_app` đổi; dự án kết thúc.
+
+Giữ nguyên tuyệt đối, không đổi một chữ: `T-06 = DONE` (lịch sử, `DEC-031`); verdict official =
+`DO_NOT_BUILD`; `V2.1.5 validation = FAILED`; `can_proceed_to_app = false`; `GATE-B = CLOSED`
+(`DEC-038`); `DEC-005 = PENDING`; `T-08` vẫn bị `DEC-005` chặn; `WP-C2 = DONE`, `WP-C3 = READY`
+(không mở), `WP-C4 = PLANNED` (không mở); toàn bộ threshold/manifest/seed/ngày split của V2.1.5
+đã đóng băng (Master Index §6) — không đổi.
+
+`T-11`: **vẫn `BLOCKED`**, và dưới V2.1.5 điều kiện `verdict=BUILD` **không bao giờ** thoả được
+nữa (V2.1.5 đã đóng lại bằng L-1) — `T-11` dưới tên gọi V2.1.5 chuyển từ "blocked, chờ dependency"
+sang "not applicable vĩnh viễn dưới V2.1.5", đúng tinh thần `DEC-031`. Một verdict `BUILD` từ một
+chiến lược/version khác (nếu tương lai có) sẽ phải tự đủ điều kiện từ đầu, không kế thừa gì từ
+V2.1.5.
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: mở `V2.2`/`WP-D2`; chọn Objective A/C; mở/thực
+thi `WP-C3`/`WP-C4`/`T-08`; resolve `DEC-005`; sửa `src/`/`tests/`/`webapp/`; sửa
+threshold/manifest/seed/ngày split của V2.1.5; rerun `T-06`; đổi/ghi đè official artifact nào;
+đổi verdict `DO_NOT_BUILD`; đổi `can_proceed_to_app`; mở `T-11`; tạo task ID mới; merge/push
+`main`; xoá nhánh; branch cleanup; chạm `data/`. Production diff = 0 (quyết định chỉ đổi trạng
+thái, không sửa mã).
+
+Review/repair budget: không tiêu — `T-07` không phải work package có Completion Gate/budget
+riêng (Tier `DUYET`), và production diff của quyết định này = 0.
+
+---
