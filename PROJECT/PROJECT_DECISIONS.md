@@ -3763,3 +3763,153 @@ Review/repair budget: không tiêu, theo đúng tiền lệ `DEC-041`/`DEC-012` 
 diff = 0.
 
 ---
+
+## DEC-043 — Owner Decision: tu chỉnh `T-12` (kiến trúc persistence, golden baseline, pre-authorize một repair cycle)
+
+Date:
+2026-09-05 (Owner Decision, qua chat, phản hồi `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` và
+`docs/reviews/L1-STEP-A-TASK-DEFINITION.md` soạn tại `S032`, nhánh
+`claude/coindca-l1-step-a-task-1ka2zj`)
+
+Task:
+`T-12` — Owner giữ nguyên là ĐÚNG MỘT capability kế toán L-1 bước A; quyết định này TU CHỈNH nội
+dung task đó, KHÔNG mở task ID nào khác, KHÔNG thi hành.
+
+## Owner Response (tóm lược đầy đủ ở dưới)
+
+    OWNER REVIEW — T-12 TASK DEFINITION AMENDMENTS
+    Owner accepts T-12 as the single bounded L-1 Step-A capability, subject to three amendments:
+    1. PERSISTENCE ARCHITECTURE — approve the minimum architecture change T-12 needs: L-1 schema
+       may replace/evolve the persisted state representation WITHIN the already-authorized
+       CoinDCA state persistence boundary (document `ethdca/state`); canonical schema identifier
+       = the one defined by the approved spec (`coindca.ledger/2`); no new Firestore
+       collection/document boundary, no firestore.rules change, no Firebase architecture change,
+       no Firebase project migration authorized here; H-42/R-1…R-5 remain later work. If T-12
+       discovers it actually needs one of those four — STOP with ARCHITECTURE_CHANGE_REQUIRED
+       again; do not infer broader architecture authority.
+    2. GOLDEN_BASELINE_SHA — must NOT depend on real Owner financial data. Canonical golden
+       baseline for T-12 comes from approved SC-01…SC-12 synthetic fixtures + canonical expected
+       values from the approved spec + deterministic oracle. Separate: (A) T-12 GOLDEN ACCOUNTING
+       BASELINE — synthetic, deterministic, repo-safe, used by implementation/E2; (B)
+       OWNER_LOCAL_ACCEPTANCE — real/private data, later, not a Ready Gate dependency. Replace
+       any misleading `GOLDEN_BASELINE_SHA = PENDING_OWNER_DATA` with the canonical
+       synthetic-baseline requirement; if a SHA cannot exist until the fixture is first
+       generated, define the precise deterministic moment it freezes. Do not invent a random
+       pre-implementation SHA.
+    3. BOUNDED REPAIR AUTHORITY — pre-authorize ONE repair cycle for T-12. Does not create
+       additional scope or capability budget. Usable only if: a REQUIRED T-12 check fails; the
+       failure is inside the already-frozen T-12 capability; no financial semantics from
+       DEC-042/spec need to change; no new architecture authority required; no Firebase/auth
+       scope introduced; no new task ID needed; production file boundary stays <= 7 files;
+       cumulative production change stays within the frozen task change budget; repair does not
+       weaken/delete a REQUIRED test/check/invariant. Allowed purpose: make the already-approved
+       T-12 capability satisfy its frozen contract. Not allowed: redesign spec, reinterpret
+       accounting rules, add features, absorb UI work, add research/strategy behavior, expand
+       Firebase scope, weaken SC/INV expectations. If the one cycle is consumed and REQUIRED
+       evidence still fails: STOP with OWNER_DECISION_REQUIRED / CHANGE_BUDGET_EXCEEDED as
+       appropriate — do not silently grant a second cycle.
+    4. READY STATE — re-evaluate the Ready Gate after applying the amendments; T-12 may remain
+       READY only if the architecture gap is resolved by this approval, no real Owner data is
+       required to start, and all other 17 Ready Gate requirements remain satisfied; otherwise
+       report READY_GATE_FAIL.
+    5. E2 — preserve the independent E2 requirement exactly as frozen; implementer may not
+       self-certify E2; E2 must still cover pooled USDT WAC, UNKNOWN propagation, edit/delete/
+       late-entry recomputation, timezone/month boundaries, migration ambiguity, persistence
+       round-trip, production reachability, malformed/incomplete state.
+    6. TASK SCOPE PRESERVATION — one task only (T-12), CAP-WEBAPP lineage, SC-01…SC-12,
+       INV-1…INV-15, CHECK-T12-01…14, P-1…P-6, current LOC/file caps, no real Owner data, no UI
+       redesign, no Firebase isolation/auth implementation, no Research/Buy Score/regime/
+       recommendation, no V2.2, no strategy code changes unless a canonical production-path
+       dependency proves unavoidable. Do not create additional task IDs.
+    7. Update only the T-12 task-definition/state documents necessary to record these
+       amendments. Production diff must remain EMPTY. Commit/push only
+       claude/coindca-l1-step-a-task-1ka2zj. Do NOT merge main.
+
+## Decision
+
+**A. Persistence architecture — bounded approval GRANTED.** `T-12` được phép thay thế/tiến hoá
+đại diện state đã lưu (schema/version canonical `coindca.ledger/2`, định nghĩa tại
+`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §5) **bên trong** ranh giới persistence
+CoinDCA đã được phép hiện có — document `ethdca/state`, đã allow-list tại
+`firestore.rules:104-105`. **KHÔNG** được phép: collection/document Firestore mới ngoài
+`ethdca/state` + `ethdca/seed`; sửa `firestore.rules`; đổi kiến trúc Firebase (project, Hosting,
+auth); di trú Firebase project. `H-42` / `R-1`…`R-5` (spec §18) vẫn là product-readiness work
+**SAU** `T-12`, không đổi. Phạm vi phê duyệt CHỈ giới hạn cho đúng thay đổi `T-12` đã đóng khung;
+nếu thi hành thật sự cần một trong bốn mục bị cấm ở trên, `T-12` DỪNG LẠI với
+`ARCHITECTURE_CHANGE_REQUIRED` một lần nữa — quyết định này KHÔNG được suy diễn rộng thành thẩm
+quyền kiến trúc tổng quát. Ghi chi tiết vào `docs/tasks/T-12-so-cai-l1-v2-va-derive.md`
+§ Persistence boundary § Owner-approved bounded scope.
+
+**B. Golden baseline — tách bạch ba khái niệm, không dùng dữ liệu thật của Owner.** `T-12` định
+nghĩa `T12_GOLDEN_ACCOUNTING_BASELINE` — bộ fixture `SC-01`…`SC-12` **tổng hợp** (synthetic) +
+số kỳ vọng canonical của spec §19, dùng làm oracle cho implementation/E2. Khái niệm này **tách
+biệt** khỏi:
+
+- `GOLDEN_BASELINE_SHA` tầng dự án (`H-10`, gắn với `T-06`/backtest engine V2.1.5, dữ liệu thị
+  trường thật) — **không đổi bởi quyết định này**, vẫn `PENDING_OWNER_DATA / MIGRATION_REQUIRED`,
+  và **chưa từng, vẫn không phải**, phụ thuộc của `T-12`;
+- `OWNER_LOCAL_ACCEPTANCE` (spec §22.1) — dữ liệu THẬT, riêng tư, ngoài repo, thuộc bước D, ngoài
+  `T-12` (`O-6`).
+
+`T12_GOLDEN_ACCOUNTING_BASELINE_SHA` được định nghĩa là SHA của commit đầu tiên trên nhánh thi
+hành `T-12` đưa đủ 12 fixture `SC-01`…`SC-12` vào dưới dạng file test đã commit; đóng băng ngay
+tại thời điểm đó (cùng quy tắc đã áp cho spec §19 — không viết lại ngữ nghĩa/số kỳ vọng SC sau
+khi đóng băng, trừ qua `COMPLETION GATE CHANGE PROPOSAL`). Vì `T-12` chưa thi hành, SHA này **chưa
+tồn tại** tại thời điểm quyết định — đây là quy tắc xác định nó SẼ được đóng băng thế nào, không
+phải một SHA bịa ra trước. Ghi chi tiết: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` § Change
+budget § Ba khái niệm golden/baseline.
+
+**C. Bounded repair authority — MỘT chu kỳ pre-authorized, có điều kiện.** Owner pre-authorize
+đúng MỘT repair cycle cho `T-12`, RÚT TỪ pool `CAP-WEBAPP` hiện có (`allowed 2 / used 0 /
+remaining 2`, `DEC-018`) — **không** cộng thêm budget, **không** tạo lineage mới. Chu kỳ này chỉ
+dùng được khi TẤT CẢ đồng thời đúng: một REQUIRED check của `T-12` FAIL; thất bại nằm trong
+capability đã đóng băng; không ngữ nghĩa tài chính nào của `DEC-042`/spec cần đổi; không cần
+thẩm quyền kiến trúc mới ngoài mục A; không mở rộng Firebase/auth; không cần task ID mới; touch
+area vẫn ≤ 7 file production; diff production cộng dồn vẫn trong trần đã đóng băng; repair không
+làm yếu/xoá REQUIRED test/check/invariant nào. Mục đích duy nhất: làm cho capability `T-12` đã
+duyệt thoả đúng hợp đồng đã đóng băng của chính nó — không redesign spec, không diễn giải lại
+quy tắc kế toán, không thêm tính năng, không hấp thụ UI, không thêm research/strategy, không mở
+rộng Firebase, không làm yếu kỳ vọng SC/INV. Nếu chu kỳ này đã dùng và REQUIRED evidence vẫn
+FAIL: dừng với `OWNER_DECISION_REQUIRED` hoặc `CHANGE_BUDGET_EXCEEDED` tuỳ trường hợp — **không**
+tự cấp chu kỳ thứ hai. Ghi chi tiết: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` § Budget
+review/repair và `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.6.
+
+**D. Ready Gate — tái xác nhận, `T-12` giữ nguyên `READY`.** Khoảng trống thẩm quyền kiến trúc
+trước đây nay được đóng bởi mục A; điều kiện tiên quyết dữ liệu được xác nhận thoả bởi mục B
+(không cần dữ liệu thật để bắt đầu/hoàn tất gate kế toán tự động). 17/17 mục Ready Gate còn lại
+không đổi. Không `READY_GATE_FAIL`.
+
+**E. Bảo toàn phạm vi — không đổi.** Vẫn ĐÚNG MỘT task (`T-12`), lineage `CAP-WEBAPP`,
+`SC-01`…`SC-12`, `INV-1`…`INV-15`, `CHECK-T12-01`…`-14`, `P-1`…`P-6`, trần LOC/file hiện tại,
+không dữ liệu thật của Owner, không redesign UI, không thi hành Firebase isolation/auth, không
+Research/Buy Score/regime/recommendation, không `V2.2`, không sửa code chiến lược trừ khi một
+dependency production-path canonical chứng minh không tránh được. Không task ID mới nào được
+tạo bởi quyết định này.
+
+**F. `E2` — giữ nguyên, không đổi.** Yêu cầu `E2` độc lập giữ nguyên vẹn đúng như đã đóng băng ở
+`T-12`; implementer vẫn không được tự chứng nhận `E2`; tám điểm dò đối kháng không mất mục nào.
+
+## Reason
+
+`S032` mở `T-12` với hai khoảng trống tường minh (thẩm quyền kiến trúc cho persistence trong
+`ethdca/state`, và một câu diễn đạt gây hiểu lầm về `GOLDEN_BASELINE_SHA`) cùng một quy tắc budget
+đòi Owner Decision phản ứng khi cần repair cycle. Owner đọc `docs/tasks/T-12-so-cai-l1-v2-va-derive.md`
+và `docs/reviews/L1-STEP-A-TASK-DEFINITION.md`, và thay vì chờ các gap đó chặn phiên thi hành sau
+này, đóng cả ba ngay tại đây — đúng tinh thần `CAPABILITY_MODEL.md` §II.8 (pre-authorization là
+một Owner Decision hợp lệ, không phải một ngoại lệ của quy tắc "task creation approval !=
+repair-budget allocation approval").
+
+## Consequence
+
+`docs/tasks/T-12-so-cai-l1-v2-va-derive.md`: amended tại § Persistence boundary, § Change budget,
+§ Budget review/repair, § Stop conditions, § Ready Gate, § Evidence/E2, § Implementation
+authority, § Notes. **14 REQUIRED check (`CHECK-T12-01`…`-14`) KHÔNG đổi một chữ.** `T-12` giữ
+`READY`. `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.6 cập nhật để ghi pre-authorization. Không task
+ID mới. Không thay đổi trạng thái task nào khác trong `PROJECT_PROGRESS.md` ngoài việc ghi nhận
+tu chỉnh này trong `Last Updated` và `Current Task Snapshot`.
+
+Production diff = 0 (`git diff --shortstat 91cfbba..HEAD -- src/eth_dca_os webapp pyproject.toml
+pyproject.lock` → rỗng). Review/repair budget: quyết định này TỰ NÓ không tiêu chu kỳ nào (chỉ
+pre-authorize một chu kỳ để dùng SAU, khi `T-12` thi hành và cần).
+
+---

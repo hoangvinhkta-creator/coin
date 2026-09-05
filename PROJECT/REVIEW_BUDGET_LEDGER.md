@@ -204,7 +204,7 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
     THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (DONE — DEC-021/DEC-041 I),
                      WP-C2 (DONE — DEC-036, Owner-authorized Lifecycle Closure, 2026-09-04),
                      WP-C3 (CANCELLED — DEC-041 F), WP-C4 (CANCELLED — DEC-041 F),
-                     T-12 (READY — S032, 2026-09-05; xem §2.2.6)
+                     T-12 (READY — S032, 2026-09-05; amended S033/DEC-043; xem §2.2.6, §2.2.7)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
     BRANCH         = main   (canonical trunk từ `DEC-013`)
@@ -398,7 +398,8 @@ một phiên riêng sau `DEC-042`"*). Định tuyến đầy đủ (5 câu hỏi
     ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI (Owner-ratified, `DEC-018`)
     CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI
     CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
-    T-12 tự cấp thêm          = 0
+    T-12 tự cấp thêm          = 0   <- đúng tại thời điểm S032; XEM §2.2.7 (DEC-043 pre-authorize
+                                        1 chu kỳ sau đó, cùng ngày, không phải một khoản cấp mới)
     OWNER_EXTENSION           = KHÔNG CẤP
 
 **`T-12` KHÔNG làm budget reset và KHÔNG được cấp budget riêng.** Ba lý do, ghi để không phải
@@ -411,7 +412,9 @@ tranh luận lại:
    giờ được khai `ADOPTED`, và quy tắc chuyển tiếp nói rõ:
    *"task creation approval != repair-budget allocation approval"*. Vì vậy **mở một repair cycle
    cho `T-12` cần một Owner Decision riêng**; hai chu kỳ còn lại của `CAP-WEBAPP` KHÔNG được coi
-   là đã cấp sẵn cho `T-12`.
+   là đã cấp sẵn cho `T-12`. (Đúng nguyên trạng tại `S032`. `S033`/`DEC-043` cung cấp ĐÚNG Owner
+   Decision riêng đó cho chu kỳ thứ nhất — trước, có điều kiện — chứ không bỏ qua quy tắc; xem
+   §2.2.7.)
 3. Lượt thi hành đầu tiên của `T-12` là **INITIAL IMPLEMENTATION** — theo tiền lệ đã ghi cho
    `CAP-PROV` §1, `CAP-DATA` §2.1 và chính `CAP-WEBAPP` §2.2 (`T-09A`, `T-09B`, `WP-C2`), lượt
    này **không tiêu** repair cycle. `USED` giữ nguyên `0` vì **chưa tiêu**, không phải vì reset.
@@ -421,7 +424,8 @@ Effective Risk của `CAP-WEBAPP` tại `T-12` = **HIGH** (`MAX(Local Risk 3, Bl
 Hệ quả đã biết: **batch review bắt buộc cuối phiên** cho mọi phiên thi hành `T-12`.
 
 Budget **tầng B** (`SESSION_PRODUCTION_DIFF_MAX` / `GOLDEN_CUMULATIVE_DIFF_MAX`) VẪN chưa khai
-được (`H-10`; `GOLDEN_BASELINE_SHA = PENDING_OWNER_DATA / MIGRATION_REQUIRED`). File task `T-12`
+được (`H-10`; `GOLDEN_BASELINE_SHA = PENDING_OWNER_DATA / MIGRATION_REQUIRED` — dòng này gắn với
+lineage `T-06`/backtest engine, KHÔNG phải `CAP-WEBAPP`/`T-12`, xem §2.2.7). File task `T-12`
 khai một **mốc đo cấp task** `91cfbba` kèm trần diff `+1.600 / −450` trên production path; đây là
 ràng buộc phạm vi của riêng task đó và **KHÔNG** phải khai `GOLDEN_BASELINE_SHA`, **KHÔNG** phải
 khai giá trị tầng B của dự án.
@@ -433,6 +437,37 @@ Phiên `S032` là phiên governance-only. Đo trực tiếp, không cộng tay:
 
 Vì diff production = 0, phiên này **không tiêu** chu kỳ nào và không cần cặp BASE/HEAD SHA trong
 bảng §2.2. Cặp SHA sẽ được ghi tại lượt implementation thật của `T-12`.
+
+#### 2.2.7 Phiên `S033` (2026-09-05) — Owner Decision `DEC-043`: tu chỉnh `T-12`, budget PRE-AUTHORIZED (chưa tiêu)
+
+Owner đọc `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` (từ `S032`) và ban hành `DEC-043`, duyệt ba
+tu chỉnh. Phần liên quan tới ledger này là mục thứ ba: **pre-authorize đúng MỘT repair cycle cho
+`T-12`**, rút từ pool `CAP-WEBAPP` hiện có — không cộng thêm budget, không tạo lineage mới.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI (Owner-ratified, `DEC-018`)
+    CURRENT BUDGET USED       = 0 repair cycle    <- KHÔNG ĐỔI (pre-authorization ≠ tiêu thụ)
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI cho tới khi thật sự dùng
+    T-12 PRE-AUTHORIZED       = 1 repair cycle (DEC-043) — RÚT TỪ 2 chu kỳ ở trên khi dùng,
+                                KHÔNG phải một khoản cộng thêm
+    OWNER_EXTENSION           = KHÔNG CẤP (khác OWNER_EXTENSION — đây là pre-authorization nội
+                                bộ pool CAP-WEBAPP, không phải mở rộng pool)
+
+**Vì sao `USED` vẫn `0`, không phải `1`.** `DEC-043` **cấp phép trước** cho việc dùng một chu kỳ
+— nó không phải bản thân một lượt sửa đã chạy. `USED` chỉ tăng khi chu kỳ đó thật sự được tiêu
+(có cặp BASE/HEAD SHA của một lượt repair thật), theo đúng quy ước đã dùng cho mọi mục khác trong
+ledger này. Khi tiêu: `USED 0→1`, `REMAINING 2→1`, ghi cặp SHA tại đây theo đúng khuôn §1/§2.1.
+
+**Điều kiện dùng** (đầy đủ tại `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` § Budget review/repair
+và `DEC-043` mục C): REQUIRED check FAIL trong capability đã đóng băng; không đổi ngữ nghĩa tài
+chính; không cần thẩm quyền kiến trúc ngoài mục A của `DEC-043`; không mở rộng Firebase/auth;
+không task ID mới; touch area ≤ 7 file; diff trong trần đã đóng băng; không làm yếu REQUIRED
+test/check/invariant. Nếu chu kỳ này dùng xong mà REQUIRED evidence vẫn FAIL, hoặc điều kiện
+không đủ ngay từ đầu: `OWNER_DECISION_REQUIRED` — **không** tự cấp chu kỳ thứ hai.
+
+**Khoản mục §2.2.7 này KHÔNG tự nó tiêu ngân sách.** Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat 91cfbba..HEAD -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 0   (production diff = EMPTY; xem `docs/sessions/S033-t12-owner-amendments-dec043.md`)
 
 ## 3. Golden cumulative change budget
 

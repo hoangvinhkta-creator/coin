@@ -253,3 +253,32 @@ Trình tự bắt buộc của phiên đó: chạy `branch_authority_check.sh` *
 Ràng buộc mang theo: Completion Gate đã đóng băng (không xoá/làm yếu REQUIRED check); không mở
 thêm task ID; không tự cấp repair budget; không tự chứng nhận `E2`; batch review bắt buộc cuối
 phiên (Effective Risk `HIGH`); `E2` do một phiên reviewer **độc lập** chạy sau khi thi hành xong.
+
+---
+
+## Addendum — `S033` (2026-09-05), Owner Decision `DEC-043`
+
+Owner đọc báo cáo này và `T-12`, rồi tu chỉnh ba điểm — không thi hành, không task ID mới:
+
+1. **Persistence (§6 ở trên).** Owner GRANT thẩm quyền kiến trúc tối thiểu mà §6 đã xác định là
+   bắt buộc: schema `coindca.ledger/2` được thay thế/tiến hoá state đã lưu **bên trong**
+   `ethdca/state`. Collection/document mới, sửa `firestore.rules`, đổi kiến trúc Firebase vẫn
+   **ngoài** phạm vi và vẫn kích hoạt `ARCHITECTURE_CHANGE_REQUIRED` nếu thật sự cần.
+2. **Golden baseline (§9 ở trên).** Câu *"`GOLDEN_BASELINE_SHA` vẫn `PENDING_OWNER_DATA`"* trong
+   §9 bị Owner xác nhận gây hiểu lầm khi đọc trong ngữ cảnh `T-12` — nó không, và chưa từng, là
+   phụ thuộc của `T-12`. `T-12` nay có khái niệm riêng, tổng hợp: `T12_GOLDEN_ACCOUNTING_BASELINE`
+   (bộ fixture `SC-01`…`SC-12` + số kỳ vọng spec §19), tách khỏi cả `GOLDEN_BASELINE_SHA` tầng dự
+   án (`H-10`, lineage `T-06`) lẫn `OWNER_LOCAL_ACCEPTANCE` (dữ liệu thật, bước D).
+3. **Repair budget (§9 § Budget review/repair ở trên).** Owner pre-authorize MỘT repair cycle
+   cho `T-12`, rút từ pool `CAP-WEBAPP` hiện có (không cộng thêm), dùng được chỉ khi đủ các điều
+   kiện đã liệt kê trong file task. Chu kỳ thứ hai vẫn cần Owner Decision riêng.
+
+**Ready Gate (§10 ở trên) tái xác nhận: `T-12` giữ nguyên `READY`.** 17/17 mục vẫn thoả; hai mục
+(tác động dữ liệu/bảo mật, điều kiện tiên quyết dữ liệu) được củng cố thêm bằng phê duyệt Owner
+tường minh thay vì giả định thi hành. Không `READY_GATE_FAIL`.
+
+**§7 Completion Gate KHÔNG đổi một chữ** — 14 REQUIRED check giữ nguyên. **§8 Evidence/E2 KHÔNG
+đổi** — yêu cầu độc lập giữ nguyên vẹn.
+
+Chi tiết đầy đủ: `PROJECT_DECISIONS.md` `DEC-043`, `docs/tasks/T-12-so-cai-l1-v2-va-derive.md`,
+`docs/sessions/S033-t12-owner-amendments-dec043.md`.

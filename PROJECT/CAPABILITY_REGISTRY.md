@@ -134,7 +134,7 @@ lại Owner Decision — **không tự tạo task**.
 | `CAP-MEASURE` | Đo Failure Signal | `WP-A5` | `WP-A5` | DONE tại S015 — 9/9 REQUIRED PASS (E1), chủ dự án phê chuẩn | CÓ |
 | `CAP-ORDER` | Thứ tự 18 bước tính toán | `WP-A6` | `WP-A6` | DONE tại S014 — 8/8 REQUIRED PASS, CHECK-A6-08 (E2 độc lập) PASS | CÓ |
 | `CAP-VERDICT` | Chính sách verdict, test đặc tả, audit trail | `WP-B1` | `WP-B1`, `WP-B2`, `WP-B3` | `WP-B1` **DONE** (`DEC-034`); `WP-B2` **DONE** (`DEC-038`, 2026-09-05 — Owner-authorized Lifecycle Closure, 10/10 REQUIRED PASS, 141 ca test mới, 0 dòng production bị sửa, đóng `R-09` + danh sách "chưa có test" của `S001` thuộc BT §21); `WP-B3` **DONE** (`DEC-037`, 2026-09-05 — Owner-authorized Lifecycle Closure, 8/8 REQUIRED PASS, đóng `F-024`/`F-033`). **Toàn bộ lineage DONE** — `GATE-B = CLOSED` (`DEC-038`) | CÓ (lát cắt đã chạy — T-06 DONE) |
-| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python; **từ `DEC-041` gồm cả sổ cái tài chính CoinDCA L-1** | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4`, **`T-12` (READY — `S032`, 2026-09-05)** | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; partial fill là khái niệm zone/ladder, không tồn tại dưới L-1. Ghi chú: `DEC-036` từng chuyển `READY` nhưng không được áp vào file task — stale `ST-09`, đóng tại `DEC-041` I); `WP-C4` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; phần dư parity OSCORE → `RE_TRIGGER_CONDITION` trong `HARDENING_BACKLOG.md`, không phải task) | **CÓ — lineage còn sống, lineage root của công việc L-1** (`DEC-041`) |
+| `CAP-WEBAPP` | App web: sổ sách, trạng thái thực thi, parity JS/Python; **từ `DEC-041` gồm cả sổ cái tài chính CoinDCA L-1** | `WP-C1` | `WP-C1`, `WP-C2`, `WP-C3`, `WP-C4`, **`T-12` (READY — `S032`, 2026-09-05; amended `S033`/`DEC-043`)** | `WP-C1` DONE; `WP-C2` **DONE** (`DEC-036`, Owner-authorized Lifecycle Closure, 2026-09-04 — 8/8 REQUIRED PASS); `WP-C3` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; partial fill là khái niệm zone/ladder, không tồn tại dưới L-1. Ghi chú: `DEC-036` từng chuyển `READY` nhưng không được áp vào file task — stale `ST-09`, đóng tại `DEC-041` I); `WP-C4` **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; phần dư parity OSCORE → `RE_TRIGGER_CONDITION` trong `HARDENING_BACKLOG.md`, không phải task) | **CÓ — lineage còn sống, lineage root của công việc L-1** (`DEC-041`) |
 | `CAP-DEBT` | Nợ kỹ thuật không đổi hành vi | `WP-D1` | `WP-D1` | DONE | KHÔNG |
 | `CAP-SPEC` | Đề xuất V2.2 cho khiếm khuyết đặc tả | `WP-D2` | `WP-D2` | **CANCELLED** (`DEC-041` F — `NOT_APPLICABLE_TO_V2_1_5`; `DEC-040` từ chối V2.2 và đòi giả thuyết tương lai không kế thừa V2.1.5. `S-001`/`S-002`/`S-003` được ghi chú kèm freeze `DEC-041` A) | KHÔNG — đóng cùng V2.1.5 |
 | `CAP-GOVTOOL` | Validator & tooling governance | `MICRO-GOVDEF-001` | chưa có owner cho phần glob | READY một phần | KHÔNG |
@@ -170,6 +170,14 @@ số `OWNER_ASSIGNMENT_REQUIRED` mới = **0**.
 `END_TO_END_ACCEPTANCE` của §1.A vẫn `PENDING_OWNER_DATA` — **không đổi**. `T-12` được chấp nhận
 bằng toạ độ nghiệp vụ **tổng hợp** (`SC-01`…`SC-12`, spec §19, có số cụ thể), đúng như `DEC-041`
 C cho phép; `A-5` (`OWNER_LOCAL_ACCEPTANCE`, spec §22.1) vẫn nằm ngoài `T-12`.
+
+**Amended `S033` (2026-09-05), Owner Decision `DEC-043`.** Owner duyệt ba tu chỉnh cho `T-12`:
+phạm vi kiến trúc persistence bên trong `ethdca/state`; tách bạch `T12_GOLDEN_ACCOUNTING_BASELINE`
+(tổng hợp) khỏi `GOLDEN_BASELINE_SHA` tầng dự án (`H-10`, lineage `T-06`, không thuộc
+`CAP-WEBAPP`) và khỏi `OWNER_LOCAL_ACCEPTANCE`; pre-authorize một repair cycle có điều kiện, rút
+từ pool `CAP-WEBAPP` hiện có (không cộng thêm budget). `T-12` giữ `READY`, giữ nguyên trong
+`CAP-WEBAPP`. Chi tiết: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md`,
+`PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.7, `PROJECT_DECISIONS.md` `DEC-043`.
 
 ---
 

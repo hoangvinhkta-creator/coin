@@ -25,7 +25,20 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-05 — **`S032` — MỞ `T-12` (CoinDCA L-1 bước A): Sổ cái L-1 v2 + `derive()` tất định +
+2026-09-05 — **`S033` — OWNER DECISION `DEC-043`: tu chỉnh `T-12` (persistence architecture bounded
+approval, tách bạch golden baseline, pre-authorize MỘT repair cycle có điều kiện).** `T-12` giữ
+`READY`; 14 REQUIRED check (`CHECK-T12-01`…`-14`) KHÔNG đổi một chữ; 17/17 Ready Gate tái xác nhận
+vẫn thoả. Ba tu chỉnh: (1) sổ `coindca.ledger/2` được phép thay thế/tiến hoá state đã lưu **bên
+trong** ranh giới `ethdca/state` đã có — KHÔNG collection/document mới, KHÔNG sửa
+`firestore.rules`, KHÔNG đổi kiến trúc Firebase; (2) `T12_GOLDEN_ACCOUNTING_BASELINE` (tổng hợp,
+`SC-01`…`SC-12`) tách khỏi `GOLDEN_BASELINE_SHA` tầng dự án (`H-10`, lineage `T-06`, KHÔNG phải
+phụ thuộc của `T-12`) và khỏi `OWNER_LOCAL_ACCEPTANCE` (dữ liệu thật, bước D); (3) MỘT repair
+cycle pre-authorized cho `T-12`, RÚT TỪ pool `CAP-WEBAPP` hiện có (`allowed 2 / used 0 / remaining
+2`, không cộng thêm), dùng được chỉ khi đủ điều kiện đã liệt kê (§ Budget review/repair). Không
+task ID mới. Production diff = **EMPTY**. Chi tiết: `PROJECT_DECISIONS.md` `DEC-043`,
+`docs/tasks/T-12-so-cai-l1-v2-va-derive.md`, `docs/sessions/S033-t12-owner-amendments-dec043.md`.
+
+Trước đó, cùng ngày — 2026-09-05 — **`S032` — MỞ `T-12` (CoinDCA L-1 bước A): Sổ cái L-1 v2 + `derive()` tất định +
 migration + test kế toán. Trạng thái `NOT_PLANNED → READY`, Completion Gate FROZEN, Tier D /
 Effort max.** Thẩm quyền: `DEC-042` § Consequence (*"việc mở task ID cho bước A thuộc một phiên
 riêng sau `DEC-042`"*). Task ID mới = **1** (`T-12`); registry 22 → 23 task file, 29 → 30 roadmap
@@ -950,25 +963,35 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 
 ## Current Task Snapshot
 
-**Task đang mở: `T-12` — `READY`, CHƯA bắt đầu thi hành** (`S032`, 2026-09-05).
+**Task đang mở: `T-12` — `READY`, CHƯA bắt đầu thi hành** (mở `S032`, tu chỉnh `S033`/`DEC-043`,
+2026-09-05).
 
     Task ID        T-12
     Tên            Sổ cái L-1 v2: mô hình dữ liệu, derive() tất định, migration và test kế toán
     File           docs/tasks/T-12-so-cai-l1-v2-va-derive.md
     Task Mode      MAJOR
-    Trạng thái     READY (17/17 MAJOR Ready Gate xác nhận trong file task)
+    Trạng thái     READY (17/17 MAJOR Ready Gate xác nhận; tái xác nhận sau DEC-043)
     Routing        D / Fable / max — model_score 3.1, effort_score 3.65,
                    inputs D4 R3 B3 A2 X3 · U3 V4 H4 C3 F4,
                    categories accounting_financial + destructive_migration
-    Gate           FROZEN 2026-09-05 — 14 REQUIRED check (CHECK-T12-01…-14)
+    Gate           FROZEN 2026-09-05 — 14 REQUIRED check (CHECK-T12-01…-14), KHÔNG đổi bởi DEC-043
     Capability     CAP-WEBAPP (lineage root WP-C1) — KHÔNG tạo lineage mới
-    Budget         Không tự cấp. Pool capability: allowed 2 / used 0 / remaining 2 (DEC-018).
-                   Mở repair cycle cho T-12 cần Owner Decision riêng (CAPABILITY_MODEL §II.8).
-    Thẩm quyền mở  DEC-042 § Consequence — "việc mở task ID cho bước A thuộc một phiên riêng"
+    Kiến trúc      DEC-043 duyệt: schema coindca.ledger/2 thay thế state bên trong ethdca/state
+                   đã có; KHÔNG collection/document mới, KHÔNG sửa firestore.rules, KHÔNG đổi
+                   kiến trúc Firebase (vẫn thuộc bước C nếu cần vượt phạm vi này)
+    Golden         T12_GOLDEN_ACCOUNTING_BASELINE (tổng hợp, SC-01…SC-12) — tách khỏi
+                   GOLDEN_BASELINE_SHA tầng dự án (H-10, lineage T-06, không phải phụ thuộc của
+                   T-12) và khỏi OWNER_LOCAL_ACCEPTANCE (dữ liệu thật, bước D)
+    Budget         Pool capability: allowed 2 / used 0 / remaining 2 (DEC-018). DEC-043
+                   pre-authorize MỘT chu kỳ đầu cho T-12 (rút từ pool trên, không cộng thêm),
+                   dùng được chỉ khi đủ điều kiện đã liệt kê trong file task. Chu kỳ thứ hai vẫn
+                   cần Owner Decision riêng.
+    Thẩm quyền mở  DEC-042 § Consequence; tu chỉnh DEC-043 (persistence/golden/repair)
 
 Pha `L-1 PRODUCT + ACCOUNTING SPEC` **đã hoàn tất** (`DEC-042`, spec `CANONICAL — APPROVED`).
-`T-12` là bước **A** của spec §24. Bước B (dashboard/UX), C (`H-42` Firebase/auth) và D
-(`OWNER_LOCAL_ACCEPTANCE`) **chưa được mở** và không phải hệ quả tự động của `T-12`.
+`T-12` là bước **A** của spec §24. Bước B (dashboard/UX), C (`H-42` Firebase/auth, và bất kỳ mở
+rộng persistence nào vượt phạm vi `DEC-043`) và D (`OWNER_LOCAL_ACCEPTANCE`) **chưa được mở** và
+không phải hệ quả tự động của `T-12`.
 
 Cảnh báo **"dừng dùng app với tiền thật" vẫn còn hiệu lực** (`H-41`, `DEC-041` K.2): `T-12` chỉ
 mở được `A-1`…`A-4` của spec §22; `A-5` và `A-6` nằm ngoài phạm vi.
@@ -2380,7 +2403,7 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
-**Cập nhật sau `S032` (2026-09-05) — task definition cho L-1 bước A.**
+**Cập nhật sau `S033` (2026-09-05) — Owner Decision `DEC-043` tu chỉnh `T-12`.**
 
     NEXT SMALLEST ACTION = mở một phiên thi hành RIÊNG cho T-12.
 
@@ -2389,17 +2412,25 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 1. Đọc theo thứ tự: `AGENTS.md` → `governance/v4/CORE/*` → `PROJECT/PROJECT_PROFILE.md`,
    `CAPABILITY_REGISTRY.md`, file này, `PRODUCTION_PATHS.md`, `REVIEW_BUDGET_LEDGER.md`,
    `HARDENING_BACKLOG.md` (`H-41`, `H-42`, `H-43`), `PROJECT_DECISIONS.md` (`DEC-040`,
-   `DEC-041`, `DEC-042`) → `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` →
+   `DEC-041`, `DEC-042`, `DEC-043`) → `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` →
    `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md`.
 2. Chạy `branch_authority_check.sh` TRƯỚC khi đọc state; nhánh mới tách từ `origin/main`.
-3. Completion Gate của `T-12` đã **đóng băng** 2026-09-05 — không xoá/làm yếu REQUIRED check;
-   thay đổi phải qua `COMPLETION GATE CHANGE PROPOSAL`.
-4. **Không** mở thêm task ID nào. **Không** tự cấp repair budget. **Không** tự chứng nhận `E2`.
+3. Completion Gate của `T-12` đã **đóng băng** 2026-09-05 và **không đổi bởi `DEC-043`** —
+   không xoá/làm yếu REQUIRED check; thay đổi phải qua `COMPLETION GATE CHANGE PROPOSAL`.
+4. **Không** mở thêm task ID nào. **Không** tự cấp repair budget NGOÀI chu kỳ pre-authorized của
+   `DEC-043` (và chu kỳ đó chỉ dùng được khi đủ điều kiện đã liệt kê trong file task — tự đối
+   chiếu, ghi rõ trong evidence). **Không** tự chứng nhận `E2`.
 5. `E2` cho khối tính đúng tài chính do một phiên reviewer **độc lập** tạo, sau khi thi hành
-   xong — không phải trong cùng phiên.
+   xong — không phải trong cùng phiên. Yêu cầu `E2` KHÔNG đổi bởi `DEC-043`.
+6. Sổ L-1 phải nằm **trong** `ethdca/state` đã có (`DEC-043` mục A); cần collection/document mới
+   hoặc sửa `firestore.rules` ⇒ dừng với `ARCHITECTURE_CHANGE_REQUIRED`, không tự suy diễn rộng
+   thẩm quyền của `DEC-043`.
+7. `T12_GOLDEN_ACCOUNTING_BASELINE` (tổng hợp) là đủ cho gate kế toán; **không** cần dữ liệu tài
+   chính thật của Owner để bắt đầu hay hoàn tất `T-12` (`DEC-043` mục B).
 
 Cần Owner quyết định (khi tới lúc, không chặn việc bắt đầu `T-12`):
-- repair budget cho `T-12` nếu vòng rà soát đầu tiên FAIL (`CAPABILITY_MODEL.md` §II.8);
+- chu kỳ repair **thứ hai** cho `T-12` nếu chu kỳ pre-authorized đã dùng mà vẫn FAIL
+  (`CAPABILITY_MODEL.md` §II.8; `DEC-043` không tự động mở rộng);
 - `IMPLEMENTED → DONE` của `T-12`.
 
 ---
