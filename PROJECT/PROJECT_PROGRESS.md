@@ -25,6 +25,18 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
+2026-09-05 — **T-12: IMPLEMENTED → DONE** (`DEC-046`, Owner-authorized Lifecycle Closure) sau
+independent E2 `E2_VERDICT = PASS` (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`). 9/9 check
+E2-required PASS trên bằng chứng độc lập tái lập được (oracle WAC riêng, property test bảo toàn
+VND, 300 hoán vị + 6 TZ, 14 mutant độc lập, production reachability riêng trên `app_final.html`),
+0 BLOCKING. Completion Gate **14/14 PASS**. Golden `c610a29` không đổi trong suốt E2/closure;
+production diff của cả E2 lẫn closure = RỖNG. `CAP-WEBAPP` budget KHÔNG đổi **2/1/1**,
+`REPAIR_CYCLE_1` vẫn CONSUMED, không tiêu chu kỳ thứ hai. Bốn finding E2 route thành HARDENING
+`H-44`…`H-47` (không task mới). **`T-12 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46`
+(`F-E2-03`, khiếm khuyết đặc tả) phải xử lý TRƯỚC khi mở nghiệp vụ SELL thật; `H-42`
+(Firebase isolation/xác thực bền vững) và ràng buộc product-readiness khác giữ nguyên.
+
+Lịch sử cập nhật trước:
 2026-09-05 — S034: T-12 **IMPLEMENTED**, independent E2 REQUIRED. DEC-045 đã disposition
 hai nhóm trước implementation; Ready Gate 17/17. SC12/12, INV15/15, mutation7/7 và
 P1…P6 PASS E1; full Python678/678 PASS, npm baselinePASS/sau exit1 ở luồng legacy đã gỡ,
@@ -794,15 +806,21 @@ Vertical Acceptance Slice ACTIVE đổi sang **sản phẩm CoinDCA L-1**
 `can_proceed_to_app = false` giữ nguyên vĩnh viễn.
 
 Current Task:
-T-12 — IMPLEMENTED (S034, sau DEC-045). Implementation/E1 hoàn tất;
-independent E2 REQUIRED cho9check. Báo cáo: docs/reviews/T12-IMPLEMENTATION-REPORT.md.
+Không có task MAJOR nào đang IN_PROGRESS. T-12 — DONE (Owner Closure `DEC-046`, 2026-09-05,
+sau independent E2 PASS). Báo cáo: docs/reviews/T12-IMPLEMENTATION-REPORT.md,
+docs/reviews/T12-E2-INDEPENDENT-REVIEW.md, docs/reviews/T12-OWNER-CLOSURE.md.
 
 Current Task Mode:
-MAJOR
+(không có task MAJOR/MICRO/SPIKE đang thi hành)
 
 Next Recommended Task:
-Reviewer độc lập thực hiện E2 trên T-12 đã IMPLEMENTED; không tạo task mới.
-Không mở task mới. Spec L-1 đã được duyệt tại DEC-042; các task V2.1.5 đã đóng/hoãn giữ nguyên.
+KHÔNG mở task mới trong closure này (`AGENTS.md` §3). Bước kế tiếp của chuỗi L-1
+(spec-l1 §24, bước B — dashboard/UX) là quyết định của Owner, không phải hệ quả tự động của
+`T-12 DONE`. TRƯỚC khi bước B/C/D chạm nghiệp vụ SELL cho dữ liệu thật: `H-46` (`F-E2-03` —
+ngữ nghĩa tạo/giải phóng giá vốn VND khi bán) phải được một Owner Decision riêng xử lý.
+`H-42` (Firebase isolation/xác thực bền vững, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D)
+vẫn là product-readiness constraint chưa đóng. Không mở task mới cho V2.1.5; spec L-1 đã
+được duyệt tại DEC-042, các task V2.1.5 đã đóng/hoãn giữ nguyên.
 
 Branch authority: mọi phiên mới branch từ `origin/main` sau khi fetch. Baseline đo
 budget/production diff là **`origin/main` sau fetch**, KHÔNG phải ref `main` cục bộ
@@ -861,7 +879,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
 | CANCELLED | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) · **`DEC-041` (2026-09-05)**: `READY → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Đầu ra là đề xuất **V2.2-của-V2.1.5**; `DEC-040` từ chối mở V2.2 và đòi mọi giả thuyết chiến lược tương lai phải độc lập, KHÔNG kế thừa trạng thái validation V2.1.5 — nên tiền đề của `WP-D2` không còn. `S-001`/`S-002`/`S-003` được **ghi chú kèm** freeze `DEC-041` A (khiếm khuyết trong artifact đóng băng thì ghi chú, không sửa — Master Index §6) |
 | CANCELLED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Điều kiện của `T-11` gồm `verdict = BUILD`, mà `DEC-040` §E xác lập điều kiện này KHÔNG BAO GIỜ thoả được nữa dưới V2.1.5. Đóng luôn mâu thuẫn trạng thái cũ (`PLANNED` ở bảng vs `BLOCKED` ở `DEC-040` §D — stale `ST-08`). Verdict `BUILD` từ chiến lược/version khác trong tương lai phải tự đủ điều kiện từ đầu |
-| IMPLEMENTED | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041` (lát cắt ACTIVE = L-1, `app_development_allowed = true`) và `DEC-042` (spec `CANONICAL — APPROVED`; mở task ID cho bước A thuộc một phiên riêng — thi hành tại `S032`). Capability `CAP-WEBAPP`, lineage root `WP-C1` — KHÔNG tạo lineage mới, KHÔNG reset budget. Mở đường cho bước B (dashboard/UX) và bước D (chấp nhận dùng thật). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
+| DONE | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | **DONE — Owner-authorized Lifecycle Closure tại `DEC-046`** (2026-09-05), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 9/9 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 14/14 REQUIRED PASS** (5 E1-only + 9 E1+E2), không sửa câu chữ/ngữ nghĩa. Golden `c610a29` không đổi trong suốt E2; production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1** (`REPAIR_CYCLE_1` vẫn CONSUMED, không tiêu chu kỳ thứ hai). Bốn finding E2 (`F-E2-01`…`04`) route thành HARDENING `H-44`…`H-47`, không task mới. **`T-12 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46`/`F-E2-03` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041`/`DEC-042`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Trước đó IMPLEMENTED tại `S034` (`docs/reviews/T12-IMPLEMENTATION-REPORT.md`). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -976,27 +994,31 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 
 ## Current Task Snapshot
 
-**T-12 — IMPLEMENTED (S034, sau DEC-045); independent E2 REQUIRED.**
+**T-12 — DONE (`DEC-046`, Owner Closure, 2026-09-05, sau independent E2 PASS).**
 
     Task ID        T-12
     File           docs/tasks/T-12-so-cai-l1-v2-va-derive.md
-    Task Mode      MAJOR
-    Trạng thái     IMPLEMENTED — implementation/E1 hoàn tất, chưa DONE
+    Task Mode      MAJOR (đã đóng — không có task MAJOR nào đang thi hành kế tiếp)
+    Trạng thái     DONE — Completion Gate 14/14 REQUIRED PASS (5 E1-only + 9 E1+E2)
     Routing        D / max; model_score3.1, effort_score3.65
-    Gate           FROZEN2026-09-05; 14REQUIRED, E2surface9check giữ nguyên
+    Gate           FROZEN2026-09-05; 14/14 PASS, không sửa câu chữ/ngữ nghĩa
     Ready Gate     Tái đánh giá duy nhất sauDEC-045: 17/17PASS
     Capability     CAP-WEBAPP, lineage rootWP-C1
     Kiến trúc      L-1 trong ethdca/state, không đổi Firebase/auth/rules/hosting
-    Golden         c610a299ed6b66dea3cd63372a0943967c93e95d — frozen, không đổi fixture
-    Repair         BASEc610a29 → HEAD2a2ab3f; REPAIR_CYCLE_1 CONSUMED
-    Budget         allowed2/used1/remaining1, task không được tự dùng chu kỳ thứ hai
-    Evidence       SC12/12, INV15/15, mutation7/7, P1…P6 và17nhóm browser PASS E1
+    Golden         c610a299ed6b66dea3cd63372a0943967c93e95d — frozen, không đổi trong suốt E2
+    Repair         BASEc610a29 → HEAD2a2ab3f; REPAIR_CYCLE_1 CONSUMED (không đổi bởi closure)
+    Budget         allowed2/used1/remaining1 — E2 và Owner closure KHÔNG tiêu chu kỳ nào
+    Evidence       SC12/12, INV15/15, mutation7/7, P1…P6 E1 + 9/9 check E2-required PASS độc lập
     Regression     Python678/678 PASS; npm legacy N/A từng ca, persistence L-1 PASS
-    Còn lại        independent E2 cho CHECK02/03/04/05/06/09/10/11/12; Owner closure sau gate
+    E2 report      docs/reviews/T12-E2-INDEPENDENT-REVIEW.md — E2_VERDICT = PASS, 0 BLOCKING
+    Findings       F-E2-01…04 → HARDENING H-44…H-47, kèm RE_TRIGGER_CONDITION, không task mới
+    Guard          T-12 DONE KHÔNG cấp phép SELL tiền thật — H-46/F-E2-03 phải xử lý TRƯỚC
 
 
-Bước B/C/D chưa mở. `H-41`/`H-42` chưa đóng. Không ghi hay đọc dữ liệu tài chính thật của Owner.
-Nguồn checkpoint: `7d1985aaf306294df49c9508078d5425da10f47e`; production diff = 0.
+Bước B/C/D chưa mở — quyết định bởi Owner, không phải hệ quả tự động của DONE này. `H-42` (bước
+C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng; `H-46` (`F-E2-03`) phải xử lý trước SELL thật.
+Không ghi hay đọc dữ liệu tài chính thật của Owner. Nguồn checkpoint:
+`7d1985aaf306294df49c9508078d5425da10f47e`; production diff của E2/closure = 0.
 
 ### Snapshot trước đó — sau `DEC-041` (giữ để truy vết)
 

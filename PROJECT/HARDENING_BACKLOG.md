@@ -1508,3 +1508,121 @@ ngày thì OSCORE lệch âm thầm dù parity "xanh" trên dữ liệu liên t�
     - spec L-1 quyết định bật tab Research / hiển thị Buy Score hồi cứu; HOẶC
     - `webapp/engine.js` được giữ lại chạy trên dữ liệu do người dùng nhập tay; HOẶC
     - một con số OSCORE hiển thị trong app L-1 bị nghi lệch khỏi `score.py`.
+
+---
+
+## H-44 — Khoá sắp xếp `(businessDate, seq)` của `derive()` chỉ được `test_t12_browser.js` giữ độc lập; unit suite không phân biệt được
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review, `F-E2-01`, `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §10/§23)
+
+Reviewer E2 độc lập viết hai mutant riêng (đổi khoá sắp xếp của `derive()` sang chỉ `seq`, và
+sang `createdAt` rồi `seq`) — cả hai **sống sót cả 32 test** của `webapp/test_t12_ledger.js`,
+vì fixture `SC-07` không phân biệt được thứ tự (giải phóng WAC theo tỷ lệ giữ nguyên bình quân)
+và test `INV-6` đổi `createdAt` theo đúng thứ tự mảng (trùng thứ tự `seq`). Cả hai mutant **bị
+diệt** khi chạy qua `webapp/test_t12_browser.js` (oracle `P-4`, exit 1) bằng một kịch bản có
+tính phân biệt (nhập muộn xen giữa hai lần đổi tỷ giá P2P). Vì vậy hành vi production **ĐÚNG**,
+nhưng chứng cứ giữ đúng hành vi đó nằm ở tầng harness chậm nhất (emulator + Playwright), và
+`webapp/package.json` § `scripts.test` hiện **không** nối bất kỳ script `test_t12_*.js` nào vào
+`npm test` — `npm test` hôm nay không chạy một test kế toán L-1 nào.
+
+Không BLOCKING: `derive()` sắp xếp đúng, đã xác nhận độc lập cả bằng probe trực tiếp lẫn qua
+production reachability (P-3, P-5). Đây là khoảng trống về **vị trí** của bằng chứng, không phải
+một khiếm khuyết hành vi.
+
+    RE_TRIGGER_CONDITION:
+    - bất kỳ thay đổi nào chạm biểu thức sắp xếp trong `derive()`; HOẶC
+    - `webapp/test_t12_browser.js` bị gỡ khỏi bộ evidence bắt buộc của `T-12` hoặc khỏi CI; HOẶC
+    - bộ `test_t12_*.js` vẫn nằm ngoài `npm test` khi `CAP-WEBAPP` có lượt thi hành kế tiếp chạm
+      `webapp/ledger.js`; HOẶC
+    - một capability tương lai phụ thuộc vào tính tất định của thứ tự xử lý event.
+
+    Khắc phục đề xuất (khi có thẩm quyền, KHÔNG thi hành trong closure này): thêm đúng một ca
+    unit dùng ledger phân biệt đã ghi trong `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §23
+    `F-E2-01`. Không đổi fixture SC đã đóng băng, không đổi ngữ nghĩa kế toán.
+
+---
+
+## H-45 — Cờ `UNKNOWN_VND_BASIS` biến mất sau khi cạn sạch một pool USDT có giá vốn UNKNOWN
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review, `F-E2-02`, `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §7/§23)
+
+Quy tắc §6.5 ép `usdtCostVnd = 0` khi `usdtQty` về 0 (chống phần dư sống sót — `INV-3`). Khi
+basis là `UNKNOWN` (`null`), quy tắc này biến `null` thành `0`, và nếu không có lệnh mua nào
+từng rút từ pool UNKNOWN đó thì biểu thức đặt cờ `UNKNOWN_VND_BASIS` (kiểm `usdt.costVnd`,
+`eth.costVnd`, `reserve`, các `invested[m]`) không còn phần tử `null` nào để bắt được — cờ biến
+mất, trong khi `realizedFxVnd` (lãi/lỗ tỷ giá đã thực hiện của chính lần cạn pool đó) vẫn thực sự
+`UNKNOWN` nhưng không nằm trong biểu thức đặt cờ và cũng không được `ledger_ui.js` hiển thị ở
+đâu.
+
+Không BLOCKING: tại thời điểm đó mọi vị thế liên quan đều bằng 0 nên `costVnd = 0` không phải
+một con số sai; đại lượng còn UNKNOWN duy nhất (`realizedFxVnd`) không được Completion Gate nào
+của `T-12` yêu cầu hiển thị, và spec §6.4 tuyên bố L-1 "dừng ở mức mô tả" cho lãi/lỗ tỷ giá.
+
+    RE_TRIGGER_CONDITION:
+    - L-1 (hoặc bước B/C/D của spec §24) bắt đầu hiển thị `realizedFxVnd` hoặc bất kỳ P&L VND
+      nào cho người dùng; HOẶC
+    - xuất hiện yêu cầu sản phẩm "UNKNOWN phải nhìn thấy được kể cả khi vị thế liên quan = 0"
+      (ví dụ mục đích kiểm toán/lịch sử); HOẶC
+    - giao diện lịch sử giao dịch hiển thị nguồn gốc giá vốn (basis provenance) của từng event.
+
+    Khắc phục đề xuất (khi có thẩm quyền): thêm `realizedFxVnd` vào biểu thức đặt cờ
+    `UNKNOWN_VND_BASIS` trong `webapp/ledger.js`. Một dòng, không đổi ngữ nghĩa kế toán khác.
+
+---
+
+## H-46 — SELL: ngữ nghĩa tạo/giải phóng giá vốn VND khi bán ETH — khiếm khuyết ĐẶC TẢ, KHÔNG phải lỗi cài đặt `T-12`
+
+Capability: `CAP-WEBAPP` · Owner: **CHƯA CÓ — cần Owner quyết định trước khi mở nghiệp vụ SELL cho dữ liệu thật** · Phân loại: **HARDENING (khiếm khuyết đặc tả)**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review, `F-E2-03`, `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §14/§23)
+
+**MỤC NÀY PHẢI GIỮ NỔI BẬT — không được rút gọn/gộp/ẩn ở các lượt biên tập backlog sau này.**
+
+Spec §6.3 quy định `TRADE SELL`: `usdtCostVnd += thu về × usdtAvgVnd` (giải phóng USDT thu về
+theo bình quân **của pool USDT**). Spec §7.3 đồng thời phát biểu **ý định**: bán không được "tự
+tạo ra hay huỷ đi giá vốn VND". Hai câu này mâu thuẫn với nhau bất cứ khi nào bình quân giá vốn
+VND của ETH (`ethAvgVnd`) khác bình quân giá vốn VND của pool USDT (`usdtAvgVnd`) tại thời điểm
+bán — trường hợp rất phổ biến trong thực tế (P2P nhiều tỷ giá, ETH mua ở nhiều thời điểm). Cài
+đặt của `T-12` làm ĐÚNG theo công thức spec §6.3, nên đây **không phải lỗi cài đặt** — reviewer
+E2 độc lập xác nhận `ledger.js` khớp đúng công thức đã duyệt.
+
+Hai hệ quả cụ thể, tái lập được:
+- khi pool USDT còn basis biết: bán ETH có thể **tạo ra** một khoản chênh VND không tương ứng
+  với bất kỳ dòng tiền VND thật nào (ví dụ: bán 0,5 ETH giá vốn 25.000.000 VND lấy 1.200 USDT
+  vào pool đang có bình quân 26.000 VND/USDT → pool nhận thêm 31.200.000 VND, không phải
+  25.000.000 VND vừa giải phóng khỏi ETH — chênh 6.200.000 VND không đi vào `realizedFxVnd`);
+- khi pool USDT rỗng: toàn bộ basis VND vừa nhận vào từ việc bán trở thành `UNKNOWN`
+  (`DEC-042` §4 cấm bịa tỷ giá) — đây là hành vi TUÂN THỦ, fail-visible, không phải khiếm khuyết.
+
+**T-12 DONE không sửa mục này** — sửa nó là đổi ngữ nghĩa kế toán (`DEC-042`), vượt hẳn thẩm
+quyền của một repair cycle T-12 và vượt phạm vi Completion Gate đã đóng băng của `T-12`.
+
+    RE_TRIGGER_CONDITION — PHẢI xử lý TRƯỚC (không phải sau) khi:
+    - mở nghiệp vụ SELL cho dữ liệu tài chính THẬT của Owner (real-money production); HOẶC
+    - thi hành sổ lãi/lỗ đã thực hiện (realized P&L) ở bước B/C/D của spec §24; HOẶC
+    - phơi bày kế toán bán hàng (sale accounting) cho dữ liệu production của Owner ở bất kỳ
+      giao diện nào.
+
+    Đây là finding, KHÔNG phải task (`AGENTS.md` §3). Xử lý đòi một Owner Decision mở lại ngữ
+    nghĩa §6.3/§7.3 của spec — KHÔNG tự suy diễn cách sửa và KHÔNG tự thi hành trong bất kỳ
+    repair cycle T-12 nào.
+
+---
+
+## H-47 — `ROUND_VND` với tử số âm làm tròn "nửa ra xa 0" thay vì "nửa lên" như spec ghi
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (defense-in-depth)**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review, `F-E2-04`, `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §14/§23)
+
+`round(n, d)` trong `webapp/ledger.js` tách dấu rồi làm tròn theo độ lớn (`round(-5, 2) = -3`);
+spec §6.5 ghi "nửa lên" (`ROUND_VND(x) = làm tròn nửa lên tới đồng nguyên`), tức `-2` cho cùng
+input nếu áp nghĩa đen "lên" theo trục số. Chỉ chạm được khi `usdtCostVnd` hoặc `ethCostVnd` âm
+— trạng thái mà bản thân nó đã kích `LEDGER_INCONSISTENT` (`INV-4`) và fail-visible từ trước khi
+`round()` được gọi tới. Không có đường dữ liệu hợp lệ nào trong `T-12` tạo ra cost basis âm.
+
+    RE_TRIGGER_CONDITION:
+    - một thay đổi cho phép cost basis âm tồn tại hợp lệ (ví dụ rebate, điều chỉnh dấu âm,
+      hoàn tiền) được đưa vào mô hình; HOẶC
+    - `ROUND_VND`/`round()` được tổng quát hoá để dùng ngoài miền tiền tệ không âm hiện tại; HOẶC
+    - `LEDGER_INCONSISTENT` ngừng là fail-visible/blocking trước khi số âm tới được `round()`.

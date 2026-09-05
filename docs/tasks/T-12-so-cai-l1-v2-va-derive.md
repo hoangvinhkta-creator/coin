@@ -2,19 +2,31 @@
 
 ## Metadata
 Status:
-IMPLEMENTED
+DONE
 
-Hiện hành S034 sau DEC-045: Ready Gate đánh giá duy nhất 17/17 PASS;
-BLOCKED → READY → IN_PROGRESS. Implementation/repair tại `2a2ab3f`; SC12/12, INV15/15,
-mutation7/7 và P1…P6 PASS E1. Full Python regression 678/678 PASS; IN_PROGRESS → IMPLEMENTED, chưa DONE.
-Golden frozen `c610a299ed6b66dea3cd63372a0943967c93e95d`, fixture không đổi sau freeze.
-REPAIR_CYCLE_1 CONSUMED theo DEC-043; CAP-WEBAPP2/1/1. Independent E2 REQUIRED.
+Hiện hành sau DEC-046: Owner chấp nhận verdict E2_VERDICT = PASS của rà soát độc lập
+(`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`) — 9/9 check E2 bắt buộc PASS, 0 finding BLOCKING.
+Completion Gate 14/14 REQUIRED PASS (5 E1 + 9 E1+E2). `T-12: IMPLEMENTED → DONE`
+(`DEC-046`, Owner-authorized Lifecycle Closure, cùng khuôn `DEC-024`/`DEC-036`/`DEC-037`/`DEC-038`).
+Golden vẫn frozen `c610a299ed6b66dea3cd63372a0943967c93e95d`, fixture không đổi sau freeze và
+không đổi trong suốt E2. REPAIR_CYCLE_1 vẫn CONSUMED theo DEC-043 — closure này KHÔNG tiêu chu kỳ
+thứ hai; CAP-WEBAPP giữ nguyên 2/1/1. Bốn finding của E2 (`F-E2-01`…`F-E2-04`) ghi vào
+`PROJECT/HARDENING_BACKLOG.md` là HARDENING, không phải task.
+
+**`T-12 DONE` KHÔNG cấp phép dùng tiền thật cho nghiệp vụ SELL.** `F-E2-03` (ngữ nghĩa tạo/giải
+phóng giá vốn VND khi SELL là khiếm khuyết ĐẶC TẢ) phải được xử lý TRƯỚC khi mở SELL cho dữ liệu
+thật; `H-42` (Firebase isolation/xác thực bền vững) và các ràng buộc product-readiness khác vẫn
+GIỮ NGUYÊN, không đổi bởi việc đóng `T-12`. `T-12 DONE` nghĩa là: capability sổ cái bước A đã
+thoả đúng hợp đồng đã đóng băng của chính nó — KHÔNG có nghĩa toàn bộ sản phẩm CoinDCA đã sẵn
+sàng cho việc dùng tiền thật không giới hạn.
 
 Lịch sử thẩm quyền: task mở/Ready Gate17/17 và14REQUIRED FROZEN tại S032; DEC-043 cấp
 persistence bounded và1repair; S034 dừng SC04carry tại2642c8e; DEC-044 sửa carry rồi một
 preflight cho9CONSISTENT/3CONTRACT_CONFLICT; DEC-045 duyệt GroupA WACquantization và
-GroupB SC09/10closedmonth. Không broad preflight sau DEC-045. Báo cáo hiện hành và lịch sử:
-`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §1–29/phụ lục.
+GroupB SC09/10closedmonth. Không broad preflight sau DEC-045. S034 tiếp: IMPLEMENTED, independent
+E2 độc lập PASS (không cùng phiên implementer), Owner closure `DEC-046`. Báo cáo hiện hành và
+lịch sử: `docs/reviews/T12-IMPLEMENTATION-REPORT.md` §1–29/phụ lục;
+`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`; `docs/reviews/T12-OWNER-CLOSURE.md`.
 
 Phase:
 CoinDCA L-1 — bước A (sự thật tài chính) của chuỗi A → B → C → D (spec §24)
@@ -631,33 +643,34 @@ Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: `derive()` là hàm thuần (không `new Date()` bên trong, không đọc `createdAt`), cùng
 tập event cho cùng `DerivedState` dưới ≥ 100 hoán vị thứ tự nhập và ≥ 2 `TZ` tiến trình khác
 nhau. Phủ `INV-2`, `INV-6`. Golden: `SC-04`, `SC-07`, `SC-08`.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §5 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 #### CHECK-T12-03 — Giá vốn VND: WAC trên một pool USDT, đúng số
 Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: `vndRelieved = ROUND_VND(usdtOut × usdtCostVnd / usdtQty)`; giải phóng theo bình quân
@@ -667,23 +680,24 @@ không lưu bình quân cũ, không phần dư ẩn, không tolerance bổ sung;
 cùng phương pháp; cạn pool ép `usdtCostVnd = 0` và đẩy phần dư vào `realizedFxVnd`. Số kỳ vọng
 đối chiếu **tuyệt đối** (`tolerance = 0`) với `SC-01`…`SC-04`, `SC-06`. Phủ `INV-3`.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §6 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 #### CHECK-T12-04 — `UNKNOWN` lan truyền thấy được, không bao giờ bị ép về 0
 Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: `openingPosition.usdt.costVnd = null` (và phần USDT thiếu phủ của §8.4) → `qty` và
@@ -692,23 +706,24 @@ Yêu cầu: `openingPosition.usdt.costVnd = null` (và phần USDT thiếu phủ
 **không tồn tại** trường tỷ giá nhập theo từng lệnh (`vndRateOverride` hoặc tương đương).
 Phủ `INV-11`. Golden: `SC-12`.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §7 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 #### CHECK-T12-05 — Sửa / xoá / nhập muộn tính lại đúng, không trôi
 Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: sửa giữ `id`+`seq`, cập nhật `updatedAt`, chạy lại toàn bộ; **không tồn tại** phép
@@ -716,23 +731,24 @@ Yêu cầu: sửa giữ `id`+`seq`, cập nhật `updatedAt`, chạy lại toàn
 được xếp theo `businessDate` chứ không theo lúc nhập. Phủ `INV-1`, `INV-15`. Golden: `SC-05`,
 `SC-06`, `SC-07`.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §8 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 #### CHECK-T12-06 — Ngày nghiệp vụ, `Asia/Ho_Chi_Minh`, tháng lịch
 Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: `businessDate` là chuỗi, so sánh chuỗi, `month = slice(0,7)`; **đúng một** chỗ trong
@@ -741,13 +757,14 @@ toàn bộ mã hỏi giờ hệ thống và nó trả ngày theo `Asia/Ho_Chi_Mi
 Bằng chứng gồm grep chứng minh không còn `getMonth()`/`toISOString()` trong đường tính tiền.
 Phủ `INV-6`. Golden: `SC-08`, `SC-11`. Đóng `B3`, `B4`, `B7` của `H-41`.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §9 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 #### CHECK-T12-07 — Số nguyên VND, làm tròn đối chiếu được, thứ tự tất định
 Priority:
@@ -802,10 +819,10 @@ Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: mỗi dòng của ma trận `INV` ở trên có **ít nhất một test nhắm đích** thực sự đỏ khi bất
@@ -813,13 +830,14 @@ biến bị phá (chứng minh bằng mutation/nghịch đảo có chủ đích 
 `INV-4`, `INV-9`, `INV-11`, `INV-12`, `INV-14`). Không được để một `INV` chỉ "được phủ gián
 tiếp" bởi một SC mà không có phép khẳng định trực tiếp.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §10 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 ### Migration
 
@@ -828,10 +846,10 @@ Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu, trên fixture legacy **tổng hợp**:
@@ -844,13 +862,14 @@ Yêu cầu, trên fixture legacy **tổng hợp**:
 (g) dữ liệu legacy không bị xoá; `ledger[]` chỉ đọc;
 (h) không `Base`/`Smart`/`Opportunity`/`ladder`/`zone`/`score` nào lọt vào sự thật tài chính L-1.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §11 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 ### Persistence
 
@@ -859,10 +878,10 @@ Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: ghi → máy chủ xác nhận → đọc lại từ SERVER → `derive()` cho `DerivedState` **trùng
@@ -870,13 +889,14 @@ tuyệt đối**; payload durable không chứa khoá dẫn xuất bị cấm (`
 `derivedSnapshot` thì import **bỏ qua** khối đó (kiểm bằng file export bị sửa tay). Sổ nằm trong
 document `ethdca/state` đã được `firestore.rules` allow-list — **không** tạo document mới.
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §12 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 ### Production reachability
 
@@ -885,10 +905,10 @@ Priority:
 REQUIRED
 
 Status:
-E2_REQUIRED
+PASS
 
 Evidence Level:
-E1
+E2
 
 Evidence:
 Yêu cầu: `P-1`…`P-6` của § Production Reachability, đo trên `app_final.html` đã build qua
@@ -897,13 +917,14 @@ nêu **số event thật** và **số case** đã chạy qua đường productio
 Mọi file runtime MỚI được khai vào `PROJECT/PRODUCTION_PATHS.md` §1 (khiếm khuyết `H-32` không
 được lặp lại).
 
-Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 chưa thực hiện; không tự chứng nhận.
+Kết quả implementation S034: E1 PASS — `2a2ab3f`, unit/browser/mutation logs ở `docs/reviews/evidence/T12/`; mapping cụ thể report §21. Independent E2 PASS — `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §13 (đối chiếu độc lập, tái lập bằng oracle/harness riêng của reviewer, không tự chứng nhận). Bằng chứng E1 của implementer ở trên GIỮ NGUYÊN, không bị thay thế.
 
 Executed By:
 GPT-6 Astra / S034 — implementer E1
+Claude Opus 5 — reviewer E2 độc lập (Independent E2 Review)
 
 Timestamp:
-2026-09-05
+2026-09-05 (implementer); 2026-09-05 (E2 độc lập)
 
 ### Regression
 
@@ -964,18 +985,20 @@ Timestamp:
 
 ## Exit Criteria
 
-- [ ] 14/14 REQUIRED check PASS
-- [ ] Evidence level thoả: `E1` toàn bộ; `E2` độc lập PASS cho khối tính đúng tài chính
-      (xem § Evidence / E2)
-- [ ] 0 defect nghiêm trọng chưa xử lý; 0 finding BLOCKING còn mở có đường production hiện hành
+- [x] 14/14 REQUIRED check PASS (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §24 Completion Gate Matrix)
+- [x] Evidence level thoả: `E1` toàn bộ; `E2` độc lập PASS cho khối tính đúng tài chính
+      (xem § Evidence / E2) — 9/9 check E2-required PASS, không tự chứng nhận
+- [x] 0 defect nghiêm trọng chưa xử lý; 0 finding BLOCKING còn mở có đường production hiện hành
+      (4 finding của E2 là HARDENING kèm `RE_TRIGGER_CONDITION`, ghi tại
+      `PROJECT/HARDENING_BACKLOG.md` `H-44`…`H-47`; KHÔNG BLOCKING)
 - [x] Regression áp dụng được PASS, không REQUIRED check nào bị xoá/làm yếu
 - [x] `PROJECT/PRODUCTION_PATHS.md` khai đủ mọi file runtime mới
 - [x] `PROJECT/PROJECT_PROGRESS.md` cập nhật; `sync_easy_roadmap.py` chạy lại;
       `validate_routing.py` + `validate_easy_roadmap.py` PASS
-- [x] `PROJECT/REVIEW_BUDGET_LEDGER.md` cập nhật (diff đo bằng lệnh, không cộng tay)
+- [x] `PROJECT/REVIEW_BUDGET_LEDGER.md` cập nhật (diff đo bằng lệnh, không cộng tay) — 2/1/1 KHÔNG đổi
 - [x] `H-41` được cập nhật: hạng mục nào đã đóng bằng kiến trúc, hạng mục nào còn lại
 - [x] Session handoff được viết (`MAJOR` bắt buộc)
-- [ ] Owner đóng vòng đời (`IMPLEMENTED → DONE`) — xem § Owner closure authority
+- [x] Owner đóng vòng đời (`IMPLEMENTED → DONE`) — `DEC-046`, xem § Owner closure authority
 
 ## Evidence / E2
 

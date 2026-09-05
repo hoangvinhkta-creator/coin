@@ -691,3 +691,25 @@ Chốt S034: T-12 IMPLEMENTED; production5file +460/-7 từ91cfbba; test/fixture
 production. Repair3file +44/-15 từc610a29→2a2ab3f. Python678/678 PASS, E1 đầy đủ, E2_REQUIRED.
 GoldenfixtureSHA256067de9228e8230cf38f2363f0cb40a8f2e2f7a3b0e77ce0439b9f6a125583509 giữ nguyên.
 Budget2/1/1, không có lần tiêu khác trong các lần chạy harness/regression/validators.
+
+---
+
+## T-12 — Owner Closure sau independent E2 (2026-09-05, `DEC-046`) — budget KHÔNG đổi
+
+`T-12: IMPLEMENTED → DONE`, Owner-authorized, sau `E2_VERDICT = PASS`
+(`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`). Phiên này thuần state/docs/governance — production
+diff (`src/eth_dca_os webapp pyproject.toml pyproject.lock`) = **RỖNG** cho lượt commit đóng T-12
+này (đo bằng `git diff --shortstat`, không cộng tay).
+
+    ALLOWED BUDGET (CAP-WEBAPP)   = 2 repair cycle     (không đổi)
+    CURRENT BUDGET USED           = 1 repair cycle     (không đổi — REPAIR_CYCLE_1 CONSUMED tại
+                                                          `2a2ab3f`, DEC-043; xem entry phía trên)
+    CURRENT BUDGET REMAINING      = 1 repair cycle     (không đổi)
+
+Independent E2 (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`) **KHÔNG tiêu repair cycle**: 9/9
+check E2-required PASS trên bằng chứng độc lập, không finding nào đòi sửa production code, không
+finding nào BLOCKING. Bốn finding (`F-E2-01`…`F-E2-04`) đều route thành HARDENING
+(`PROJECT/HARDENING_BACKLOG.md` `H-44`…`H-47`), kèm `RE_TRIGGER_CONDITION`. Owner closure
+(`DEC-046`) cũng không tiêu budget — đây là hành vi ghi nhận vòng đời, không phải một chu kỳ
+repair mới. Golden `T12_GOLDEN_ACCOUNTING_BASELINE = c610a299ed6b66dea3cd63372a0943967c93e95d`
+giữ nguyên trong suốt E2 và closure; fixture `webapp/test_t12_fixtures.js` không đổi một byte.

@@ -544,3 +544,26 @@ Ready Gate đánh giá duy nhất17/17; BLOCKED→READY→IN_PROGRESS. Golden fr
 `c610a299ed6b66dea3cd63372a0943967c93e95d`; repair cycle1 DEC-043 tại`2a2ab3f`,
 CAP-WEBAPP2/1/1. SC12/12, INV15/15, mutation7/7, P1…P6 PASS E1. Full Python regression
 678/678 PASS; T-12 IN_PROGRESS → IMPLEMENTED; E2 độc lập REQUIRED. Không task/capability mới, không reset WP-C1.
+
+## 14. T-12 Owner Closure sau independent E2 (2026-09-05, `DEC-046`)
+
+Independent E2 (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer) verdict
+`E2_VERDICT = PASS`: 9/9 check E2-required PASS trên bằng chứng tái lập độc lập (oracle WAC viết
+riêng bằng Python, property test bảo toàn VND, 300 hoán vị + 6 TZ tiến trình, 14 mutant độc lập,
+kịch bản production reachability riêng trên `app_final.html` + Firestore Emulator + rules thật).
+Owner chấp nhận verdict, `T-12: IMPLEMENTED → DONE` (`DEC-046`). Completion Gate **14/14 REQUIRED
+PASS** (5 check E1-only giữ nguyên; 9 check nay E1+E2). Golden `c610a299ed6b66dea3cd63372a0943967c93e95d`
+không đổi trong suốt E2/closure. `CAP-WEBAPP` budget **KHÔNG đổi: 2/1/1** — E2 và Owner closure
+không tiêu repair cycle nào; `REPAIR_CYCLE_1` vẫn CONSUMED (không phải reset, không phải chu kỳ
+thứ hai). Không task/capability/lineage mới, không reset `WP-C1`.
+
+Bốn finding của E2 (`F-E2-01`…`F-E2-04`) route thành HARDENING tại `PROJECT/HARDENING_BACKLOG.md`
+`H-44`…`H-47`, mỗi finding kèm `RE_TRIGGER_CONDITION`; 0 BLOCKING. `H-46` (`F-E2-03` — ngữ nghĩa
+SELL tạo/giải phóng giá vốn VND) là khiếm khuyết ĐẶC TẢ phải xử lý **TRƯỚC** khi mở nghiệp vụ SELL
+cho dữ liệu thật — không thuộc phạm vi sửa của `T-12`, giữ nguyên bằng một Owner Decision riêng
+sau này.
+
+**Ranh giới quan trọng: `T-12 DONE` chỉ đóng bước A (sự thật tài chính) của chuỗi A→B→C→D (spec
+§24).** Nó KHÔNG mở khoá dùng tiền thật không giới hạn cho CoinDCA: `H-42` (Firebase
+isolation/xác thực bền vững — bước C) và các ràng buộc product-readiness khác (backup,
+`OWNER_LOCAL_ACCEPTANCE` — bước D) giữ nguyên, không đổi bởi quyết định này.

@@ -4019,3 +4019,115 @@ Commit tài liệu DEC-045 không phải golden freeze. Freeze tại commit impl
 V2.1.5, dữ liệu Owner, projection, research/Buy Score hay scope.
 
 ---
+
+## DEC-046 — Owner-authorized Lifecycle Closure: `T-12: IMPLEMENTED → DONE`
+
+Date:
+2026-09-05 (phiên Owner Closure — tiếp nối independent E2 review, nhánh `codex/t12-l1-ledger-impl`)
+
+Task:
+`T-12` / capability `CAP-WEBAPP`, lineage root `WP-C1`. Đóng khe thẩm quyền
+`STATE_AUTHORITY.md` § The State Machine And Who May Write It: chuyển một task `IMPLEMENTED`
++ evidence đủ sang `DONE` là hành vi của chủ dự án — cùng cơ chế đã dùng cho `T-09A` (`DEC-018`),
+`T-09B` (`DEC-024`), `WP-C2` (`DEC-036`), `WP-B3` (`DEC-037`), `WP-B2`/`T-07` (`DEC-038`/`DEC-040`).
+
+Owner Response (tóm lược):
+
+    Owner accepts the independent E2 verdict: E2_VERDICT = PASS
+    (docs/reviews/T12-E2-INDEPENDENT-REVIEW.md, reviewed 0cf24cad98e342a9070168d321461772ea0021e4).
+    Authorize T-12: IMPLEMENTED -> DONE. Update the nine E2_REQUIRED checks to PASS with
+    independent E2 evidence; preserve the five E1-only checks; final Completion Gate 14/14 PASS.
+    Add the four E2 findings to HARDENING_BACKLOG.md as HARDENING with RE_TRIGGER_CONDITION,
+    no task IDs. Explicitly preserve: T-12 DONE does NOT authorize real-money SELL usage;
+    F-E2-03 must be resolved before SELL becomes a real-money production workflow. Preserve
+    H-42/Firebase/auth/backup/Owner acceptance constraints. Review budget unchanged (2/1/1),
+    no second repair cycle. Do not modify production code, golden fixtures, DEC-041...045,
+    accounting semantics, Firebase/auth/rules/hosting during this closure.
+
+Decision:
+
+    (1) T-12: IMPLEMENTED -> DONE.
+
+        Completion Gate 14/14 REQUIRED PASS. Không sửa câu chữ hay ngữ nghĩa của bất kỳ check
+        nào. Evidence hai tầng, không tầng nào thay thế tầng kia:
+          - 5 check E1-only giữ nguyên PASS (`CHECK-T12-01`, `-07`, `-08`, `-13`, `-14`) — không
+            đòi E2 riêng theo đúng Completion Gate đã đóng băng từ `S032`.
+          - 9 check E2-required (`CHECK-T12-02`, `-03`, `-04`, `-05`, `-06`, `-09`, `-10`, `-11`,
+            `-12`) chuyển `E2_REQUIRED -> PASS`, `Evidence Level: E1 -> E2`, bằng chứng E1 của
+            implementer GIỮ NGUYÊN không bị xoá/thay thế, cộng thêm dẫn chứng E2 độc lập trỏ
+            đúng mục trong `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` (§5–§13, §24).
+        Independent E2 do một phiên reviewer khác, không cùng phiên implementer, không tự chứng
+        nhận (`EVIDENCE_STANDARD.md` § E2). Golden `T12_GOLDEN_ACCOUNTING_BASELINE =
+        c610a299ed6b66dea3cd63372a0943967c93e95d` xác nhận không đổi một byte trong suốt E2;
+        production diff của phiên E2 và phiên closure này = **RỖNG**.
+
+    (2) `CAP-WEBAPP` BUDGET GIỮ NGUYÊN — KHÔNG reset, KHÔNG cấp thêm, KHÔNG tiêu thêm.
+
+            ALLOWED = 2 repair cycle · USED = 1 · REMAINING = 1   (không đổi từ `DEC-043`/S034)
+
+        `REPAIR_CYCLE_1` vẫn `CONSUMED` (tại `2a2ab3f`, theo `DEC-043`) — độc lập với việc đóng
+        `T-12`. Independent E2 và Owner closure này **không tiêu chu kỳ repair thứ hai**: 0
+        finding CONFIRMED BLOCKING phát sinh cần sửa sau khi 9/9 check E2-required đã PASS.
+
+    (3) BỐN FINDING CỦA E2 — HARDENING, KHÔNG PHẢI TASK.
+
+        `F-E2-01`…`F-E2-04` (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §23) route thành
+        `PROJECT/HARDENING_BACKLOG.md` `H-44`…`H-47`, mỗi mục giữ nguyên phân loại `HARDENING`
+        và kèm `RE_TRIGGER_CONDITION`. Không task ID nào được tạo cho bốn mục này
+        (`AGENTS.md` §3 "A finding is not a task"; `REVIEW_PROTOCOL.md` § Finding Routing).
+
+    (4) F-E2-03 (`H-46`) — REAL-MONEY SELL GUARD, GIỮ NỔI BẬT.
+
+        `T-12 DONE` **KHÔNG** cấp phép dùng tiền thật cho nghiệp vụ SELL. Ngữ nghĩa tạo/giải
+        phóng giá vốn VND khi bán (spec §6.3 vs §7.3) là một khiếm khuyết ĐẶC TẢ, không phải
+        lỗi cài đặt `T-12` — `H-46`/`F-E2-03` phải được một Owner Decision riêng xử lý **TRƯỚC**
+        khi: (a) mở nghiệp vụ SELL cho dữ liệu tài chính thật của Owner; (b) thi hành sổ lãi/lỗ
+        đã thực hiện (realized P&L); hoặc (c) phơi bày kế toán bán hàng cho dữ liệu production.
+        `T-12` không sửa mục này trong closure hiện tại — sửa nó là đổi ngữ nghĩa kế toán
+        (`DEC-042`), vượt thẩm quyền một repair cycle và vượt phạm vi Completion Gate đã đóng
+        băng của `T-12`.
+
+    (5) RANH GIỚI PRODUCT-READINESS KHÁC — GIỮ NGUYÊN, KHÔNG ĐỔI BỞI QUYẾT ĐỊNH NÀY.
+
+        `H-42` (Firebase isolation + xác thực bền vững — bước C của spec §24) và mọi ràng buộc
+        product-readiness khác (backup/rollback, `OWNER_LOCAL_ACCEPTANCE` §22.1 — bước D, dữ
+        liệu thật ngoài repo) giữ nguyên hiệu lực. `T-12 DONE` nghĩa là: capability sổ cái bước
+        A đã thoả đúng hợp đồng đã đóng băng của chính nó. Nó KHÔNG có nghĩa toàn bộ sản phẩm
+        CoinDCA đã sẵn sàng cho việc dùng tiền thật không giới hạn.
+
+    (6) INTEGRATION — KHÔNG ĐỔI, GHI NHẬN TÍN HIỆU MỚI.
+
+        `branch_authority_check.sh` tại phiên closure này báo
+        `INTEGRATION_DECISION_REQUIRED=loc>5000` (phân kỳ tích luỹ của nhánh `codex/t12-l1-ledger-impl`
+        so với `main`, tính cả tài liệu review — KHÔNG phải production diff, vẫn RỖNG). Quyết
+        định này **không** giải quyết câu hỏi tích hợp/merge — đó là một Owner Decision RIÊNG,
+        khi Owner chọn thời điểm merge/cắt phạm vi/chấp nhận phân kỳ. Không merge `main` trong
+        quyết định này.
+
+Reason:
+9/9 check E2-required đã PASS trên bằng chứng độc lập tái lập được (không kế thừa kết luận
+implementer); 0 finding BLOCKING; golden baseline toàn vẹn; production diff rỗng trong suốt E2
+và closure. Theo đúng tiền lệ `DEC-024`/`DEC-036`/`DEC-037`/`DEC-038`, phần còn lại chỉ là hành
+vi ghi nhận vòng đời của chủ dự án — không phải một phát hiện kỹ thuật mới nào agent có thẩm
+quyền tự quyết.
+
+Impact:
+- `docs/tasks/T-12-so-cai-l1-v2-va-derive.md`: Status `IMPLEMENTED` → `DONE`; 9 check
+  `E2_REQUIRED` → `PASS` (Evidence Level `E2`); Exit Criteria cập nhật đủ 14/14.
+- `PROJECT/PROJECT_PROGRESS.md`: roadmap row `T-12` → `DONE`; Last Updated; Current Task
+  Snapshot; Session History.
+- `PROJECT/CAPABILITY_REGISTRY.md` §14 (mới): ghi nhận DONE, budget không đổi.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md`: ghi nhận DONE, ba con số budget (2/1/1) không đổi.
+- `PROJECT/HARDENING_BACKLOG.md`: bốn mục mới `H-44`…`H-47`, đều HARDENING kèm
+  `RE_TRIGGER_CONDITION`.
+- `docs/reviews/T12-OWNER-CLOSURE.md` (mới): bản ghi đóng gói ngắn gọn của closure này.
+- Số task ID mới = **0**. Số production file bị sửa bởi CHÍNH quyết định này = **0**.
+
+Can Revisit After:
+`H-46`/`F-E2-03` khi Owner quyết định mở nghiệp vụ SELL cho dữ liệu thật (bắt buộc, không tuỳ
+chọn); `H-44` khi thứ tự xử lý event trong `derive()` bị chạm hoặc `test_t12_*.js` được nối vào
+`npm test`; `H-45` khi L-1 bắt đầu hiển thị `realizedFxVnd`/P&L; `H-47` khi cost basis âm trở
+thành trạng thái hợp lệ. Câu hỏi tích hợp nhánh `codex/t12-l1-ledger-impl` vào `main` (mục (6))
+khi Owner chọn thời điểm.
+
+---
