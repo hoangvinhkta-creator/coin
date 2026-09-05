@@ -2992,3 +2992,118 @@ tạo task mới từ finding; bắt đầu/thực thi `T-07`; mở/thực thi `
 xoá nhánh; branch cleanup; chạm `data/`.
 
 ---
+
+## DEC-039 — Owner response cho `T-07` (Owner Decision Brief): giữ `L-0`/`T-07 READY`; uỷ quyền một phiên SPIKE evidence-investigation (RQ-1/RQ-3/RQ-4/RQ-5) trước khi quay lại chọn L-1/L-2
+
+Date:
+2026-09-05 (Owner Decision, qua chat, phản hồi trực tiếp `docs/reviews/T07-OWNER-DECISION-BRIEF.md`,
+nhánh `claude/t-07-decision-prep-1oprq1`)
+
+Task:
+Không thuộc work package nào. Phản hồi của chủ dự án cho bước DUYỆT `T-07`, cộng uỷ quyền một
+phiên SPIKE (`TASK_MODE_STANDARD.md` Mode 3 — Exploratory) đọc thêm evidence, capability
+`CAP-VERDICT` (lineage root `WP-B1`) — nội dung điều tra là các đại lượng do chính `WP-A5`/`WP-B1`
+sinh ra (`cash_ratio`, `opportunity_cap_hit`, `regime_advantage`, Control F/G).
+
+## Owner Response (dẫn nguyên, làm cơ sở quyết định)
+
+    OWNER DECISION — T-07
+    XAC NHAN BE MAT LUA CHON (Q1): ĐỒNG Ý với L-1/L-2 là hai hướng canonical hiện có sau
+    DO_NOT_BUILD. L-0 được dùng tạm thời như trạng thái chưa quyết, không phải một hướng
+    chiến lược mới.
+    LUA CHON: L-0
+    T-07 LIFECYCLE: GIU READY
+    RANG BUOC BAT BUOC: official verdict = DO_NOT_BUILD [GIU NGUYEN]; V2.1.5 validation =
+    FAILED [GIU NGUYEN]; can_proceed_to_app = false [GIU NGUYEN]; T-11 = BLOCKED [GIU NGUYEN];
+    DEC-005 = PENDING [GIU NGUYEN]
+    UY QUYEN GHI QUYET DINH: KHONG ghi DEC cho lựa chọn chiến lược cuối cùng ở thời điểm này.
+    UY QUYEN NGHIEN CUU SAU T-07: CO, nhưng chỉ trong phạm vi evidence investigation, không
+    phải strategy development — RQ-1, RQ-3, RQ-4, RQ-5 (RQ-2: dùng kết quả post-F-017 hiện
+    có làm input, KHÔNG diễn giải thành predictive skill đã chứng minh).
+    RANH GIOI: production diff = EMPTY; không sửa src/; không sửa strategy/threshold; không
+    thay đổi V2.1.5; không tạo V2.2; không chọn objective A/C; không rerun official T-06;
+    không thay đổi official artifacts/verdict/can_proceed_to_app; không mở T-11/WP-D2; không
+    resolve DEC-005. Nếu cần deterministic replay: tách REPLAY khỏi OFFICIAL, phải reproduce
+    baseline official tương ứng trước khi tin kết quả derived, không reproduce được thì ghi
+    NOT ESTABLISHED.
+    Sau khi evidence investigation hoàn tất: QUAY LẠI T-07 để Owner chọn L-1 hoặc L-2.
+    GHI CHU: mục tiêu không phải cứu V2.1.5, mà hiểu thất bại đủ tốt để tránh (1) bỏ một
+    hypothesis còn tín hiệu hữu ích chỉ vì sai objective/capital treatment, hoặc (2) mở V2.2
+    và tiếp tục tối ưu một hypothesis thực tế không có edge.
+
+## Decision
+
+**A. `T-07` KHÔNG chuyển trạng thái.** Owner xác nhận `L-0` (chưa chọn giữa L-1/L-2) và chỉ thị
+tường minh `T-07 LIFECYCLE: GIU READY`. `T-07` giữ nguyên `READY`, KHÔNG `DONE`.
+
+**B. Bề mặt lựa chọn L-1/L-2 (§7 của brief) được Owner xác nhận đúng và đủ**, với ghi chú L-0 là
+trạng thái tạm/chưa quyết, không phải một hướng chiến lược thứ ba.
+
+**C. Uỷ quyền một phiên SPIKE/EXPLORATORY** (`TASK_MODE_STANDARD.md` Mode 3 — mục tiêu giảm
+bất định, không đòi Completion Gate sản xuất) để trả lời RQ-1, RQ-3, RQ-4, RQ-5 (BT §17 Failure
+Signal diagnostics, không phải một work package sản xuất mới) trong ranh giới liệt kê nguyên văn
+ở trên. RQ-2 được xử lý bằng cách DÙNG LẠI evidence đã tồn tại (`CHECK-B1-03` Addendum 3,
+`WP-B1`), không chạy gì mới, và không được diễn giải thành "đã chứng minh có kỹ năng dự báo".
+
+**D. Không ghi quyết định chiến lược cuối cùng ở đây.** Việc chọn L-1/L-2 vẫn PENDING, quay lại
+`T-07` sau khi phiên SPIKE hoàn tất.
+
+**E. Toàn bộ ràng buộc `DEC-031`/`DEC-038` giữ nguyên tuyệt đối, không đổi bởi quyết định này:**
+`official verdict = DO_NOT_BUILD`; `V2.1.5 validation = FAILED`; `can_proceed_to_app = false`;
+`T-11 = BLOCKED`; `DEC-005 = PENDING`.
+
+## Reason
+
+`STATE_AUTHORITY.md`: "`READY`" có thể được ghi bởi Implementer/Owner; Owner ở đây chọn giữ
+nguyên `READY` một cách tường minh — không phải một khoảng trống governance mà là một quyết
+định chủ động. `TASK_MODE_STANDARD.md` Mode 3 (SPIKE/EXPLORATORY) đúng khuôn cho yêu cầu của
+Owner: "mục tiêu giảm bất định, không đòi hoàn thiện sản xuất"; "Completion Gate nên xác nhận
+việc học được gì: hypothesis đã kiểm, phương án đã so sánh, ràng buộc đã phát hiện, evidence đã
+ghi, khuyến nghị đã ghi, task triển khai tiếp theo được xác định nếu phù hợp" — khớp chính xác
+với "Sau khi evidence investigation hoàn tất: QUAY LẠI T-07" của Owner. Không cần file task
+riêng dưới `docs/tasks/` (đó là yêu cầu của Mode 2 — MAJOR); phiên SPIKE này được ghi bằng một
+evidence record (theo đúng khuôn `docs/T06_OFFICIAL_EVIDENCE_RECORD.md`/`CHECK-B1-03` Addendum
+2/3 đã có tiền lệ) và một session record.
+
+`Capability first` (`AGENTS.md` §3, `CAPABILITY_MODEL.md`): công việc này không mở task mới —
+nó đọc/tính thêm diagnostics cho các đại lượng capability `CAP-VERDICT` (lineage `WP-B1`) đã
+sinh ra (`cash_ratio`, `opportunity_cap_hit`, `regime_advantage`, Control F/G), dùng lại nguyên
+hàm production đã có (`window_metrics`, `oos_metrics`, `cash_ratio_stats`,
+`opportunity_cap_hit_share`, `random_timing_control`, `random_anchor_control`) — không sửa một
+dòng nào trong `src/`.
+
+## Consequence
+
+`T-07`: giữ `READY`. Không transition.
+
+**Mở một phiên SPIKE evidence-investigation** (ghi tại `docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md`),
+phạm vi ĐÚNG bốn câu hỏi RQ-1/RQ-3/RQ-4/RQ-5 cộng khung diễn giải RQ-2, với:
+- Deterministic replay script (embedded, reuse nguyên hàm production, KHÔNG sửa `src/`) cho
+  RQ-1 (tương quan quan sát cash_ratio × AE theo 9 window — KHÔNG counterfactual), RQ-3 (Control
+  F/G tính riêng từng W1..W9 và OOS, thay vì chỉ số aggregate), RQ-4 (phân rã ETH theo nguồn
+  purchase SMART/OPPORTUNITY/CRASH/BASE + thống kê idle capital hiện có của `opportunity_cap_hit_share()`).
+- Smoke test PASS trên dataset SYNTHETIC (`eth_dca_os.data.synth`) trong sandbox agent — xác
+  nhận script chạy hết, không lỗi cú pháp/API, kiểu dữ liệu đúng (`bool`/`float` thuần Python).
+  **KHÔNG phải evidence** — số liệu synthetic không được dùng cho bất kỳ kết luận nào.
+- **MISSING_INPUT**: môi trường agent không có dataset official (`data/raw` rỗng/gitignored,
+  không có kết nối Binance, không được fetch mới). Owner phải tự chạy script trên máy có dataset
+  official đã bảo toàn (backup T-06) và dán lại output để canonicalize.
+- RQ-1/RQ-3/RQ-4: **NOT ESTABLISHED — chờ Owner replay** cho tới khi có output đó.
+- RQ-2: giữ nguyên kết luận đã có (`CHECK-B1-03` Addendum 3, `WP-B1`) — `FS-08` (post-`F-017`)
+  = FALSE, V2 vượt P95 cả Control F lẫn G ở mức AGGREGATE toàn kỳ — với caveat tường minh BT §251
+  (Control F đo lẫn hiệu ứng cơ học của điều kiện hoá trên giá đã giảm, KHÔNG thuần kỹ năng dự
+  báo): **KHÔNG được diễn giải thành "đã chứng minh có timing edge"**.
+- RQ-5: **trả lời được ngay bằng tổng hợp evidence hiện có** (không cần dataset official mới) —
+  xem báo cáo cho phân tích đầy đủ, dán nhãn FACTS/INTERPRETATIONS/NOT ESTABLISHED.
+
+**Không mở rộng phạm vi.** Quyết định này và phiên SPIKE nó uỷ quyền KHÔNG: sửa `src/`
+(production diff = 0); sửa strategy/threshold nào của V2.1.5; đổi verdict `DO_NOT_BUILD`; đổi
+`can_proceed_to_app`; mở `T-11`; mở `WP-D2`/`V2.2`; chọn Objective A/C; resolve `DEC-005`; rerun
+official `T-06`; đổi/ghi đè official artifact nào; tạo task ID mới; merge/push `main`; chạm
+`data/`. `T-07` giữ `READY` cho tới khi Owner chọn L-1/L-2 ở một quyết định riêng, sau phiên
+SPIKE này.
+
+Review/repair budget (`CAP-VERDICT`): không tiêu — phiên SPIKE là evidence-only, production
+diff = 0, không phải implementation/repair cycle.
+
+---

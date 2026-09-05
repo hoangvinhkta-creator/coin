@@ -25,7 +25,42 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-05 — **OWNER DECISION `DEC-038` — Lifecycle Closure: `WP-B2: IMPLEMENTED → DONE`;
+2026-09-05 — **OWNER DECISION `DEC-039` — phản hồi Owner Decision Brief của `T-07`: giữ
+`L-0`/`T-07 = READY` (KHÔNG chuyển `DONE`); uỷ quyền một phiên SPIKE evidence-investigation
+(RQ-1/RQ-3/RQ-4/RQ-5, RQ-2 dùng lại evidence sẵn có).**
+Chủ dự án đọc `docs/reviews/T07-OWNER-DECISION-BRIEF.md`, xác nhận bề mặt lựa chọn L-1/L-2 là
+đúng và đủ, nhưng **chưa chọn** giữa hai hướng đó (`L-0` = trạng thái tạm, không phải hướng thứ
+ba). `T-07` giữ nguyên `READY`, không transition. Toàn bộ ràng buộc của `DEC-031`/`DEC-038`
+giữ nguyên tuyệt đối: `official verdict = DO_NOT_BUILD`, `V2.1.5 validation = FAILED`,
+`can_proceed_to_app = false`, `T-11 = BLOCKED`, `DEC-005 = PENDING`.
+
+Owner uỷ quyền một phiên **SPIKE/EXPLORATORY** (`TASK_MODE_STANDARD.md` Mode 3, capability
+`CAP-VERDICT` lineage `WP-B1`) đọc thêm evidence — KHÔNG phải strategy development — cho năm
+câu hỏi nghiên cứu đã biết: RQ-1 (reserve/cash → AE), RQ-3 (Control F/G theo từng W1-W9 + OOS,
+không chỉ aggregate), RQ-4 (Opportunity Fund optionality vs cash drag), RQ-5 (evidence hiện có
+phân biệt được tới đâu "thiếu timing edge" vs "objective/capital-allocation mismatch"); RQ-2
+dùng lại evidence đã có (`CHECK-B1-03` Addendum 3), không diễn giải thành predictive skill đã
+chứng minh. Kết quả: `docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md`.
+
+**RQ-5 trả lời được ngay** (tổng hợp evidence hiện có, không cần dataset mới): **PARTIALLY
+ESTABLISHED** — bằng chứng (Gate 2 = 0,00 % trên 219 config; FS-02 reserve nằm im 89,61 % dù
+FS-07 buộc `avg_cash_ratio ≤ 0,30` ở tầng portfolio; thua cả Monthly DCA ở FS-01) nghiêng về
+phía cấu trúc phân bổ vốn của Opportunity Fund góp phần vào thất bại, nhưng KHÔNG loại trừ được
+việc cũng thiếu timing edge, và KHÔNG có phép đo nào tách bạch hai thành phần bằng một con số.
+
+**RQ-1/RQ-3/RQ-4 = `MISSING_INPUT`** — sandbox agent không có dataset official (`data/raw` rỗng/
+gitignored). Thiết kế deterministic replay script (dùng lại nguyên hàm production
+`window_metrics`/`oos_metrics`/`cash_ratio_stats`/`opportunity_cap_hit_share`/
+`random_timing_control`/`random_anchor_control`, KHÔNG sửa `src/`), reproduce bắt buộc baseline
+official đã biết (`v2_eth=14,910758150139896`, `control_f_p95=14,887400583487747`,
+`control_g_p95=14,813546903782814`) trước khi tin số derived; smoke test PASS trên dataset
+SYNTHETIC (không phải evidence). Chờ Owner chạy trên dataset official và cung cấp lại output.
+
+Production diff = EMPTY (docs-only). Không sửa `src/`/`tests/`/`webapp/`. Không rerun `T-06`.
+Không mở `T-11`/`WP-D2`. Không resolve `DEC-005`. Không tạo task ID mới. Sau khi có output
+Owner, một phiên canonicalize sẽ ghi kết quả và **quay lại `T-07`** để Owner chọn L-1/L-2.
+
+Trước đó, cùng ngày — 2026-09-05 — **OWNER DECISION `DEC-038` — Lifecycle Closure: `WP-B2: IMPLEMENTED → DONE`;
 `GATE-B: CHƯA MỞ → CLOSED`; `T-07: PLANNED → READY`.**
 Chủ dự án chấp nhận bằng chứng Completion Gate đóng băng của `WP-B2` (10/10 REQUIRED PASS,
 production reachability PASS, bất biến tài chính/chiến lược PASS, full suite 678/678 PASS,
@@ -730,7 +765,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | WP-B1 | Chốt chính sách ra kết luận cuối (verdict) và ngưỡng cảnh báo | Không cho phép kết luận thuận lợi khi vẫn còn tín hiệu cảnh báo chưa đo được | D | max | **DONE (`DEC-034`, Lifecycle Closure 2026-09-04, sau `READY` tại `DEC-031`)** — **10/10 REQUIRED PASS** (CHECK-B1-01…10). Sau HAI vòng fresh Independent E2 liên tiếp FAIL (`E2-WP-B1-002`: `E2-B1-F01`/`E2-B1-F02` — sửa batch 1, 21 test; `E2-WP-B1-003`: cả hai finding CHƯA đóng hết — sửa batch 2, 49 test, `_numeric_and_finite()` viết lại triệt để + `run_verdict` hạ verdict về `INCONCLUSIVE` khi non-official), vòng E2 độc lập thứ BA (`E2-WP-B1-004-FRESH-ROUND3`) PASS trên đúng HEAD `9ac01b8`: tái lập độc lập cả hai finding lịch sử ĐÃ ĐÓNG, không BLOCKING mới, full suite 461/461 PASS. `CHECK-B1-09: NOT_TESTED → PASS`. Completion Gate = PASS. Verdict lịch sử T-06 (`DO_NOT_BUILD`) không đổi. Downstream KHÔNG tự mở: `GATE-B` vẫn chưa mở (`WP-B2` READY, `WP-B3` BLOCKED bởi `WP-C2`), `T-07` vẫn NOT READY. Xem file task để có evidence đầy đủ |
 | DONE | WP-B2 | Bổ sung test cho các yêu cầu đặc tả còn thiếu | Nhiều yêu cầu của BT §21 hiện không có gì kiểm chứng | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-038`** (2026-09-05). Đóng đề xuất `R-09`. **10/10 REQUIRED PASS** (`CHECK-B2-01`…`10`, E1 toàn bộ). 141 ca test mới trên `run_engine` THẬT cho bảy khoảng trống của §21.2/§21.3/§21.4; bảng đối chiếu **31/31** requirement §21 ở `docs/CONVENTIONS.md`, có test giữ cho bảng không trôi khỏi văn bản spec. **0 dòng `src/` bị sửa** (`git diff` rỗng trên mọi production path); bất biến tài chính `sha256 3ea7c8d7…` trùng trước–sau. Full suite **678/678 PASS** (trước gói 537/537). Sinh `H-39`, `H-40` (giữ HARDENING, không nâng đường găng). `WP-B2` là thành viên CUỐI CÙNG của `GATE-B` — cùng `DEC-038`, **`GATE-B` chuyển `CLOSED`** (Lớp B hoàn tất) và **`T-07` chuyển `READY`** (chưa thực thi). Trước đó IMPLEMENTED tại `S026`, READY tại `DEC-031` |
 | DONE | WP-B3 | Hoàn thiện nhật ký quyết định để truy vết được | Cần truy vết được vì sao hệ thống ra quyết định như vậy tại từng thời điểm | C | high | **DONE — Owner-authorized Lifecycle Closure tại `DEC-037`** (2026-09-05). Đóng `F-024`, `F-033`. 8/8 REQUIRED PASS (`CHECK-B3-01`…`08`, E1 toàn bộ). `decision_log` nay đúng hình dạng DM §11 (19 trường + `tags`), `previous_state`/`new_state` là chính `ExecutionState` của WP-C2 (bản ghi chuyển trạng thái = mốc timeline − 1), phạm vi sự kiện từ 3 lên **25 loại** trên run toàn kỳ, và cờ `log_decisions` bị GỠ (production: 0 → 2.441/2.478 bản ghi). **Bất biến tài chính bit-for-bit** (`sha256 3ea7c8d7…`, 3.728.853 byte, gồm cả đầu ra WP-C2); gỡ bỏ lớp log không đổi hành vi. Diff production 1 file +266/−15; full suite 537/537 PASS. Sinh H-36, H-37, H-38 (giữ HARDENING, không nâng đường găng). `GATE-B` vẫn chưa mở (`WP-B2` mới READY, chưa DONE). Trước đó IMPLEMENTED tại `S025`, READY tại `DEC-036` |
-| READY | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | `T-06 = DONE` (`DEC-031`, verdict `DO_NOT_BUILD`) và **`GATE-B = CLOSED`** (`DEC-038`, 2026-09-05 — `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`). Hai điều kiện đã khai đều thoả → `READY`. **CHƯA thực thi** — bước DUYỆT thuộc con người. `T-11` vẫn `BLOCKED` (đòi `T-07 DONE ∧ verdict=BUILD`; verdict hiện `DO_NOT_BUILD`) |
+| READY | T-07 | DUYỆT — đọc verdict và chọn hướng đi | Verdict quyết định được xây app đầy đủ hay phải mở V2.2 | DUYET | - | `T-06 = DONE` (`DEC-031`, verdict `DO_NOT_BUILD`) và **`GATE-B = CLOSED`** (`DEC-038`, 2026-09-05 — `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`). Hai điều kiện đã khai đều thoả → `READY`. **CHƯA thực thi** — bước DUYỆT thuộc con người. `T-11` vẫn `BLOCKED` (đòi `T-07 DONE ∧ verdict=BUILD`; verdict hiện `DO_NOT_BUILD`). Owner phản hồi Decision Brief tại `DEC-039` (2026-09-05): giữ `L-0`/`READY`, uỷ quyền phiên SPIKE evidence-investigation RQ-1/RQ-3/RQ-4/RQ-5 (`docs/reviews/T07-RQ-EVIDENCE-INVESTIGATION.md`) trước khi quay lại chọn L-1/L-2 |
 | DONE | WP-C1 | Kiểm chứng ba nghi vấn ở app web và khôi phục bộ test | App đang có thể dùng để ghi tiền thật; ba nghi vấn về sai sổ vẫn chưa có kết luận | C | xhigh | **DONE 2026-09-02** (8/8 REQUIRED PASS, E1). V-01 XÁC NHẬN, V-02 XÁC NHẬN, V-03 BÁC BỎ (an toàn tình cờ, HARDENING). Harness khôi phục (F-027 đóng). Gỡ BLOCKED cho T-03 (CHECK-03-01 PASS) |
 | DONE | WP-C2 | Làm rõ và đặt tên trạng thái thực thi của hệ thống | Cần biết rõ hệ thống đang ở trạng thái nào trước khi đưa vào dùng thật | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-036`** (2026-09-04). Đóng `F-006`. 8/8 REQUIRED PASS (`CHECK-C2-01`…`08`, E1 trừ `CHECK-C2-07` E0 theo gate FROZEN). Một enum `ExecutionState` (sáu giá trị ST §16/§19) + một hàm thuần `derive_execution_state` đo tại bước 12b BT §19; KHÔNG có class `StateMachine`. Lưu vết: `execution_state_timeline` (ghi-khi-đổi — hình dạng `previous_state`/`new_state` cho `WP-B3`) và `market_snapshots` (mỗi accounting day, `execution_state` NOT NULL, DM §4). `FUNDING_REQUIRED` = NOT_APPLICABLE theo `ADR-001`. **Backtest bit-for-bit không đổi** (`sha256 e0492a58…`); diff production 1 file +128/−0 thuần thêm mới; full suite 494/494. Mở `WP-B3`/`WP-C3` sang `READY`. `GATE-B` vẫn chưa mở. Trước đó IMPLEMENTED tại `S024`, READY tại `DEC-035` |
 | READY | WP-C3 | Xử lý mua một phần ở tầng sản phẩm | Mua một phần là tình huống thật ngoài đời, tầng ghi sổ hiện chưa xử lý đúng | C | xhigh | **READY tại `DEC-036`** (2026-09-04) — dependency `WP-C2 DONE` nay thoả (Dependencies của WP-C3 chỉ liệt kê T-04 DONE + WP-C2 DONE). Chưa mở/thực thi (đóng F-020) |
