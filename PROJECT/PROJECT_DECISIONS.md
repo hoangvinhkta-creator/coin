@@ -2837,3 +2837,158 @@ verdict (verdict lịch sử `DO_NOT_BUILD`/`can_proceed_to_app=false` giữ ngu
 xoá nhánh; chạm `data/`; sửa `H-36`/`H-37`/`H-38`; tạo task mới từ finding.
 
 ---
+
+## DEC-038 — Owner-authorized Lifecycle Closure: `WP-B2: IMPLEMENTED → DONE`; `GATE-B = CLOSED`; `T-07: PLANNED → READY`
+
+Date:
+2026-09-05 (phiên Lifecycle Closure, nhánh `claude/wp-b2-implementation-u9y68k`)
+
+Task:
+`WP-B2` / capability `CAP-VERDICT` (lineage root `WP-B1`). Đóng lifecycle toàn bộ gói `WP-B2`
+(đóng đề xuất `R-09`). Đây là thành viên CUỐI CÙNG của `GATE-B` (= `WP-B1 ∧ WP-B2 ∧ WP-B3`).
+
+Decision:
+
+    Chủ dự án chấp nhận bằng chứng Completion Gate đã đóng băng trong
+    `docs/reviews/WP-B2-IMPLEMENTATION-REPORT.md` (10/10 REQUIRED check PASS
+    — CHECK-B2-01..10; production reachability PASS; bất biến tài chính/chiến
+    lược PASS; full regression 678/678 PASS; production diff = EMPTY; 0
+    finding BLOCKING) và uỷ quyền tường minh cho phiên này:
+
+        1. canonical hoá WP-B2 REQUIRED = 10/10 PASS;
+        2. ghi nhận Completion Gate = SATISFIED;
+        3. đóng lifecycle WP-B2 theo governance hiện có (`STATE_AUTHORITY.md`:
+           `DONE` = Owner, hoặc completion authority được chỉ định);
+        4. tính lại GATE-B ĐÚNG THEO định nghĩa canonical đã có
+           (`PROJECT_PROGRESS.md`: `GATE-B = WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE`),
+           KHÔNG tự suy diễn thêm tiêu chí nào ngoài định nghĩa đó;
+        5. tính lại readiness của `T-07` ĐÚNG THEO dependency đã khai
+           (`T-06 DONE ∧ GATE-B`), KHÔNG bắt đầu thực thi `T-07`;
+        6. cập nhật MỨC TỐI THIỂU các file state canonical cần thiết (vòng đời,
+           roadmap, capability registry, ledger).
+
+    Uỷ quyền này KHÔNG bao gồm: production repair mới; sửa `H-39`/`H-40`; tạo
+    task mới từ finding; bắt đầu/thực thi `T-07`; mở/thực thi `WP-C3`; mở
+    `T-08`; resolve `DEC-005`; rerun `T-06`; rerun thí nghiệm chiến lược; đổi
+    threshold/verdict; merge `main`; push `main`; xoá nhánh; branch cleanup;
+    chạm `data/`.
+
+Ghi nhận nguyên văn (Owner, qua chat): *"OWNER APPROVES WP-B2 LIFECYCLE CLOSURE... Owner
+authorizes: WP-B2: IMPLEMENTED → DONE."* Owner đồng thời uỷ quyền tường minh cho phiên này
+**tự xác định** GATE-B có mở được như một hệ quả tất định của B1∧B2∧B3=DONE hay không, với ràng
+buộc: *"Do NOT automatically invent additional Gate-B requirements"* và *"If (a), apply only
+the state transition explicitly permitted by canonical authority."*
+
+Reason:
+
+**Đóng WP-B2.** Không có rà soát độc lập (E2) mới ở quyết định này — Completion Gate đã đóng
+băng của `WP-B2` KHÔNG đòi check E2 nào (`Risk = 2 → E1` cho toàn bộ mười check REQUIRED, đúng
+mức gate quy định, khác `WP-B1` có `CHECK-B1-09` đòi E2). Bằng chứng có thẩm quyền là báo cáo
+implementer (`docs/reviews/WP-B2-IMPLEMENTATION-REPORT.md`), và chủ dự án tự xác nhận đã đọc
+nó (viện dẫn đúng mười CHECK-B2-01…10, Production Reachability, Financial/Strategy Invariance,
+Full regression 678/678) trước khi phê duyệt. Đây là hành động Owner đúng `STATE_AUTHORITY.md`,
+không phải implementer tự cấp `DONE` cho chính mình.
+
+Tóm tắt evidence được Owner viện dẫn: `CHECK-B2-01`…`CHECK-B2-10` = PASS; production
+reachability = mọi test chạy `run_engine` thật, kịch bản lớn nhất 3.936 nến, bất biến
+không-double-reservation đo ở MỌI nến; bất biến tài chính/chiến lược = payload chuẩn tắc
+3.728.853 byte, `sha256 3ea7c8d7d6d439fdc54470b1677ef5f783cb1c383f33cdc0c5dc1f32aae59dd7` trùng
+khớp trước–sau (và trùng giá trị `WP-B3` đã ghi ở phiên trước); full regression = 678/678 PASS,
+exit 0 (537 baseline + 141 test mới); diff production = **EMPTY** (`git diff b778dc1..HEAD --
+src/eth_dca_os webapp pyproject.toml pyproject.lock` rỗng — gói CHỈ VIẾT TEST); `H-39`/`H-40`
+giữ nguyên HARDENING, không được nâng lên đường găng.
+
+**Tính lại GATE-B.** Định nghĩa canonical duy nhất của `GATE-B`, xuất hiện nhất quán trong
+`PROJECT_PROGRESS.md`, mọi file task `WP-B{1,2,3}-*.md` (mục "Blocks") và
+`PROJECT/ROADMAP_CHANGE_PROPOSAL_001.md` ("GATE-B — LỚP B HOÀN TẤT"), là:
+
+    GATE-B = WP-B1 ∧ WP-B2 ∧ WP-B3 đều DONE
+
+Không có REQUIRED component nào khác trong định nghĩa canonical này — không tìm thấy file
+Completion Gate riêng cho `GATE-B`, không tìm thấy tiêu chí bổ sung nào (cross-module
+integration test riêng, phê duyệt riêng, v.v.) ở bất kỳ nguồn thẩm quyền nào đã rà soát
+(`AGENTS.md`, `governance/v4/CORE/*`, ba file task `WP-B{1,2,3}`, roadmap change proposal,
+toàn bộ `PROJECT_DECISIONS.md`). Đây là đúng khuôn mà `DEC-028` đã dùng để đóng `GATE-A`
+("Xác nhận bằng kiểm tra trực tiếp `docs/tasks/WP-A{1..7}-*.md` ... Không có REQUIRED component
+nào khác ... Không suy diễn thêm requirement ngoài định nghĩa này").
+
+Kiểm tra trực tiếp trạng thái ba thành viên tại thời điểm quyết định này:
+
+    WP-B1 = DONE   (`DEC-034`, 2026-09-04)
+    WP-B2 = DONE   (mục (1) của quyết định này)
+    WP-B3 = DONE   (`DEC-037`, 2026-09-05)
+
+Cả ba đều `DONE` theo đúng nghĩa `STATE_AUTHORITY.md` (Owner hoặc completion authority ghi).
+Vế bên phải của công thức `GATE-B` được thoả đầy đủ, không cần suy luận thêm. Vì vậy: đây là
+trường hợp **(a)** trong hai lựa chọn Owner đặt ra — `GATE-B` mở được như một hệ quả TẤT ĐỊNH
+của việc kiểm tra định nghĩa đã đóng băng, không phải một phán xét mới cần thẩm quyền Owner độc
+lập (thẩm quyền Owner đã được dùng hết ở chính ba quyết định đóng `WP-B1`/`WP-B2`/`WP-B3`).
+Áp dụng ĐÚNG một state transition mà định nghĩa canonical cho phép: `GATE-B: CHƯA MỞ → CLOSED`
+("Lớp B hoàn tất").
+
+**Tính lại T-07.** Dòng roadmap của `T-07` (`PROJECT_PROGRESS.md`) khai đúng hai điều kiện:
+`T-06 DONE` (đã thoả từ `DEC-031`) và `GATE-B` (nay `CLOSED`). Không điều kiện nào khác được
+khai cho `T-07` ở bất kỳ nguồn nào đã rà soát. Vì vậy `T-07: PLANNED → READY`. Đây KHÔNG phải
+bắt đầu thực thi `T-07` — `T-07` là một bước DUYỆT của con người ("đọc verdict và chọn hướng
+đi"), và quyết định này không đọc verdict thay chủ dự án, không đề xuất hướng đi, không mở
+`T-11`.
+
+**Ràng buộc tường minh (theo đúng chỉ thị Owner):** việc `GATE-B` mở và `T-07` sẵn sàng KHÔNG
+được diễn giải là ghi đè verdict official `DO_NOT_BUILD` hay `can_proceed_to_app = false`.
+`GATE-B` là một cổng THỦ TỤC (lớp B — verdict policy + test §21 + audit trail — đã hoàn tất);
+nó không phải và không thể là một phán quyết về nội dung verdict. Nội dung verdict vẫn thuộc về
+`T-06` (đã `DONE`, lịch sử, `DO_NOT_BUILD`) và chỉ `T-07` — khi con người thực sự thực thi nó —
+mới đọc và xử lý ý nghĩa đó.
+
+Consequence:
+`WP-B2: IMPLEMENTED → DONE`. `Completion Gate: 10/10 REQUIRED PASS → CANONICAL DONE`.
+`GATE-B: CHƯA MỞ → CLOSED` (Lớp B hoàn tất — `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`).
+`T-07: PLANNED → READY` (chưa thực thi).
+
+Downstream, tính lại NGHIÊM NGẶT từ dependency đã khai trong từng file task (không suy luận
+thêm):
+
+- `WP-B1 = DONE` (`DEC-034`) — không đổi.
+- `WP-B2: IMPLEMENTED → DONE` — quyết định của phiên này.
+- `WP-B3 = DONE` (`DEC-037`) — không đổi.
+- `GATE-B: CHƯA MỞ → CLOSED` — quyết định của phiên này, hệ quả tất định của ba dòng trên.
+- `T-07: PLANNED → READY` — hệ quả tất định của `GATE-B = CLOSED` (∧ `T-06 DONE` đã thoả từ
+  trước). **CHƯA thực thi.**
+- `T-11`: **không đổi — vẫn `BLOCKED`.** Điều kiện của `T-11` là
+  `T-07 ∧ WP-C2 ∧ WP-C3 ∧ WP-C4 ∧ verdict=BUILD`. Dù `T-07` nay `READY`, nó **chưa `DONE`**
+  (chưa thực thi), và verdict hiện là `DO_NOT_BUILD` — riêng điều kiện verdict đã đủ để giữ
+  `T-11` ở `BLOCKED` vô thời hạn cho tới khi có quyết định khác của chủ dự án.
+- `WP-C2 = DONE` (`DEC-036`), `WP-C3 = READY` (`DEC-036`) — không đổi, không mở.
+- `T-08`: **vẫn bị chặn bởi `DEC-005 = PENDING`** — không đổi. `GATE-B`/`T-07` không nằm trong
+  điều kiện của `T-08`.
+
+Giữ nguyên, không đổi một chữ: `DEC-005 = PENDING`; `T-06 = DONE`; V2.1.5 validation = `FAILED`;
+verdict lịch sử = `DO_NOT_BUILD`; `can_proceed_to_app = false`; tag `v2.1.5-official-T06`.
+`H-39`/`H-40` giữ nguyên **HARDENING**, không được nâng lên đường găng.
+
+Files cập nhật (docs/state-only, KHÔNG production code):
+- `docs/tasks/WP-B2-bo-sung-test-requirement-con-thieu.md`: `Status: IMPLEMENTED → DONE`, viện
+  dẫn `DEC-038`; Exit Criteria giữ nguyên (đã `[x]` từ phiên implementation).
+- `PROJECT/PROJECT_PROGRESS.md`: dòng roadmap `WP-B2` → `DONE`; dòng roadmap `T-07` →
+  `READY`; sơ đồ phụ thuộc + công thức `GATE-B` → `CLOSED`; mục `Last Updated`.
+- `PROJECT/LO_TRINH_DE_HIEU.md`: sinh lại bằng generator (không sửa tay).
+- `PROJECT/CAPABILITY_REGISTRY.md`: `CAP-VERDICT` — thành viên `WP-B2` → `DONE`; toàn bộ
+  lineage (`WP-B1`, `WP-B2`, `WP-B3`) nay `DONE`.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md`: dòng `CAP-VERDICT` cập nhật trạng thái thành viên; budget
+  số **không đổi** — đóng lifecycle không tiêu repair cycle vì production diff của chính lượt
+  đóng này = 0.
+
+Review/repair budget (`CAP-VERDICT`, lineage root `WP-B1`): **0 repair cycle mới tiêu bởi
+quyết định này** (production diff = 0 — quyết định chỉ đổi trạng thái, không sửa mã). Toàn bộ
+công việc implementation của `WP-B2` (0 dòng `src/eth_dca_os`, thuần test) vẫn được tính là
+**implementation ban đầu**, không phải repair cycle — cùng quy ước xuyên suốt ledger cho
+`WP-A4`/`T-09A`/`T-09B`/`WP-B1`/`WP-C2`/`WP-B3`.
+
+**Không mở rộng phạm vi.** Quyết định này KHÔNG: sửa production code nào; sửa `H-39`/`H-40`;
+tạo task mới từ finding; bắt đầu/thực thi `T-07`; mở/thực thi `WP-C3`; mở `T-08`; resolve
+`DEC-005`; rerun `T-06`; rerun thí nghiệm chiến lược; đổi threshold/strategy; diễn giải lại
+`GATE-B CLOSED` hay `T-07 READY` thành một tuyên bố về verdict (verdict lịch sử
+`DO_NOT_BUILD`/`can_proceed_to_app=false` giữ nguyên); mở `T-11`; merge `main`; push `main`;
+xoá nhánh; branch cleanup; chạm `data/`.
+
+---

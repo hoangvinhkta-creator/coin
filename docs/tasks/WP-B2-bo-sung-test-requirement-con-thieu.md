@@ -2,8 +2,17 @@
 
 ## Metadata
 Status:
-**IMPLEMENTED — 2026-09-05, phiên `S026`** (nhánh `claude/wp-b2-implementation-u9y68k`, tách từ
-`origin/main` `b778dc1`). Ready Gate được xác nhận lại đầy đủ khi mở task;
+**DONE — 2026-09-05, Owner-authorized Lifecycle Closure (`DEC-038`).** `IMPLEMENTED → DONE`.
+Chủ dự án chấp nhận bằng chứng Completion Gate đóng băng trong
+`docs/reviews/WP-B2-IMPLEMENTATION-REPORT.md` và uỷ quyền đóng vòng đời — xem `DEC-038`
+(`PROJECT/PROJECT_DECISIONS.md`) cho toàn văn quyết định và hệ quả downstream. Đóng đề xuất
+`R-09`. `WP-B2` là thành viên CUỐI CÙNG của `GATE-B`; `DEC-038` đồng thời tính lại `GATE-B`
+(→ `CLOSED`, hệ quả tất định của `WP-B1 ∧ WP-B2 ∧ WP-B3` đều `DONE`) và `T-07`
+(`PLANNED → READY`, chưa thực thi). Verdict lịch sử `DO_NOT_BUILD` và `can_proceed_to_app =
+false` KHÔNG đổi.
+
+Trước đó, 2026-09-05 — **IMPLEMENTED, phiên `S026`** (nhánh `claude/wp-b2-implementation-u9y68k`,
+tách từ `origin/main` `b778dc1`). Ready Gate được xác nhận lại đầy đủ khi mở task;
 `READY → IN_PROGRESS → IMPLEMENTED`. **10/10 REQUIRED check PASS** (`CHECK-B2-01`…`CHECK-B2-10`,
 E1 toàn bộ — Completion Gate đóng băng 2026-08-23 KHÔNG bị sửa một chữ nào ở phần yêu cầu).
 
