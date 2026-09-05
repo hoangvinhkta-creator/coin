@@ -2,16 +2,19 @@
 
 ## Metadata
 Status:
-**IMPLEMENTED — 2026-09-04, phiên `S025`** (nhánh `claude/wp-b3-audit-trail-impl-3covtf`, tách
-từ `origin/main` `04f77ac`). Ready Gate được xác nhận lại đầy đủ khi mở task;
-`READY → IN_PROGRESS → IMPLEMENTED`. **8/8 REQUIRED check PASS** (`CHECK-B3-01`…`CHECK-B3-08`),
-đầu ra tài chính/chiến lược trùng khớp **bit-for-bit** trước–sau, full suite PASS. Đóng
-`F-024` và `F-033`. Bằng chứng đầy đủ: `docs/reviews/WP-B3-IMPLEMENTATION-REPORT.md`.
-**Chưa `DONE`** — `governance/v4/CORE/STATE_AUTHORITY.md` quy định `DONE` do chủ dự án (hoặc
-completion authority được chỉ định) ghi; xem `OWNER_DECISION_REQUIRED` trong báo cáo §22.
+**DONE — 2026-09-05, Owner-authorized Lifecycle Closure (`DEC-037`).** `IMPLEMENTED → DONE`.
+Chủ dự án chấp nhận bằng chứng Completion Gate đóng băng trong
+`docs/reviews/WP-B3-IMPLEMENTATION-REPORT.md` và uỷ quyền đóng vòng đời — xem `DEC-037`
+(`PROJECT/PROJECT_DECISIONS.md`) cho toàn văn quyết định và hệ quả downstream. Đóng `F-024`
+và `F-033`.
 
-Trước đó, cùng ngày — READY (`DEC-036`): dependency `WP-C2 DONE` nay thoả, cả hai dependency
-đủ.
+Trước đó, 2026-09-04 — IMPLEMENTED, phiên `S025` (nhánh `claude/wp-b3-audit-trail-impl-3covtf`,
+tách từ `origin/main` `04f77ac`). Ready Gate được xác nhận lại đầy đủ khi mở task;
+`READY → IN_PROGRESS → IMPLEMENTED`. **8/8 REQUIRED check PASS** (`CHECK-B3-01`…`CHECK-B3-08`),
+đầu ra tài chính/chiến lược trùng khớp **bit-for-bit** trước–sau, full suite 537/537 PASS.
+Bằng chứng đầy đủ: `docs/reviews/WP-B3-IMPLEMENTATION-REPORT.md`.
+
+Trước đó nữa: READY (`DEC-036`): dependency `WP-C2 DONE` nay thoả, cả hai dependency đủ.
 
 Trước đó nữa: BLOCKED — cập nhật tại `DEC-031` (2026-09-03): dependency `T-06 DONE` thoả; lý do
 chặn DUY NHẤT còn lại khi đó là `Dependency WP-C2 DONE`.
