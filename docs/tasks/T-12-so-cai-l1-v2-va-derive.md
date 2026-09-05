@@ -2,7 +2,17 @@
 
 ## Metadata
 Status:
-READY — 2026-09-05. Task được mở tại phiên `S032` theo thẩm quyền `DEC-042` § Consequence
+BLOCKED
+
+**S034 — 2026-09-05: `OWNER_DECISION_REQUIRED`, dừng tại DISCOVER trước implementation.**
+Ready Gate 17/17 của S033 là bản ghi lịch sử; phiên này **không tái xác nhận được 17/17** vì
+hợp đồng SC-04 mâu thuẫn với công thức carry canonical. Không chuyển `IN_PROGRESS`, không tạo
+fixture, không có `T12_GOLDEN_ACCOUNTING_BASELINE_SHA`, không tiêu repair cycle.
+Bằng chứng số học E1 và `COMPLETION GATE CHANGE PROPOSAL` chờ Owner ở
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §3/§29. Task `READY → BLOCKED` theo quyền hard-stop
+của § Implementation authority; 14 REQUIRED check giữ nguyên câu chữ và `NOT_TESTED`.
+
+Lịch sử: READY — 2026-09-05. Task được mở tại phiên `S032` theo thẩm quyền `DEC-042` § Consequence
 (*"Việc mở task ID cho bước A (Ledger/Data Model v2) thuộc một phiên riêng sau `DEC-042`"*).
 Đây là bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24.
 Toàn bộ 17 mục MAJOR Ready Gate được xác nhận trong chính file này (§ Ready Gate).

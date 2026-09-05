@@ -204,7 +204,7 @@ tại trong roadmap từ T-04 (2026-08-23), trước khi WP-A1 tiêu hết budge
     THÀNH VIÊN     = WP-C1 (DONE), T-09A (DONE), T-09B (DONE — DEC-021/DEC-041 I),
                      WP-C2 (DONE — DEC-036, Owner-authorized Lifecycle Closure, 2026-09-04),
                      WP-C3 (CANCELLED — DEC-041 F), WP-C4 (CANCELLED — DEC-041 F),
-                     T-12 (READY — S032, 2026-09-05; amended S033/DEC-043; xem §2.2.6, §2.2.7)
+                     T-12 (BLOCKED — S034, 2026-09-05; OWNER_DECISION_REQUIRED; xem §2.2.8)
     BASELINE SHA   = cb75f9d1fb139f4c5daae063e754245998819f22   (2026-09-02, commit cuối trước
                      khi nhánh web WP-C1 tách ra khỏi `main`)
     BRANCH         = main   (canonical trunk từ `DEC-013`)
@@ -468,6 +468,15 @@ không đủ ngay từ đầu: `OWNER_DECISION_REQUIRED` — **không** tự c�
 
     git diff --shortstat 91cfbba..HEAD -- src/eth_dca_os webapp pyproject.toml pyproject.lock
       -> 0   (production diff = EMPTY; xem `docs/sessions/S033-t12-owner-amendments-dec043.md`)
+
+#### 2.2.8 S034 — dừng DISCOVER do hợp đồng mâu thuẫn, không tiêu budget
+
+`T-12: READY → BLOCKED` (`OWNER_DECISION_REQUIRED`). SC-04 lệch công thức carry 4.684.700 VND;
+bằng chứng số học và đề xuất chờ Owner: `docs/reviews/T12-IMPLEMENTATION-REPORT.md` §3/§29.
+Không implementation, không repair. `ALLOWED = 2 / USED = 0 / REMAINING = 2` giữ nguyên;
+`REPAIR_CYCLE_1 = NOT_CONSUMED`. Không cặp SHA repair nào được tạo.
+Mốc đầu phiên `7d1985aaf306294df49c9508078d5425da10f47e`; mốc đo task vẫn
+`91cfbba5e3af01d432c64369bb5a286f6461ab6a`; không fixture commit, baseline kế toán chưa tồn tại.
 
 ## 3. Golden cumulative change budget
 

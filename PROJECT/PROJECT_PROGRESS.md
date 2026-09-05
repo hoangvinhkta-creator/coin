@@ -25,6 +25,12 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
+2026-09-05 — **S034: T-12 READY → BLOCKED; OWNER_DECISION_REQUIRED.** SC-04 yêu cầu remainingPlannedBudget(2026-02) = 7.090.822 VND, nhưng §11.2/§11.4 và DEC-042 bắt buộc 11.775.522 VND (carryIn = 4.684.700 VND).
+Dừng trước implementation theo Stop conditions của T-12; production diff = 0; chưa tạo fixture,
+chưa đóng băng golden baseline; repair used vẫn 0. Báo cáo và đề xuất chờ Owner:
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §29.
+
+Lịch sử cập nhật trước:
 2026-09-05 — **`S033` — OWNER DECISION `DEC-043`: tu chỉnh `T-12` (persistence architecture bounded
 approval, tách bạch golden baseline, pre-authorize MỘT repair cycle có điều kiện).** `T-12` giữ
 `READY`; 14 REQUIRED check (`CHECK-T12-01`…`-14`) KHÔNG đổi một chữ; 17/17 Ready Gate tái xác nhận
@@ -768,28 +774,16 @@ Vertical Acceptance Slice ACTIVE đổi sang **sản phẩm CoinDCA L-1**
 `can_proceed_to_app = false` giữ nguyên vĩnh viễn.
 
 Current Task:
-**KHÔNG CÓ task nào đang chạy.** Không mở/thực thi hạng mục nào.
-(`WP-B1` đã `DONE` tại `DEC-034` — trường này trước đây còn ghi `IN_PROGRESS`, là stale `ST-01`,
-đóng tại `DEC-041` I.)
+T-12 — BLOCKED (`S034`, `OWNER_DECISION_REQUIRED` do SC-04 mâu thuẫn carry canonical).
+Chưa bắt đầu implementation. Chi tiết: Current Task Snapshot và báo cáo T12 §3/§29.
 
 Current Task Mode:
-— (không có task đang chạy)
+MAJOR
 
 Next Recommended Task:
-**KHÔNG PHẢI task — pha kế tiếp là `L-1 PRODUCT + ACCOUNTING SPEC`** (`DEC-041` Consequence).
-Nó phải định nghĩa **mô hình sự thật tài chính TRƯỚC** khi thi hành UI, và phải giải quyết tường
-minh 10 ràng buộc kế toán liệt kê tại `DEC-041` K.2 (ngày do người dùng nhập ·
-`Asia/Ho_Chi_Minh` · tháng lịch · số dư đầu kỳ · sổ cái an toàn với edit/delete · VND integer ·
-treasury VND↔USDT · asset trade USDT→crypto · tính lại cost basis · migration).
-Owner tường minh: **KHÔNG bắt đầu thi hành L-1** trước khi spec đó tồn tại.
-
-Không hạng mục roadmap cũ nào được mở: `T-08`/`T-10` = `DEFERRED` (`REDEFINE_FOR_L1`);
-`T-05`/`T-11`/`WP-C3`/`WP-C4`/`WP-D2` = `CANCELLED` (`NOT_APPLICABLE_TO_V2_1_5` /
-`SUPERSEDED_BY_DEC-041`). Spec L-1 sẽ quyết định capability nào được tái dụng, định nghĩa lại,
-hay bỏ. **Không tạo task ID thay thế.**
-
-(Trước `DEC-041`, trường này còn đề xuất `WP-A6`/`WP-A1` — cả hai đã `DONE` từ 2026-09-03; stale
-`ST-03`, đóng tại `DEC-041` I.)
+Owner định đoạt `COMPLETION GATE CHANGE PROPOSAL` trong
+`docs/reviews/T12-IMPLEMENTATION-REPORT.md` §29, rồi tái xác nhận Ready Gate của chính T-12.
+Không mở task mới. Spec L-1 đã được duyệt tại DEC-042; các task V2.1.5 đã đóng/hoãn giữ nguyên.
 
 Branch authority: mọi phiên mới branch từ `origin/main` sau khi fetch. Baseline đo
 budget/production diff là **`origin/main` sau fetch**, KHÔNG phải ref `main` cục bộ
@@ -848,7 +842,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | WP-D1 | Dọn các khoản nợ kỹ thuật không ảnh hưởng kết quả | Dọn cho sạch, không ảnh hưởng gì tới kết quả hiện tại | B | medium | **DONE tại S005** (6/6 REQUIRED PASS; kết quả mô phỏng trùng khớp bit-for-bit, chỉ counter chẩn đoán đổi theo ngoại lệ khai báo) (đóng F-028, F-029, F-031, F-034) |
 | CANCELLED | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) · **`DEC-041` (2026-09-05)**: `READY → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Đầu ra là đề xuất **V2.2-của-V2.1.5**; `DEC-040` từ chối mở V2.2 và đòi mọi giả thuyết chiến lược tương lai phải độc lập, KHÔNG kế thừa trạng thái validation V2.1.5 — nên tiền đề của `WP-D2` không còn. `S-001`/`S-002`/`S-003` được **ghi chú kèm** freeze `DEC-041` A (khiếm khuyết trong artifact đóng băng thì ghi chú, không sửa — Master Index §6) |
 | CANCELLED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Điều kiện của `T-11` gồm `verdict = BUILD`, mà `DEC-040` §E xác lập điều kiện này KHÔNG BAO GIỜ thoả được nữa dưới V2.1.5. Đóng luôn mâu thuẫn trạng thái cũ (`PLANNED` ở bảng vs `BLOCKED` ở `DEC-040` §D — stale `ST-08`). Verdict `BUILD` từ chiến lược/version khác trong tương lai phải tự đủ điều kiện từ đầu |
-| READY | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041` (lát cắt ACTIVE = L-1, `app_development_allowed = true`) và `DEC-042` (spec `CANONICAL — APPROVED`; mở task ID cho bước A thuộc một phiên riêng — thi hành tại `S032`). Capability `CAP-WEBAPP`, lineage root `WP-C1` — KHÔNG tạo lineage mới, KHÔNG reset budget. Mở đường cho bước B (dashboard/UX) và bước D (chấp nhận dùng thật). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
+| BLOCKED | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041` (lát cắt ACTIVE = L-1, `app_development_allowed = true`) và `DEC-042` (spec `CANONICAL — APPROVED`; mở task ID cho bước A thuộc một phiên riêng — thi hành tại `S032`). Capability `CAP-WEBAPP`, lineage root `WP-C1` — KHÔNG tạo lineage mới, KHÔNG reset budget. Mở đường cho bước B (dashboard/UX) và bước D (chấp nhận dùng thật). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -963,40 +957,25 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 
 ## Current Task Snapshot
 
-**Task đang mở: `T-12` — `READY`, CHƯA bắt đầu thi hành** (mở `S032`, tu chỉnh `S033`/`DEC-043`,
-2026-09-05).
+**T-12 — BLOCKED (`S034`, 2026-09-05); `OWNER_DECISION_REQUIRED`.**
 
     Task ID        T-12
-    Tên            Sổ cái L-1 v2: mô hình dữ liệu, derive() tất định, migration và test kế toán
     File           docs/tasks/T-12-so-cai-l1-v2-va-derive.md
     Task Mode      MAJOR
-    Trạng thái     READY (17/17 MAJOR Ready Gate xác nhận; tái xác nhận sau DEC-043)
-    Routing        D / Fable / max — model_score 3.1, effort_score 3.65,
-                   inputs D4 R3 B3 A2 X3 · U3 V4 H4 C3 F4,
-                   categories accounting_financial + destructive_migration
-    Gate           FROZEN 2026-09-05 — 14 REQUIRED check (CHECK-T12-01…-14), KHÔNG đổi bởi DEC-043
-    Capability     CAP-WEBAPP (lineage root WP-C1) — KHÔNG tạo lineage mới
-    Kiến trúc      DEC-043 duyệt: schema coindca.ledger/2 thay thế state bên trong ethdca/state
-                   đã có; KHÔNG collection/document mới, KHÔNG sửa firestore.rules, KHÔNG đổi
-                   kiến trúc Firebase (vẫn thuộc bước C nếu cần vượt phạm vi này)
-    Golden         T12_GOLDEN_ACCOUNTING_BASELINE (tổng hợp, SC-01…SC-12) — tách khỏi
-                   GOLDEN_BASELINE_SHA tầng dự án (H-10, lineage T-06, không phải phụ thuộc của
-                   T-12) và khỏi OWNER_LOCAL_ACCEPTANCE (dữ liệu thật, bước D)
-    Budget         Pool capability: allowed 2 / used 0 / remaining 2 (DEC-018). DEC-043
-                   pre-authorize MỘT chu kỳ đầu cho T-12 (rút từ pool trên, không cộng thêm),
-                   dùng được chỉ khi đủ điều kiện đã liệt kê trong file task. Chu kỳ thứ hai vẫn
-                   cần Owner Decision riêng.
-    Thẩm quyền mở  DEC-042 § Consequence; tu chỉnh DEC-043 (persistence/golden/repair)
+    Trạng thái     BLOCKED — dừng ở DISCOVER, chưa bắt đầu implementation
+    Routing        D / max; model_score 3.1, effort_score 3.65; router tái chạy PASS
+    Gate           FROZEN 2026-09-05 — 14 REQUIRED, vẫn NOT_TESTED; không sửa câu chữ
+    Ready Gate     S033 đã ghi 17/17; S034 không tái xác nhận được vì xung đột SC-04/carry
+    Capability     CAP-WEBAPP (lineage root WP-C1)
+    Kiến trúc      DEC-043 vẫn có hiệu lực: schema mới bên trong ethdca/state
+    Golden         Chưa có fixture commit; T12_GOLDEN_ACCOUNTING_BASELINE_SHA chưa tồn tại
+    Budget         allowed 2 / used 0 / remaining 2; repair pre-authorized của T-12 chưa tiêu
+    Blocker        SC-04: 7.090.822 VND; §11.2/§11.4: 11.775.522 VND
+    Bằng chứng     docs/reviews/T12-IMPLEMENTATION-REPORT.md §3 (số học E1)
+    Bước kế tiếp   Owner duyệt/bác đề xuất §29; không tự đổi ngữ nghĩa, không mở task mới
 
-Pha `L-1 PRODUCT + ACCOUNTING SPEC` **đã hoàn tất** (`DEC-042`, spec `CANONICAL — APPROVED`).
-`T-12` là bước **A** của spec §24. Bước B (dashboard/UX), C (`H-42` Firebase/auth, và bất kỳ mở
-rộng persistence nào vượt phạm vi `DEC-043`) và D (`OWNER_LOCAL_ACCEPTANCE`) **chưa được mở** và
-không phải hệ quả tự động của `T-12`.
-
-Cảnh báo **"dừng dùng app với tiền thật" vẫn còn hiệu lực** (`H-41`, `DEC-041` K.2): `T-12` chỉ
-mở được `A-1`…`A-4` của spec §22; `A-5` và `A-6` nằm ngoài phạm vi.
-
----
+Bước B/C/D chưa mở. `H-41`/`H-42` chưa đóng. Không ghi hay đọc dữ liệu tài chính thật của Owner.
+Nguồn checkpoint: `7d1985aaf306294df49c9508078d5425da10f47e`; production diff = 0.
 
 ### Snapshot trước đó — sau `DEC-041` (giữ để truy vết)
 
@@ -1685,6 +1664,10 @@ Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 (Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
 
 ## Session History
+
+- **S034 (2026-09-05)** — T-12 dừng tại DISCOVER với OWNER_DECISION_REQUIRED; SC-04 lệch
+  công thức carry 4.684.700 VND. Không production/fixture commit, không tiêu repair cycle.
+  `docs/sessions/S034-t12-ledger-discovery-stop.md`.
 - S022 — DEC-029 INTEGRATION CLOSURE (`DEC-032`) — 2026-09-03 — branch
   `claude/coindca-data-stream-vv0vwv`. Governance/state-sync session, KHÔNG thực hiện thêm
   integration. Owner đã tự fast-forward `main` lên đúng DATA head TRƯỚC phiên này (không force
@@ -2402,6 +2385,12 @@ lưu lại để đối chiếu lịch sử: D2 R2 B2 A1 X2 → 1.85 → B; U1 V
 D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
+
+**Hiện hành sau S034:** Owner định đoạt đề xuất trong `docs/reviews/T12-IMPLEMENTATION-REPORT.md`
+§29. Không bắt đầu implementation từ bản 17/17 lịch sử khi xung đột SC-04 còn mở. Sau disposition,
+tái xác nhận Ready Gate và branch authority trên nhánh được Owner cho phép; tiếp tục chính T-12.
+
+### Hướng dẫn trước S034 (lịch sử, chỉ áp dụng sau khi blocker trên được đóng)
 
 **Cập nhật sau `S033` (2026-09-05) — Owner Decision `DEC-043` tu chỉnh `T-12`.**
 
