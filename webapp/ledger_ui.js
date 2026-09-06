@@ -24,6 +24,7 @@
   const input = (id, label, type = 'text', value = '', numeric = false) => '<div class="field"><label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + type + '"' + (numeric ? ' inputmode="decimal"' : '') + ' value="' + escape(value) + '"></div>';
   const select = (id, label, choices) => '<div class="field"><label for="' + id + '">' + label + '</label><select id="' + id + '">' + choices.map(([v, t]) => '<option value="' + v + '">' + t + '</option>').join('') + '</select></div>';
   const button = (id, label, cls = '') => '<button type="button" id="' + id + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + label + '</button>';
+  const symbolChoices = () => L.ASSETS.map(x => [x, x]);
   let hooks, mounted = false, editId = null, shownLegacy = null, lastFormState = null, currentTxType = null, returnAnchor = null;
 
   /* -------- 9 loại giao dịch của Step-B spec §5: 1 sheet, bước 1 chọn loại -------- */
@@ -31,9 +32,12 @@
     { key: 'opening', label: 'Số dư đầu kỳ', special: 'opening' },
     { key: 'p2p_in', label: 'Đổi VND → USDT', kind: 'TREASURY', dir: 'VND_TO_USDT' },
     { key: 'p2p_out', label: 'Đổi USDT → VND', kind: 'TREASURY', dir: 'USDT_TO_VND' },
-    { key: 'buy_plan', label: 'Mua ETH · Kế hoạch', kind: 'TRADE', side: 'BUY', source: 'PLAN' },
-    { key: 'buy_extra', label: 'Mua ETH · Ngoài kế hoạch', kind: 'TRADE', side: 'BUY', source: 'EXTRA' },
-    { key: 'buy_reserve', label: 'Mua ETH · Từ dự phòng', kind: 'TRADE', side: 'BUY', source: 'RESERVE', noteRequired: true },
+    { key: 'buy_plan', label: 'Mua coin · Kế hoạch', kind: 'TRADE', side: 'BUY', source: 'PLAN' },
+    { key: 'buy_extra', label: 'Mua coin · Ngoài kế hoạch', kind: 'TRADE', side: 'BUY', source: 'EXTRA' },
+    { key: 'buy_reserve', label: 'Mua coin · Từ dự phòng', kind: 'TRADE', side: 'BUY', source: 'RESERVE', noteRequired: true },
+    { key: 'sell', label: 'Bán coin', kind: 'TRADE', side: 'SELL', source: 'EXTRA' },
+    { key: 'cash_in', label: 'Nạp tiền mặt (VND)', kind: 'CASH', ctype: 'DEPOSIT' },
+    { key: 'cash_out', label: 'Rút tiền mặt (VND)', kind: 'CASH', ctype: 'WITHDRAW' },
     { key: 'reserve_add', label: 'Nạp dự phòng', kind: 'RESERVE', rtype: 'CONTRIBUTE' },
     { key: 'reserve_out', label: 'Rút dự phòng', kind: 'RESERVE', rtype: 'WITHDRAW' },
     { key: 'price', label: 'Giá tham chiếu', kind: 'PRICE' },
@@ -75,9 +79,9 @@
       try {
         const d = L.derive(st.openingPosition, st.plan, st.events, L.clock().today);
         payload.derivedSnapshot = { _meta: 'INFORMATIONAL — NOT IMPORTED', asOf: L.clock().today,
-          ethQty: d.holdings.ETH.qty, ethCostUsdt: d.holdings.ETH.costUsdt, ethCostVnd: d.holdings.ETH.costVnd,
+          holdings: Object.fromEntries(Object.entries(d.holdings).map(([sym, h]) => [sym, { qty: h.qty, costUsdt: h.costUsdt, costVnd: h.costVnd }])),
           usdtQty: d.usdt.qty, usdtCostVnd: d.usdt.costVnd, vndBalance: d.vnd.balance,
-          reserveBalance: d.reserve.balance, realizedFxVnd: d.realizedFxVnd, flags: d.flags };
+          reserveBalance: d.reserve.balance, realizedFxVnd: d.realizedFxVnd, realizedPnlUsdt: d.realizedPnlUsdt, flags: d.flags };
       } catch (e) { /* sổ chưa đủ dữ liệu để dẫn xuất — bỏ khối tham khảo, KHÔNG chặn backup */ }
     }
     return payload;
@@ -118,14 +122,32 @@
   function message(text) { $('l1Message').textContent = text; }
   function run(fn) { return async () => { try { writable(); const result = await fn(); message(result || 'Đã cập nhật sổ; xem xác nhận lưu bền đầu trang.'); } catch (e) { message(e.message); } }; }
   function readNumber(id, places = 0, nullable = false) { const v = $(id).value.trim(); return !v && nullable ? null : L.decimal(v, places); }
+  /** Số dư đầu kỳ nay có NHIỀU tài sản, nhưng form chỉ sửa MỘT dòng mỗi lần (dropdown chọn coin).
+   *  Dòng đang sửa ghi đè entry cùng symbol trong sổ và giữ nguyên các coin khác; lượng 0 + giá vốn
+   *  để trống = xoá coin đó khỏi số dư đầu kỳ. Ba ô nhập giữ nguyên id `l1Eth*` — hợp đồng id với
+   *  test_t12_browser.js/test_stepb_ui.js (xem đầu file). */
   function openingInput() {
-    return { asOf: $('l1OpeningDate').value, assets: [{ symbol: 'ETH', qty: readNumber('l1Eth', 8), costUsdt: readNumber('l1EthCostUsdt', 6, true), costVnd: readNumber('l1EthCostVnd', 0, true) }], usdt: { qty: readNumber('l1Usdt', 6), costVnd: readNumber('l1UsdtCost', 0, true) }, vnd: { qty: readNumber('l1Vnd') }, reserveVnd: readNumber('l1Reserve'), note: $('l1OpeningNote').value };
+    const symbol = $('l1OpeningSymbol').value, current = hooks.state();
+    const prior = current.schema === L.SCHEMA && current.openingPosition ? L.clone(current.openingPosition.assets) : [];
+    const qty = readNumber('l1Eth', 8), costUsdt = readNumber('l1EthCostUsdt', 6, true), costVnd = readNumber('l1EthCostVnd', 0, true);
+    const assets = prior.filter(a => a.symbol !== symbol);
+    if (qty || costUsdt || costVnd) assets.push({ symbol, qty, costUsdt, costVnd });
+    assets.sort((a, b) => a.symbol.localeCompare(b.symbol));
+    return { asOf: $('l1OpeningDate').value, assets, usdt: { qty: readNumber('l1Usdt', 6), costVnd: readNumber('l1UsdtCost', 0, true) }, vnd: { qty: readNumber('l1Vnd') }, reserveVnd: readNumber('l1Reserve'), note: $('l1OpeningNote').value };
+  }
+  function fillOpeningAsset(o) {
+    const symbol = $('l1OpeningSymbol').value;
+    const a = (o && o.assets.find(x => x.symbol === symbol)) || { qty: 0, costUsdt: null, costVnd: null };
+    for (const [id, amount, places] of [['l1Eth', a.qty, 8], ['l1EthCostUsdt', a.costUsdt, 6], ['l1EthCostVnd', a.costVnd, 0]]) $(id).value = amount === null ? '' : (amount / 10 ** places).toFixed(places);
   }
   function planInput() {
     const current = hooks.state(), plan = current.schema === L.SCHEMA ? L.clone(current.plan) : { startMonth: $('l1StartMonth').value, versions: [] };
     plan.startMonth = $('l1StartMonth').value;
     const effectiveFrom = $('l1Effective').value, old = plan.versions.find(v => v.effectiveFrom === effectiveFrom);
-    const p = { id: old ? old.id : crypto.randomUUID(), effectiveFrom, asset: 'ETH', monthlyBudgetVnd: readNumber('l1Budget'), scheduleDays: $('l1Days').value.split(',').map(x => Number(x.trim())), carryPolicy: 'CAPPED_CARRY', carryCapMonths: 1 };
+    // Kế hoạch là ĐƠN tài sản: version mới luôn theo asset của version đã có; dropdown chỉ quyết
+    // định khi kế hoạch còn rỗng. planCheck() ép lại điều này ở tầng sổ, đây chỉ là UI cho khớp.
+    const asset = plan.versions.length ? plan.versions[0].asset : $('l1PlanAsset').value;
+    const p = { id: old ? old.id : crypto.randomUUID(), effectiveFrom, asset, monthlyBudgetVnd: readNumber('l1Budget'), scheduleDays: $('l1Days').value.split(',').map(x => Number(x.trim())), carryPolicy: 'CAPPED_CARRY', carryCapMonths: 1 };
     if (old) plan.versions[plan.versions.indexOf(old)] = p; else plan.versions.push(p);
     return plan;
   }
@@ -138,12 +160,13 @@
   function eventInput() {
     const kind = $('l1Kind').value, e = { kind, businessDate: $('l1Date').value, note: $('l1Note').value };
     if (kind === 'TREASURY') Object.assign(e, { dir: $('l1Dir').value, vndAmount: readNumber('l1P2pVnd'), usdtAmount: readNumber('l1P2pUsdt', 6), counterparty: $('l1Counterparty').value });
-    if (kind === 'TRADE') Object.assign(e, { side: $('l1Side').value, symbol: 'ETH', source: $('l1Source').value, usdtNotional: readNumber('l1Notional', 6), feeUsdt: readNumber('l1Fee', 6), qty: readNumber('l1Qty', 8) });
+    if (kind === 'TRADE') Object.assign(e, { side: $('l1Side').value, symbol: $('l1Symbol').value, source: $('l1Source').value, usdtNotional: readNumber('l1Notional', 6), feeUsdt: readNumber('l1Fee', 6), qty: readNumber('l1Qty', 8) });
     if (kind === 'RESERVE') Object.assign(e, { type: $('l1ReserveType').value, vndAmount: readNumber('l1ReserveAmount') });
-    if (kind === 'PRICE') Object.assign(e, { symbol: 'ETH', priceUsdt: readNumber('l1Price', 6), usdVndRate: readNumber('l1MarkRate', 0, true) });
+    if (kind === 'CASH') Object.assign(e, { type: $('l1CashType').value, vndAmount: readNumber('l1CashAmount') });
+    if (kind === 'PRICE') Object.assign(e, { symbol: $('l1PriceSymbol').value, priceUsdt: readNumber('l1Price', 6), usdVndRate: readNumber('l1MarkRate', 0, true) });
     return e;
   }
-  function kindFields() { for (const k of ['TREASURY', 'TRADE', 'RESERVE', 'PRICE']) $('l1Fields' + k).hidden = $('l1Kind').value !== k; }
+  function kindFields() { for (const k of ['TREASURY', 'TRADE', 'RESERVE', 'CASH', 'PRICE']) $('l1Fields' + k).hidden = $('l1Kind').value !== k; }
 
   /* -------- điều hướng: 4 điểm đến trong MỘT tài liệu cuộn được, refresh-safe --------
    * (không display:none các section — history/plan/settings phải luôn tương tác được cho
@@ -171,6 +194,7 @@
     if (t.side) $('l1Side').value = t.side;
     if (t.source) $('l1Source').value = t.source;
     if (t.rtype) $('l1ReserveType').value = t.rtype;
+    if (t.ctype) $('l1CashType').value = t.ctype;
     kindFields();
     document.querySelectorAll('.txtype').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.txtype === key)));
     $('l1NoteHint').textContent = t.noteRequired ? 'Bắt buộc: ghi lý do giải ngân dự phòng ở ô Ghi chú trước khi lưu.' : '';
@@ -195,7 +219,8 @@
     return events.filter(e => {
       if (type !== 'all') {
         if (type === 'RESERVE_BUY') { if (!(e.kind === 'TRADE' && e.source === 'RESERVE')) return false; }
-        else if (type === 'PLAN' || type === 'EXTRA') { if (!(e.kind === 'TRADE' && e.source === type)) return false; }
+        else if (type === 'SELL') { if (!(e.kind === 'TRADE' && e.side === 'SELL')) return false; }
+        else if (type === 'PLAN' || type === 'EXTRA') { if (!(e.kind === 'TRADE' && e.side === 'BUY' && e.source === type)) return false; }
         else if (e.kind !== type) return false;
       }
       if (from && e.businessDate < from) return false;
@@ -206,9 +231,11 @@
   }
   const KIND_LABEL = e => {
     if (e.kind === 'TREASURY') return e.dir === 'VND_TO_USDT' ? 'Đổi VND → USDT' : 'Đổi USDT → VND';
-    if (e.kind === 'TRADE') return 'Mua ETH' + (e.source === 'RESERVE' ? ' · Dự phòng' : '');
+    // T-16: SELL tới được trở lại (T-15 đã bỏ nhãn này vì lúc đó eventCheck chặn ở cổng vào).
+    if (e.kind === 'TRADE') return (e.side === 'SELL' ? 'Bán ' : 'Mua ') + e.symbol + (e.source === 'RESERVE' ? ' · Dự phòng' : '');
     if (e.kind === 'RESERVE') return e.type === 'CONTRIBUTE' ? 'Nạp dự phòng' : 'Rút dự phòng';
-    return 'Giá tham chiếu';
+    if (e.kind === 'CASH') return e.type === 'DEPOSIT' ? 'Nạp tiền mặt' : 'Rút tiền mặt';
+    return 'Giá tham chiếu ' + e.symbol;
   };
   function renderHistoryCards(d, s) {
     const today = L.clock().today;
@@ -220,9 +247,9 @@
       const future = e.businessDate > today ? '<span class="chip r">TƯƠNG LAI</span>' : '';
       const unk = unknown ? '<span class="chip y" title="Liên quan tới UNKNOWN_VND_BASIS">—</span>' : '';
       const amount = e.kind === 'TREASURY' ? units(e.vndAmount) + ' ₫ / ' + units(e.usdtAmount, 6) + ' USDT'
-        : e.kind === 'TRADE' ? units(e.qty, 8) + ' ETH · ' + units(e.usdtNotional, 6) + ' USDT'
-        : e.kind === 'RESERVE' ? units(e.vndAmount) + ' ₫'
-        : units(e.priceUsdt, 6) + ' USDT/ETH';
+        : e.kind === 'TRADE' ? units(e.qty, 8) + ' ' + e.symbol + ' · ' + units(e.usdtNotional, 6) + ' USDT'
+        : e.kind === 'RESERVE' || e.kind === 'CASH' ? units(e.vndAmount) + ' ₫'
+        : units(e.priceUsdt, 6) + ' USDT/' + e.symbol;
       return '<div class="hist-card" data-event="' + escape(e.id) + '">' +
         '<div class="hc-top"><span class="hc-date">' + escape(e.businessDate) + '</span>' + badge + future + unk + '</div>' +
         '<div class="hc-main">' + escape(KIND_LABEL(e)) + '</div>' +
@@ -263,22 +290,34 @@
       $('l1NoteHint').textContent = m.nextPlannedAmountVnd !== null ? 'Gợi ý theo kế hoạch: ' + units(m.nextPlannedAmountVnd) + ' ₫ — bạn tự điền USDT/ETH đã khớp thật.' : '';
     };
   }
+  /** T-16: một khối dòng cho MỖI coin đang nắm giữ. Định giá cũng theo từng coin — mỗi coin dùng
+   *  PRICE mới nhất CỦA CHÍNH NÓ (derive() lo phần đó, kể cả hạn dùng 1 ngày và usdVndRate). */
+  function holdingRows(d, s, today) {
+    const rows = [];
+    for (const symbol of Object.keys(d.holdings).sort()) {
+      const h = d.holdings[symbol];
+      if (!h.qty) continue;
+      const v = d.valuation[symbol];
+      const lastPrice = s.events.filter(e => e.kind === 'PRICE' && e.symbol === symbol && e.businessDate <= today).sort((a, b) => a.businessDate.localeCompare(b.businessDate)).slice(-1)[0];
+      rows.push(['Đang nắm giữ (' + symbol + ')', units(h.qty, 8)]);
+      rows.push(['Giá vốn TB ' + symbol + ' (USDT)', avg(h.avgCostUsdt, 1000000)]);
+      rows.push(['Giá vốn TB ' + symbol + ' (VND)', avg(h.avgCostVnd)]);
+      rows.push(['Định giá ' + symbol, v
+        ? units(v.usdt, 6) + ' USDT' + (v.vnd === null ? '' : ' ≈ ' + units(v.vnd) + ' ₫') + ' (' + v.businessDate + ')'
+        : (lastPrice ? '— · giá gần nhất ' + lastPrice.businessDate : '—')]);
+    }
+    return rows;
+  }
   function renderDashBottom(d, s) {
-    const eth = d.holdings.ETH, today = L.clock().today;
-    const lastPrice = s.events.filter(e => e.kind === 'PRICE' && e.businessDate <= today).sort((a, b) => a.businessDate.localeCompare(b.businessDate)).slice(-1)[0];
-    // "USDT/VND tham khảo" nhập trên chính event PRICE nay được dùng: quy đổi định giá sang VND.
-    // Không có tỷ giá thì chỉ hiện USDT — không bịa tỷ giá (OD-L1-4 STRICT).
-    const valuation = d.valuation
-      ? units(d.valuation.usdt, 6) + ' USDT' + (d.valuation.vnd === null ? '' : ' ≈ ' + units(d.valuation.vnd) + ' ₫') + ' (' + d.valuation.businessDate + ')'
-      : (lastPrice ? '— · giá gần nhất ' + lastPrice.businessDate : '—');
-    $('dashBottom').innerHTML = [
-      ['Đang nắm giữ (ETH)', units(eth.qty, 8)],
-      ['Giá vốn TB (USDT)', avg(eth.avgCostUsdt, 1000000)],
-      ['Giá vốn TB (VND)', avg(eth.avgCostVnd)],
-      ['Định giá hiện tại', valuation],
+    const today = L.clock().today;
+    $('dashBottom').innerHTML = holdingRows(d, s, today).concat([
       ['USDT hiện có', units(d.usdt.qty, 6)],
       ['VND hiện có', units(d.vnd.balance)],
-    ].map(([k, v]) => '<div class="stat"><small>' + k + '</small><div>' + escape(v) + '</div></div>').join('');
+      // HAI đơn vị khác nhau, KHÔNG bao giờ cộng chung: lãi/lỗ khi bán coin nằm ở pool USDT;
+      // lãi/lỗ VND chỉ phát sinh khi USDT đổi ngược ra VND.
+      ['Lãi/lỗ đã thực hiện (USDT)', units(d.realizedPnlUsdt, 6)],
+      ['Lãi/lỗ tỷ giá đã thực hiện (VND)', units(d.realizedFxVnd)],
+    ]).map(([k, v]) => '<div class="stat"><small>' + escape(k) + '</small><div>' + escape(v) + '</div></div>').join('');
   }
   function renderPlanCarry(d) {
     const m = d.month, prevKey = prevMonthKey(d.currentMonth), prevCarry = d.months[prevKey] ? d.months[prevKey].carryOutVnd : undefined;
@@ -315,19 +354,20 @@
         '<div class="txtypes">' + TX_TYPES.map(t => '<button type="button" class="txtype" data-txtype="' + t.key + '">' + t.label + '</button>').join('') + '</div>' +
         '<p id="l1NoteHint"></p>' +
         '<div class="txtech"><small class="hint">Chi tiết kỹ thuật (tự set theo loại đã chọn ở trên — vẫn sửa được):</small><div class="form">' +
-          select('l1Kind', 'Loại', [['TREASURY', 'Đổi VND / USDT'], ['TRADE', 'Mua ETH'], ['RESERVE', 'Dự phòng'], ['PRICE', 'Giá tham khảo']]) +
+          select('l1Kind', 'Loại', [['TREASURY', 'Đổi VND / USDT'], ['TRADE', 'Mua / bán coin'], ['CASH', 'Tiền mặt VND'], ['RESERVE', 'Dự phòng'], ['PRICE', 'Giá tham khảo']]) +
           input('l1Date', 'Ngày giao dịch (businessDate)', 'date', today) + input('l1Note', 'Ghi chú / lý do giải ngân dự phòng') + '</div>' +
         '<div id="l1FieldsTREASURY" class="form">' + select('l1Dir', 'Chiều', [['VND_TO_USDT', 'VND → USDT'], ['USDT_TO_VND', 'USDT → VND']]) + input('l1P2pVnd', 'VND thực trả / nhận (đã gồm phí)', 'text', '', true) + input('l1P2pUsdt', 'USDT thực nhận / trả', 'text', '', true) + input('l1Counterparty', 'Đối tác (tùy chọn)') + '</div>' +
-        '<div id="l1FieldsTRADE" class="form">' + select('l1Side', 'Chiều', [['BUY', 'Mua']]) + select('l1Source', 'Nguồn', [['PLAN', 'Theo kế hoạch'], ['EXTRA', 'Mua thêm'], ['RESERVE', 'Dự phòng']]) + input('l1Notional', 'USDT khớp lệnh', 'text', '', true) + input('l1Fee', 'Phí USDT', 'text', '0', true) + input('l1Qty', 'Lượng ETH thực nhận', 'text', '', true) + '</div>' +
+        '<div id="l1FieldsTRADE" class="form">' + select('l1Symbol', 'Tài sản', symbolChoices()) + select('l1Side', 'Chiều', [['BUY', 'Mua'], ['SELL', 'Bán']]) + select('l1Source', 'Nguồn', [['PLAN', 'Theo kế hoạch'], ['EXTRA', 'Mua thêm'], ['RESERVE', 'Dự phòng']]) + input('l1Notional', 'USDT khớp lệnh', 'text', '', true) + input('l1Fee', 'Phí USDT', 'text', '0', true) + input('l1Qty', 'Lượng coin thực nhận / bán ra', 'text', '', true) + '<p class="hint">Nguồn “Theo kế hoạch” chỉ dùng được cho đúng coin của kế hoạch; mua coin khác hãy chọn “Mua thêm”.</p></div>' +
         '<div id="l1FieldsRESERVE" class="form">' + select('l1ReserveType', 'Thao tác dự phòng', [['CONTRIBUTE', 'Đóng góp'], ['WITHDRAW', 'Rút earmark']]) + input('l1ReserveAmount', 'Số tiền VND', 'text', '', true) + '</div>' +
-        '<div id="l1FieldsPRICE" class="form">' + input('l1Price', 'Giá ETH (USDT)', 'text', '', true) + input('l1MarkRate', 'USDT/VND để quy đổi định giá (tùy chọn)', 'text', '', true) + '</div>' +
+        '<div id="l1FieldsCASH" class="form">' + select('l1CashType', 'Thao tác tiền mặt', [['DEPOSIT', 'Nạp vào ví'], ['WITHDRAW', 'Rút ra tiêu']]) + input('l1CashAmount', 'Số tiền VND', 'text', '', true) + '<p class="hint">Ghi việc BỎ TIỀN vào ví hoặc rút ra tiêu. Khác với “Đổi VND / USDT” — đó là một cuộc đổi hai chân, không phải tiền từ đâu vào.</p></div>' +
+        '<div id="l1FieldsPRICE" class="form">' + select('l1PriceSymbol', 'Tài sản', symbolChoices()) + input('l1Price', 'Giá coin (USDT)', 'text', '', true) + input('l1MarkRate', 'USDT/VND để quy đổi định giá (tùy chọn)', 'text', '', true) + '</div>' +
         '<div class="formfoot">' + button('l1SaveEvent', 'Lưu giao dịch', 'primary') + button('l1CancelEdit', 'Hủy sửa') + '</div></div>' +
       '</details>' +
 
       '<section class="view-sec" id="view-history">' +
         '<h2>Lịch sử</h2>' +
         '<div class="histfilter">' +
-          '<select id="histFilterType"><option value="all">Tất cả loại</option><option value="TREASURY">P2P VND/USDT</option><option value="PLAN">Mua · Kế hoạch</option><option value="EXTRA">Mua · Ngoài kế hoạch</option><option value="RESERVE_BUY">Mua · Dự phòng</option><option value="RESERVE">Dự phòng nạp/rút</option><option value="PRICE">Giá tham chiếu</option></select>' +
+          '<select id="histFilterType"><option value="all">Tất cả loại</option><option value="TREASURY">P2P VND/USDT</option><option value="PLAN">Mua · Kế hoạch</option><option value="EXTRA">Mua · Ngoài kế hoạch</option><option value="RESERVE_BUY">Mua · Dự phòng</option><option value="SELL">Bán coin</option><option value="CASH">Tiền mặt VND</option><option value="RESERVE">Dự phòng nạp/rút</option><option value="PRICE">Giá tham chiếu</option></select>' +
           '<input type="date" id="histFrom" aria-label="Từ ngày"><input type="date" id="histTo" aria-label="Đến ngày">' +
           '<input type="text" id="histSearch" placeholder="Tìm theo ghi chú" aria-label="Tìm theo ghi chú">' +
         '</div>' +
@@ -337,8 +377,9 @@
       '<section class="view-sec" id="view-plan">' +
         '<h2>Kế hoạch</h2>' +
         '<div class="stats" id="planCarry"></div>' +
-        '<details><summary>Ngân sách &amp; lịch mua</summary><div class="form">' + input('l1StartMonth', 'Tháng bắt đầu', 'month', month) + input('l1Effective', 'Áp dụng từ tháng', 'month', month) + input('l1Budget', 'Ngân sách VND', 'text', '20000000', true) + input('l1Days', 'Các ngày mua, cách nhau bằng dấu phẩy', 'text', '3,13,23') + '</div><p class="hint">Version đã lưu là bất biến: không đổi được ngân sách hay lịch của nó. Muốn đổi, hãy đặt \u201cÁp dụng từ tháng\u201d là tháng hiện tại hoặc muộn hơn để tạo version mới. \u201cTháng bắt đầu\u201d không được sớm hơn tháng áp dụng của version đầu tiên.</p>' + button('l1SavePlan', 'Lưu kế hoạch', 'primary') + '</details>' +
-        '<details><summary>Số dư đầu kỳ</summary><p class="hint">Để trống giá vốn khi chưa biết; số 0 nghĩa là giá vốn bằng 0.</p><div class="form">' + input('l1OpeningDate', 'Ngày đầu kỳ', 'date', today) + input('l1Eth', 'ETH đang có', 'text', '0', true) + input('l1EthCostUsdt', 'Tổng giá vốn ETH (USDT)', 'text', '', true) + input('l1EthCostVnd', 'Tổng giá vốn ETH (VND)', 'text', '', true) + input('l1Usdt', 'USDT đang có', 'text', '0', true) + input('l1UsdtCost', 'Tổng giá vốn USDT (VND)', 'text', '', true) + input('l1Vnd', 'VND đang có', 'text', '0', true) + input('l1Reserve', 'Dự phòng VND đầu kỳ', 'text', '0', true) + input('l1OpeningNote', 'Ghi chú đầu kỳ') + '</div>' + button('l1SaveOpening', 'Lưu số dư đầu kỳ', 'primary') + button('l1DeleteOpening', 'Xóa số dư đầu kỳ', 'danger') + '<p class="hint">Sửa/xoá số dư đầu kỳ có thể khiến phần lớn giá vốn trở thành KHÔNG XÁC ĐỊNH.</p></details>' +
+        '<details><summary>Ngân sách &amp; lịch mua</summary><div class="form">' + input('l1StartMonth', 'Tháng bắt đầu', 'month', month) + select('l1PlanAsset', 'Coin của kế hoạch', symbolChoices()) + input('l1Effective', 'Áp dụng từ tháng', 'month', month) + input('l1Budget', 'Ngân sách VND', 'text', '20000000', true) + input('l1Days', 'Các ngày mua, cách nhau bằng dấu phẩy', 'text', '3,13,23') + '</div><p class="hint">Version đã lưu là bất biến: không đổi được ngân sách hay lịch của nó. Muốn đổi, hãy đặt \u201cÁp dụng từ tháng\u201d là tháng hiện tại hoặc muộn hơn để tạo version mới. \u201cTháng bắt đầu\u201d không được sớm hơn tháng áp dụng của version đầu tiên. Một kế hoạch chỉ nhắm MỘT coin: sau version đầu tiên, ô \u201cCoin của kế hoạch\u201d bị khoá theo coin đó.</p>' + button('l1SavePlan', 'Lưu kế hoạch', 'primary') + '</details>' +
+        '<details><summary>Số dư đầu kỳ</summary><p class="hint">Để trống giá vốn khi chưa biết; số 0 nghĩa là giá vốn bằng 0. Mỗi lần lưu chỉ sửa MỘT coin (chọn ở ô Tài sản); các coin khác trong số dư đầu kỳ giữ nguyên. Lượng 0 và bỏ trống giá vốn = xoá coin đó khỏi số dư đầu kỳ.</p><div class="form">' + input('l1OpeningDate', 'Ngày đầu kỳ', 'date', today) + select('l1OpeningSymbol', 'Tài sản', symbolChoices()) + input('l1Eth', 'Lượng coin đang có', 'text', '0', true) + input('l1EthCostUsdt', 'Tổng giá vốn coin (USDT)', 'text', '', true) + input('l1EthCostVnd', 'Tổng giá vốn coin (VND)', 'text', '', true) + input('l1Usdt', 'USDT đang có', 'text', '0', true) + input('l1UsdtCost', 'Tổng giá vốn USDT (VND)', 'text', '', true) + input('l1Vnd', 'VND đang có', 'text', '0', true) + input('l1Reserve', 'Dự phòng VND đầu kỳ', 'text', '0', true) + input('l1OpeningNote', 'Ghi chú đầu kỳ') + '</div>' + button('l1SaveOpening', 'Lưu số dư đầu kỳ', 'primary') + button('l1DeleteOpening', 'Xóa số dư đầu kỳ', 'danger') + '<p class="hint">Sửa/xoá số dư đầu kỳ có thể khiến phần lớn giá vốn trở thành KHÔNG XÁC ĐỊNH.</p></details>' +
+        '<details id="l1MigrationV3" hidden><summary>Nâng cấp sổ lên schema 3 (đa tài sản)</summary><p>Sổ đang ở <code>' + escape(L.SCHEMA_V2) + '</code>. Bản nâng cấp chỉ đổi nhãn schema; nội dung sổ được đối chiếu bằng một replay độc lập trước khi ghi, và bị từ chối nếu lệch dù một đồng.</p>' + button('l1MigrateV3', 'Đối chiếu và nâng cấp', 'primary') + '</details>' +
         '<details id="l1Migration" hidden><summary>Chuyển sổ legacy</summary><p>Nhập kế hoạch và số dư đầu kỳ ở trên. Xác nhận ngày và thứ tự từng giao dịch bên dưới; ngày bấm nút cũ chỉ để tham khảo. Mọi trade cũ trở thành mua thêm.</p>' + select('l1Contributions', 'VND đóng góp cũ', [['', 'Chọn cách xử lý'], ['opening', 'Đã đưa vào VND đầu kỳ ở trên'], ['ignore', 'Bỏ bản ghi contribution']]) + '<div id="l1MigrationDates"></div>' + button('l1Migrate', 'Xác nhận và chuyển sổ', 'primary') + '</details>' +
       '</section>';
 
@@ -346,7 +387,12 @@
       '<div class="card"><h3>Dữ liệu của bạn</h3><div class="formfoot" style="margin-top:0">' +
         button('l1Export', 'Tải về JSON') + input('l1Import', 'Nạp lại từ JSON', 'file') + button('l1Wipe', 'Xóa sổ', 'danger') + '</div></div>';
 
+    // Mặc định của mọi ô chọn tài sản là ETH (coin duy nhất của sổ trước T-16); render() sẽ
+    // đồng bộ ô của form giao dịch/giá theo coin của kế hoạch khi kế hoạch đã có version.
+    for (const id of ['l1Symbol', 'l1PriceSymbol', 'l1OpeningSymbol', 'l1PlanAsset']) $(id).value = 'ETH';
     $('l1Kind').onchange = kindFields; kindFields();
+    $('l1OpeningSymbol').onchange = () => { const st = hooks.state(); fillOpeningAsset(st.schema === L.SCHEMA ? st.openingPosition : null); };
+    $('l1MigrateV3').onclick = run(() => destroy('Nâng cấp sổ lên ' + L.SCHEMA + '?', () => L.migrateV3(hooks.raw() || hooks.state(), meta())));
     $('l1SavePlan').onclick = run(() => commit(L.update(hooks.state(), { type: 'plan', value: planInput() }, meta())));
     $('l1SaveOpening').onclick = run(() => commit(L.update(hooks.state(), { type: 'opening', value: openingInput() }, meta())));
     $('l1DeleteOpening').onclick = run(() => destroy('Xóa đầu kỳ có thể làm mất giá vốn đã biết.', () => ({ ok: true, state: L.update(hooks.state(), { type: 'opening', value: null }, meta()) })));
@@ -389,7 +435,7 @@
         const e = hooks.state().events.find(e => e.id === b.dataset.id); if (!e) throw new Error('Event không còn tồn tại');
         if (b.dataset.action === 'delete') return destroy('Xóa giao dịch ' + e.businessDate + '?', () => ({ ok: true, state: L.update(hooks.state(), { type: 'delete', id: e.id }, meta()) }));
         editId = e.id; $('l1Kind').value = e.kind; $('l1Date').value = e.businessDate; $('l1Note').value = e.note;
-        const fields = { dir: ['l1Dir', 0], vndAmount: [e.kind === 'RESERVE' ? 'l1ReserveAmount' : 'l1P2pVnd', 0], usdtAmount: ['l1P2pUsdt', 6], side: ['l1Side', 0], source: ['l1Source', 0], usdtNotional: ['l1Notional', 6], feeUsdt: ['l1Fee', 6], qty: ['l1Qty', 8], type: ['l1ReserveType', 0], priceUsdt: ['l1Price', 6], usdVndRate: ['l1MarkRate', 0], counterparty: ['l1Counterparty', 0] };
+        const fields = { dir: ['l1Dir', 0], vndAmount: [e.kind === 'RESERVE' ? 'l1ReserveAmount' : e.kind === 'CASH' ? 'l1CashAmount' : 'l1P2pVnd', 0], usdtAmount: ['l1P2pUsdt', 6], side: ['l1Side', 0], symbol: [e.kind === 'PRICE' ? 'l1PriceSymbol' : 'l1Symbol', 0], source: ['l1Source', 0], usdtNotional: ['l1Notional', 6], feeUsdt: ['l1Fee', 6], qty: ['l1Qty', 8], type: [e.kind === 'CASH' ? 'l1CashType' : 'l1ReserveType', 0], priceUsdt: ['l1Price', 6], usdVndRate: ['l1MarkRate', 0], counterparty: ['l1Counterparty', 0] };
         for (const [key, [id, places]] of Object.entries(fields)) if (key in e) $(id).value = e[key] === null ? '' : typeof e[key] === 'number' ? (e[key] / 10 ** places).toFixed(places) : e[key];
         kindFields(); $('l1Entry').open = true; $('l1SaveEvent').textContent = 'Lưu sửa giao dịch';
         $('l1Entry').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -408,13 +454,20 @@
 
   function render() {
     if (!mounted) return;
-    const s = hooks.state(), legacy = s.schema !== L.SCHEMA;
-    $('l1Migration').hidden = !legacy;
+    const s = hooks.state(), legacy = s.schema !== L.SCHEMA, isV2 = s.schema === L.SCHEMA_V2;
+    // T-16: HAI đường nâng cấp khác nhau. `ethdca.tracker/1` = sổ app cũ (migrate, cần xác nhận
+    // từng ngày). `coindca.ledger/2` = sổ L-1 trước đa tài sản (migrateV3, chỉ đổi nhãn schema
+    // nhưng vẫn phải qua oracle). Không đường nào tự chạy: cả hai đều do Owner bấm.
+    $('l1Migration').hidden = !legacy || isV2;
+    $('l1MigrationV3').hidden = !isV2;
     for (const id of ['l1SavePlan', 'l1SaveOpening', 'l1SaveEvent', 'l1DeleteOpening']) $(id).disabled = legacy;
     if (legacy) {
-      $('l1Flags').textContent = 'LEGACY — CHỈ ĐỌC. Cần xác nhận migration trước khi ghi giao dịch L-1.';
+      $('l1Flags').textContent = isV2
+        ? 'SỔ SCHEMA 2 — CHỈ ĐỌC. Nâng cấp lên ' + L.SCHEMA + ' (Kế hoạch → Nâng cấp sổ) trước khi ghi giao dịch mới.'
+        : 'LEGACY — CHỈ ĐỌC. Cần xác nhận migration trước khi ghi giao dịch L-1.';
       $('l1Summary').textContent = ''; $('dashMain').innerHTML = ''; $('dashBottom').innerHTML = ''; $('planCarry').innerHTML = '';
-      $('l1History').textContent = 'Nguồn legacy được giữ nguyên; có thể xuất JSON đầy đủ.';
+      $('l1History').textContent = 'Nguồn hiện tại được giữ nguyên; có thể xuất JSON đầy đủ.';
+      if (isV2) return;
       if (shownLegacy !== s) {
         shownLegacy = s; let i = 0;
         $('l1MigrationDates').innerHTML = ['p2p', 'trades'].flatMap(k => s[k].map((r, n) => { const id = 'l1MigrationDate' + i++; return '<label>' + k + '[' + n + '] · thời điểm nhập cũ: ' + escape(r.ts) + '<input type="date" id="' + id + '" data-migration-key="' + k + '[' + n + ']"></label>' + input(id + 'Order', 'Thứ tự xác nhận', 'number', i); })).join('');
@@ -425,12 +478,16 @@
       lastFormState = s;
       const p = s.plan.versions.slice().sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom)).slice(-1)[0];
       $('l1StartMonth').value = s.plan.startMonth;
+      // Kế hoạch đơn tài sản: khi đã có version, ô coin khoá lại theo asset của kế hoạch.
+      $('l1PlanAsset').value = s.plan.versions.length ? s.plan.versions[0].asset : $('l1PlanAsset').value;
+      $('l1PlanAsset').disabled = s.plan.versions.length > 0;
+      if (s.plan.versions.length) for (const id of ['l1Symbol', 'l1PriceSymbol']) $(id).value = s.plan.versions[0].asset;
       if (p) { $('l1Effective').value = p.effectiveFrom; $('l1Budget').value = p.monthlyBudgetVnd; $('l1Days').value = p.scheduleDays.join(','); }
       const o = s.openingPosition;
       if (o) {
-        const a = o.assets[0] || { qty: 0, costUsdt: 0, costVnd: 0 };
         $('l1OpeningDate').value = o.asOf; $('l1OpeningNote').value = o.note;
-        for (const [id, amount, places] of [['l1Eth', a.qty, 8], ['l1EthCostUsdt', a.costUsdt, 6], ['l1EthCostVnd', a.costVnd, 0], ['l1Usdt', o.usdt.qty, 6], ['l1UsdtCost', o.usdt.costVnd, 0], ['l1Vnd', o.vnd ? o.vnd.qty : 0, 0], ['l1Reserve', o.reserveVnd || 0, 0]]) $(id).value = amount === null ? '' : (amount / 10 ** places).toFixed(places);
+        fillOpeningAsset(o);
+        for (const [id, amount, places] of [['l1Usdt', o.usdt.qty, 6], ['l1UsdtCost', o.usdt.costVnd, 0], ['l1Vnd', o.vnd ? o.vnd.qty : 0, 0], ['l1Reserve', o.reserveVnd || 0, 0]]) $(id).value = amount === null ? '' : (amount / 10 ** places).toFixed(places);
       }
     }
     // MỘT lệnh gọi derive() cho toàn bộ Tổng quan/Lịch sử/Kế hoạch (CHECK-T13-10).
@@ -439,7 +496,9 @@
     renderDashMain(d);
     renderDashBottom(d, s);
     renderPlanCarry(d);
-    const values = [['Tháng', d.currentMonth], ['Ngân sách tháng', units(d.month.monthlyBudgetVnd)], ['Carry từ tháng trước', units(d.month.carryInVnd)], ['Ngân sách gồm carry', units(d.month.plannedBudgetVnd)], ['Đã đầu tư', units(d.month.investedThisMonthVnd)], ['Theo kế hoạch', units(d.month.planInvestedVnd)], ['Còn lại theo kế hoạch', units(d.month.remainingPlannedBudgetVnd)], ['Dự phòng', units(d.reserve.balance)], ['Mua kế tiếp', (d.month.nextPlannedDate || '—') + ' · ' + units(d.month.nextPlannedAmountVnd) + ' VND'], ['ETH', units(d.holdings.ETH.qty, 8)], ['Giá vốn TB ETH (USDT)', avg(d.holdings.ETH.avgCostUsdt, 1000000)], ['Giá vốn TB ETH (VND)', avg(d.holdings.ETH.avgCostVnd)], ['USDT', units(d.usdt.qty, 6)], ['Giá vốn pool USDT (VND)', units(d.usdt.costVnd)], ['VND', units(d.vnd.balance)]];
+    const values = [['Tháng', d.currentMonth], ['Ngân sách tháng', units(d.month.monthlyBudgetVnd)], ['Carry từ tháng trước', units(d.month.carryInVnd)], ['Ngân sách gồm carry', units(d.month.plannedBudgetVnd)], ['Đã đầu tư', units(d.month.investedThisMonthVnd)], ['Theo kế hoạch', units(d.month.planInvestedVnd)], ['Còn lại theo kế hoạch', units(d.month.remainingPlannedBudgetVnd)], ['Dự phòng', units(d.reserve.balance)], ['Mua kế tiếp', (d.month.nextPlannedDate || '—') + ' · ' + units(d.month.nextPlannedAmountVnd) + ' VND']]
+      .concat(Object.keys(d.holdings).sort().flatMap(sym => [[sym, units(d.holdings[sym].qty, 8)], ['Giá vốn TB ' + sym + ' (USDT)', avg(d.holdings[sym].avgCostUsdt, 1000000)], ['Giá vốn TB ' + sym + ' (VND)', avg(d.holdings[sym].avgCostVnd)]]))
+      .concat([['USDT', units(d.usdt.qty, 6)], ['Giá vốn pool USDT (VND)', units(d.usdt.costVnd)], ['VND', units(d.vnd.balance)], ['Lãi/lỗ đã thực hiện (USDT)', units(d.realizedPnlUsdt, 6)], ['Lãi/lỗ tỷ giá (VND)', units(d.realizedFxVnd)]]);
     $('l1Summary').innerHTML = values.map(([name, value]) => '<div class="stat"><small>' + name + '</small><div>' + escape(value) + '</div></div>').join('');
     renderHistoryCards(d, s);
     $('foot').textContent = 'CoinDCA L-1 · rev ' + s.rev;

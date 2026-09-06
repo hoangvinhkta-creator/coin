@@ -87,15 +87,19 @@ test('L3c không tính được ngân sách thì phải hiện cờ, không im l
 });
 
 /* ---------------- L4 — SELL bị chặn ở cổng vào ---------------- */
-test('L4 event TRADE side=SELL bị từ chối, kèm tham chiếu H-46', () => {
+// T-16 (DEC-052) MỞ LẠI SELL và thiết kế đúng nó. Ca dưới đây giữ NGUYÊN bộ số tái lập của rà
+// soát T-15 nhưng đảo chiều khẳng định: SELL nay được nhận, và đúng con số mà lỗi cũ làm sai.
+// Lỗi cũ: tổng giá vốn VND rơi 50.000.000 -> 49.995.000, flags = [] (không cảnh báo).
+test('L4 SELL được nhận và KHÔNG phá bất biến bảo toàn VND (lỗi cũ: 50.000.000 -> 49.995.000)', () => {
   const sell = event(3, '2026-01-20', { kind: 'TRADE', side: 'SELL', symbol: 'ETH', source: 'EXTRA', usdtNotional: 200000000, feeUsdt: 0, qty: 10000000 });
   const s = base(); s.events.push(sell); s.nextSeq = 4;
-  A.throws(() => L.canonical(s), /H-46/);
-  A.throws(() => derive(s, '2026-01-31'), /H-46/);
-  A.throws(() => L.update(base(), { type: 'event', value: sell }, { id: 'x', instant }), /H-46/);
-  // Bất biến bảo toàn VND của bộ dữ liệu gốc vẫn nguyên vẹn khi không có SELL.
-  const d = derive(base(), '2026-01-31');
-  A.equal(d.holdings.ETH.costVnd + d.usdt.costVnd + d.realizedFxVnd, 50000000);
+  A.doesNotThrow(() => L.canonical(s));
+  const before = derive(base(), '2026-01-31'), after = derive(s, '2026-01-31');
+  A.equal(before.holdings.ETH.costVnd + before.usdt.costVnd + before.realizedFxVnd, 50000000);
+  A.equal(after.holdings.ETH.costVnd + after.usdt.costVnd + after.realizedFxVnd, 50000000, 'bán chỉ CHUYỂN giá vốn, không tạo/xoá');
+  A.equal(after.holdings.ETH.costVnd, 5005000);   // một nửa của 10.010.000
+  A.equal(after.usdt.costVnd, 44995000);          // 39.990.000 + 5.005.000 CHUYỂN sang (lỗi cũ: 44.990.000)
+  A.deepEqual(after.flags, []);
 });
 
 /* ---------------- L5 — không sửa hồi tố ngân sách version đã tồn tại ---------------- */
@@ -178,14 +182,14 @@ test('L7f usdVndRate được derive() dùng thật cho định giá', () => {
   const price = event(3, '2026-01-31', { kind: 'PRICE', symbol: 'ETH', priceUsdt: 2400000000, usdVndRate: 26000 });
   const s = base(); s.events.push(price); s.nextSeq = 4;
   const d = derive(s, '2026-01-31');
-  A.equal(d.valuation.usdt, 480000000);            // 0,2 ETH × 2.400 USDT = 480 USDT
-  A.equal(d.valuation.vnd, 12480000);              // 480 USDT × 26.000
-  A.equal(d.valuation.usdVndRate, 26000);
+  A.equal(d.valuation.ETH.usdt, 480000000);        // 0,2 ETH × 2.400 USDT = 480 USDT
+  A.equal(d.valuation.ETH.vnd, 12480000);          // 480 USDT × 26.000
+  A.equal(d.valuation.ETH.usdVndRate, 26000);
   const noRate = clone(price); noRate.usdVndRate = null;
   const t = base(); t.events.push(noRate); t.nextSeq = 4;
   const e = derive(t, '2026-01-31');
-  A.equal(e.valuation.usdt, 480000000);
-  A.equal(e.valuation.vnd, null, 'không có tỷ giá thì KHÔNG bịa ra một tỷ giá nào');
+  A.equal(e.valuation.ETH.usdt, 480000000);
+  A.equal(e.valuation.ETH.vnd, null, 'không có tỷ giá thì KHÔNG bịa ra một tỷ giá nào');
 });
 
 test('L7g engine.js không còn được nhúng vào trang', () => {

@@ -144,6 +144,15 @@
     }
     var bad = function (r) { return { ok: false, reason: r }; };
     if (!o || typeof o !== "object" || Array.isArray(o)) return bad("không phải object");
+    // T-16: sổ `coindca.ledger/2` (bản trước đa tài sản) KHÔNG phải bản hỏng — nó là bản HỢP LỆ
+    // đang chờ nâng cấp. Nếu không nhận diện ở đây, nó rơi vào nhánh "durable không hợp lệ" và
+    // Owner không bao giờ tới được nút nâng cấp. Validate ĐẦY ĐỦ nằm ở CoinLedger.migrateV3()
+    // (guardV2 + oracle replay + oracle hình dạng), chạy khi Owner bấm, fail-closed nếu lệch.
+    if (o.schema === CoinLedger.SCHEMA_V2) {
+      if (!isNum(o.rev) || o.rev < 0 || Math.floor(o.rev) !== o.rev) return bad("`rev` không hợp lệ");
+      if (!o.plan || !Array.isArray(o.events)) return bad("sổ v2 thiếu `plan`/`events`");
+      return { ok: true };
+    }
     if (o.schema !== "ethdca.tracker/1") {
       return bad("thiếu hoặc sai `schema` (" + JSON.stringify(o.schema === undefined ? null : o.schema) + ")");
     }

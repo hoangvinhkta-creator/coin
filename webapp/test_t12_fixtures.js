@@ -10,7 +10,7 @@ const opening = { asOf: '2026-01-01', assets: [{ symbol: 'ETH', qty: 50000000, c
 function event(seq, date, fields) { return Object.assign({ id: 'event-' + seq, seq, businessDate: date, createdAt: instant, updatedAt: instant, note: '' }, fields); }
 const p2p = (seq, date, vndAmount, usdtAmount) => event(seq, date, { kind: 'TREASURY', dir: 'VND_TO_USDT', vndAmount, usdtAmount });
 const buy = (seq, date, usdtNotional, qty, source = 'PLAN', feeUsdt = 0, note = '') => Object.assign(event(seq, date, { kind: 'TRADE', side: 'BUY', symbol: 'ETH', usdtNotional, qty, feeUsdt, source }), { note });
-const state = (o = opening, p = plan(), events = []) => ({ schema: 'coindca.ledger/2', rev: 0, nextSeq: Math.max(0, ...events.map(e => e.seq)) + 1, plan: copy(p), openingPosition: copy(o), events: copy(events) });
+const state = (o = opening, p = plan(), events = []) => ({ schema: 'coindca.ledger/3', rev: 0, nextSeq: Math.max(0, ...events.map(e => e.seq)) + 1, plan: copy(p), openingPosition: copy(o), events: copy(events) });
 const a = p2p(1, '2026-01-05', 25600000, 1000000000);
 const b = buy(2, '2026-01-06', 600000000, 25000000, 'PLAN', 600000);
 const c = p2p(3, '2026-02-03', 13100000, 500000000);

@@ -100,6 +100,23 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
       await p.waitForFunction(code => document.getElementById('l1Message').textContent.includes(code), code);
       A.deepEqual(await H.getDoc('state'), raw); record('Migration ' + code, 'Snapshot trước lỗi, source/durable không đổi một byte canonical.');
     }
+    /* ---- T-16: sổ `coindca.ledger/2` nạp được ở chế độ CHỈ ĐỌC và nâng cấp được qua UI ---- */
+    const v2 = F.copy(migrated); v2.schema = 'coindca.ledger/2'; delete v2.LEGACY_ARCHIVE; delete v2.RESEARCH_ONLY; v2.rev = 0;
+    await H.putDoc('state', v2); await p.evaluate(() => localStorage.clear()); await p.reload(); await H.waitPhase(p, 'ONLINE');
+    A.match(await p.textContent('#l1Flags'), /SCHEMA 2 — CHỈ ĐỌC/);
+    A.equal(await p.locator('#l1MigrationV3').isHidden(), false, 'nút nâng cấp v2->v3 phải hiện');
+    A.equal(await p.locator('#l1Migration').isHidden(), true, 'luồng migration legacy v1 KHÔNG được hiện cho sổ v2');
+    A.deepEqual(await H.getDoc('state'), v2, 'sổ v2 KHÔNG bị ghi đè trước khi Owner bấm nâng cấp');
+    await openDetails(p);
+    const v3Snapshot = await snapshotClick(p, '#l1MigrateV3'); A.deepEqual(v3Snapshot.state, v2, 'snapshot chạy trước khi ghi');
+    await H.waitSaved(p);
+    const upgraded = await H.readState(p);
+    A.equal(upgraded.schema, L.SCHEMA);
+    const withoutSchema = o => { const c = F.copy(o); delete c.schema; delete c.rev; return c; };
+    A.deepEqual(withoutSchema(upgraded), withoutSchema(v2), 'nâng cấp không đổi một byte nội dung nào ngoài nhãn schema');
+    A.doesNotMatch(await p.textContent('#l1Flags'), /CHỈ ĐỌC/);
+    record('T-16 v2->v3', 'Sổ coindca.ledger/2 nạp CHỈ ĐỌC, không bị ghi đè; nâng cấp qua UI có snapshot, oracle khớp, nội dung không đổi.');
+
     await H.putDoc('state', migrated); await p.evaluate(() => localStorage.clear()); await p.reload(); await H.waitPhase(p, 'ONLINE'); await openDetails(p);
     p.removeAllListeners('dialog'); p.on('dialog', dialog => dialog.dismiss());
     const cancelledSnapshot = await snapshotClick(p, '#l1Wipe'); A.deepEqual(cancelledSnapshot.state, migrated);
