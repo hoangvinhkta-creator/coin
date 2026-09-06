@@ -92,10 +92,21 @@ Task Snapshot, roadmap row, Recent Decisions, Session History, Next Session) ·
 `PROJECT/PROJECT_DECISIONS.md` `DEC-048` (appended) · `PROJECT/LO_TRINH_DE_HIEU.md` (regenerated
 via `sync_easy_roadmap.py`, not hand-edited).
 
-Validators run this session: `validate_routing.py`, `validate_easy_roadmap.py`,
-`validate_project_state.py`, `validate_governance.py`, `branch_authority_check.sh` — results and
-any vacuous-validator caveats (`H-08`) recorded in the final response of this session; not
-restated here to avoid a stale second copy.
+Validators run this session: `validate_routing.py` PASS · `validate_easy_roadmap.py` PASS ·
+`validate_project_state.py` PASS · `validate_governance.py` PASS (50 hardening items counted) ·
+`validate_structure.py` PASS · `branch_authority_check.sh` — `BRANCH AUTHORITY: PASS`, production
+diff EMPTY. `validate_evidence.py` and `validate_task_completion.py` also report PASS but check
+**0 records** (`H-08`: both glob `TASK-*.md`, which matches none of this project's
+`T-*.md`/`WP-*.md` task files) — not treated as meaningful confirmation of anything in this
+closure.
+
+**Observed, not resolved here:** `branch_authority_check.sh` reports
+`INTEGRATION_DECISION_REQUIRED=loc>5000` (cumulative branch divergence vs. `main`, driven by
+review/governance documentation across the implementation + E2 + closure sessions — production
+diff itself is EMPTY). Same category of observation as `T-12`'s own closure
+(`T12-OWNER-CLOSURE.md` §6). This is an integration/merge-timing question, out of scope for this
+closure and explicitly not actioned (`main` not touched, not merged). Recorded here for the
+Owner to pick up separately.
 
 ## 7. Next Product Step
 
