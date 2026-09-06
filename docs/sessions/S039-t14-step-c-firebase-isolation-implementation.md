@@ -119,7 +119,22 @@ phải `INTEGRATION_DECISION_REQUIRED`. State đọc được đúng là state c
       validate_easy_roadmap.py      -> PASS
       validate_task_completion.py   -> PASS
       sync_easy_roadmap.py          -> PASS (LO_TRINH_DE_HIEU.md sinh lại)
-      branch_authority_check.sh     -> BRANCH_AUTHORITY_PLACEHOLDER
+      branch_authority_check.sh     -> PASS (sau khi `git push -u`, upstream đã có)
+
+    branch_authority_check.sh --expect-branch claude/t14-step-c-firebase-isolation-xu6nxb
+    (chạy LẠI sau khi push, commit 3a6dc25):
+
+      branch            = claude/t14-step-c-firebase-isolation-xu6nxb
+      default branch    = main (resolved, not assumed)
+      behind upstream   = 0
+      ahead of default  = 1 commit(s)
+      divergence age    = 0 day(s)
+      divergence LOC    = 3354      (tổng diff gồm cả test/docs/governance — không phải
+                                     production diff; production diff đo riêng ở dưới)
+      integration       = INTEGRATION_DECISION_REQUIRED=NO
+      tracked worktree  = CLEAN
+      production diff   = EMPTY     (so với chính HEAD của nhánh — mọi thay đổi đã commit)
+      BRANCH AUTHORITY: PASS
 
     Change budget (đo bằng git, không cộng tay):
       production (4 file)  -> +194 / −23     (trần frozen +600 / −400 -> TRONG TRẦN)

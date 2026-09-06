@@ -38,7 +38,9 @@ Branch authority check (`AGENTS.md` §7 bước 0), chạy TRƯỚC khi đọc s
 `FAIL` có **đúng một** nguyên nhân: nhánh mới chưa có upstream (chưa `git push -u`). Đây **không**
 phải khiếm khuyết tích hợp: `INTEGRATION_DECISION_REQUIRED = NO`, `ahead of default = 0`,
 `divergence LOC = 0`, worktree sạch — nghĩa là state đọc được đúng là state của `origin/main`.
-Sau khi push, kiểm tra được chạy lại — kết quả ghi ở §21.
+Sau khi push (commit `3a6dc25`), kiểm tra được chạy lại và cho **`BRANCH AUTHORITY: PASS`**
+(`behind upstream = 0`, `ahead of default = 1 commit`, `INTEGRATION_DECISION_REQUIRED=NO`,
+worktree CLEAN). Toàn văn: `docs/sessions/S039-t14-step-c-firebase-isolation-implementation.md` §5.
 
 ## 2. Trạng thái task trước phiên (đọc từ file, không từ trí nhớ)
 
@@ -498,7 +500,7 @@ Cả hai được ghi vào `PROJECT/HARDENING_BACKLOG.md` cùng phiên, dưới 
 | `validate_easy_roadmap.py` | PASS |
 | `validate_task_completion.py` (T-14) | PASS |
 | `sync_easy_roadmap.py` | chạy, `PROJECT/LO_TRINH_DE_HIEU.md` sinh lại |
-| `branch_authority_check.sh --expect-branch claude/t14-step-c-firebase-isolation-xu6nxb` | xem §22 (chạy lại sau khi push) |
+| `branch_authority_check.sh --expect-branch claude/t14-step-c-firebase-isolation-xu6nxb` | **PASS** (chạy lại sau khi push — trước push chỉ FAIL vì chưa có upstream) |
 
 ## 22. Kết quả chạy cuối phiên
 
