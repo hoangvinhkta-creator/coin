@@ -1,0 +1,31 @@
+ledger.js SCHEMA = coindca.ledger/2
+
+--- Reviewer synthetic ledger derived once (authoritative baseline) ---
+  ETH qty=136500000  costVnd=88615181  USDT qty=571200000  VND=19000000  reserve=5500000
+
+--- A. Backup round-trip is bit-exact and derive() is identical ---
+  ok   | restored canonical state is byte-identical to original
+  ok   | derive() after restore is byte-identical (tolerance 0)
+
+--- B. derivedSnapshot can never become restore authority ---
+  ok   | canonical() drops derivedSnapshot from restored state
+  ok   | state with derivedSnapshot restores byte-identically
+  ok   | poisoned backup derives the SAME money as clean backup
+  ok   | injected top-level `holdings` is REJECTED (not silently kept)
+  ok   | injected top-level `derived` is REJECTED
+
+--- C. Malformed payloads are rejected by the SAME T-12 validation ---
+  ok   | wrong schema string rejected
+  ok   | missing events array rejected
+  ok   | out-of-domain numeric field rejected
+  ok   | event with unknown kind rejected
+  ok   | non-canonical extra field rejected
+  ok   | non-object payload rejected
+
+--- D. Cancelled/failed restore performs no mutation ---
+  ok   | cancelled confirm -> ok:false, cancelled:true
+  ok   | cancelled confirm -> NOTHING committed
+  ok   | snapshot taken BEFORE confirm (recovery always possible)
+  ok   | failed operation -> NOTHING committed
+
+=== E2 INDEPENDENT RESTORE SEMANTICS: pass=17 fail=0 ===

@@ -1,0 +1,36 @@
+reviewer OWNER uid  = IgmGGwfWC3euyzU7ppZIIRPVmS25
+reviewer OTHER uid  = 5fhHv53cJQtTTVvj6lC6b9sZ4qNj
+reviewer ANON  uid  = 6W4FClkyt6tihdFtPQzG2VJjbWgq
+rules file          = /home/user/coin/firestore.rules (real repo file, placeholder -> reviewer owner uid)
+
+--- A. CoinDCA financial documents (ethdca/state) ---
+  ok   | Owner (google.com, matching UID) READ                      got=ALLOW want=ALLOW
+  ok   | Owner UPDATE (write)                                       got=ALLOW want=ALLOW
+  ok   | Owner DELETE (must stay denied)                            got=DENY want=DENY
+  ok   | UNAUTHENTICATED READ                                       got=DENY want=DENY
+  ok   | UNAUTHENTICATED WRITE                                      got=DENY want=DENY
+  ok   | ANONYMOUS auth READ                                        got=DENY want=DENY
+  ok   | ANONYMOUS auth WRITE                                       got=DENY want=DENY
+  ok   | OTHER authenticated Google user READ                       got=DENY want=DENY
+  ok   | OTHER authenticated Google user WRITE                      got=DENY want=DENY
+
+--- B. ethdca/seed + namespace boundedness ---
+  ok   | Owner READ ethdca/seed                                     got=DENY/404 want=DENY/404
+  ok   | Owner WRITE ethdca/seed                                    got=ALLOW want=ALLOW
+  ok   | Owner WRITE ethdca/notallowlisted (bounded)                got=DENY want=DENY
+  ok   | Owner READ ethdca/notallowlisted (bounded)                 got=DENY want=DENY
+
+--- C. Content namespace: do Content users reach CoinDCA? ---
+  ok   | Content ADMIN reads CoinDCA ledger                         got=DENY want=DENY
+  ok   | Content ADMIN writes CoinDCA ledger                        got=DENY want=DENY
+
+--- D. Reverse direction: what Content access does the CoinDCA Owner hold? ---
+  ok   | CoinDCA Owner reads Content /users                         got=ALLOW want=ALLOW
+  ok   | ANONYMOUS reads Content /users (pre-T14 class)             got=ALLOW want=ALLOW
+  ok   | CoinDCA Owner deletes Content user (admin-only)            got=DENY want=DENY
+
+--- E. Placeholder ruleset grants nobody ---
+  ok   | Owner under un-deployed placeholder rules READ             got=DENY want=DENY
+  ok   | Anon under un-deployed placeholder rules READ              got=DENY want=DENY
+
+=== E2 INDEPENDENT RULES MATRIX: pass=20 fail=0 ===
