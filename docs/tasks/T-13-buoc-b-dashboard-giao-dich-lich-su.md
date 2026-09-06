@@ -2,7 +2,7 @@
 
 ## Metadata
 Status:
-IMPLEMENTED — E2_REQUIRED
+DONE
 
 Hiện hành: Task được mở và đưa thẳng lên `READY` trong cùng phiên định nghĩa (`S035`,
 2026-09-05), theo đúng thẩm quyền Owner của chỉ thị phiên "COINDCA — L-1 STEP B DEFINITION"
@@ -11,7 +11,17 @@ Hiện hành: Task được mở và đưa thẳng lên `READY` trong cùng phi�
 
 `S036` (2026-09-05, cùng ngày): thi hành `READY → IN_PROGRESS → IMPLEMENTED`. 13/13 REQUIRED
 check PASS ở tối thiểu E1; 7 check còn cần Independent E2 trước khi `DONE` (xem § Completion
-Gate và `docs/reviews/T13-IMPLEMENTATION-REPORT.md`). **KHÔNG** `DONE` ở phiên này.
+Gate và `docs/reviews/T13-IMPLEMENTATION-REPORT.md`).
+
+`S037` (2026-09-06): Independent E2 review độc lập (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`,
+reviewer khác implementer, HEAD `cb75d6c`) → `E2_VERDICT = PASS`, 7/7 check E2-required PASS
+độc lập, 0 BLOCKING. Owner chấp nhận verdict và uỷ quyền lifecycle closure
+(`DEC-048`, `PROJECT/PROJECT_DECISIONS.md`): `T-13: IMPLEMENTED → DONE`. 13/13 REQUIRED
+Completion Gate PASS (6 E1-only + 7 E1+E2). Ba finding E2 mới route thành HARDENING
+(`H-48`, `H-49`, `H-50`, `PROJECT/HARDENING_BACKLOG.md`), không task mới. Đóng ở đây
+**KHÔNG** cấp phép SELL thật (`H-46` giữ nguyên) và **KHÔNG** có nghĩa CoinDCA sẵn sàng dùng
+tiền thật không giới hạn — bước C (`H-42`) và bước D (`OWNER_LOCAL_ACCEPTANCE`) vẫn chưa mở.
+Xem `docs/reviews/T13-OWNER-CLOSURE.md`.
 
 Phase:
 CoinDCA L-1 — bước **B** (dashboard §16 + UX nhập/sửa/xoá + lịch sử §15) của chuỗi A → B → C → D
@@ -374,18 +384,28 @@ giữ đúng màn hình, không có tab/markup V2.1.5 nào còn hiển thị (St
 `REMOVE_FROM_L1_PATH`).
 
 #### CHECK-T13-02 — Dashboard đúng Dashboard Contract §16, không sai một trường
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-01/AS-08 đối chiếu bit-với-bit `derive()`. Xem báo cáo §4/§12.
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-01/AS-08 đối chiếu bit-với-bit `derive()`. Xem báo cáo §4/§12.
+
+Kết quả Independent E2 S037: PASS — reviewer dựng kịch bản RIÊNG có `carryIn = 14.000.000 ₫` thật
+(fixture implementer có `carryIn = 0`, chưa từng phân biệt được phụ đề carry), đối chiếu 5 thẻ +
+phụ đề `nextPlannedAmountVnd` + 6 mục khối dưới, tolerance 0, không GO/WAIT/score/regime/ladder.
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §5.
 
 Yêu cầu: khối chính 4 số + 1 hành động, khối dưới, banner bắt buộc — đối chiếu **tuyệt đối**
 (tolerance 0) với `derive()` trên fixture `SC-09`/`SC-10`. Không "GO"/"WAIT"/màu tín hiệu ở thẻ
 "Mua kế tiếp" (`DEC-041` B).
 
 #### CHECK-T13-03 — Sheet nhập liệu ánh xạ đúng 8 loại sự kiện
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-02..AS-04/AS-10 (không ô FX riêng lệnh). Xem báo cáo §5.
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-02..AS-04/AS-10 (không ô FX riêng lệnh). Xem báo cáo §5.
+
+Kết quả Independent E2 S037: PASS — reviewer ghi cả 8/8 loại qua sheet, đọc ánh xạ trên **durable
+state** đọc thẳng từ Firestore; `note` toàn khoảng trắng cho RESERVE bị chặn tại form (0 event
+ghi bền); quét toàn bộ input/select trong `#l1Entry` xác nhận đúng MỘT ô tỷ giá, thuộc `PRICE`.
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §6.
 
 Yêu cầu: mỗi loại trong bảng Step-B spec §5 sinh đúng `action.type`/`event.kind`/trường bắt buộc;
 `RESERVE` buy thiếu `note` bị chặn tại form; không có ô nhập tỷ giá riêng theo lệnh nào tồn tại
@@ -401,26 +421,41 @@ kiện đủ loại; badge EXTRA/RESERVE hiển thị đúng; badge UNKNOWN khô
 nội bộ nào khác (giữ `H-45` không bị mở rộng — Step-B spec §6).
 
 #### CHECK-T13-05 — Sửa qua UI tính lại đúng, `id`/`seq` không đổi
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-05, `test_t12_browser.js` P-3: id/seq bất biến. Xem báo cáo §7/§12.
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-05, `test_t12_browser.js` P-3: id/seq bất biến. Xem báo cáo §7/§12.
+
+Kết quả Independent E2 S037: PASS — reviewer sửa qua Lịch sử, xác nhận `id`/`seq`/`events.length`
+bất biến, Tổng quan khớp `derive()` ngay không cần reload, **và sống sót sau reload** (implementer
+chưa kiểm điều này cho luồng sửa). `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §7.
 
 Yêu cầu: sửa một sự kiện qua form → `derive()` chạy lại toàn bộ, Tổng quan/Lịch sử khớp ngay;
 `id`/`seq` bất biến (`INV-15`).
 
 #### CHECK-T13-06 — Xoá qua UI: cảnh báo + snapshot bắt buộc trước khi xoá
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` AS-06, `test_t12_browser.js` INV-14: snapshot trước khi xoá xác nhận. Xem báo cáo §7/§12.
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` AS-06, `test_t12_browser.js` INV-14: snapshot trước khi xoá xác nhận. Xem báo cáo §7/§12.
+
+Kết quả Independent E2 S037: PASS — reviewer xác nhận snapshot bit-exact TRƯỚC khi xoá; `derive()`
+sau xoá **deepEqual** sổ chưa từng có event đó; **huỷ dialog ⇒ sổ giữ nguyên** (implementer chỉ
+kiểm nhánh chấp nhận); dialog riêng, mạnh hơn cho Số dư đầu kỳ; sống sót reload.
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §8.
 
 Yêu cầu: dialog cảnh báo tường minh xuất hiện; snapshot export tự động được tạo TRƯỚC khi xoá
 thật (`INV-14`, gọi đúng `CoinLedger.destructive()`); sau xoá số liệu như giao dịch chưa từng tồn
 tại; xoá Số dư đầu kỳ có cảnh báo RIÊNG mạnh hơn.
 
 #### CHECK-T13-07 — Kế hoạch/Carry: ba đại lượng tách riêng, không cần tự tính
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `#planCarry` tách ba đại lượng; `test_stepb_ui.js` AS-01/AS-08 khớp `scheduleDays`/carry tolerance 0. Xem báo cáo §8.
+Kết quả implementation S036: PASS (E1) — `#planCarry` tách ba đại lượng; `test_stepb_ui.js` AS-01/AS-08 khớp `scheduleDays`/carry tolerance 0. Xem báo cáo §8.
+
+Kết quả Independent E2 S037: PASS — reviewer dựng kịch bản có tháng ĐÃ ĐÓNG sinh carry thật
+(`carryIn = 14.000.000 ₫`, điều fixture implementer không có vì `carryIn = 0`): 5 đại lượng tách
+riêng đúng, `carryOut` tháng đã đóng hiển thị đúng còn `carryOut` tháng hiện tại = `null` (không
+trình bày như đã chốt), `nextPlannedDate`/`Amount` đúng ranh giới lịch, tolerance 0.
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §9.
 
 Yêu cầu: `monthlyBudgetVnd`/`carryInVnd`/`investedThisMonthVnd` (hoặc `planInvestedVnd`) hiển thị
 tách biệt, không gộp; "Mua kế tiếp" đúng theo `scheduleDays`/carry của fixture `SC-09` (tolerance
@@ -443,9 +478,15 @@ Yêu cầu: grep toàn bộ UI mới — không có tuỳ chọn "SELL"/"Bán" �
 hình nào hiển thị lãi/lỗ đã thực hiện.
 
 #### CHECK-T13-10 — Không công thức tài chính mới, chỉ gọi API đã đóng băng
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — một lệnh `L.derive()` mỗi `render()` (đọc `ledger_ui.js`); `test_stepb_ui.js` PR-6 grep không phép tính tiền độc lập. Xem báo cáo §10 nguyên tắc kiến trúc.
+Kết quả implementation S036: PASS (E1) — một lệnh `L.derive()` mỗi `render()` (đọc `ledger_ui.js`); `test_stepb_ui.js` PR-6 grep không phép tính tiền độc lập. Xem báo cáo §10 nguyên tắc kiến trúc.
+
+Kết quả Independent E2 S037: PASS — reviewer quét TOÀN BỘ biểu thức số học nhị phân trên trường
+tiền trong `ledger_ui.js` (rộng hơn regex compound-assignment của implementer), soi tay từng kết
+quả: đúng 1 lệnh `L.derive(`, 0 ghi thẳng `state`, 0 `events.push/splice`; biểu thức duy nhất còn
+lại là bề rộng % của thanh tiến trình hiển thị (Step-B spec §4.1 cho phép tường minh).
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §10.
 
 Yêu cầu: (a) grep UI mới — mọi con số hiển thị truy được nguồn gốc về đúng một lệnh gọi
 `CoinLedger.derive()`; (b) mọi ghi dữ liệu truy được về đúng
@@ -471,9 +512,15 @@ Yêu cầu: toàn bộ suite `test_t12_*.js` + Python `678/678` vẫn PASS sau k
 `INV-1`…`INV-15` nào bị làm yếu; không test cũ nào bị bỏ chọn/skip để lấy suite xanh.
 
 #### CHECK-T13-13 — Production Reachability PR-1…PR-6 qua UI mới
-Priority: REQUIRED · Status: PASS · Evidence Level: E1 (E2 độc lập CHƯA chạy — bắt buộc trước khi task DONE)
+Priority: REQUIRED · Status: PASS · Evidence Level: E1 + E2 (độc lập)
 
-Kết quả implementation S036: PASS (E1; Independent E2 CHƯA chạy) — `test_stepb_ui.js` toàn bộ AS-01..AS-11 + PR-1..PR-6 qua `app_final.html` + Firestore Emulator + rules thật; reload khớp tuyệt đối (PR-4/PR-5). Xem báo cáo §12.
+Kết quả implementation S036: PASS (E1) — `test_stepb_ui.js` toàn bộ AS-01..AS-11 + PR-1..PR-6 qua `app_final.html` + Firestore Emulator + rules thật; reload khớp tuyệt đối (PR-4/PR-5). Xem báo cáo §12.
+
+Kết quả Independent E2 S037: PASS — reviewer tái lập bằng kịch bản RIÊNG (không dùng lại
+assertion của implementer): 32 thao tác ghi bền thật qua UI mới + 5 thao tác âm/huỷ, 45 kiểm
+chứng (44 PASS/1 FAIL không thuộc 7 check E2), đọc lại từ SERVER qua REST, reload khớp tuyệt đối,
+0 page error. `test_t12_browser.js` (17/17) và `test_stepb_ui.js` (16/16) chạy lại độc lập cũng
+PASS. `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §11/§21.
 
 Yêu cầu: đúng định nghĩa Step-B spec §15 — toàn bộ AS-01…AS-11 chạy qua `app_final.html` +
 Firestore Emulator + `firestore.rules` thật, không gọi hàm module trực tiếp trong Node; reload
@@ -482,14 +529,18 @@ khớp tuyệt đối (tolerance 0).
 ---
 
 ## Exit Criteria
-- [x] 13/13 REQUIRED check PASS (tối thiểu E1 — S036)
-- [x] Không finding BLOCKING chưa đóng (§17 báo cáo implementation)
-- [ ] Evidence Level đạt tối thiểu theo quy ước gate (E1 toàn bộ **ĐẠT**; E2 cho 7 check đã đánh
-      dấu **CHƯA ĐẠT** — Independent E2 là điều kiện còn lại duy nhất trước `DONE`)
+- [x] 13/13 REQUIRED check PASS (tối thiểu E1 — S036; 7/7 check E2-required nâng E1+E2 — S037)
+- [x] Không finding BLOCKING chưa đóng (§17 báo cáo implementation; §24 báo cáo E2 — 0 BLOCKING,
+      3 HARDING mới `H-48`/`H-49`/`H-50`)
+- [x] Evidence Level đạt tối thiểu theo quy ước gate (E1 toàn bộ ĐẠT tại S036; E2 cho 7 check đã
+      đánh dấu **ĐẠT tại S037** — `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, `E2_VERDICT = PASS`)
 - [x] `PROJECT/PRODUCTION_PATHS.md` §1 khai đủ mọi file runtime mới (S-B11) — N/A, không file
       production mới (3 file sửa đều đã có trong bảng từ `T-12`)
-- [x] `PROJECT/PROJECT_PROGRESS.md` cập nhật (Last Updated `S036`, roadmap row `T-13 IMPLEMENTED`)
-- [x] Session handoff viết theo Task Mode MAJOR — `docs/reviews/T13-IMPLEMENTATION-REPORT.md`
+- [x] `PROJECT/PROJECT_PROGRESS.md` cập nhật (Last Updated `S037`, roadmap row `T-13 DONE`)
+- [x] Session handoff viết theo Task Mode MAJOR — `docs/reviews/T13-IMPLEMENTATION-REPORT.md`,
+      `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, `docs/reviews/T13-OWNER-CLOSURE.md`
+- [x] Owner Decision đóng lifecycle — `DEC-048` (`PROJECT/PROJECT_DECISIONS.md`):
+      `T-13: IMPLEMENTED → DONE`
 
 ## Escalation Triggers
 - Nếu implementation phát hiện việc ẩn SELL đòi sửa `webapp/engine.js` hoặc `webapp/ledger.js` →
@@ -506,15 +557,27 @@ khớp tuyệt đối (tolerance 0).
 
 ## Changed Files Registry
 
-Created:
+Created (S036, implementation):
 - `webapp/test_stepb_ui.js` — test mới, KHÔNG phải production path (AS-01…AS-12/PR-1…PR-6 qua UI mới)
 - `docs/reviews/T13-IMPLEMENTATION-REPORT.md`
 
-Modified:
+Created (S037, Independent E2 + Owner closure — không phải production path):
+- `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, `docs/reviews/evidence/T13/**` (9 file bằng chứng
+  chạy lại được, gồm hai script reviewer)
+- `docs/reviews/T13-OWNER-CLOSURE.md`
+
+Modified (S036, production):
 - `webapp/app_shell.html` — xoá markup V2.1.5 (5-tab/hero/ladder/entry cũ/setup cũ); thêm CSS/markup Step-B
 - `webapp/app_logic.js` — xoá dead code V2.1.5 (OSCORE/ladder/pool/seed); GIỮ NGUYÊN persist()/renderPersistence()/validateState()
 - `webapp/ledger_ui.js` — thiết kế lại Dashboard/Sheet/Lịch sử/Kế hoạch/Cài đặt; vẫn chỉ gọi CoinLedger.derive/update/migrate/destructive
-- `PROJECT/PROJECT_PROGRESS.md` — Last Updated `S036`
+
+Modified (governance, không phải production path):
+- `PROJECT/PROJECT_PROGRESS.md` — Last Updated `S036` rồi `S037`
+- `PROJECT/HARDENING_BACKLOG.md` — `H-48`/`H-49`/`H-50` (S037)
+- `PROJECT/PROJECT_DECISIONS.md` — `DEC-048` (S037)
+- `PROJECT/CAPABILITY_REGISTRY.md` §15, `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.10 (S037, bổ sung)
+
+Production diff của S037 (E2 + closure) = **EMPTY** — không file production nào bị chạm.
 
 Deleted:
 - (không có)

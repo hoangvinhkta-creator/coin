@@ -751,3 +751,43 @@ Phiên `S035` là phiên governance/spec/task-definition-only. Đo trực tiếp
 
 Vì diff production = 0, phiên này **không tiêu** chu kỳ nào và không cần cặp BASE/HEAD SHA trong
 bảng §2.2. Cặp SHA sẽ được ghi tại lượt implementation thật của `T-13`.
+
+---
+
+### 2.2.10 — S036 (implementation) + S037 (Independent E2 + Owner closure) — `T-13: IMPLEMENTED → DONE`, budget KHÔNG ĐỔI
+
+**S036 (2026-09-05) — INITIAL IMPLEMENTATION**, đúng tiền lệ đã ghi cho `WP-A4`/`T-09A`/`T-09B`/
+`WP-C2`/`T-12`: lượt thi hành đầu tiên của một task mới trong capability không tự động tiêu
+repair cycle.
+
+    T13_MEASURE_BASE_SHA = 5d26bcc4c24d80228720db5d43a52f904df60791
+    git diff --shortstat 5d26bcc..cb75d6c -- webapp/app_logic.js webapp/engine.js
+      webapp/app_shell.html webapp/build_app.js webapp/ledger_ui.js webapp/ledger.js
+      src/eth_dca_os pyproject.toml pyproject.lock
+      -> 3 file, +374 / −1330   (dưới trần +1800/−1400 § Change budget của file task)
+
+Không repair cycle nào tiêu ở S036. `webapp/ledger.js`, `webapp/engine.js`, `src/eth_dca_os/**`,
+`pyproject.*` = KHÔNG đổi.
+
+**S037 (2026-09-06) — Independent E2 review + Owner-authorized Lifecycle Closure (`DEC-048`)**:
+
+    git diff --shortstat cb75d6c..f56851f -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 0   (production diff = EMPTY trong suốt E2)
+    git diff --shortstat f56851f..HEAD -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 0   (production diff = EMPTY trong phiên đóng)
+
+Independent E2 (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer,
+`E2_VERDICT = PASS`) và Owner closure đều **không sửa production code** — đúng nguyên tắc
+`REVIEW_PROTOCOL.md` "REVIEW WIDE — REPAIR NARROW": review được phép rộng, không cấp quyền sửa.
+Ba finding HARDENING mới (`H-48`/`H-49`/`H-50`) không đòi repair ngay; không finding nào
+`BLOCKING`.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 1 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1, T-12, DEC-043)
+    CURRENT BUDGET REMAINING  = 1 repair cycle    <- KHÔNG ĐỔI
+    T-13 tự cấp thêm          = 0   <- S036 (implementation) VÀ S037 (E2 + closure) đều không
+                                        tiêu repair cycle nào
+
+`T-13: IMPLEMENTED → DONE` không phải một sự kiện làm reset hay cấp lại budget — cùng đúng
+nguyên tắc `AGENTS.md` §3 "Budget does not reset" đã áp dụng cho `T-12`/`DEC-046`
+(§ "T-12 — Owner Closure sau independent E2", ngay trên §2.2.9).

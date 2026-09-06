@@ -1626,3 +1626,102 @@ input nếu áp nghĩa đen "lên" theo trục số. Chỉ chạm được khi `
       hoàn tiền) được đưa vào mô hình; HOẶC
     - `ROUND_VND`/`round()` được tổng quát hoá để dùng ngoài miền tiền tệ không âm hiện tại; HOẶC
     - `LEDGER_INCONSISTENT` ngừng là fail-visible/blocking trước khi số âm tới được `round()`.
+
+---
+
+## H-48 — Lịch sử render nhãn tự mâu thuẫn `"Mua ETH (Bán)"` cho `TRADE side='SELL'` nạp qua UI
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review `T-13`, `F-T13-E2-01`,
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §14/§24)
+
+`webapp/ledger_ui.js:142` (`KIND_LABEL`):
+
+    if (e.kind === 'TRADE') return 'Mua ETH' + (e.side === 'SELL' ? ' (Bán)' : '') + …
+
+`CHECK-T13-09`/`S-B10` (Step-B spec §11 B-1) đòi **form/menu** không có tuỳ chọn SELL/Bán — điều
+kiện này **đạt**: `#l1Side` chỉ còn `BUY`, UI Step B không tạo được một event `side='SELL'` bằng
+thao tác tap/điền thông thường. Nhưng reviewer E2 tái lập được đường đi: Cài đặt → "Nạp lại từ
+JSON" chấp nhận một sổ tự soạn có `TRADE side='SELL'` (`L.canonical()` của `T-12`, đã đóng băng,
+cho phép `SELL` ở tầng dữ liệu — đúng thẩm quyền `H-46`), ghi bền, và Lịch sử render nhãn
+**tự mâu thuẫn**: `"Mua ETH (Bán)"`. `derive().flags` không bật cờ nào cho trường hợp này.
+
+Không phải lỗi cài đặt SELL-guard của form/menu (`CHECK-T13-09` PASS đúng nghĩa đã đóng băng) —
+đây là một khe hẹp ở lớp **trình bày** khi sổ đã chứa `SELL` qua đường nạp file, không phải đường
+nhập giao dịch chuẩn.
+
+Bằng chứng tái lập: `docs/reviews/evidence/T13/sell-label-reachability.txt`,
+`docs/reviews/evidence/T13/reviewer-e2-part1.js` (`SELL/import-json-path`).
+
+    RE_TRIGGER_CONDITION:
+    - `H-46` được Owner giải quyết và nghiệp vụ SELL được mở cho dữ liệu thật; HOẶC
+    - bất kỳ đường UI nào (ngoài nạp file) trở nên có khả năng **tạo** event `side='SELL'`; HOẶC
+    - `migrate()` bắt đầu sinh event `SELL`; HOẶC
+    - một Completion Gate tương lai mở rộng yêu cầu SELL-guard từ "form/menu" sang "mọi nhãn hiển
+      thị", kể cả nhãn sinh từ dữ liệu nạp vào.
+
+---
+
+## H-49 — Bằng chứng persistence `T-09B` không còn chạy lại được sau khi gỡ `#tab-setup`; `npm test` đỏ
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review `T-13`, `F-T13-E2-02`,
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §15/§23/§24)
+
+Step-B spec §12 cho phép tường minh xoá `nav.tabs` 5-tab V2.1.5 (gồm `setup`) khỏi đường L-1
+(`REMOVE_FROM_L1_PATH`). `#seedFile` (nút "Nạp dữ liệu lịch sử") nằm trong `#tab-setup` và bị xoá
+theo đúng thẩm quyền đó. Hệ quả: sáu file test V2.1.5 —
+`test_app.js`, `test_zone.js`, `test_v01_v02_v03.js`, `test_multi_month_invariant.js`,
+`test_t09a_accounting.js`, `test_t09b_persistence.js` (118 assertion, phủ toàn bộ
+`CHECK-T09B-01`…`16`) — không còn chạy được: tất cả timeout tại đúng một điểm
+(`page.setInputFiles: … waiting for locator('#seedFile')`). Không file nào bị sửa/bỏ chọn để lấy
+suite xanh; `webapp/package.json` không đổi, nên `npm --prefix webapp test` (lệnh mặc định đã
+khai) nay **exit khác 0**.
+
+Reviewer E2 độc lập xác nhận **hành vi production vẫn ĐÚNG**, không phải chỉ tin lời implementer:
+`persist()`/`renderPersistence()`/`validateState()`/`reconcileMirror()`/`pushDiverged()`/
+`dropDiverged()` trong `webapp/app_logic.js` giữ nguyên **verbatim, 0 dòng đổi**. Đặc biệt
+`CHECK-T09B-16` (mirror không âm thầm thắng nguồn bền) — vốn không còn suite nào phủ sau khi sáu
+file trên hỏng — được reviewer **tự kiểm trực tiếp trên UI Step B**: giả mạo `localStorage` với
+`rev+5` và sổ khác hẳn, reload, xác nhận nguồn bền (Firestore) **không** bị ghi đè và app báo
+phân kỳ chờ người dùng chọn. Cái mất ở đây là **bằng chứng tự động chạy lại được**, không phải
+hành vi production sai — do đó không đủ điều kiện thứ hai của `BLOCKING` (hậu quả nghiệp vụ nằm
+trong Completion Gate/risk register): `CHECK-T13-12` chỉ đòi `test_t12_*.js` + Python PASS và
+không test nào bị bỏ chọn — cả hai đều đạt.
+
+Cùng họ với `H-44` (bằng chứng nằm ở tầng harness chậm nhất, không nối vào `scripts.test`).
+
+Bằng chứng: `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §15(b)(c), §23; kiểm chứng
+`T09B-16/mirror-never-silently-wins` trong `docs/reviews/evidence/T13/reviewer-e2-part2.js`.
+
+    RE_TRIGGER_CONDITION:
+    - tầng persistence (`persist()`/`reconcileMirror()`/mirror-divergence) bị thay đổi; HOẶC
+    - bước **C** (`H-42`, Firebase isolation) bắt đầu — bước đó cần bằng chứng persistence chạy
+      lại được để chứng minh không regression; HOẶC
+    - `npm --prefix webapp test` được dùng làm cổng release/CI; HOẶC
+    - bằng chứng persistence legacy (sáu file trên) được nghỉ hưu/thay thế chính thức bằng một
+      suite L-1 mới phủ đủ `CHECK-T09B-01`…`16` qua UI Step B.
+
+---
+
+## H-50 — "Định giá hiện tại" hiện NGÀY của giá tham chiếu thay vì TUỔI như spec §16.3 mô tả
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (nhỏ)**
+Ngày ghi nhận: 2026-09-05 (Independent E2 review `T-13`, `F-T13-E2-03`,
+`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §5/§24)
+
+`webapp/ledger_ui.js:202` hiện `"— · giá gần nhất 2026-03-08"` (một NGÀY) khi `priceMark` không
+hợp lệ theo §16.3. Spec kế toán §16.3 và Step-B spec §4.2 mô tả hiển thị `—` kèm **tuổi** của giá
+("giá gần nhất: 12 ngày trước"). Không sai số, không ngoại suy — định giá vẫn `DESCRIPTIVE` và
+không vào bất kỳ phép tính giá vốn/kế hoạch nào; người dùng chỉ phải tự trừ ngày để biết độ cũ.
+
+Không làm FAIL `CHECK-T13-02`: yêu cầu đóng băng của check đó là khớp tolerance 0 với `derive()`
++ không GO/WAIT; `valuation = null` không phải một con số của `derive()` để đối chiếu bằng số,
+và `—` đã hiển thị đúng.
+
+    RE_TRIGGER_CONDITION:
+    - PRICE UX trở thành thiết yếu với thao tác hằng ngày của người dùng; HOẶC
+    - ngữ nghĩa cảnh báo giá cũ/stale-price được đưa vào sản phẩm; HOẶC
+    - hiển thị giá thị trường trở thành một phần của luồng dùng hằng ngày (không còn thuần
+      DESCRIPTIVE); HOẶC
+    - một Completion Gate tương lai đòi đích danh định dạng "N ngày trước".

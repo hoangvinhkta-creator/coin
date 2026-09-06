@@ -25,13 +25,27 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-05 — **`S036` — THI HÀNH `T-13` (CoinDCA L-1 Bước B): `READY → IN_PROGRESS →
+2026-09-06 — **`S037` — Independent E2 review + Owner-authorized Lifecycle Closure: `T-13:
+IMPLEMENTED → DONE` (`DEC-048`).** Independent E2 (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`,
+reviewer khác implementer, HEAD `cb75d6c`) → `E2_VERDICT = PASS`: cả 7 check `E2_REQUIRED`
+(`CHECK-T13-02/03/05/06/07/10/13`) PASS độc lập, tolerance 0, qua 45 kiểm chứng riêng của
+reviewer (44 PASS/1 FAIL không thuộc 7 check E2), 32 thao tác ghi bền thật qua UI mới, 0 page
+error. Completion Gate **13/13 REQUIRED PASS** (6 E1-only + 7 E1+E2). 0 finding `BLOCKING`. Ba
+finding HARDENING mới route thành `H-48`/`H-49`/`H-50` (`PROJECT/HARDENING_BACKLOG.md`), không
+task mới. `CAP-WEBAPP` budget **KHÔNG đổi** `2/1/1` — E2 và closure không tiêu repair cycle nào
+(production diff của cả hai phiên = EMPTY). **Guard SELL giữ nguyên**: `T-13 DONE` KHÔNG cấp
+phép SELL thật (`H-46` chưa xử lý); bước C (`H-42`) và bước D (`OWNER_LOCAL_ACCEPTANCE`) vẫn
+CHƯA mở. Chi tiết đầy đủ: `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`,
+`docs/reviews/T13-OWNER-CLOSURE.md`.
+
+Trước đó, 2026-09-05 — **`S036` — THI HÀNH `T-13` (CoinDCA L-1 Bước B): `READY → IN_PROGRESS →
 IMPLEMENTED`.** Nhánh `claude/t13-step-b-implementation-8wpnkr`, tách đúng từ `origin/main`
 `5d26bcc` (`branch_authority_check.sh` PASS, 0 phân kỳ). 13/13 REQUIRED check đạt tối thiểu E1
 (`CHECK-T13-01`…`13`); bảy check (`02/03/05/06/07/10/13`) còn cần **Independent E2** theo đúng
-quy ước gate đã đóng băng — `T-13` vì vậy dừng ở `IMPLEMENTED`, **KHÔNG `DONE`**. Toàn bộ
-`AS-01`…`AS-12` và `PR-1`…`PR-6` PASS qua `app_final.html` + Firestore Emulator + UI mới
-(`docs/tasks/T-13-*.md` không đổi một chữ). Chi tiết đầy đủ: `docs/reviews/T13-IMPLEMENTATION-REPORT.md`.
+quy ước gate đã đóng băng — `T-13` vì vậy dừng ở `IMPLEMENTED` tại thời điểm đó (nay đã `DONE`
+như trên). Toàn bộ `AS-01`…`AS-12` và `PR-1`…`PR-6` PASS qua `app_final.html` + Firestore
+Emulator + UI mới (`docs/tasks/T-13-*.md` không đổi một chữ). Chi tiết đầy đủ:
+`docs/reviews/T13-IMPLEMENTATION-REPORT.md`.
 
 Việc đã làm, gọn trong bốn ý. (1) **Dashboard/Sheet/Lịch sử/Kế hoạch/Cài đặt** thay hoàn toàn
 markup 5-tab V2.1.5 (`webapp/app_shell.html`): bottom-nav 4 điểm đến, FAB "+ Ghi giao dịch" sheet
@@ -939,7 +953,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | CANCELLED | WP-D2 | Chuẩn bị đề xuất mở phiên bản đặc tả mới cho các điểm mâu thuẫn | Một số mâu thuẫn thuộc về chính bộ đặc tả, cần chủ dự án quyết định mở V2.2 | C | xhigh | Không phụ thuộc. Đầu ra là đề xuất, KHÔNG sửa V2.1.5 (đóng S-001, S-002, S-003) · **`DEC-041` (2026-09-05)**: `READY → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Đầu ra là đề xuất **V2.2-của-V2.1.5**; `DEC-040` từ chối mở V2.2 và đòi mọi giả thuyết chiến lược tương lai phải độc lập, KHÔNG kế thừa trạng thái validation V2.1.5 — nên tiền đề của `WP-D2` không còn. `S-001`/`S-002`/`S-003` được **ghi chú kèm** freeze `DEC-041` A (khiếm khuyết trong artifact đóng băng thì ghi chú, không sửa — Master Index §6) |
 | CANCELLED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Điều kiện của `T-11` gồm `verdict = BUILD`, mà `DEC-040` §E xác lập điều kiện này KHÔNG BAO GIỜ thoả được nữa dưới V2.1.5. Đóng luôn mâu thuẫn trạng thái cũ (`PLANNED` ở bảng vs `BLOCKED` ở `DEC-040` §D — stale `ST-08`). Verdict `BUILD` từ chiến lược/version khác trong tương lai phải tự đủ điều kiện từ đầu |
 | DONE | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | **DONE — Owner-authorized Lifecycle Closure tại `DEC-046`** (2026-09-05), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 9/9 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 14/14 REQUIRED PASS** (5 E1-only + 9 E1+E2), không sửa câu chữ/ngữ nghĩa. Golden `c610a29` không đổi trong suốt E2; production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1** (`REPAIR_CYCLE_1` vẫn CONSUMED, không tiêu chu kỳ thứ hai). Bốn finding E2 (`F-E2-01`…`04`) route thành HARDENING `H-44`…`H-47`, không task mới. **`T-12 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46`/`F-E2-03` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041`/`DEC-042`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Trước đó IMPLEMENTED tại `S034` (`docs/reviews/T12-IMPLEMENTATION-REPORT.md`). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
-| READY | T-13 | CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao dịch/Lịch sử | Biến sự thật tài chính của T-12 thành công cụ dùng được hằng ngày (dashboard, nhập 8 loại giao dịch, lịch sử, sửa/xoá, plan/carry UX) mà không cần biết cấu trúc kỹ thuật bên dưới | C | xhigh | **`NOT_PLANNED → READY` tại `S035`** (2026-09-05), thẩm quyền `DEC-047` (chỉ thị phiên trực tiếp "COINDCA — L-1 STEP B DEFINITION"). Ready Gate 17/17 tương đương, Completion Gate **13/13 REQUIRED FROZEN**. Bước **B** của spec kế toán §24 + `docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md` (`CANONICAL — APPROVED`, mới). Sau `T-12` (DONE). Capability `CAP-WEBAPP`, lineage root `WP-C1`, budget KHÔNG đổi `2/1/1`. Chỉ tiêu thụ API đã đóng băng của `T-12` (`derive/update/migrate/destructive`) — không đổi schema/persistence/công thức tài chính. SELL bị ẩn hoàn toàn khỏi UI (`H-46` chưa xử lý); Firebase/auth/rules không bị chạm (`H-42`, bước C). Chưa `IN_PROGRESS`. Định nghĩa đầy đủ: `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md` |
+| DONE | T-13 | CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao dịch/Lịch sử | Biến sự thật tài chính của T-12 thành công cụ dùng được hằng ngày (dashboard, nhập 8 loại giao dịch, lịch sử, sửa/xoá, plan/carry UX) mà không cần biết cấu trúc kỹ thuật bên dưới | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-048`** (2026-09-06, `S037`), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 7/7 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 13/13 REQUIRED PASS** (6 E1-only + 7 E1+E2), không sửa câu chữ/ngữ nghĩa. Production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1**. Ba finding E2 (`F-T13-E2-01`…`03`) route thành HARDENING `H-48`…`H-50`, không task mới. **`T-13 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Trước đó IMPLEMENTED tại `S036` (`docs/reviews/T13-IMPLEMENTATION-REPORT.md`), READY tại `DEC-047`/`S035`. Bước **B** của spec kế toán §24 + `docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Định nghĩa đầy đủ: `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md` |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -1054,24 +1068,44 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 
 ## Current Task Snapshot
 
-**T-13 — READY (`DEC-047`, mở tại `S035`, 2026-09-05).**
+**T-13 — DONE (`DEC-048`, Owner Closure, 2026-09-06, sau independent E2 PASS).**
 
     Task ID        T-13
     File           docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md
     Spec UX        docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md (CANONICAL — APPROVED, DEC-047)
     Task Mode      MAJOR
-    Trạng thái     READY — Completion Gate 13/13 REQUIRED FROZEN, Ready Gate 17/17 tương đương
+    Trạng thái     DONE — Completion Gate 13/13 REQUIRED PASS (6 E1-only + 7 E1+E2)
     Routing        C / Opus / xhigh; model_score 2.85, effort_score 2.8
-    Gate           FROZEN 2026-09-05, chưa thi hành
+    Gate           FROZEN 2026-09-05; 13/13 PASS, không sửa câu chữ/ngữ nghĩa
     Capability     CAP-WEBAPP, lineage root WP-C1
-    Budget         allowed 2 / used 1 / remaining 1 — mở task KHÔNG tiêu chu kỳ nào
-    Phase          Bước B (dashboard + nhập/sửa/xoá + lịch sử) của chuỗi A→B→C→D spec §24
+    Budget         allowed 2 / used 1 / remaining 1 — E2 và Owner closure KHÔNG tiêu chu kỳ nào
+    Phase          Bước B (dashboard + nhập/sửa/xoá + lịch sử) của chuỗi A→B→C→D spec §24 — ĐÓNG
     Phụ thuộc      T-12 DONE (DEC-046); spec kế toán CANONICAL — APPROVED (DEC-042)
-    Guard          KHÔNG mở SELL thật (H-46 chưa xử lý); KHÔNG chạm Firebase/auth/rules (H-42,
-                   bước C); KHÔNG đổi schema/persistence/công thức tài chính của T-12
-    Production diff của phiên mở task = EMPTY. Chưa IN_PROGRESS.
+    E2 report      docs/reviews/T13-E2-INDEPENDENT-REVIEW.md — E2_VERDICT = PASS, 0 BLOCKING
+    Findings       F-T13-E2-01…03 → HARDENING H-48…H-50, kèm RE_TRIGGER_CONDITION, không task mới
+    Guard          T-13 DONE KHÔNG cấp phép SELL tiền thật — H-46 phải xử lý TRƯỚC; KHÔNG chạm
+                   Firebase/auth/rules (H-42, bước C); KHÔNG đổi schema/persistence/công thức
+                   tài chính của T-12
+    Production diff của phiên implementation (S036) = 3 file +374/−1330 (dưới trần). Production
+    diff của phiên E2 + closure (S037) = EMPTY.
 
-Bước C/D vẫn chưa mở. Nguồn checkpoint: nhánh `claude/coindca-l1-step-b-definition-xvq3b1`.
+Bước B/C/D: chỉ bước B đóng ở đây. Bước C (`H-42`) và bước D (`OWNER_LOCAL_ACCEPTANCE`) chưa mở
+— quyết định bởi Owner, không phải hệ quả tự động của `DONE` này. Nguồn checkpoint: nhánh
+`claude/t13-step-b-implementation-8wpnkr`, HEAD `f56851f` tại thời điểm closure.
+
+### Snapshot trước đó — T-13 IMPLEMENTED (giữ để truy vết)
+
+**T-13 — IMPLEMENTED (`S036`, 2026-09-05, chưa E2).**
+
+    Task ID        T-13
+    File           docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md
+    Trạng thái     IMPLEMENTED — 13/13 REQUIRED PASS ở tối thiểu E1; 7 check còn cần Independent
+                   E2 trước khi DONE
+    Capability     CAP-WEBAPP, lineage root WP-C1, budget KHÔNG đổi 2/1/1
+    Guard          SELL bị ẩn hoàn toàn khỏi UI (H-46 chưa xử lý); Firebase/auth/rules không bị
+                   chạm (H-42, bước C)
+    Production diff của phiên implementation = EMPTY tại thời điểm mở task; 3 file +374/−1330
+    sau khi thi hành xong. Chưa DONE tại thời điểm này (nay đã DONE — xem snapshot hiện hành).
 
 ### Snapshot trước đó — T-12 DONE (giữ để truy vết)
 
@@ -1793,11 +1827,33 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 - **DEC-047** — Owner Direction: mở CoinDCA L-1 Bước B; duyệt
   `docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md` `CANONICAL — APPROVED`; mở task `T-13`
   (`NOT_PLANNED → READY`). Task ID mới = 1. `CAP-WEBAPP` budget `2/1/1` không đổi
+- **DEC-048** — Owner-authorized Lifecycle Closure: `T-13: IMPLEMENTED → DONE`, sau independent
+  E2 `E2_VERDICT = PASS` (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`). Completion Gate
+  13/13 REQUIRED PASS (6 E1-only + 7 E1+E2). Ba finding HARDENING mới (`H-48`/`H-49`/`H-50`),
+  0 BLOCKING. `CAP-WEBAPP` budget `2/1/1` không đổi. `T-13 DONE` KHÔNG cấp phép SELL thật
+  (`H-46` giữ nguyên); bước C (`H-42`)/bước D (`OWNER_LOCAL_ACCEPTANCE`) chưa mở
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 (Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
 
 ## Session History
+
+- **S037 (2026-09-06)** — Independent E2 review cho `T-13` (reviewer khác implementer, nhánh
+  `claude/t13-independent-e2-review-565b5f`, HEAD reviewed `cb75d6c`) → `E2_VERDICT = PASS`
+  (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`), rồi Owner-authorized Lifecycle Closure trong
+  cùng lineage (`claude/t13-step-b-implementation-8wpnkr`): `T-13: IMPLEMENTED → DONE`
+  (`DEC-048`). 7/7 check `E2_REQUIRED` PASS độc lập tolerance 0 (45 kiểm chứng riêng của
+  reviewer, 32 thao tác ghi bền thật qua UI mới, 0 page error). Completion Gate 13/13 REQUIRED
+  PASS. Ba finding HARDENING mới `H-48`/`H-49`/`H-50`, 0 BLOCKING, không task mới. `CAP-WEBAPP`
+  budget KHÔNG đổi (`2/1/1`) — production diff của cả E2 lẫn closure = **EMPTY**. Guard SELL
+  (`H-46`) và bước C/D (`H-42`/`OWNER_LOCAL_ACCEPTANCE`) giữ nguyên chưa mở.
+  `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, `docs/reviews/T13-OWNER-CLOSURE.md`.
+
+- **S036 (2026-09-05)** — THI HÀNH `T-13` (`READY → IN_PROGRESS → IMPLEMENTED`), nhánh
+  `claude/t13-step-b-implementation-8wpnkr` tách đúng từ `origin/main` `5d26bcc`. 13/13 REQUIRED
+  check PASS ở tối thiểu E1; 7 check còn cần Independent E2 (xử lý tại `S037`, xem trên).
+  Production diff 3 file `+374/−1330` (dưới trần). Sáu file test V2.1.5 chuyển
+  `NOT_APPLICABLE` (`DEC-041` B, `REMOVE_FROM_L1_PATH`). `docs/reviews/T13-IMPLEMENTATION-REPORT.md`.
 
 - **S035 (2026-09-05)** — MỞ `T-13` (CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao
   dịch/Lịch sử). Chế độ "PRODUCT / CAPABILITY DEFINITION ONLY" theo chỉ thị phiên trực tiếp,
@@ -2533,12 +2589,39 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
-**Hiện hành sau `S035`/`DEC-047`:**
+**Hiện hành sau `S037`/`DEC-048`:**
+
+    NEXT SMALLEST ACTION = Owner Decision riêng nếu muốn mở bước C (H-42, Firebase isolation).
+    Không có NEXT SMALLEST ACTION bắt buộc nào khác — T-13 đã DONE, không task nào đang mở.
+
+`T-13` đã **DONE** (`DEC-048`, 2026-09-06, sau independent E2 `PASS`). Ràng buộc còn hiệu lực cho
+mọi phiên kế tiếp trong `CAP-WEBAPP`:
+
+1. Đọc theo thứ tự: `AGENTS.md` → `governance/v4/CORE/*` → `PROJECT/PROJECT_PROFILE.md`,
+   `CAPABILITY_REGISTRY.md` (§15), file này, `PRODUCTION_PATHS.md`, `REVIEW_BUDGET_LEDGER.md`
+   (§2.2.10), `HARDENING_BACKLOG.md` (`H-42`, `H-45`, `H-46`, `H-48`…`H-50`), `PROJECT_DECISIONS.md`
+   (`DEC-042`, `DEC-046`…`DEC-048`).
+2. Chạy `branch_authority_check.sh` TRƯỚC khi đọc state; nhánh mới tách từ `origin/main`.
+3. `T-13` Completion Gate **đóng, 13/13 REQUIRED PASS** — không mở lại implementation.
+4. **Không** mở thêm task ID nào chỉ để xử lý ba finding HARDENING (`H-48`/`H-49`/`H-50`) — đó là
+   finding, không phải task (`AGENTS.md` §3). **Không** tự cấp repair budget — `CAP-WEBAPP` còn
+   đúng 1 chu kỳ `REMAINING`; nếu cần, đó là một Owner Decision riêng khi một REQUIRED check FAIL
+   thật sự.
+5. **Guard SELL giữ nguyên**: `H-46` phải được một Owner Decision riêng xử lý TRƯỚC khi mở SELL
+   thật cho dữ liệu Owner. `T-13 DONE` không đổi điều này.
+6. **Real-money readiness chưa đủ điều kiện**: bước C (`H-42`, Firebase isolation/auth/backup/
+   recovery) và bước D (`OWNER_LOCAL_ACCEPTANCE`, spec kế toán §22.1) vẫn CHƯA mở — không phải
+   hệ quả tự động của `T-13 DONE`. Mở bước C là quyết định Owner riêng, ngoài phạm vi phiên đóng
+   này.
+
+### Hướng dẫn lịch sử cho phiên thi hành `T-13` (đã hoàn tất tại `S036`/`S037` — giữ để truy vết)
+
+**Cập nhật sau `S035`/`DEC-047` (đã lỗi thời — `T-13` nay đã `DONE`):**
 
     NEXT SMALLEST ACTION = mở một phiên thi hành RIÊNG cho T-13 (đúng tiền lệ T-12).
 
-`T-13` đang `READY` (Ready Gate 17/17 tương đương, Completion Gate 13/13 REQUIRED FROZEN từ
-2026-09-05). Điều kiện của phiên thi hành:
+`T-13` khi đó đang `READY` (Ready Gate 17/17 tương đương, Completion Gate 13/13 REQUIRED FROZEN
+từ 2026-09-05). Điều kiện của phiên thi hành lúc đó:
 
 1. Đọc theo thứ tự: `AGENTS.md` → `governance/v4/CORE/*` → `PROJECT/PROJECT_PROFILE.md`,
    `CAPABILITY_REGISTRY.md` (§15), file này, `PRODUCTION_PATHS.md`, `REVIEW_BUDGET_LEDGER.md`
@@ -2559,7 +2642,7 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 7. File runtime MỚI (nếu tách nhỏ `ledger_ui.js`) phải khai vào `PROJECT/PRODUCTION_PATHS.md` §1
    trong CÙNG phiên thi hành (tránh lặp lại `H-32`).
 8. `E2` độc lập cho các check REQUIRED đã đánh dấu E2 (§ Completion Gate của file task) do một
-   phiên reviewer khác implementer tạo, sau khi thi hành xong.
+   phiên reviewer khác implementer tạo, sau khi thi hành xong — **đã thực hiện tại `S037`**.
 
 ### Hướng dẫn lịch sử cho T-12 (đã DONE, giữ để truy vết — không áp dụng cho phiên T-13)
 

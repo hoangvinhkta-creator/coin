@@ -4227,3 +4227,105 @@ không phải hệ quả của `T-13`); Step-B spec §16 khi Owner muốn đổi
 sàng cho Firebase project riêng.
 
 ---
+
+## DEC-048 — Owner-authorized Lifecycle Closure: `T-13: IMPLEMENTED → DONE`
+
+Date:
+2026-09-06 (Owner Decision, qua chỉ thị phiên trực tiếp "COINDCA — T-13 OWNER CLOSURE", nhánh
+`claude/t13-step-b-implementation-8wpnkr`)
+
+Task:
+`T-13` — capability `CAP-WEBAPP`, lineage root `WP-C1`. Quyết định này ĐÓNG vòng đời lifecycle
+của `T-13` sau khi Independent E2 độc lập đã `PASS`; không mở lại implementation, không sửa
+Completion Gate, không tạo task/capability/lineage mới. Đóng khe thẩm quyền
+`STATE_AUTHORITY.md` § The State Machine And Who May Write It: chuyển một task `IMPLEMENTED` +
+evidence đủ sang `DONE` là hành vi của chủ dự án — cùng cơ chế đã dùng cho `T-09A` (`DEC-018`),
+`T-09B` (`DEC-024`), `WP-C2` (`DEC-036`), `WP-B3` (`DEC-037`), `WP-B2`/`T-07` (`DEC-038`/`DEC-040`),
+và chính `T-12` (`DEC-046`).
+
+## Owner Response (tóm lược)
+
+    Owner accepts the independent E2 verdict: E2_VERDICT = PASS
+    (docs/reviews/T13-E2-INDEPENDENT-REVIEW.md, reviewed cb75d6c8ba64087b065d79a9ffbe351042a79b2a,
+     E2 documentation commit f56851fe41cf637a94f9cfbfad28b07cdc612346).
+
+    Owner authorizes: T-13: IMPLEMENTED -> DONE.
+
+## Decision
+
+Owner **DUYỆT** đóng vòng đời `T-13` dựa trên bằng chứng canonical hiện có, xác nhận lại tại
+phiên đóng này (không chạy lại toàn bộ evidence từ đầu — chỉ tái xác nhận các điều kiện đóng):
+
+1. **Ready Gate** = 17/17 tương đương PASS (`docs/tasks/T-13-*.md` § Ready Gate, không đổi từ
+   `S035`).
+2. **Completion Gate** = **13/13 REQUIRED PASS**. Bảy check `E2_REQUIRED`
+   (`CHECK-T13-02`, `-03`, `-05`, `-06`, `-07`, `-10`, `-13`) được **nâng cấp** từ `PASS (E1;
+   E2 độc lập CHƯA chạy)` lên `PASS (E1 + E2 độc lập)`, dựa trên
+   `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §5–§11/§25 — reviewer khác implementer, tái lập
+   độc lập trên đúng HEAD `cb75d6c`, tolerance 0, 45 kiểm chứng riêng (44 PASS/1 FAIL không
+   thuộc 7 check E2), 32 thao tác ghi bền thật qua UI mới, 0 page error. Sáu check E1-only
+   (`CHECK-T13-01`, `-04`, `-08`, `-09`, `-11`, `-12`) giữ nguyên PASS E1, không đổi câu chữ/
+   ngữ nghĩa REQUIRED nào.
+3. **E2_VERDICT = PASS** — không finding `BLOCKING`.
+4. **Production code không đổi trong suốt E2 và closure**: `webapp/ledger.js`, `engine.js`,
+   `firestore.rules`, `firebase.json`, toàn bộ `test_t12_*.js`, `test_firebase_harness.js` —
+   0 dòng đổi (`T13-E2-INDEPENDENT-REVIEW.md` §22). Diff production của `T-13` (đo từ
+   `T13_MEASURE_BASE_SHA = 5d26bcc`) giữ nguyên **3 file, +374/−1330**, dưới trần
+   `+1800/−1400`.
+5. **`T-12` accounting non-regression PASS**: `test_t12_ledger.js` 32/32, `test_t12_mutations.js`
+   7/7 KILLED (0 survivor), `test_t12_browser.js` 17/17 (chạy nguyên văn, không sửa), `test_t12_owner.js`
+   PASS, Python 678/678 PASS — tất cả tái xác nhận độc lập bởi reviewer E2, không phải chỉ đọc lại
+   báo cáo implementer.
+
+Ba finding mới từ E2 độc lập route thành **HARDENING**, 0 BLOCKING, không task ID mới
+(`AGENTS.md` §3):
+
+| Finding E2 | Backlog | Tóm tắt |
+|---|---|---|
+| `F-T13-E2-01` | `H-48` | Lịch sử render nhãn tự mâu thuẫn `"Mua ETH (Bán)"` khi một `TRADE side='SELL'` được nạp qua Cài đặt → "Nạp lại từ JSON" |
+| `F-T13-E2-02` | `H-49` | Bằng chứng persistence `T-09B` (6 file test V2.1.5) không còn chạy lại được sau khi gỡ `#tab-setup`; `npm --prefix webapp test` đỏ; `CHECK-T09B-16` không còn suite tự động nào phủ (hành vi được reviewer xác nhận vẫn ĐÚNG bằng kiểm trực tiếp) |
+| `F-T13-E2-03` | `H-50` | "Định giá hiện tại" hiện **ngày** thay vì **tuổi** của giá tham chiếu (spec §16.3) |
+
+`F-T13-E2-04` (OBSERVATION về ba tuyên bố quá lời trong `T13-IMPLEMENTATION-REPORT.md`) không
+phải finding HARDENING — ghi trong báo cáo đóng `docs/reviews/T13-OWNER-CLOSURE.md` §5 để phiên
+sau không trích dẫn lại, không cần entry backlog riêng.
+
+Không repair nào được thực hiện trong phiên đóng này. Không tiêu repair budget.
+
+**Guard SELL giữ nguyên tuyệt đối.** `T-13 DONE` **KHÔNG** cấp phép nghiệp vụ SELL cho dữ liệu
+thật. `H-46`/`F-E2-03` (khiếm khuyết đặc tả spec §6.3/§7.3) vẫn phải được một Owner Decision
+riêng xử lý **TRƯỚC** khi mở SELL thật — không đổi bởi quyết định này, không đổi bởi `H-48` (vốn
+là một vấn đề nhãn hiển thị của UI, không phải mở nghiệp vụ SELL).
+
+**Real-money readiness không đổi.** `T-13 DONE` có nghĩa: Step-B UX capability đã qua Completion
+Gate đóng băng của nó. Nó **KHÔNG** có nghĩa CoinDCA sẵn sàng cho việc dùng tiền thật không giới
+hạn. Bước **C** (`H-42`, Firebase isolation/auth/backup/recovery) và bước **D**
+(`OWNER_LOCAL_ACCEPTANCE`, spec kế toán §22.1) vẫn CHƯA mở — không phải hệ quả tự động của quyết
+định này.
+
+## Impact
+
+- `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md`: Status `IMPLEMENTED — E2_REQUIRED` →
+  `DONE`; 7 check E2-required nâng `PASS (E1)` → `PASS (E1+E2)`; Exit Criteria 6/6 (E2 hoàn tất).
+- `PROJECT/PROJECT_PROGRESS.md`: Last Updated; roadmap row `T-13` → `DONE`; Current Task Snapshot;
+  Session History; Recent Decisions.
+- `PROJECT/CAPABILITY_REGISTRY.md` §15 (bổ sung, không viết lại): ghi nhận đóng vòng đời, budget
+  không đổi.
+- `PROJECT/HARDENING_BACKLOG.md`: `H-48`, `H-49`, `H-50` (mới), mỗi mục kèm `RE_TRIGGER_CONDITION`.
+  `H-44`…`H-47` giữ nguyên tuyệt đối, không sửa.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.10 (mới): ghi nhận đóng, budget `2/1/1` không đổi, không
+  tiêu repair cycle thứ hai.
+- `docs/reviews/T13-OWNER-CLOSURE.md` (mới): báo cáo đóng ngắn gọn.
+- Số task ID mới = **0**. Số capability mới = **0**. Số lineage root mới = **0**. Số proposal mới
+  = **0**. Production diff của phiên đóng = **EMPTY**.
+
+## Can Revisit After
+
+`H-46` khi Owner quyết định mở nghiệp vụ SELL cho dữ liệu thật (Owner Decision riêng); `H-48` khi
+SELL trở nên product-reachable hoặc `H-46` được xử lý và SELL UX được mở; `H-49` khi tầng
+persistence bị đổi, bước C bắt đầu, hoặc bằng chứng persistence legacy được nghỉ hưu chính thức;
+`H-50` khi PRICE UX trở thành thiết yếu với người dùng hoặc ngữ nghĩa cảnh báo giá cũ được đưa
+vào; mở bước C (`H-42`) khi Owner sẵn sàng cho Firebase project riêng; mở bước D
+(`OWNER_LOCAL_ACCEPTANCE`) sau khi bước C đóng.
+
+---

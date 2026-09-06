@@ -606,3 +606,17 @@ persistence `ethdca/state`. Trạng thái sau phiên định nghĩa: `NOT_PLANNE
 `H-46` (`F-E2-03` — ngữ nghĩa SELL) và `H-42` (Firebase isolation, bước C) **không** bị `T-13`
 chạm tới hay giải quyết — `T-13` ẩn hoàn toàn tuỳ chọn SELL khỏi UI thay vì xử lý khiếm khuyết đặc
 tả, và không mở bất kỳ thành phần Firebase mới nào.
+
+### 15.1 Cập nhật — Owner-authorized Lifecycle Closure (2026-09-06, `S037`, `DEC-048`)
+
+`T-13: IMPLEMENTED → DONE` sau independent E2 độc lập (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`,
+`E2_VERDICT = PASS`, reviewer khác implementer, HEAD `cb75d6c`). Completion Gate **13/13 REQUIRED
+PASS** (6 E1-only + 7 E1+E2). Không mở lại `T-13`, không tạo task/capability/lineage mới, không
+đổi budget: `CAP-WEBAPP` giữ nguyên `allowed 2 / used 1 / remaining 1` (chi tiết
+`REVIEW_BUDGET_LEDGER.md` §2.2.10).
+
+Ba finding E2 mới route thành HARDENING `H-48`/`H-49`/`H-50` (`PROJECT/HARDENING_BACKLOG.md`),
+0 BLOCKING, không task mới. `H-46`/`H-42` giữ nguyên **chưa xử lý** — `T-13 DONE` không cấp phép
+SELL thật và không đóng bước C/D của spec kế toán §24. Số task ID mới do phiên này tạo = **0**;
+số capability mới = **0**; số lineage root mới = **0**; production diff của phiên đóng =
+**EMPTY**.
