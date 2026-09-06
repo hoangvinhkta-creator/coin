@@ -1661,6 +1661,19 @@ của `T-12` yêu cầu hiển thị, và spec §6.4 tuyên bố L-1 "dừng ở
 
 ## H-46 — SELL: ngữ nghĩa tạo/giải phóng giá vốn VND khi bán ETH — khiếm khuyết ĐẶC TẢ, KHÔNG phải lỗi cài đặt `T-12`
 
+> **CẬP NHẬT 2026-09-06 (`S043`, `T-16`/`DEC-052`) — ĐÓNG MỘT PHẦN, KHÔNG đóng dứt điểm.**
+> **Đã đóng:** phần *"bán coin lấy USDT"*. `derive()` nay CHUYỂN giá vốn từ holding sang pool
+> USDT (`usdt.costVnd += relievedV`) thay vì cộng một `basis` tính theo giá trung bình của chính
+> pool; chênh lệch của lượt bán ghi bằng **đơn vị USDT** vào `realizedPnlUsdt` mới, không gộp với
+> `realizedFxVnd` (VND). Bất biến bảo toàn giá vốn VND có test property 60 chuỗi ngẫu nhiên +
+> một ca tính tay (`webapp/test_t16_multiasset.js` `T16-12`/`T16-13`/`T16-14`). `eventCheck`
+> KHÔNG còn chặn `SELL`.
+> **CÒN MỞ:** (a) lãi/lỗ thực hiện quy ra **VND** cho một lượt bán — hiện lãi/lỗ VND chỉ phát
+> sinh khi USDT đổi ngược ra VND thật (`TREASURY USDT_TO_VND`), nên một lượt bán chưa có con số
+> VND nào; (b) báo cáo lãi/lỗ theo lô hoặc theo kỳ; (c) chi phí/thuế. Mô tả gốc bên dưới giữ
+> nguyên văn cho phần còn mở.
+
+
 Capability: `CAP-WEBAPP` · Owner: **CHƯA CÓ — cần Owner quyết định trước khi mở nghiệp vụ SELL cho dữ liệu thật** · Phân loại: **HARDENING (khiếm khuyết đặc tả)**
 Ngày ghi nhận: 2026-09-05 (Independent E2 review, `F-E2-03`, `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §14/§23)
 
@@ -2078,3 +2091,56 @@ production hiện tại là synthetic. Đường cứu không cần code: xuất
 
     RE_TRIGGER_CONDITION:
     - một sổ bền thật vấp guard này (Owner báo app không nạp được sổ sau khi cập nhật).
+
+---
+
+## H-59 — `TRADE side='SELL'` vẫn nhận `source='PLAN'`/`'RESERVE'`: tổ hợp vô nghĩa không bị chặn
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S043`, `T-16`/`DEC-052`)
+
+`eventCheck` đòi `source ∈ {PLAN, EXTRA, RESERVE}` cho mọi `TRADE`, kể cả `SELL`. Về số học vô
+hại — `derive()` không cho `SELL` chạm `invested`/`planSpent`/`reserve` — nhưng "bán theo kế
+hoạch" hay "bán từ dự phòng" là tổ hợp không có nghĩa. UI mặc định `EXTRA` cho lệnh bán.
+
+Không sửa ở `T-16` vì thêm một luật validation ngoài chỉ thị là mở rộng phạm vi.
+
+    RE_TRIGGER_CONDITION:
+    - một sổ thật xuất hiện lệnh SELL mang source khác EXTRA; HOẶC
+    - Owner mở một task chạm ngữ nghĩa `source`.
+
+---
+
+## H-60 — `realizedPnlUsdt = null` khi giá vốn USDT của holding chưa biết, không có cờ riêng
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S043`, `T-16`/`DEC-052`)
+
+Số dư đầu kỳ cho phép `costUsdt = null` ("chưa biết"). Bán một holding như vậy làm
+`realizedPnlUsdt` thành `null` và lan `null` cho mọi lượt bán sau. Hiển thị là "—", nhất quán với
+cách `UNKNOWN_VND_BASIS` xử lý giá vốn VND, **nhưng không có cờ riêng cho "giá vốn USDT chưa
+biết"** — `UNKNOWN_VND_BASIS` chỉ nói về VND, đặt thêm cờ mới là mở rộng bề mặt ngoài chỉ thị.
+
+Đáng lưu ý khi nhập sổ Excel thật: nếu số dư đầu kỳ thiếu giá vốn USDT thì lãi/lỗ bán sẽ là "—"
+cho tới khi holding đó về 0 và được mua lại từ đầu.
+
+    RE_TRIGGER_CONDITION:
+    - sổ nhập thật có số dư đầu kỳ thiếu `costUsdt` và có lệnh bán; HOẶC
+    - Owner cần một cờ tường minh cho giá vốn USDT chưa biết.
+
+---
+
+## H-61 — Form số dư đầu kỳ sửa MỘT coin mỗi lần lưu, không phải trình soạn thảo N-dòng
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (UX)**
+Ngày ghi nhận: 2026-09-06 (`S043`, `T-16`/`DEC-052`)
+
+`openingPosition.assets` nay nhận 0..N tài sản, nhưng form chỉ sửa dòng của coin đang chọn ở
+dropdown; các coin khác giữ nguyên, và "lượng 0 + bỏ trống giá vốn" = xoá coin đó. Đủ dùng, và
+giữ nguyên hợp đồng id `l1Eth`/`l1EthCostUsdt`/`l1EthCostVnd` mà `test_t12_browser.js` và
+`test_stepb_ui.js` phụ thuộc (xem chú thích đầu `ledger_ui.js`). Nhưng nó không hiển thị đồng
+thời cả ba coin, nên dễ tưởng các coin khác đã mất.
+
+    RE_TRIGGER_CONDITION:
+    - Owner nhập số dư đầu kỳ nhiều coin và thấy vướng; HOẶC
+    - một task khác đã mở hợp đồng id của form số dư đầu kỳ.

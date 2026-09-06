@@ -931,3 +931,46 @@ mặt sai (chặn SELL, chặn sửa hồi tố, chặn `priceUsdt = 0`, chặn 
 Ngân sách artifact (`DEC-051` §B) là ràng buộc RIÊNG, không thay thế budget repair ở trên:
 1 task file + 1 báo cáo gộp + 1 DEC + 0 evidence log commit — đã tuân thủ, kiểm được bằng
 `git show --stat`.
+
+#### 2.2.15 `S043` (2026-09-06) — `T-16` đa tài sản/SELL/CASH: implementation ban đầu (0 chu kỳ) + `OWNER_EXTENSION` +2
+
+    CAPABILITY      = CAP-WEBAPP        (lineage root WP-C1)
+    TASK            = T-16              (NOT_PLANNED -> DONE, một phiên, DEC-052)
+    LOẠI            = INITIAL IMPLEMENTATION — KHÔNG tiêu repair cycle
+
+Vì sao KHÔNG phải repair cycle, dù chạm đúng file mà `T-15` vừa sửa: `T-16` là **công việc mới**
+(mở rộng phạm vi sổ — đa tài sản, từ vựng sự kiện mới, thiết kế nghiệp vụ bán), không phải một
+lượt sửa sau khi reviewer trả finding trên mã đã `DONE`. Đó đúng là ranh giới mà §4.3 và
+`GOVERNANCE_V4.md` §II.2 phân biệt, và là tiền lệ đã dùng cho `T-09A`, `T-09B`, `WP-C2`,
+`WP-B1`, `WP-B2`, `WP-B3`. `USED` giữ nguyên **2**.
+
+**KHÔNG tạo capability mới để lách ngân sách.** Công việc nằm đúng lineage `WP-C1`, đúng thư mục
+`webapp/`. `GOVERNANCE_V4.md` §II.2 nói thẳng: khi budget cạn, ba lựa chọn là
+`ACCEPT_AS_IS | DESCOPE | OWNER_EXTENSION`, và *"Creating a new unit of work — including a
+sibling at the same level — is not among them"*.
+
+| # | Loại | BASE | HEAD | Diff production path | Kết quả |
+|---|---|---|---|---|---|
+| — | `T-16` implementation ban đầu (`S043`) | `72d8eee` | nhánh `claude/fix-7-ledger-errors-91dybv` | **3 file, +351 / −107** (`webapp/ledger.js`, `webapp/ledger_ui.js`, `webapp/app_logic.js`); tính cả test/harness: 10 file sửa + 1 file mới, +362 / −116 | 20/20 REQUIRED PASS (E1); fixture Owner bit-exact 9/9; mutation 7/7 KILLED; `npm test` exit 0 |
+
+Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat 72d8eee..HEAD -- webapp/ledger.js webapp/ledger_ui.js webapp/app_logic.js
+    git diff --stat     72d8eee..HEAD -- src/eth_dca_os docs/spec firestore.rules   -> (rỗng)
+
+Trạng thái budget sau phiên — **`OWNER_EXTENSION` được cấp, KHÔNG phải reset**:
+
+    ALLOWED BUDGET            = 4 repair cycle    <- 2 (DEC-018) + 2 (OWNER_EXTENSION, DEC-052 §E)
+    CURRENT BUDGET USED       = 2 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1 T-12 DEC-043;
+                                                     REPAIR_CYCLE_2 T-15 DEC-051). T-16 tiêu 0.
+    CURRENT BUDGET REMAINING  = 2 repair cycle
+    OWNER_EXTENSION           = ĐÃ CẤP 2026-09-06 (DEC-052 §E), +2 chu kỳ
+
+`USED` đi từ 2 lên 2 vì `T-16` **thật sự không tiêu** chu kỳ nào, không phải vì phiên này đặt lại
+số. `ALLOWED` đi từ 2 lên 4 vì Owner **cấp thêm tường minh**, có ngày và lý do — cùng cơ chế
+`DEC-012`/`DEC-017`/`DEC-018`, không phải cơ chế reset. Phiên sau phải **ĐỌC** ba con số này.
+
+Effective Risk của `CAP-WEBAPP` **KHÔNG đổi** (vẫn `HIGH`). `T-16` mở rộng bề mặt dữ liệu (ba
+tài sản, hai loại event mới) nhưng đồng thời siết validation ở đúng chỗ mở ra (whitelist cố định,
+plan đơn tài sản ép ở `planCheck`, `source PLAN` sai asset chặn ở `eventCheck`, migration
+fail-closed ba cổng). Không REQUIRED check nào của gate đã FROZEN bị thêm/bớt.

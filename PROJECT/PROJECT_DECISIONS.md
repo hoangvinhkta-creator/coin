@@ -4784,3 +4784,114 @@ khi Owner chủ động yêu cầu. `H-58` nếu một sổ bền thật vấp g
 cần lượt sửa thứ ba.
 
 ---
+
+## DEC-052 — Owner Direction + Lifecycle Closure: mở và đóng `T-16` (sổ đa tài sản, SELL đúng, CASH); `OWNER_EXTENSION` +2 repair cycle cho `CAP-WEBAPP`
+
+Date:
+2026-09-06 (Owner Decision, qua chỉ thị phiên trực tiếp "Mở rộng sổ L-1 của CoinDCA sang đa tài
+sản (BTC/ETH/ADA), làm đúng lại lệnh BÁN (SELL), và thêm loại sự kiện nạp tiền mặt (CASH
+DEPOSIT)", nhánh `claude/fix-7-ledger-errors-91dybv`)
+
+Task:
+`T-16` — capability `CAP-WEBAPP`, lineage root `WP-C1`. Quyết định này vừa MỞ vừa ĐÓNG `T-16`
+trong cùng một phiên (`S043`), cùng khuôn `STATE_AUTHORITY.md` đã dùng cho `T-12`…`T-15`.
+
+Điều kiện tiên quyết đã kiểm trước khi bắt đầu: `DEC-051` tồn tại và `T-15 = DONE`.
+
+## Owner Direction (tóm lược)
+
+    Mở schema đa tài sản (BTC/ETH/ADA) ở tầng NẮM GIỮ, giữ ĐƠN tài sản ở tầng KẾ HOẠCH.
+    MỞ LẠI và sửa đúng SELL (H-46). Thêm CASH DEPOSIT/WITHDRAW để cờ vnd âm của T-15 không
+    bắn oan trên dữ liệu hợp lệ. Chuẩn bị nhập một sổ Excel theo dõi thủ công từ 08/10/2025.
+
+    Ngân sách artifact CỨNG như hai task trước. KHÔNG chạm src/eth_dca_os/,
+    docs/spec/*_V2_1_5.md, khối rules app Content. KHÔNG migration tự động âm thầm.
+
+    "CAP-WEBAPP hiện dùng hết ngân sách sửa lại (2/2 theo DEC-051)… hãy tự phân loại theo
+     đúng quy trình governance của repo… Tôi (Owner) đã đọc DEC-051 và biết ngân sách 2/2;
+     nếu quy trình đòi một quyết định mở rộng hoặc OWNER_EXTENSION cho task này, coi văn bản
+     này là uỷ quyền đó — ghi nhận đúng thủ tục (DEC mở task) rồi làm tiếp."
+
+## Decision
+
+**A. Lifecycle.** `T-16`: `NOT_PLANNED → READY → IN_PROGRESS → IMPLEMENTED → DONE` trong phiên
+`S043`. Task Mode `MAJOR`, Tier `C`, effort `xhigh` (`routing_engine.py`, category
+`accounting_financial`). Completion Gate FROZEN 2026-09-06, **20/20 REQUIRED PASS**. Bằng chứng:
+`docs/reviews/T16-IMPLEMENTATION-AND-E2-REPORT.md`.
+
+**B. Ngân sách artifact CỨNG của `DEC-051` §B tiếp tục áp dụng** và đã được tuân thủ: 1 task
+file, 1 báo cáo gộp, 1 DEC (chính văn bản này), **0** evidence log commit.
+
+**C. Mức bằng chứng = E1 toàn bộ; KHÔNG mở vòng E2 độc lập thứ hai** — cùng lý do `DEC-051` §C,
+cộng thêm hai điều `T-15` chưa có: (1) một **property test** 60 chuỗi ngẫu nhiên khẳng định hai
+bất biến kế toán tổng quát; (2) **hai đường UI thật** chạy trên bundle + Firestore Emulator +
+Chromium thật (nâng cấp v2→v3 qua nút, và CASH + mua BTC + bán ETH qua đúng control mới). Cộng
+với fixture Owner bit-exact 9/9, mutation 7/7 KILLED, `npm test` exit 0 không suite nào bị bỏ qua.
+
+**D. Ba quyết định thiết kế, ghi nhận chính thức:**
+
+1. **"Asset của kế hoạch" suy từ `plan.versions[0].asset`, KHÔNG thêm trường `plan.asset`.**
+   `planCheck()` đã ép mọi version trong một plan cùng một asset, nên version đầu tiên là nguồn
+   canonical duy nhất; thêm một trường ở cấp `plan` sẽ tạo nguồn sự thật thứ hai, đổi hình dạng
+   sổ (`keys(plan, …)`) và kéo theo một migration nữa — không đáng cho một giá trị suy được.
+2. **Ranh giới đa-tài-sản/đơn-kế-hoạch cài ở HAI lớp.** Validation: `eventCheck` từ chối `TRADE`
+   `source='PLAN'` mà `symbol` khác asset của kế hoạch (event sai không được TỒN TẠI trong sổ).
+   Derive: `invested`/`planSpent` chỉ cộng trade đúng asset của kế hoạch. **Diễn giải cần ghi
+   rõ:** chỉ thị viết "planSpent/invested CHỈ cộng trade có symbol === plan asset VÀ source ===
+   'PLAN'"; đọc nguyên văn sẽ làm `investedThisMonthVnd` luôn bằng `planInvestedVnd`, xoá mất
+   phân biệt "tổng đã đầu tư" vs "phần theo kế hoạch" và phá `SC-09`/`SC-10`. Thi hành theo ngữ
+   nghĩa đang có: **cả hai** giới hạn theo coin của kế hoạch, còn bộ lọc `source` giữ nguyên
+   (`invested` mọi nguồn, `planSpent` chỉ `PLAN`).
+3. **`migrateV3` có ba cổng fail-closed** (`guardV2` hình dạng v2, oracle replay v2 độc lập về
+   duyệt, oracle "không đổi byte nào ngoài `schema`"), chạy qua `L.destructive` nên có snapshot
+   trước, và **chỉ chạy khi Owner bấm**. Giới hạn đã biết và nói thẳng trong báo cáo: oracle
+   replay dùng chung bốn phép số nguyên với `derive()` nên độc lập về **duyệt/hình dạng**, không
+   độc lập về số học — phần số học đã có mutation suite riêng.
+
+**E. `OWNER_EXTENSION` — `CAP-WEBAPP`: `ALLOWED 2 → 4`.** Phân loại đã làm theo đúng thủ tục,
+không tự chọn cho tiện:
+
+- `T-16` **KHÔNG** tiêu repair cycle: đây là **implementation ban đầu** của một task chưa từng
+  `DONE` (mở rộng phạm vi), không phải lượt sửa sau một finding trên mã đã `DONE` — khác hẳn
+  `T-15`. Tiền lệ: `T-09A`, `T-09B`, `WP-C2`, `WP-B1`, `WP-B2`, `WP-B3`. `USED` giữ nguyên **2**.
+- **KHÔNG** tạo capability mới để thoát ngân sách. Công việc chạm đúng lineage `WP-C1`, đúng file
+  `webapp/`; tách một capability riêng chỉ để có budget mới chính là thứ `GOVERNANCE_V4.md` §II.2
+  cấm (*"Creating a new unit of work — including a sibling at the same level — is not among
+  them"*, *"task creation approval != repair-budget allocation approval"*).
+- Nhưng `REMAINING = 0` sau `T-15` nghĩa là **không còn gì để tiêu nếu `T-16` cần sửa**. Owner đã
+  uỷ quyền tường minh. Ghi nhận: **`OWNER_EXTENSION = +2 repair cycle`**, `ALLOWED 2 → 4`,
+  `USED = 2` (không đổi), `REMAINING 0 → 2`. Budget **KHÔNG reset** (`AGENTS.md` §3) — nó được
+  Owner **cấp thêm**, có ngày và lý do, đúng như `DEC-012`/`DEC-017`/`DEC-018` đã làm.
+
+**F. Một phát hiện ngoài chỉ thị, đã sửa:** `webapp/app_logic.js::validateState()` chỉ nhận
+`coindca.ledger/3` và `ethdca.tracker/1`. Một sổ `coindca.ledger/2` nằm trên Firestore sẽ rơi vào
+nhánh "bản durable không hợp lệ" — app khoá ghi, không nạp, và Owner **không bao giờ tới được nút
+nâng cấp**. Đã thêm nhánh nhận diện v2 ở chế độ chỉ đọc; validate đầy đủ vẫn nằm ở `migrateV3`.
+Đường này có test chạy trên trình duyệt thật.
+
+**G. Test cũ khẳng định hành vi nay đã đổi — cập nhật, không né.** `INV-3`, `L4`, `L7f`,
+`AS-07`, `AS-10`, `derivedSnapshot`, `schema` của fixture. Đáng chú ý: `AS-10` của `T-13` đòi
+"UI không có SELL, không có P&L thực hiện" — điều kiện đó đúng khi nghiệp vụ bán chưa được thiết
+kế; `DEC-052` **đảo chiều** nó. Không test nào bị xoá, không assertion nào bị làm yếu.
+
+**H. KHÔNG mở task mới trong closure này** (`AGENTS.md` §3). Nhập file sổ Excel thật là bước
+riêng, chạy ngoài repo. Cảnh báo `H-41` (**chưa nên dùng tiền thật**) giữ nguyên.
+
+## Consequences (state surfaces)
+
+- `docs/tasks/T-16-so-da-tai-san-sell-cash.md` (mới); `docs/reviews/T16-IMPLEMENTATION-AND-E2-REPORT.md` (mới).
+- `PROJECT/PROJECT_PROGRESS.md`: `T-16 = DONE`; Current/Next Task; Recent Decisions.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.15 (mới): `OWNER_EXTENSION` +2, `2/2/0 → 4/2/2`.
+- `PROJECT/HARDENING_BACKLOG.md`: `H-46` ĐÓNG MỘT PHẦN (phần "bán lấy USDT"), phần P&L quy VND /
+  báo cáo theo lô / thuế **còn mở**; `H-59`/`H-60`/`H-61` mới. `H-41`, `H-54`…`H-58` giữ nguyên.
+- Số task ID mới = **1** (`T-16`). Capability mới = **0**. Lineage root mới = **0**.
+  DEC ngoài `DEC-052` = **0**. Evidence log commit = **0**.
+
+## Can Revisit After
+
+`H-46` phần còn mở (P&L thực hiện quy ra VND, báo cáo theo lô/kỳ, thuế) khi Owner cần một con số
+lãi/lỗ bằng VND cho một lượt bán. `H-59`/`H-60`/`H-61` khi Owner chủ động yêu cầu. Nhập sổ Excel
+thật sau khi bản này được deploy và sổ production được nâng cấp lên `coindca.ledger/3`. Bước D
+(`OWNER_LOCAL_ACCEPTANCE`) sau khi Owner hoàn tất nhóm việc vận hành ngoài repo.
+
+---
