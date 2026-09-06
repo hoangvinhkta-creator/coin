@@ -1482,6 +1482,41 @@ Vì sao KHÔNG BLOCKING bây giờ: `T-09B` đã `DONE` với gate FROZEN của 
     - chủ dự án bắt đầu ghi tiền thật vào app; HOẶC
     - app Content ghi nhận bất kỳ document lạ nào do khách vô danh tạo (`FB-1` thành hiện thực).
 
+**Cập nhật 2026-09-06 (S038, `DEC-049`) — vế 1 của RE_TRIGGER_CONDITION ĐÃ KÍCH HOẠT; disposition
+tách REQUIRED / DEFERRED, Owner = `T-14`.** Owner chọn **"Shared Firebase Project with Strong
+Logical Isolation"** (`DEC-049` A) — project Firebase riêng KHÔNG bắt buộc cho bước C. `H-42`
+được tách thành hai nhóm, không xoá bảng `FB-1`…`FB-4` ở trên:
+
+    REQUIRED CHO BƯỚC C — Owner = `T-14` (docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md):
+      - FB-4 (danh tính không bền): đóng bằng Google Sign-In thay Anonymous Auth (thiết kế đầy
+        đủ: docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md §3).
+      - FB-2 (thiếu khoá site): đóng bằng `firebase.json` khai `hosting.target` (spec §5.1).
+      - FB-3 (placeholder OWNER_UID_REQUIRED): không tự đóng được trong repo — giá trị thật do
+        Owner deploy, đúng cơ chế đã có; runbook deploy 3 bước (spec §5.2) là điều kiện giảm
+        thiểu, không phải đóng dứt điểm (deploy vẫn là hành động Owner-executed, ngoài phạm vi
+        session).
+      - Backup/recovery (R-4 của spec kế toán §18): đóng bằng preview/validate/snapshot/atomic
+        (spec §7, §8).
+      - Bằng chứng persistence chạy lại được: hấp thụ `H-49` vào `CHECK-T14-11` (xem `H-49` bên
+        dưới) thay vì mở task riêng.
+
+    DEFERRED / FUTURE HARDENING — KHÔNG có owner, KHÔNG phải điều kiện của `T-14`:
+      - Project Firebase vật lý riêng cho CoinDCA.
+      - Tắt Anonymous Auth provider trong Firebase Console (khuyến nghị vận hành — đóng FB-1 tại
+        nguồn một khi CoinDCA không còn cần Anonymous — nhưng cần Owner tự xác nhận Content
+        không phụ thuộc; ngoài phạm vi audit CoinDCA).
+      - Bất kỳ hệ thống multi-user/role nào.
+
+Phân loại giữ **HARDENING** — `H-42` KHÔNG đóng bởi ghi chú này; đóng phần REQUIRED là kết quả kỳ
+vọng của `T-14 DONE`. `RE_TRIGGER_CONDITION` gốc giữ nguyên cho phần DEFERRED (project riêng);
+phần REQUIRED nay có `RE_TRIGGER_CONDITION` MỚI:
+
+    RE_TRIGGER_CONDITION (phần REQUIRED, mới):
+    - `T-14` đạt `IMPLEMENTED` mà một trong FB-2/FB-3/FB-4/backup/recovery vẫn chưa đóng — mục
+      đó tách riêng, giữ HARDENING, chờ Owner; HOẶC
+    - `T-14` đạt `DONE` với toàn bộ REQUIRED check PASS — phần REQUIRED của `H-42` đóng, chỉ còn
+      phần DEFERRED (project riêng) tồn tại trong backlog.
+
 ---
 
 ## H-43 — Phần dư parity của `WP-C4`: OSCORE `engine.js` ↔ `score.py` nếu tab Research L-1 được bật
@@ -1701,6 +1736,15 @@ Bằng chứng: `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §15(b)(c), §23; ki
     - `npm --prefix webapp test` được dùng làm cổng release/CI; HOẶC
     - bằng chứng persistence legacy (sáu file trên) được nghỉ hưu/thay thế chính thức bằng một
       suite L-1 mới phủ đủ `CHECK-T09B-01`…`16` qua UI Step B.
+
+**Cập nhật 2026-09-06 (S038, `DEC-049`) — vế 2 ĐÃ KÍCH HOẠT: bước C mở (`T-14`).** Owner (qua
+chỉ thị phiên "COINDCA — L-1 STEP C DEFINITION") chỉ thị **hấp thụ** mục này vào Completion Gate
+của `T-14` thay vì mở task riêng — đúng "Finding != task": `CHECK-T14-11`
+(`docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md`) đòi một suite executable mới trỏ vào
+UI Step B, phủ đúng các kịch bản `CHECK-T09B-01`…`16` (reload, logout/login, hồ sơ mới, mirror cũ,
+ghi xung đột), và `npm --prefix webapp test` phải thoát mã 0 khi bao gồm suite đó. Phân loại giữ
+**HARDENING** — mục này KHÔNG tự đóng bởi ghi chú này; đóng khi `CHECK-T14-11 PASS` và `T-14`
+đạt tối thiểu `IMPLEMENTED`.
 
 ---
 

@@ -620,3 +620,47 @@ Ba finding E2 mới route thành HARDENING `H-48`/`H-49`/`H-50` (`PROJECT/HARDEN
 SELL thật và không đóng bước C/D của spec kế toán §24. Số task ID mới do phiên này tạo = **0**;
 số capability mới = **0**; số lineage root mới = **0**; production diff của phiên đóng =
 **EMPTY**.
+
+## 16. `T-14` — thành viên mới của `CAP-WEBAPP` (2026-09-06, `S038`) — mở CoinDCA L-1 Bước C
+
+`T-14` (*CoinDCA L-1 Bước C: Firebase Isolation, Owner Auth bền vững, Backup/Recovery*,
+`docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md`) là bước **C** của
+`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24 và
+`docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (`CANONICAL — APPROVED`, `DEC-049`).
+
+Định tuyến theo `CAPABILITY_MODEL.md` § Capability-First Question Order, ghi lại để không phải
+quyết lại:
+
+1. *Cần cho lát cắt ACTIVE chạy đúng không?* — **CÓ, gián tiếp**: §1.A tự nó không đòi Firebase
+   auth để `derive()` chạy đúng trên dữ liệu tổng hợp, nhưng mục tiêu cuối của
+   `PROJECT_PROFILE.md` ("dùng cá nhân... ghi giao dịch thật") không đạt được **an toàn** nếu
+   danh tính Owner không bền vững qua thời gian trong một project Firebase dùng chung — đây là
+   điều kiện product-readiness `docs/spec-l1/...ACCOUNTING_SPEC.md` §18/§24 khai là bắt buộc
+   TRƯỚC khi dùng tiền thật.
+2. *Thuộc capability đã có không?* — **CÓ**, `CAP-WEBAPP` (lineage root `WP-C1`, cùng lineage
+   `T-09B`/`T-12`/`T-13`). **Không** tạo capability mới, **không** tạo lineage root mới.
+3. *Task/owner nào gần nhất?* — **không có task nào đang mở**: `T-12`, `T-13` đều `DONE`. `H-42`
+   tự ghi "Owner: chưa có — T-12 KHÔNG nhận mục này" (bước C ngoài phạm vi T-12 mục O-5).
+4. *Hấp thụ vào owner đó có vượt Absorption Limit không?* — **không áp dụng**: mở một task MỚI
+   trong capability đã có (giống hình thái `T-12`/`T-13`), không phải hấp thụ vào một task đang
+   mở. `H-49` được hấp thụ vào **chính `T-14` mới mở** (`CHECK-T14-11`), không phải absorption
+   vào một owner cũ đã đóng băng gate — bốn ngưỡng Absorption Limit không đo trên hành vi này.
+5. *Đưa lên Owner.* — **đã có**: chỉ thị phiên trực tiếp "COINDCA — L-1 STEP C DEFINITION", ghi
+   nhận thành `DEC-049` (`PROJECT/PROJECT_DECISIONS.md`).
+
+`T-14` **không** phải sibling task tách ra để giải phóng budget: nó nằm **trong** capability đã
+có, dùng chung pool của lineage root `WP-C1` (`allowed 2 / used 1 / remaining 1` — không đổi bởi
+việc mở task) và không đặt lại con số nào (`REVIEW_BUDGET_LEDGER.md` §2.2.11). Số task ID mới do
+phiên `S038` tạo = **1**; số capability mới = **0**; số lineage root mới = **0**; số proposal mới
+= **0**; số `OWNER_ASSIGNMENT_REQUIRED` mới = **0**.
+
+`T-14` cũng KHÔNG tách Auth/Rules/Backup/Recovery/Multi-device/Deploy thành nhiều task
+(`DEC-049` F): chúng chia sẻ một lifecycle sản phẩm-sẵn-sàng duy nhất, không thoả "ba điều kiện,
+đều bắt buộc" của `CAPABILITY_MODEL.md` §II.4 cho một sibling task độc lập.
+
+Owner Decision chiến lược Firebase — **"Shared Firebase Project with Strong Logical Isolation"**
+(`DEC-049` A) — xác nhận project Firebase riêng cho CoinDCA vẫn **DEFERRED**, không phải điều
+kiện của `T-14`. `H-42` (`PROJECT/HARDENING_BACKLOG.md`) được tách disposition: phần REQUIRED
+(danh tính bền vững, rules, deploy isolation logic, backup/recovery, bằng chứng persistence) nay
+có owner = `T-14`; phần DEFERRED (project vật lý riêng, tắt Anonymous provider) giữ nguyên
+HARDENING không có owner, chờ Owner chủ động.

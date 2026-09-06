@@ -4329,3 +4329,151 @@ vào; mở bước C (`H-42`) khi Owner sẵn sàng cho Firebase project riêng;
 (`OWNER_LOCAL_ACCEPTANCE`) sau khi bước C đóng.
 
 ---
+
+## DEC-049 — Owner Direction: "Shared Firebase Project with Strong Logical Isolation"; duyệt Step-C spec; mở task `T-14`
+
+Date:
+2026-09-06 (Owner Decision, qua chỉ thị phiên trực tiếp "COINDCA — L-1 STEP C DEFINITION", nhánh
+`claude/coindca-l1-step-c-arch-fog4cb`)
+
+Task:
+Không thuộc task ID nào tại thời điểm ra quyết định — quyết định mở vòng đời Bước C và cho phép
+mở đúng một task ID (`T-14`), đúng khuôn `DEC-041`/`DEC-047`.
+
+## Owner Direction (tóm lược, đầy đủ ở chỉ thị phiên)
+
+    OWNER DIRECTION — COINDCA L-1 STEP C DEFINITION
+    MODE: ARCHITECTURE + TASK DEFINITION ONLY. Do NOT implement Firebase changes this session.
+    Owner chọn: KEEP THE EXISTING SHARED FIREBASE PROJECT — không yêu cầu project Firebase mới.
+    Lý do: CoinDCA là công cụ cá nhân, tần suất thấp; thêm tài khoản/project Google là chi phí
+    vận hành không cần thiết. Mục tiêu là cô lập LOGIC/OPERATIONAL bên trong project dùng chung,
+    KHÔNG phải cô lập vật lý. Quyết định này KHÔNG cho phép isolation yếu.
+    Phạm vi bắt buộc: data isolation, Owner identity bền vững (ưu tiên Google Sign-in), Firestore
+    rules isolation, deploy isolation, auth isolation analysis, backup, recovery, multi-device,
+    thất bại mode của shared-project, re-evaluate H-42 (tách REQUIRED cho bước C khỏi DEFERRED —
+    project riêng), rà soát H-44…H-50 cho liên quan bước C (hấp thụ H-49 nếu acceptance của bước
+    C khôi phục được bằng chứng persistence).
+    Ngoài phạm vi: project Firebase riêng, tài khoản Google thứ hai, multi-user SaaS,
+    roles/admin, billing, enterprise backup, disaster recovery cluster, SELL, realized P&L,
+    Research/Buy Score, bước D (OWNER_LOCAL_ACCEPTANCE). Không đổi ngữ nghĩa kế toán T-12, không
+    redesign UX T-13 ngoài một điểm vào nhỏ cho login/backup/restore.
+    Governance output: xác định task ID kế tiếp từ registry (không đoán trước); mở đúng MỘT task
+    dưới CAP-WEBAPP (không tách Auth/Rules/Backup/Recovery/Multi-device thành nhiều task); trạng
+    thái kỳ vọng READY (nếu Ready Gate resolve đầy đủ) hoặc PLANNED kèm blocker cụ thể; ghi Owner
+    Decision Record cho chiến lược Firebase dùng chung này.
+
+## Decision
+
+**A. Chiến lược Firebase — "Shared Firebase Project with Strong Logical Isolation" DUYỆT.**
+Project Firebase riêng cho CoinDCA **KHÔNG bắt buộc** cho bước C; tách project vật lý là
+**DEFERRED**, chuyển thành hạng mục HARDENING tương lai (không phải blocker hiện tại — xem mục C
+dưới). CoinDCA tiếp tục là công cụ cá nhân, tần suất thấp, một chủ sở hữu duy nhất. Namespace
+logic (`ethdca/*`, không đổi — `DEC-043` LOCKED), Firestore rules, danh tính Owner bền vững, deploy
+isolation, backup và recovery là **BẮT BUỘC**. Đơn giản hơn được ưu tiên hơn nhân bản
+project/tài khoản Google, nhưng yêu cầu bảo mật/toàn vẹn dữ liệu **KHÔNG bị hạ thấp** để đạt sự
+đơn giản đó — quyết định này thay thế giả định trước đây (nếu có) rằng bước C đòi một project
+Firebase vật lý riêng.
+
+**B. Spec bước C DUYỆT — `CANONICAL — APPROVED`.**
+`docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (soạn cùng phiên này, `S038`) chuyển
+thẳng sang `CANONICAL — APPROVED`. Thiết kế trọng tâm: Google Sign-In thay Anonymous Auth làm
+thẩm quyền danh tính Owner duy nhất (UID bền vững qua đổi thiết bị/trình duyệt — thoả toàn bộ
+R-3 của spec kế toán §18 mà không cần cơ chế link-credential phức tạp hơn); giữ nguyên shape
+`isCoinDcaOwner()`/namespace `ethdca/*` (chỉ đổi nguồn UID, không đổi logic rules — "smallest
+migration" đúng như chỉ thị phiên yêu cầu); `firebase.json` thêm `hosting.target` (R-2 phần
+Hosting); runbook thủ công 3 bước cho deploy rules (Firestore không thể target-hoá rules theo
+app, nên isolation ở đây là **procedural**, không phải cấu hình); export backup có timestamp +
+schema version; restore có preview/validate/snapshot/atomic (R-4); test multi-device qua UI Step
+B hấp thụ khoảng trống bằng chứng persistence của `H-49`.
+
+**C. `H-42` — re-evaluate và tách REQUIRED / DEFERRED.**
+`PROJECT/HARDENING_BACKLOG.md` `H-42` được cập nhật (không viết đè lịch sử, chỉ bổ sung
+disposition mới):
+
+    REQUIRED CHO BƯỚC C (T-14): danh tính Owner bền vững; rules khoá đúng Owner (shape không
+      đổi, nguồn UID đổi); deploy isolation logic (hosting target + runbook); backup +
+      recovery có snapshot/validate/atomic; bằng chứng persistence chạy lại được (hấp thụ H-49).
+    DEFERRED / FUTURE HARDENING (KHÔNG mở task, KHÔNG blocker của T-14): project Firebase vật lý
+      riêng cho CoinDCA; tắt Anonymous Auth provider ở Console (khuyến nghị vận hành, Owner tự
+      xác nhận Content không phụ thuộc); bất kỳ hệ thống multi-user/role nào.
+
+`H-42` KHÔNG bị đóng bởi quyết định này — nó chuyển từ "chưa có owner, chờ Owner" sang "một phần
+REQUIRED có owner = `T-14`, một phần DEFERRED có `RE_TRIGGER_CONDITION` mới cho phần project vật
+lý". Đóng `H-42` (phần REQUIRED) là kết quả kỳ vọng của `T-14 DONE`, không phải của quyết định
+định nghĩa này.
+
+**D. `H-49` hấp thụ vào `T-14`.** Khoảng trống bằng chứng persistence (`H-49`, phát sinh từ
+Independent E2 của `T-13`) được hấp thụ vào Completion Gate của `T-14` (`CHECK-T14-11`) thay vì
+mở một task riêng — đúng chỉ thị phiên §14 ("Finding != task", "nếu Step-C acceptance có thể
+khôi phục durable executable persistence evidence, ABSORB nó vào Step C"). `H-44`…`H-48`, `H-50`
+giữ nguyên tuyệt đối, không mở task nào cho chúng — đúng yêu cầu "không tự động fix unrelated
+H-48/H-50".
+
+**E. Mở đúng MỘT task ID — `T-14`.** Định tuyến theo `CAPABILITY_MODEL.md` § Capability-First
+Question Order (chi tiết đầy đủ: `PROJECT/CAPABILITY_REGISTRY.md` §16,
+`docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md` § Notes): cần cho mục tiêu
+product-readiness của `PROJECT_PROFILE.md` trước khi dùng tiền thật (CÓ), thuộc `CAP-WEBAPP` đã
+có (CÓ), không task nào đang mở để hấp thụ vào nên đây là mở task mới chứ không phải absorption,
+đưa lên Owner = chính chỉ thị phiên này. Task Mode `MAJOR`, routing `C / Opus / xhigh` (bằng
+chứng router: `docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md` § Ghi chú chấm điểm
+routing — hard floor `authentication/authorization → min Tier C, min effort high` thoả bởi chính
+điểm số cơ bản). Trạng thái sau phiên: `NOT_PLANNED → READY` (Ready Gate 17/17 tương đương,
+Completion Gate 12/12 REQUIRED FROZEN) — **KHÔNG** `IN_PROGRESS`, đúng giới hạn chỉ thị phiên
+("Do NOT implement Firebase changes in this session").
+
+**F. Auth+Rules+Backup+Recovery+Multi-device+Deploy giữ là MỘT task, không tách.** Đúng chỉ thị
+phiên §19: các hạng mục này chia sẻ một lifecycle sản phẩm-sẵn-sàng duy nhất (bước C của spec kế
+toán §24), không phải các capability độc lập theo `CAPABILITY_MODEL.md` §II.4 ("ba điều kiện,
+đều bắt buộc" cho sibling task) — chúng không có output độc lập có ý nghĩa với người dùng nếu
+tách rời (ví dụ: auth bền vững vô nghĩa nếu không có backup cho trường hợp auth vẫn thất bại).
+
+**G. Guard tiếp tục hiệu lực, không đổi.** `T-14` KHÔNG mở SELL cho dữ liệu thật (`H-46` vẫn cần
+Owner Decision riêng); KHÔNG đổi schema/công thức kế toán `T-12`; KHÔNG redesign UX `T-13` ngoài
+điểm vào nhỏ; KHÔNG tạo project Firebase mới; KHÔNG mở bước D. `T-12 DONE`/`T-13 DONE` và mọi
+guard của `DEC-046`/`DEC-048` giữ nguyên tuyệt đối.
+
+**H. Không hạng mục nào khác được mở.** Không capability mới, không lineage root mới, không
+proposal mới. `CAP-WEBAPP` budget không đổi (`allowed 2 / used 1 / remaining 1` — xem
+`PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.11). Không thi hành Firebase/auth/rules/backup trong phiên
+này — production diff = **EMPTY**.
+
+## Reason
+
+`T13-OWNER-CLOSURE.md` §7 và `PROJECT_PROGRESS.md` § Next Session để lại đúng một hành động kế
+tiếp: "Owner Decision riêng nếu muốn mở bước C (H-42, Firebase isolation)". Chỉ thị phiên
+"COINDCA — L-1 STEP C DEFINITION" là câu trả lời trực tiếp đó — đến kèm đủ chi tiết kiến trúc (22
+mục: data isolation, owner identity, rules, deploy, auth analysis, backup, recovery, multi-device,
+failure modes, H-42/H-49 disposition, acceptance scenarios, production reachability, change
+budget) để một phiên "architecture + task definition only" hoàn tất toàn bộ Ready Gate mà không
+cần hỏi lại Owner từng lựa chọn kỹ thuật — đúng cơ chế uỷ quyền `STATE_AUTHORITY.md` cho phép khi
+phạm vi đã đủ rõ. Lựa chọn kiến trúc trọng tâm (Google Sign-In thay Anonymous Auth) trực tiếp giải
+quyết FB-4 (UID không bền qua thiết bị) mà không cần mở project mới, và có hệ quả phụ có lợi: cho
+phép tắt Anonymous Auth provider (đóng FB-1 tại nguồn) như một khuyến nghị vận hành.
+
+## Impact
+
+- `docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (mới): `CANONICAL — APPROVED`.
+- `docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md` (mới): `NOT_PLANNED → READY`, Task
+  Mode MAJOR, Completion Gate 12/12 REQUIRED FROZEN, Routing C/Opus/xhigh.
+- `PROJECT/PROJECT_PROGRESS.md`: Last Updated; roadmap thêm dòng `T-14`; Current Task Snapshot;
+  Session History; Next Session.
+- `PROJECT/CAPABILITY_REGISTRY.md` §16 (mới): định tuyến 5-câu-hỏi cho `T-14`, ghi nhận không
+  capability/lineage mới.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.11 (mới): ghi nhận `T-14` là thành viên mới của
+  `CAP-WEBAPP`, budget không đổi (2/1/1).
+- `PROJECT/HARDENING_BACKLOG.md`: `H-42` cập nhật disposition (REQUIRED cho `T-14` / DEFERRED cho
+  project riêng); `H-49` ghi chú "hấp thụ vào `T-14` (`CHECK-T14-11`)" — không đóng, không tự
+  đóng bằng quyết định định nghĩa này.
+- `docs/sessions/S038-coindca-l1-step-c-firebase-isolation-definition.md` (mới): biên bản phiên
+  định nghĩa.
+- Số task ID mới = **1** (`T-14`). Số capability mới = **0**. Số lineage root mới = **0**.
+  Production diff = **EMPTY**.
+
+## Can Revisit After
+
+Project Firebase vật lý riêng: khi Owner chủ động yêu cầu (không phải hệ quả tự động của bất kỳ
+finding nào ở đây); tắt Anonymous Auth provider: khi Owner tự xác nhận qua Console Content không
+còn phụ thuộc; `H-46` khi Owner quyết định mở nghiệp vụ SELL cho dữ liệu thật (Owner Decision
+riêng, không phải hệ quả của `T-14`); mở bước D (`OWNER_LOCAL_ACCEPTANCE`) sau khi `T-14 DONE`.
+
+---

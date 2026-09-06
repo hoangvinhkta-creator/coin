@@ -791,3 +791,26 @@ Ba finding HARDENING mới (`H-48`/`H-49`/`H-50`) không đòi repair ngay; khô
 `T-13: IMPLEMENTED → DONE` không phải một sự kiện làm reset hay cấp lại budget — cùng đúng
 nguyên tắc `AGENTS.md` §3 "Budget does not reset" đã áp dụng cho `T-12`/`DEC-046`
 (§ "T-12 — Owner Closure sau independent E2", ngay trên §2.2.9).
+
+---
+
+### 2.2.11 — S038 (định nghĩa) — `T-14` mở dưới `CAP-WEBAPP`, budget KHÔNG ĐỔI
+
+**S038 (2026-09-06) — phiên định nghĩa architecture + task, đúng tiền lệ `T-12`/`S032` và
+`T-13`/`S035`**: mở `T-14` (bước C — Firebase isolation, Owner auth bền vững, backup/recovery)
+trực tiếp `NOT_PLANNED → READY`, không implementation.
+
+    git diff --shortstat <HEAD trước phiên>..HEAD -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 0   (production diff = EMPTY — chỉ docs/spec-l1, docs/tasks, PROJECT/*, docs/sessions)
+
+Mở task mới trong capability đã có **không** tiêu repair cycle (đúng tiền lệ `T-12`/`T-13`).
+`T-14` là INITIAL IMPLEMENTATION của chính nó khi phiên thi hành bắt đầu — không phải repair
+cycle của `T-12`/`T-13`.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 1 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1, T-12, DEC-043)
+    CURRENT BUDGET REMAINING  = 1 repair cycle    <- KHÔNG ĐỔI
+    T-14 tự cấp thêm          = 0
+
+Mở `T-14` không phải một sự kiện làm reset hay cấp lại budget — đúng `AGENTS.md` §3 "Budget does
+not reset".

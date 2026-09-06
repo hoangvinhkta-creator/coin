@@ -954,6 +954,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | CANCELLED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Điều kiện của `T-11` gồm `verdict = BUILD`, mà `DEC-040` §E xác lập điều kiện này KHÔNG BAO GIỜ thoả được nữa dưới V2.1.5. Đóng luôn mâu thuẫn trạng thái cũ (`PLANNED` ở bảng vs `BLOCKED` ở `DEC-040` §D — stale `ST-08`). Verdict `BUILD` từ chiến lược/version khác trong tương lai phải tự đủ điều kiện từ đầu |
 | DONE | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | **DONE — Owner-authorized Lifecycle Closure tại `DEC-046`** (2026-09-05), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 9/9 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 14/14 REQUIRED PASS** (5 E1-only + 9 E1+E2), không sửa câu chữ/ngữ nghĩa. Golden `c610a29` không đổi trong suốt E2; production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1** (`REPAIR_CYCLE_1` vẫn CONSUMED, không tiêu chu kỳ thứ hai). Bốn finding E2 (`F-E2-01`…`04`) route thành HARDENING `H-44`…`H-47`, không task mới. **`T-12 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46`/`F-E2-03` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041`/`DEC-042`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Trước đó IMPLEMENTED tại `S034` (`docs/reviews/T12-IMPLEMENTATION-REPORT.md`). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
 | DONE | T-13 | CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao dịch/Lịch sử | Biến sự thật tài chính của T-12 thành công cụ dùng được hằng ngày (dashboard, nhập 8 loại giao dịch, lịch sử, sửa/xoá, plan/carry UX) mà không cần biết cấu trúc kỹ thuật bên dưới | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-048`** (2026-09-06, `S037`), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 7/7 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 13/13 REQUIRED PASS** (6 E1-only + 7 E1+E2), không sửa câu chữ/ngữ nghĩa. Production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1**. Ba finding E2 (`F-T13-E2-01`…`03`) route thành HARDENING `H-48`…`H-50`, không task mới. **`T-13 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Trước đó IMPLEMENTED tại `S036` (`docs/reviews/T13-IMPLEMENTATION-REPORT.md`), READY tại `DEC-047`/`S035`. Bước **B** của spec kế toán §24 + `docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Định nghĩa đầy đủ: `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md` |
+| READY | T-14 | CoinDCA L-1 Bước C: Firebase Isolation, Owner Auth bền vững, Backup/Recovery | Đóng ba khoảng trống product-readiness trước khi dùng tiền thật không giới hạn: danh tính Owner bền vững (Google Sign-In thay Anonymous Auth), cô lập logic trong project Firebase dùng chung (rules/deploy), backup/recovery có validate/snapshot/atomic; hấp thụ luôn `H-49` (bằng chứng persistence) | C | xhigh | **`NOT_PLANNED → READY` tại `DEC-049`** (2026-09-06, `S038`, Owner Direction "COINDCA — L-1 STEP C DEFINITION") — Ready Gate 17/17 tương đương, Completion Gate 12/12 REQUIRED FROZEN, chưa `IN_PROGRESS`. Owner Decision chiến lược: **"Shared Firebase Project with Strong Logical Isolation"** — project Firebase riêng KHÔNG bắt buộc, DEFERRED thành hardening tương lai. `H-42` tách disposition: phần REQUIRED (danh tính, rules, deploy, backup/recovery, bằng chứng persistence) có owner = `T-14`; phần DEFERRED (project vật lý riêng, tắt Anonymous provider) giữ HARDENING không owner. Không đổi schema/công thức kế toán `T-12`, không redesign UX `T-13` ngoài một điểm vào nhỏ, không mở SELL (`H-46` giữ nguyên). Spec: `docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (CANONICAL — APPROVED). Capability `CAP-WEBAPP`, lineage root `WP-C1`. Định nghĩa đầy đủ: `docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md` |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -1067,6 +1068,36 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 ```
 
 ## Current Task Snapshot
+
+**T-14 — READY (`DEC-049`, Owner Direction "COINDCA — L-1 STEP C DEFINITION", 2026-09-06).**
+
+    Task ID        T-14
+    File           docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md
+    Spec           docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md (CANONICAL — APPROVED, DEC-049)
+    Task Mode      MAJOR
+    Trạng thái     NOT_PLANNED → READY (S038, cùng phiên định nghĩa) — chưa IN_PROGRESS
+    Routing        C / Opus / xhigh; model_score 2.85, effort_score 2.8; floor safety_business:min_C/min_high
+    Gate           FROZEN 2026-09-06; Completion Gate 12/12 REQUIRED
+    Capability     CAP-WEBAPP, lineage root WP-C1
+    Budget         allowed 2 / used 1 / remaining 1 — mở task mới KHÔNG tiêu chu kỳ nào
+    Phase          Bước C (Firebase isolation + auth bền + backup/snapshot) của chuỗi A→B→C→D spec §24
+    Phụ thuộc      T-12 DONE (DEC-046); T-13 DONE (DEC-048); T-09B DONE (DEC-024); spec bước C CANONICAL (DEC-049)
+    Owner Decision Chiến lược Firebase: "Shared Firebase Project with Strong Logical Isolation" (DEC-049 A)
+                   — KHÔNG cần project riêng; namespace ethdca/* KHÔNG đổi (DEC-043 LOCKED); Owner
+                   identity chuyển sang Google Sign-In (thay Anonymous Auth)
+    H-42           Tách disposition: REQUIRED cho T-14 (danh tính, rules, deploy, backup/recovery,
+                   bằng chứng persistence) / DEFERRED (project vật lý riêng, tắt Anonymous provider)
+    H-49           Hấp thụ vào CHECK-T14-11 — không mở task riêng
+    Guard          KHÔNG mở SELL (H-46 giữ nguyên); KHÔNG đổi schema/công thức kế toán T-12; KHÔNG
+                   redesign UX T-13 ngoài một điểm vào nhỏ (login/backup/restore); KHÔNG tạo project
+                   Firebase mới; KHÔNG mở bước D (OWNER_LOCAL_ACCEPTANCE)
+    Production diff của phiên định nghĩa (S038) = EMPTY (chỉ docs/spec-l1, docs/tasks, PROJECT/*, docs/sessions).
+
+Chưa có phiên thi hành. `T-14 READY` không có nghĩa Firebase/auth/rules/backup đã đổi — chỉ có
+nghĩa kiến trúc đã đủ rõ để một phiên thi hành riêng bắt đầu mà không cần hỏi lại Owner các lựa
+chọn kỹ thuật đã chốt.
+
+### Snapshot trước đó — T-13 DONE (giữ để truy vết)
 
 **T-13 — DONE (`DEC-048`, Owner Closure, 2026-09-06, sau independent E2 PASS).**
 
@@ -1832,11 +1863,38 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
   13/13 REQUIRED PASS (6 E1-only + 7 E1+E2). Ba finding HARDENING mới (`H-48`/`H-49`/`H-50`),
   0 BLOCKING. `CAP-WEBAPP` budget `2/1/1` không đổi. `T-13 DONE` KHÔNG cấp phép SELL thật
   (`H-46` giữ nguyên); bước C (`H-42`)/bước D (`OWNER_LOCAL_ACCEPTANCE`) chưa mở
+- **DEC-049** — Owner Direction "COINDCA — L-1 STEP C DEFINITION": chiến lược Firebase
+  **"Shared Firebase Project with Strong Logical Isolation"** (project riêng KHÔNG bắt buộc,
+  DEFERRED); duyệt `docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md`
+  `CANONICAL — APPROVED`; mở task `T-14` (`NOT_PLANNED → READY`, Ready Gate 17/17, Completion
+  Gate 12/12 REQUIRED FROZEN). `H-42` tách REQUIRED (owner `T-14`) / DEFERRED (project riêng).
+  `H-49` hấp thụ vào `CHECK-T14-11`. Task ID mới = 1. `CAP-WEBAPP` budget `2/1/1` không đổi.
+  Production diff = EMPTY
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 (Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
 
 ## Session History
+
+- **S038 (2026-09-06)** — Định nghĩa CoinDCA L-1 Bước C (chỉ thị phiên trực tiếp "COINDCA —
+  L-1 STEP C DEFINITION", nhánh `claude/coindca-l1-step-c-arch-fog4cb`, tách sạch từ `main`
+  `efda187`). **Không implementation** — chế độ ARCHITECTURE + TASK DEFINITION ONLY. Owner
+  Decision chiến lược Firebase: **"Shared Firebase Project with Strong Logical Isolation"**
+  (`DEC-049` A) — project riêng KHÔNG bắt buộc, DEFERRED thành hardening tương lai. Thiết kế
+  trọng tâm: Google Sign-In thay Anonymous Auth làm thẩm quyền danh tính Owner duy nhất (UID bền
+  vững qua đổi thiết bị/trình duyệt, đóng FB-4); giữ nguyên namespace `ethdca/*` và shape
+  `isCoinDcaOwner()` (`DEC-043` LOCKED — không di dời document); `firebase.json` thêm
+  `hosting.target` (FB-2); runbook thủ công 3 bước cho deploy rules (Firestore không thể
+  target-hoá rules); backup export có timestamp/schema version; restore có preview/validate/
+  snapshot/atomic; test multi-device qua UI Step B hấp thụ `H-49`. Mở `docs/spec-l1/
+  COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (`CANONICAL — APPROVED`) và task `T-14`
+  (`NOT_PLANNED → READY`, Ready Gate 17/17 tương đương, Completion Gate 12/12 REQUIRED FROZEN,
+  routing `C/Opus/xhigh`). `H-42` (`PROJECT/HARDENING_BACKLOG.md`) tách disposition REQUIRED
+  (owner = `T-14`) / DEFERRED (project vật lý riêng, tắt Anonymous provider — không owner).
+  `H-49` ghi "hấp thụ vào `CHECK-T14-11`", không đóng, không mở task riêng. `CAP-WEBAPP` budget
+  KHÔNG đổi (`2/1/1`) — mở task mới không tiêu repair cycle. Task ID mới = 1
+  (`T-14`). Capability/lineage mới = 0. Production diff = **EMPTY**. `docs/sessions/
+  S038-coindca-l1-step-c-firebase-isolation-definition.md`, `DEC-049`.
 
 - **S037 (2026-09-06)** — Independent E2 review cho `T-13` (reviewer khác implementer, nhánh
   `claude/t13-independent-e2-review-565b5f`, HEAD reviewed `cb75d6c`) → `E2_VERDICT = PASS`
@@ -2589,30 +2647,37 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
-**Hiện hành sau `S037`/`DEC-048`:**
+**Hiện hành sau `S038`/`DEC-049`:**
 
-    NEXT SMALLEST ACTION = Owner Decision riêng nếu muốn mở bước C (H-42, Firebase isolation).
-    Không có NEXT SMALLEST ACTION bắt buộc nào khác — T-13 đã DONE, không task nào đang mở.
+    NEXT SMALLEST ACTION = mở phiên thi hành T-14 (READY -> IN_PROGRESS), thực hiện đúng
+    Completion Gate 12/12 REQUIRED đã FROZEN trong docs/tasks/T-14-buoc-c-firebase-isolation-
+    auth-backup.md. Không có Owner Decision nào khác đang chờ để bắt đầu thi hành.
 
-`T-13` đã **DONE** (`DEC-048`, 2026-09-06, sau independent E2 `PASS`). Ràng buộc còn hiệu lực cho
-mọi phiên kế tiếp trong `CAP-WEBAPP`:
+`T-14` đã **READY** (`DEC-049`, 2026-09-06, phiên định nghĩa `S038`, chưa `IN_PROGRESS`). Ràng
+buộc còn hiệu lực cho phiên thi hành kế tiếp trong `CAP-WEBAPP`:
 
 1. Đọc theo thứ tự: `AGENTS.md` → `governance/v4/CORE/*` → `PROJECT/PROJECT_PROFILE.md`,
-   `CAPABILITY_REGISTRY.md` (§15), file này, `PRODUCTION_PATHS.md`, `REVIEW_BUDGET_LEDGER.md`
-   (§2.2.10), `HARDENING_BACKLOG.md` (`H-42`, `H-45`, `H-46`, `H-48`…`H-50`), `PROJECT_DECISIONS.md`
-   (`DEC-042`, `DEC-046`…`DEC-048`).
+   `CAPABILITY_REGISTRY.md` (§16), file này, `PRODUCTION_PATHS.md`, `REVIEW_BUDGET_LEDGER.md`
+   (§2.2.11), `HARDENING_BACKLOG.md` (`H-42`, `H-49`), `PROJECT_DECISIONS.md` (`DEC-042`,
+   `DEC-043`, `DEC-046`…`DEC-049`), `docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md`.
 2. Chạy `branch_authority_check.sh` TRƯỚC khi đọc state; nhánh mới tách từ `origin/main`.
-3. `T-13` Completion Gate **đóng, 13/13 REQUIRED PASS** — không mở lại implementation.
-4. **Không** mở thêm task ID nào chỉ để xử lý ba finding HARDENING (`H-48`/`H-49`/`H-50`) — đó là
-   finding, không phải task (`AGENTS.md` §3). **Không** tự cấp repair budget — `CAP-WEBAPP` còn
-   đúng 1 chu kỳ `REMAINING`; nếu cần, đó là một Owner Decision riêng khi một REQUIRED check FAIL
-   thật sự.
+3. `T-14` Ready Gate **17/17 tương đương, Completion Gate 12/12 REQUIRED FROZEN** — implementer
+   được uỷ quyền thực hiện `READY → IN_PROGRESS → IMPLEMENTED` mà không cần hỏi lại Owner các lựa
+   chọn đã chốt trong file task § Ràng buộc kiến trúc đã khoá (xem `docs/tasks/T-14-...md`
+   § Implementation authority).
+4. **Không** tách Auth/Rules/Backup/Recovery/Multi-device/Deploy thành nhiều task
+   (`DEC-049` F) — một Completion Gate duy nhất. **Không** tự cấp repair budget nếu chưa cần —
+   `CAP-WEBAPP` còn đúng 1 chu kỳ `REMAINING`.
 5. **Guard SELL giữ nguyên**: `H-46` phải được một Owner Decision riêng xử lý TRƯỚC khi mở SELL
-   thật cho dữ liệu Owner. `T-13 DONE` không đổi điều này.
-6. **Real-money readiness chưa đủ điều kiện**: bước C (`H-42`, Firebase isolation/auth/backup/
-   recovery) và bước D (`OWNER_LOCAL_ACCEPTANCE`, spec kế toán §22.1) vẫn CHƯA mở — không phải
-   hệ quả tự động của `T-13 DONE`. Mở bước C là quyết định Owner riêng, ngoài phạm vi phiên đóng
-   này.
+   thật cho dữ liệu Owner. `T-14` không chạm `H-46`.
+6. **Không tạo project Firebase mới, không tài khoản Google thứ hai** — `DEC-049` A đã đóng câu
+   hỏi provider/project cho bước C; project riêng là DEFERRED, không phải việc của `T-14`.
+7. **`H-49` đóng thông qua `CHECK-T14-11`** — không mở task riêng cho nó; nếu `CHECK-T14-11`
+   không đạt được trong phạm vi `T-14`, ghi lại tại sao thay vì âm thầm bỏ qua.
+8. **Real-money readiness vẫn chưa đủ điều kiện cho tới khi `T-14 DONE`**: cảnh báo "dừng dùng
+   app với tiền thật không giới hạn" (`H-41`) giữ nguyên trong suốt quá trình thi hành `T-14`.
+   Bước D (`OWNER_LOCAL_ACCEPTANCE`, spec kế toán §22.1) vẫn CHƯA mở, chỉ có nghĩa sau khi
+   `T-14 DONE`.
 
 ### Hướng dẫn lịch sử cho phiên thi hành `T-13` (đã hoàn tất tại `S036`/`S037` — giữ để truy vết)
 
