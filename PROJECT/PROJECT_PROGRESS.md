@@ -2,15 +2,24 @@
 
 ## Project Summary
 Project:
-ETH DCA Operating System — V2.1.5
+**CoinDCA** — sản phẩm đang phát triển là lát cắt **L-1** (`DEC-041` C/E).
+`ETH DCA Operating System V2.1.5` là **frozen historical research authority** (`DEC-041` A):
+giữ nguyên để tra cứu, KHÔNG còn là sản phẩm đang xây.
 
 Objective:
-Xây một công cụ chạy trên trình duyệt, dùng được như bảng tính, để chủ dự án theo dõi quá trình
-hold/trade coin và nhận cảnh báo dựa trên các chỉ báo phân tích của bộ spec V2.1.5
-(OSCORE, regime, ladder zone, giới hạn thực thi, chất lượng dữ liệu).
+Xây một công cụ chạy trên trình duyệt, dùng được như bảng tính, để chủ dự án **ghi sổ và giữ
+kỷ luật DCA**: kế hoạch ngân sách tháng + lịch mua, sổ cái sự kiện (nạp/đổi USDT, mua ETH, dự
+phòng, giá tham chiếu), giá vốn trung bình theo bình quân gia quyền, carry `CAPPED_CARRY`, và
+bốn con số dashboard (ngân sách · đã đầu tư · còn lại · mua kế tiếp) — mọi con số dẫn xuất từ
+MỘT lần replay `openingPosition + events[]`, không lưu trường dẫn xuất (INV-1).
 
-Ràng buộc chi phối mục tiêu này: Implementation Plan đặt cổng chặn — app MVP đầy đủ chỉ được
-dựng sau khi backtest cho verdict BUILD. Xem `PROJECT/PROJECT_DECISIONS.md` DEC-005.
+Ràng buộc chi phối mục tiêu này: `DEC-041` B **CẤM** đưa OSCORE, regime, ladder zone và mọi
+cảnh báo dựa trên chỉ báo V2.1.5 vào đường L-1. `DEC-005` đã `SUPERSEDED_BY_DEC-041` và
+`T-05 = CANCELLED`, nên **không còn** cổng chặn "chờ verdict BUILD" cho công việc L-1:
+`can_proceed_to_app = false` (production/verdict, vĩnh viễn cho V2.1.5) tách hẳn khỏi
+`app_development_allowed = true` (PROJECT/Owner) — xem `PROJECT/PROJECT_PROFILE.md` §44-56.
+Cổng chặn còn hiệu lực với L-1 là product-readiness, không phải verdict: `H-41` (chưa dùng
+tiền thật) và `OWNER_LOCAL_ACCEPTANCE` (bước D).
 
 Project Type:
 LEGACY
@@ -1527,8 +1536,16 @@ bộ 16 file MAJOR task, và WP-A2 route Tier C **tự nhiên** (không cần nh
 Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resolution";
 `MICRO-GOVDEF-001` ở mục "Micro Tasks (Inline)".
 
-### BLK-002 — Tính năng cảnh báo chưa được đặc tả
-Ảnh hưởng: T-10, và là lý do T-08 tồn tại.
+### BLK-002 — Tính năng cảnh báo chưa được đặc tả — **KHÔNG CÒN CHẶN ĐƯỜNG L-1**
+**Cập nhật 2026-09-06 (`S042`, đính chính stale — không đổi quyết định nào).** Mô tả dưới đây
+thuần V2.1.5 và vẫn ĐÚNG **trong phạm vi V2.1.5**, nhưng phạm vi đó nay là frozen research
+(`DEC-041` A). Trạng thái thật của hai task bị nêu: `T-08` và `T-10` đều `DEFERRED`, nhãn
+`REDEFINE_FOR_L1` (`DEC-041`) — xem bảng Overall Roadmap. `DEC-041` B **cấm** đưa cảnh báo dựa trên
+OSCORE/regime/ladder vào L-1, và `DEC-041` G cấm kế thừa dependency đã chết; vì vậy BLK-002
+**không chặn** bất kỳ bước nào của chuỗi L-1 (A/B/C/D). Nó chỉ còn hiệu lực nếu Owner một ngày
+nào đó mở lại đường cảnh báo V2.1.5 — khi đó nó tự tái kích hoạt cùng `T-08`.
+
+Ảnh hưởng (nguyên văn, phạm vi V2.1.5): T-10, và là lý do T-08 tồn tại.
 Mô tả: `docs/spec/01_PRODUCT_SPEC_V2_1_5.md` không có mục nào về alert/cảnh báo/notification.
 Product Spec chỉ quy định trạng thái hiển thị thụ động trên hero khi mở trang (§11–§13).
 Implementation Plan §9 hoãn có chủ đích: "không cần cron cho tới khi thực sự cần notification".
@@ -1935,7 +1952,9 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
 - DEC-002 — Phiên S001 chạy chế độ AUDIT read-only
 - DEC-003 — Dữ liệu tổng hợp không bao giờ dùng để ra verdict
 - DEC-004 — Xác nhận provider mapping Tier A/B/C/D
-- DEC-005 — PENDING: phạm vi công cụ trước verdict (chờ chủ dự án duyệt tại T-05)
+- DEC-005 — **SUPERSEDED_BY_DEC-041** (2026-09-05): phạm vi công cụ trước verdict. `T-05` (nơi
+  duy nhất sinh ra quyết định này) đã `CANCELLED` cùng `DEC-041` G. Dòng cũ ghi `PENDING` là
+  stale, mâu thuẫn với bullet `DEC-041` ngay trong danh sách này — đính chính tại `S042`
 - DEC-006 — Source of Truth cho compliance audit là V2.1.5, không phải V2.1.3
 - DEC-007 — RCP-001 được phê duyệt và áp dụng kèm bốn điều kiện
 - DEC-008 — Ghi đè thủ công routing của WP-A2 (Tier C, không dùng Tier B từ router)
