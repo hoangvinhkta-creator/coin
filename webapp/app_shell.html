@@ -17,6 +17,7 @@
   --fail:#CC4B1F; --fail-bg:#FAEAE3;
   --warn:#8A6208; --warn-bg:#F6EDD6;
   --idle:#8A948F; --idle-bg:#E9ECEA;
+  --cash:#1B5FA8; --cash-bg:#DEE9F7;
   --shadow:0 1px 2px rgba(21,28,26,.05),0 10px 28px -20px rgba(21,28,26,.3);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -28,6 +29,7 @@
   --fail:#D96238; --fail-bg:#33201A;
   --warn:#D6A63F; --warn-bg:#2E2716;
   --idle:#77837E; --idle-bg:#1F2724;
+  --cash:#5AA6E0; --cash-bg:#16283A;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -20px rgba(0,0,0,.8);
 }}
 :root[data-theme="dark"]{
@@ -39,6 +41,7 @@
   --fail:#D96238; --fail-bg:#33201A;
   --warn:#D6A63F; --warn-bg:#2E2716;
   --idle:#77837E; --idle-bg:#1F2724;
+  --cash:#5AA6E0; --cash-bg:#16283A;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -20px rgba(0,0,0,.8);
 }
 *{box-sizing:border-box}
@@ -240,6 +243,19 @@ h2{margin-top:26px}
 .dcard-next{border-color:var(--accent);background:var(--accent-soft)}
 .dcard-next button{margin-top:9px;width:100%}
 
+/* T-17: tiêu đề nhóm dùng chung cho "Kế hoạch tháng này" + 3 khối #dashBottom */
+.dashgroup-title{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted);font-weight:600;margin:18px 0 8px}
+.dashgroup-title:first-child{margin-top:0}
+/* #dashBottom: 3 khối "Đang nắm giữ / Tiền mặt & USDT / Lãi-lỗ đã thực hiện" — 2 cột desktop,
+   1 cột mobile (đổi ở breakpoint .hero 860px bên dưới) */
+.dashbottom-groups{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+.dashgroup .dashgroup-title{margin-top:0}
+.dashgroup-note{font-size:11.5px;color:var(--muted);margin:8px 0 0}
+/* Rule này phải đứng SAU rule base ở trên (thắng theo thứ tự nguồn, cùng độ cụ thể) — khớp
+   breakpoint .hero (860px) đã dùng ở trên trong file này. */
+@media (max-width:860px){.dashbottom-groups{grid-template-columns:1fr}}
+
 /* bottom nav + FAB */
 .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;
   background:var(--surface);border-top:1px solid var(--rule);
@@ -255,16 +271,21 @@ h2{margin-top:26px}
 #l1Entry{position:relative;border:2px solid var(--accent);background:var(--surface)}
 #l1Entry summary{font-weight:600}
 .txtypes{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 14px}
-.txtype{border-radius:999px;font-size:12.5px}
-.txtype[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+.txtype,.histtype{border-radius:999px;font-size:12.5px}
+.txtype[aria-pressed="true"],.histtype[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ground)}
 .txtech{margin-top:10px;font-size:11.5px;color:var(--muted)}
 .txtech .form{margin-top:6px}
 #l1NoteHint{font-size:12px;color:var(--warn);min-height:1.4em}
 
-/* history cards */
-.histfilter{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0 14px}
-.histfilter select,.histfilter input{font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+/* history filter: bộ nút .histtype (T-17) kế thừa style .txtype ở trên; #histFilterType là
+   select ẩn giữ giá trị đang chọn cho hợp đồng test cũ, không hiện trên màn hình */
+.histfilter{margin:10px 0 14px}
+.histtypes{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 10px}
+.histfilter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.histfilter-row input{font-family:"IBM Plex Mono",monospace;font-size:12.5px;
   padding:7px 9px;border-radius:4px;border:1px solid var(--rule);background:var(--sunken);color:var(--ink)}
+
+/* history cards */
 .hist-card{border:1px solid var(--rule);border-radius:6px;padding:11px 13px;margin-bottom:9px;
   background:var(--surface)}
 .hist-opening{border-left:3px solid var(--accent)}
@@ -274,6 +295,14 @@ h2{margin-top:26px}
 .hc-amount{font-family:"IBM Plex Mono",monospace;font-size:13.5px;margin-top:2px}
 .hc-note{font-size:12px;color:var(--ink-soft);margin-top:4px}
 .hc-actions{margin-top:8px;display:flex;gap:7px}
+/* T-17 mục 4: icon/màu ngắn theo loại giao dịch, cạnh hc-date — chỉ THÊM, không thay chip/badge cũ */
+.hc-kind{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;
+  border-radius:50%;font-size:10.5px;font-weight:700;line-height:1;flex:none}
+.hc-kind-buy{color:var(--pass);background:var(--pass-bg)}
+.hc-kind-sell{color:var(--fail);background:var(--fail-bg)}
+.hc-kind-cash{color:var(--cash);background:var(--cash-bg)}
+.hc-kind-treasury{color:var(--muted);background:var(--sunken)}
+.hc-kind-price{color:var(--muted);background:transparent;border:1px solid var(--rule-soft)}
 
 @media (max-width:520px){
   .dashmain{grid-template-columns:1fr 1fr}

@@ -210,24 +210,43 @@
     if (returnAnchor) { const a = returnAnchor; returnAnchor = null; routeTo(a); }
   }
 
-  /* -------- Lịch sử: filter (mặc định = không lọc gì, giữ nguyên tương thích test) -------- */
+  /* -------- Lịch sử: filter (mặc định = không lọc gì, giữ nguyên tương thích test) --------
+   * `#histFilterType` (select ẩn) vẫn là nguồn sự thật cho GIÁ TRỊ đang chọn — hợp đồng cũ cho
+   * test cũ đang query trực tiếp phần tử này; bộ nút `.histtype` chỉ đồng bộ giá trị vào đó rồi
+   * gọi render() lại (T-17, mục 3 của task). */
+  const HIST_FILTERS = [
+    ['all', 'Tất cả loại'], ['TREASURY', 'P2P VND/USDT'], ['PLAN', 'Mua · Kế hoạch'],
+    ['EXTRA', 'Mua · Ngoài kế hoạch'], ['RESERVE_BUY', 'Mua · Dự phòng'], ['SELL', 'Bán coin'],
+    ['CASH', 'Tiền mặt VND'], ['RESERVE', 'Dự phòng nạp/rút'], ['PRICE', 'Giá tham chiếu'],
+  ];
+  function matchesHistType(e, type) {
+    if (type === 'all') return true;
+    if (type === 'RESERVE_BUY') return e.kind === 'TRADE' && e.source === 'RESERVE';
+    if (type === 'SELL') return e.kind === 'TRADE' && e.side === 'SELL';
+    if (type === 'PLAN' || type === 'EXTRA') return e.kind === 'TRADE' && e.side === 'BUY' && e.source === type;
+    return e.kind === type;
+  }
   function filterHistory(events) {
     const type = $('histFilterType') ? $('histFilterType').value : 'all';
     const from = $('histFrom') ? $('histFrom').value : '';
     const to = $('histTo') ? $('histTo').value : '';
     const q = $('histSearch') ? $('histSearch').value.trim().toLowerCase() : '';
     return events.filter(e => {
-      if (type !== 'all') {
-        if (type === 'RESERVE_BUY') { if (!(e.kind === 'TRADE' && e.source === 'RESERVE')) return false; }
-        else if (type === 'SELL') { if (!(e.kind === 'TRADE' && e.side === 'SELL')) return false; }
-        else if (type === 'PLAN' || type === 'EXTRA') { if (!(e.kind === 'TRADE' && e.side === 'BUY' && e.source === type)) return false; }
-        else if (e.kind !== type) return false;
-      }
+      if (!matchesHistType(e, type)) return false;
       if (from && e.businessDate < from) return false;
       if (to && e.businessDate > to) return false;
       if (q && !(e.note || '').toLowerCase().includes(q)) return false;
       return true;
     });
+  }
+  /** Đếm trên TOÀN BỘ s.events, không phụ thuộc bộ lọc ngày/tìm-kiếm đang áp — chỉ đúng loại
+   *  (task T-17 mục 3). Nút đang chọn lấy `aria-pressed` từ giá trị hiện tại của select ẩn. */
+  function renderHistFilterButtons(events) {
+    const current = $('histFilterType').value;
+    $('histFilterTypes').innerHTML = HIST_FILTERS.map(([type, label]) => {
+      const n = events.filter(e => matchesHistType(e, type)).length;
+      return '<button type="button" class="histtype" data-histfilter="' + type + '" aria-pressed="' + String(type === current) + '">' + escape(label) + ' (' + n + ')</button>';
+    }).join('');
   }
   const KIND_LABEL = e => {
     if (e.kind === 'TREASURY') return e.dir === 'VND_TO_USDT' ? 'Đổi VND → USDT' : 'Đổi USDT → VND';
@@ -237,8 +256,20 @@
     if (e.kind === 'CASH') return e.type === 'DEPOSIT' ? 'Nạp tiền mặt' : 'Rút tiền mặt';
     return 'Giá tham chiếu ' + e.symbol;
   };
+  /** T-17 mục 4: icon/màu ngắn theo loại giao dịch, CHỈ thêm cạnh badge/chip cũ, không thay thế gì.
+   *  RESERVE giữ nguyên như trước task này (không icon riêng) theo đúng yêu cầu task. */
+  const KIND_BADGE = e => {
+    if (e.kind === 'TRADE') return e.side === 'SELL'
+      ? '<span class="hc-kind hc-kind-sell" title="Bán">↓</span>'
+      : '<span class="hc-kind hc-kind-buy" title="Mua">↑</span>';
+    if (e.kind === 'CASH') return '<span class="hc-kind hc-kind-cash" title="Tiền mặt">$</span>';
+    if (e.kind === 'TREASURY') return '<span class="hc-kind hc-kind-treasury" title="Đổi VND/USDT">⇄</span>';
+    if (e.kind === 'PRICE') return '<span class="hc-kind hc-kind-price" title="Giá tham chiếu">≈</span>';
+    return '';
+  };
   function renderHistoryCards(d, s) {
     const today = L.clock().today;
+    renderHistFilterButtons(s.events);
     const events = s.events.slice().sort((a, b) => b.businessDate.localeCompare(a.businessDate) || b.seq - a.seq);
     const filtered = filterHistory(events);
     const rows = filtered.map(e => {
@@ -251,7 +282,7 @@
         : e.kind === 'RESERVE' || e.kind === 'CASH' ? units(e.vndAmount) + ' ₫'
         : units(e.priceUsdt, 6) + ' USDT/' + e.symbol;
       return '<div class="hist-card" data-event="' + escape(e.id) + '">' +
-        '<div class="hc-top"><span class="hc-date">' + escape(e.businessDate) + '</span>' + badge + future + unk + '</div>' +
+        '<div class="hc-top">' + KIND_BADGE(e) + '<span class="hc-date">' + escape(e.businessDate) + '</span>' + badge + future + unk + '</div>' +
         '<div class="hc-main">' + escape(KIND_LABEL(e)) + '</div>' +
         '<div class="hc-amount">' + amount + '</div>' +
         (e.note ? '<div class="hc-note">' + escape(e.note) + '</div>' : '') +
@@ -308,16 +339,24 @@
     }
     return rows;
   }
+  const statCell = (k, v, cls) => '<div class="stat"><small>' + escape(k) + '</small><div' + (cls ? ' class="' + cls + '"' : '') + '>' + escape(v) + '</div></div>';
+  /** T-17 mục 1: tách lưới `.stat` phẳng cũ thành 3 khối có tiêu đề. Con số/nhãn hiển thị
+   *  KHÔNG đổi — chỉ đổi cách nhóm trực quan; #dashBottom vẫn là id container ngoài duy nhất
+   *  (test_stepb_ui.js đọc `#dashBottom .stat` — descendant selector, không phụ thuộc độ sâu lồng). */
   function renderDashBottom(d, s) {
     const today = L.clock().today;
-    $('dashBottom').innerHTML = holdingRows(d, s, today).concat([
-      ['USDT hiện có', units(d.usdt.qty, 6)],
-      ['VND hiện có', units(d.vnd.balance)],
-      // HAI đơn vị khác nhau, KHÔNG bao giờ cộng chung: lãi/lỗ khi bán coin nằm ở pool USDT;
-      // lãi/lỗ VND chỉ phát sinh khi USDT đổi ngược ra VND.
-      ['Lãi/lỗ đã thực hiện (USDT)', units(d.realizedPnlUsdt, 6)],
-      ['Lãi/lỗ tỷ giá đã thực hiện (VND)', units(d.realizedFxVnd)],
-    ]).map(([k, v]) => '<div class="stat"><small>' + escape(k) + '</small><div>' + escape(v) + '</div></div>').join('');
+    const holdRows = holdingRows(d, s, today);
+    const holdBlock = holdRows.length ? holdRows.map(([k, v]) => statCell(k, v)).join('') : '<p class="empty">Chưa có coin nào.</p>';
+    const cashBlock = [['USDT hiện có', units(d.usdt.qty, 6)], ['VND hiện có', units(d.vnd.balance)]].map(([k, v]) => statCell(k, v)).join('');
+    // HAI đơn vị khác nhau, KHÔNG bao giờ cộng chung: lãi/lỗ khi bán coin nằm ở pool USDT;
+    // lãi/lỗ VND chỉ phát sinh khi USDT đổi ngược ra VND.
+    const pnlCell = (k, n, places) => statCell(k, units(n, places), n > 0 ? 'chip g' : n < 0 ? 'chip r' : '');
+    const pnlBlock = pnlCell('Lãi/lỗ đã thực hiện (USDT)', d.realizedPnlUsdt, 6) + pnlCell('Lãi/lỗ tỷ giá đã thực hiện (VND)', d.realizedFxVnd, 0);
+    $('dashBottom').innerHTML =
+      '<div class="dashgroup"><h3 class="dashgroup-title">Đang nắm giữ</h3><div class="stats">' + holdBlock + '</div></div>' +
+      '<div class="dashgroup"><h3 class="dashgroup-title">Tiền mặt &amp; USDT</h3><div class="stats">' + cashBlock + '</div></div>' +
+      '<div class="dashgroup"><h3 class="dashgroup-title">Lãi/lỗ đã thực hiện</h3><div class="stats">' + pnlBlock + '</div>' +
+        '<p class="dashgroup-note">Hai đơn vị khác nhau, không cộng chung.</p></div>';
   }
   function renderPlanCarry(d) {
     const m = d.month, prevKey = prevMonthKey(d.currentMonth), prevCarry = d.months[prevKey] ? d.months[prevKey].carryOutVnd : undefined;
@@ -343,8 +382,9 @@
       '<section class="view-sec" id="view-dashboard">' +
         '<h2>Tổng quan</h2>' +
         '<div id="l1Flags" role="alert"></div>' +
+        '<h3 class="dashgroup-title">Kế hoạch tháng này</h3>' +
         '<div class="dashmain" id="dashMain"></div>' +
-        '<div class="stats" id="dashBottom"></div>' +
+        '<div class="dashbottom-groups" id="dashBottom"></div>' +
         '<details><summary>Thông số kỹ thuật (đối chiếu/kiểm thử)</summary><div class="stats" id="l1Summary"></div></details>' +
         '<p id="l1Message" role="status"></p>' +
       '</section>' +
@@ -367,9 +407,14 @@
       '<section class="view-sec" id="view-history">' +
         '<h2>Lịch sử</h2>' +
         '<div class="histfilter">' +
-          '<select id="histFilterType"><option value="all">Tất cả loại</option><option value="TREASURY">P2P VND/USDT</option><option value="PLAN">Mua · Kế hoạch</option><option value="EXTRA">Mua · Ngoài kế hoạch</option><option value="RESERVE_BUY">Mua · Dự phòng</option><option value="SELL">Bán coin</option><option value="CASH">Tiền mặt VND</option><option value="RESERVE">Dự phòng nạp/rút</option><option value="PRICE">Giá tham chiếu</option></select>' +
-          '<input type="date" id="histFrom" aria-label="Từ ngày"><input type="date" id="histTo" aria-label="Đến ngày">' +
-          '<input type="text" id="histSearch" placeholder="Tìm theo ghi chú" aria-label="Tìm theo ghi chú">' +
+          '<div class="histtypes" id="histFilterTypes"></div>' +
+          /* T-17 mục 3: #histFilterType GIỮ NGUYÊN id/hành vi (value = nguồn sự thật cho loại đang
+           * chọn) nhưng ẩn khỏi mắt — bộ nút .histtype ở trên đồng bộ giá trị vào đây rồi render()
+           * lại. Không test nào đang selectOption trực tiếp phần tử này (đã soát test_t12_browser.js/
+           * test_stepb_ui.js), nên đây là lựa chọn AN TOÀN nhất, không cần sửa test nào. */
+          '<select id="histFilterType" hidden aria-hidden="true"><option value="all">Tất cả loại</option><option value="TREASURY">P2P VND/USDT</option><option value="PLAN">Mua · Kế hoạch</option><option value="EXTRA">Mua · Ngoài kế hoạch</option><option value="RESERVE_BUY">Mua · Dự phòng</option><option value="SELL">Bán coin</option><option value="CASH">Tiền mặt VND</option><option value="RESERVE">Dự phòng nạp/rút</option><option value="PRICE">Giá tham chiếu</option></select>' +
+          '<div class="histfilter-row"><input type="date" id="histFrom" aria-label="Từ ngày"><input type="date" id="histTo" aria-label="Đến ngày">' +
+          '<input type="text" id="histSearch" placeholder="Tìm theo ghi chú" aria-label="Tìm theo ghi chú"></div>' +
         '</div>' +
         '<div id="l1History"></div>' +
       '</section>' +
@@ -443,6 +488,11 @@
       })();
     };
     document.querySelectorAll('.txtype').forEach(b => { b.onclick = () => applyType(b.dataset.txtype); });
+    $('histFilterTypes').onclick = ev => {
+      const b = ev.target.closest('button[data-histfilter]'); if (!b) return;
+      $('histFilterType').value = b.dataset.histfilter;
+      render();
+    };
     for (const id of ['histFilterType', 'histFrom', 'histTo']) $(id).onchange = () => render();
     $('histSearch').oninput = () => render();
 

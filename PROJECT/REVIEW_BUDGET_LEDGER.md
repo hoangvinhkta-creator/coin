@@ -974,3 +974,44 @@ Effective Risk của `CAP-WEBAPP` **KHÔNG đổi** (vẫn `HIGH`). `T-16` mở 
 tài sản, hai loại event mới) nhưng đồng thời siết validation ở đúng chỗ mở ra (whitelist cố định,
 plan đơn tài sản ép ở `planCheck`, `source PLAN` sai asset chặn ở `eventCheck`, migration
 fail-closed ba cổng). Không REQUIRED check nào của gate đã FROZEN bị thêm/bớt.
+
+#### 2.2.16 `S044` (2026-09-06) — `T-17` sắp xếp lại giao diện: implementation ban đầu (0 chu kỳ), thuần trình bày
+
+    CAPABILITY      = CAP-WEBAPP        (lineage root WP-C1)
+    TASK            = T-17              (NOT_PLANNED -> DONE, một phiên, DEC-053)
+    LOẠI            = INITIAL IMPLEMENTATION — KHÔNG tiêu repair cycle
+
+Vì sao KHÔNG phải repair cycle: `T-17` là công việc MỚI (đổi cách trình bày sau phản hồi
+usability của Owner), không phải một lượt sửa sau khi reviewer trả finding trên mã production đã
+`DONE`. Khác `T-15` ở đúng điểm §4.3 phân biệt: không có finding nào trên mã đã đóng băng được
+sửa ở đây — hai file bị chạm (`ledger_ui.js`, `app_shell.html`) không phải nơi `T-15` vừa sửa.
+`USED` giữ nguyên **2**.
+
+**KHÔNG chạm lớp tính toán.** `webapp/ledger.js` diff rỗng — task này ở NGOÀI ranh giới mà
+`PROJECT_PROFILE.md` gắn category `accounting_financial` (category đó áp cho task "chạm lớp tính
+toán tài chính"), khác `T-12`/`T-13`/`T-16`. Ghi rõ để phiên sau không tự động gán lại category.
+
+| # | Loại | BASE | HEAD | Diff production path | Kết quả |
+|---|---|---|---|---|---|
+| — | `T-17` implementation ban đầu (`S044`) | `4819a13` | nhánh `claude/coincda-ui-reorganize-2ykjse` | **2 file, +104 / −25** (`webapp/ledger_ui.js`, `webapp/app_shell.html`) | 14/14 REQUIRED PASS (E1); `npm test` (10 suite, gồm emulator + browser) exit 0; không test nào bị sửa |
+
+Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat 4819a13..HEAD -- webapp/ledger_ui.js webapp/app_shell.html
+      2 files changed, 104 insertions(+), 25 deletions(-)
+    git diff --stat     4819a13..HEAD -- webapp/ledger.js src/eth_dca_os docs/spec firestore.rules
+      -> (rỗng)
+
+Trạng thái budget sau phiên — **KHÔNG đổi, không cần `OWNER_EXTENSION`**:
+
+    ALLOWED BUDGET            = 4 repair cycle    <- KHÔNG ĐỔI (2 DEC-018 + 2 OWNER_EXTENSION DEC-052)
+    CURRENT BUDGET USED       = 2 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1 T-12 DEC-043;
+                                                     REPAIR_CYCLE_2 T-15 DEC-051). T-17 tiêu 0.
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+
+`REMAINING = 2` từ `OWNER_EXTENSION` của `DEC-052` **vẫn nguyên**, sẵn sàng cho lượt sửa tiếp theo
+của capability nếu cần — `T-17` không tiêu vào đó vì nó không phải repair cycle.
+
+Effective Risk của `CAP-WEBAPP` **KHÔNG đổi** (vẫn `HIGH`). `T-17` không mở rộng production path,
+không thêm REQUIRED check vào gate đã FROZEN của các task trước, không đổi bất kỳ field/phép tính
+nào của `derive()` — thuần thay đổi cách trình bày dữ liệu đã có.

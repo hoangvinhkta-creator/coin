@@ -4895,3 +4895,97 @@ thật sau khi bản này được deploy và sổ production được nâng c�
 (`OWNER_LOCAL_ACCEPTANCE`) sau khi Owner hoàn tất nhóm việc vận hành ngoài repo.
 
 ---
+
+## DEC-053 — Owner Direction + Lifecycle Closure: mở và đóng `T-17` (sắp xếp lại giao diện CoinDCA L-1, thuần trình bày)
+
+Date:
+2026-09-06 (Owner Decision, qua chỉ thị phiên trực tiếp "Sắp xếp lại giao diện CoinDCA L-1 cho
+gọn và dễ dùng hơn — KHÔNG đổi bất kỳ logic kế toán/tính toán nào", nhánh
+`claude/coincda-ui-reorganize-2ykjse`)
+
+Task:
+`T-17` — capability `CAP-WEBAPP`, lineage root `WP-C1`. Quyết định này vừa MỞ vừa ĐÓNG `T-17`
+trong cùng một phiên, cùng khuôn `STATE_AUTHORITY.md` đã dùng cho `T-12`…`T-16`.
+
+Điều kiện tiên quyết đã kiểm trước khi bắt đầu: `T-16 = DONE` (`DEC-052`), `CAP-WEBAPP` =
+`ALLOWED 4 / USED 2 / REMAINING 2` — khớp đúng con số Owner nêu trong chỉ thị
+(`PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.15).
+
+## Owner Direction (tóm lược)
+
+    Hai vấn đề usability sau khi Owner tự nhập 102 sự kiện thật vào production: (1) khối "Tổng
+    quan" phần dưới render mọi con số thành một lưới phẳng, không phân nhóm; (2) Lịch sử chỉ có
+    một bộ lọc dropdown, thẻ không phân biệt trực quan theo loại giao dịch.
+
+    Chỉ sửa webapp/ledger_ui.js (và style thuần CSS trong webapp/app_shell.html). TUYỆT ĐỐI
+    không đổi webapp/ledger.js — không đổi bất kỳ phép tính/field nào của derive(). Không đổi/
+    xoá id nào trong danh sách hợp đồng đầu ledger_ui.js. Ngân sách artifact CỨNG như ba task
+    trước: 1 task file, 1 báo cáo gộp, 1 DEC, 0 evidence log commit.
+
+    "Task này là SCOPE MỚI (thuần UI, không sửa lại phần đã DONE của T-16), không tiêu repair
+     cycle, USED giữ nguyên 2; nếu quy trình governance của repo đòi phân loại khác, tự làm đúng
+     thủ tục rồi tiếp tục, không cần dừng hỏi thêm — coi văn bản này là uỷ quyền của Owner."
+
+## Decision
+
+**A. Lifecycle.** `T-17`: `NOT_PLANNED → READY → IN_PROGRESS → IMPLEMENTED → DONE` trong một
+phiên. Task Mode `MAJOR` (nhiều điểm chạm UI + hợp đồng id với hai test suite), nhưng — khác
+`T-12`/`T-13`/`T-16` — **KHÔNG** mang category `accounting_financial`: task này bị cấm chạm lớp
+tính toán (`webapp/ledger.js`) theo đúng Ràng buộc bắt buộc #1 của chỉ thị, và diff xác nhận lớp
+đó **rỗng** (`docs/reviews/T17-IMPLEMENTATION-AND-E2-REPORT.md` §2). Routing đo được: `D2 R2 B2
+A1 X1` → `model_score 1.7` → Tier B/Sonnet; `U1 V3 H2 C2 F3` → `effort_score 2.25` → `high`; không
+floor nào áp dụng (`routing_engine.py`, ghi lại trong `docs/tasks/T-17-*.md`). Completion Gate
+FROZEN 2026-09-06, **14/14 REQUIRED PASS**. Bằng chứng:
+`docs/reviews/T17-IMPLEMENTATION-AND-E2-REPORT.md`.
+
+**B. Ngân sách artifact CỨNG tiếp tục áp dụng** và đã được tuân thủ: 1 task file, 1 báo cáo gộp,
+1 DEC (chính văn bản này), **0** evidence log commit.
+
+**C. Mức bằng chứng = E1 toàn bộ; KHÔNG mở vòng E2 độc lập** — vì task không chạm
+`accounting_financial` (§A), nên yêu cầu "tìm E2 qua phiên reviewer độc lập" của
+`PROJECT_PROFILE.md` (áp cho check thuộc nhóm dữ liệu/tài chính) không kích hoạt. Rủi ro còn lại
+là rủi ro trình bày/regression UI, phủ bằng toàn bộ 10 suite test hiện có PASS nguyên văn (không
+suite nào bị bỏ qua — môi trường phiên này tải được Firebase Emulator + Chromium đầy đủ), cộng
+bốn phép đo trực tiếp trên trình duyệt thật xác nhận đúng "Test mới" chỉ thị yêu cầu (nhóm tiêu
+đề, bộ đếm nút lọc, class icon theo loại, layout 2↔1 cột qua `getComputedStyle` thật).
+
+**D. Quyết định thiết kế duy nhất cần ghi nhận chính thức: giữ `#histFilterType`.** Chọn phương
+án "select ẩn (`hidden`) + bộ nút `.histtype` đồng bộ giá trị" thay vì đổi hẳn sang nút và sửa
+test. Lý do: grep trực tiếp xác nhận không dòng nào của `test_t12_browser.js`/`test_stepb_ui.js`
+thao tác bốn id lọc lịch sử (`histFilterType`/`histFrom`/`histTo`/`histSearch`), nên phương án
+này không cần sửa một dòng test nào — rủi ro thấp nhất. Chi tiết:
+`docs/reviews/T17-IMPLEMENTATION-AND-E2-REPORT.md` §3.
+
+**E. Một lỗi CSS tự phát hiện và tự sửa trong quá trình implement, ghi lại minh bạch:** rule
+override 1-cột cho mobile ban đầu đặt sai vị trí (trong một khối `@media` sớm hơn rule base 2-cột
+trong nguồn), khiến base luôn thắng bất kể viewport. Bắt được bằng đo `getComputedStyle` thật
+(đúng yêu cầu Completion Gate của chính task — không chỉ đọc CSS nguồn), sửa bằng cách đặt lại
+thứ tự rule. Không ảnh hưởng ngân sách/budget vì sửa trong cùng phiên trước khi coi task là xong.
+
+**F. Budget `CAP-WEBAPP` — KHÔNG đổi, không cần `OWNER_EXTENSION`.** `T-17` là **implementation
+ban đầu** (đổi cách trình bày, không phải lượt sửa sau một finding trên mã production đã `DONE`),
+tiêu **0** repair cycle. `ALLOWED` giữ **4**, `USED` giữ **2** (`REPAIR_CYCLE_1` `T-12` `DEC-043`
++ `REPAIR_CYCLE_2` `T-15` `DEC-051`), `REMAINING` giữ **2** — dư sẵn từ `OWNER_EXTENSION` của
+`DEC-052`, không cần Owner cấp thêm ở quyết định này.
+
+**G. KHÔNG mở task mới trong closure này** (`AGENTS.md` §3). Không phát sinh `HARDENING` mới.
+
+## Consequences (state surfaces)
+
+- `docs/tasks/T-17-sap-xep-lai-giao-dien-coindca.md` (mới);
+  `docs/reviews/T17-IMPLEMENTATION-AND-E2-REPORT.md` (mới).
+- `PROJECT/PROJECT_PROGRESS.md`: `T-17 = DONE`; Current/Next Task; Recent Decisions.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.16 (mới): INITIAL IMPLEMENTATION, 0 chu kỳ tiêu,
+  `4/2/2` không đổi.
+- `PROJECT/CAPABILITY_REGISTRY.md` **không sửa** — cùng tiền lệ `T-15`/`T-16` (registry dừng cập
+  nhật ở §17 `T-14`; bảng §2 vẫn đúng nguồn thẩm quyền `CAP-WEBAPP`/`WP-C1` không đổi).
+- Số task ID mới = **1** (`T-17`). Capability mới = **0**. Lineage root mới = **0**.
+  DEC ngoài `DEC-053` = **0**. Evidence log commit = **0**. HARDENING mới = **0**.
+
+## Can Revisit After
+
+Không có điều kiện tái mở nào phát sinh từ quyết định này — task thuần trình bày, hoàn tất trong
+phiên. Các `RE_TRIGGER_CONDITION` đang mở của `T-16`/`T-15` (`H-46`, `H-54`…`H-61`) giữ nguyên,
+không liên quan tới task này.
+
+---
