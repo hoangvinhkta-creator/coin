@@ -10,6 +10,10 @@
  * l1MigrationDate fields, l1History, l1Summary, l1Flags, l1Message, l1Root. Vì vậy Sheet
  * "+ Ghi giao dịch" (Step-B spec §5) ở đây mở sẵn (không đóng theo mặc định) thay vì modal ẩn
  * — quyết định ghi lại trong docs/reviews/T13-IMPLEMENTATION-REPORT.md.
+ * T-14 (bước C, DEC-049) chỉ thêm lớp backup/restore quanh CÙNG cơ chế đã có
+ * (download/L.destructive/commit): export mang timestamp + schemaVersion; restore có
+ * preview/validate dry-run TRƯỚC khi ghi và snapshot riêng cho nhánh restore. KHÔNG có phép tính
+ * tài chính nào mới ở đây — `CoinLedger.canonical/derive` vẫn là thẩm quyền duy nhất.
  */
 (function () {
   'use strict';
@@ -44,6 +48,62 @@
     const payload = { state: value, seed: hooks.seed(), snapshotAt: L.clock().instant };
     localStorage.setItem('coindca-last-snapshot', JSON.stringify(payload));
     download(payload, 'coindca-before-change.json');
+  }
+
+  /* ---- T-14 bước C: backup / recovery (Step-C spec §7, §8) ---- */
+
+  // Thời điểm cho TÊN FILE: ':' và '.' không dùng được trên nhiều hệ tệp nên đổi thành '-'.
+  // Nhận CHÍNH giá trị ISO 8601 đã ghi trong file (`exportedAt`/`snapshotAt`) chứ không đọc đồng
+  // hồ lần thứ hai — tên file và nội dung phải nói cùng một thời điểm.
+  function stamp(instant) { return String(instant).replace(/[:.]/g, '-'); }
+  /** Nội dung file backup: CHỈ nguồn sự thật canonical (`state` + `seed`) cộng siêu dữ liệu nhận
+   *  dạng. `derivedSnapshot` là khối THAM KHẢO cho người đọc, đánh dấu tường minh và KHÔNG bao
+   *  giờ được import (INV-1; `L.canonical()` cũng tự xoá trường này nếu lọt vào state). */
+  function exportPayload() {
+    const st = hooks.raw() || hooks.state();
+    // schemaVersion nói ĐÚNG schema của state đang xuất (kể cả bản durable hỏng đang được cứu),
+    // không mượn L.SCHEMA để trông cho hợp lệ — file backup phải tự mô tả trung thực.
+    const payload = { schemaVersion: st && st.schema !== undefined ? st.schema : null, exportedAt: L.clock().instant, state: st, seed: hooks.seed() };
+    if (st && st.schema === L.SCHEMA) {
+      try {
+        const d = L.derive(st.openingPosition, st.plan, st.events, L.clock().today);
+        payload.derivedSnapshot = { _meta: 'INFORMATIONAL — NOT IMPORTED', asOf: L.clock().today,
+          ethQty: d.holdings.ETH.qty, ethCostUsdt: d.holdings.ETH.costUsdt, ethCostVnd: d.holdings.ETH.costVnd,
+          usdtQty: d.usdt.qty, usdtCostVnd: d.usdt.costVnd, vndBalance: d.vnd.balance,
+          reserveBalance: d.reserve.balance, realizedFxVnd: d.realizedFxVnd, flags: d.flags };
+      } catch (e) { /* sổ chưa đủ dữ liệu để dẫn xuất — bỏ khối tham khảo, KHÔNG chặn backup */ }
+    }
+    return payload;
+  }
+  /** Đọc + kiểm một file backup mà KHÔNG chạm state hiện tại (dry-run, §8.2 mục 1/2).
+   *  `ok:false` = từ chối TRƯỚC mọi mutation bền (không snapshot, không ghi Firestore). */
+  function restorePreview(text) {
+    const no = r => ({ ok: false, summary: 'TỪ CHỐI KHÔI PHỤC — ' + r + '. Sổ hiện tại giữ nguyên; không ghi gì.' });
+    let o; try { o = JSON.parse(text); } catch (e) { return no('file không phải JSON hợp lệ (' + e.message + ')'); }
+    const wrapped = o && typeof o === 'object' && !Array.isArray(o) && o.state !== undefined;
+    const candidate = wrapped ? o.state : o;
+    const declared = wrapped && o.schemaVersion !== undefined ? o.schemaVersion : (candidate && candidate.schema);
+    if (declared !== L.SCHEMA || !candidate || candidate.schema !== L.SCHEMA) {
+      return no('schemaVersion ' + JSON.stringify(declared === undefined ? null : declared) + ' không phải ' + L.SCHEMA);
+    }
+    let restored;
+    try {
+      restored = L.canonical(candidate);
+      L.derive(restored.openingPosition, restored.plan, restored.events, L.clock().today);
+    } catch (e) { return no('validate thất bại: ' + e.message); }
+    const dates = restored.events.map(e => e.businessDate).sort();
+    return { ok: true, state: restored,
+      summary: 'XEM TRƯỚC KHÔI PHỤC — schemaVersion ' + declared + ' · ' + restored.events.length + ' giao dịch · ' +
+        (dates.length ? dates[0] + ' → ' + dates[dates.length - 1] : 'chưa có giao dịch') + ' · validate PASS' +
+        (wrapped && o.exportedAt ? ' · xuất lúc ' + o.exportedAt : '') };
+  }
+  /** Snapshot riêng của nhánh restore (§8.2 mục 3): tên khác snapshot "before-change" tổng quát
+   *  để Owner nhận đúng ngữ cảnh khi cần dùng lại. Chạy TRƯỚC mọi lệnh ghi phá huỷ. */
+  function restoreSnapshot(value) {
+    const payload = { schemaVersion: value && value.schema !== undefined ? value.schema : null, snapshotAt: L.clock().instant,
+      reason: 'BEFORE_RESTORE', state: value, seed: hooks.seed() };
+    localStorage.setItem('coindca-last-snapshot', JSON.stringify(payload));
+    download(payload, 'coindca-before-restore-' + stamp(payload.snapshotAt) + '.json');
   }
   function writable() { if (!hooks.canWrite()) throw new Error('Nguồn bền chưa sẵn sàng hoặc đang lưu; xem trạng thái đầu trang.'); }
   function meta() { return Object.assign({ id: crypto.randomUUID() }, L.clock()); }
@@ -287,8 +347,26 @@
       closeEntryReturn();
     });
     $('l1CancelEdit').onclick = () => { editId = null; currentTxType = null; $('l1SaveEvent').textContent = 'Lưu giao dịch'; document.querySelectorAll('.txtype').forEach(b => b.removeAttribute('aria-pressed')); message('Đã hủy sửa.'); };
-    $('l1Export').onclick = () => { try { download({ state: hooks.raw() || hooks.state(), seed: hooks.seed() }, 'coindca-ledger.json'); } catch (e) { message(e.message); } };
-    $('l1Import').onchange = run(async () => { const file = $('l1Import').files[0]; if (!file) return; return destroy('Thay toàn bộ sổ từ file?', async () => { const o = JSON.parse(await file.text()); return { ok: true, state: L.canonical(o.state || o) }; }); });
+    $('l1Export').onclick = () => { try { const p = exportPayload(); download(p, 'coindca-ledger-' + stamp(p.exportedAt) + '.json'); } catch (e) { message(e.message); } };
+    // Khôi phục (§8.2): đọc file -> XEM TRƯỚC + validate dry-run -> (chỉ khi hợp lệ) snapshot ->
+    // xác nhận dựa trên bản tóm tắt -> ghi nguyên tử qua L.destructive -> chờ máy chủ xác nhận.
+    $('l1Import').onchange = async () => {
+      const el = $('l1Import'), file = el.files[0];
+      if (!file) return;
+      try {
+        writable();
+        const preview = restorePreview(await file.text());
+        message(preview.summary);                      // hiện TRƯỚC dialog xác nhận
+        if (!preview.ok) return;                       // dừng trước mọi mutation bền
+        const result = await L.destructive(hooks.raw() || hooks.state(), () => ({ ok: true, state: preview.state }),
+          { snapshot: restoreSnapshot, commit,
+            confirm: () => window.confirm('Thay TOÀN BỘ sổ bằng file này?\n' + preview.summary +
+              '\nBản đầy đủ hiện tại đã được xuất ra coindca-before-restore-*.json trước thao tác này.') });
+        message(result.ok ? 'Đã khôi phục từ backup; chờ xác nhận lưu bền. ' + preview.summary
+          : (result.cancelled ? 'Đã hủy khôi phục; sổ giữ nguyên, snapshot vẫn có.'
+            : (result.errors || ['Khôi phục thất bại']).join('\n')));
+      } catch (e) { message(e.message); } finally { el.value = ''; }
+    };
     $('l1Wipe').onclick = run(() => destroy('Xóa toàn bộ sổ?', () => ({ ok: true, state: L.empty(L.clock().today.slice(0, 7)) })));
     $('l1Migrate').onclick = run(() => destroy('Chuyển sổ legacy sau khi đã xác nhận từng ngày?', () => {
       const dates = {}; document.querySelectorAll('[data-migration-key]').forEach(el => { dates[el.dataset.migrationKey] = { businessDate: el.value, order: Number($(el.id + 'Order').value) }; });

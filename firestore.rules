@@ -96,11 +96,30 @@ service cloud.firestore {
     // không bị bất kỳ match nào của Content chạm tới (không có collection nào tên "ethdca" ở
     // Content). Chỉ hai document được allow-list tường minh; mọi document ethdca/* khác mặc
     // định bị từ chối (Firestore default-deny), không cần catch-all riêng.
+    //
+    // T-14 (bước C, DEC-049) — NGUỒN DANH TÍNH ĐỔI, LOGIC KHÔNG ĐỔI. Từ T-14, UID điền vào
+    // OWNER_UID_REQUIRED là UID của TÀI KHOẢN GOOGLE của chủ sở hữu (Google Sign-In), KHÔNG còn
+    // là Anonymous UID gắn với IndexedDB của một trình duyệt. Hệ quả: UID không đổi khi chủ sở
+    // hữu đổi máy/trình duyệt/cửa sổ riêng tư hoặc xoá site data — ghi chú "Cross-device / mất
+    // identity: OUT OF SCOPE V1 (H-23)" ở đầu file là bối cảnh LỊCH SỬ của T-09B, đã được
+    // bước C xử lý; không xoá để giữ nguyên vết. Biểu thức dưới đây KHÔNG đổi hình dạng: vẫn so
+    // sánh ĐÚNG MỘT UID cố định, không role, không bảng hồ sơ, không "đã đăng nhập == Owner".
+    //
+    // CẢNH BÁO SUY LUẬN SAI (Step-C spec §6): `request.auth != null` KHÔNG có nghĩa là Owner.
+    // Auth là project-wide và dùng chung với app Content — một người dùng Content đã đăng nhập
+    // (kể cả bằng Google) vẫn bị từ chối ở đây vì UID khác. Mọi quyền CoinDCA đi qua so sánh UID
+    // tường minh bên dưới, không đi qua signedIn().
+    //
+    // RUNBOOK BẮT BUỘC TRƯỚC MỌI `firebase deploy --only firestore:rules` (Step-C spec §5.2,
+    // chi tiết ở webapp/README.md § Runbook deploy): (1) `npm --prefix webapp run test:rules-merge`
+    // PASS trên chính ruleset sắp deploy; (2) đọc thủ công diff của file này — mọi thay đổi NGOÀI
+    // khối COINDCA là tín hiệu dừng và hỏi chủ sở hữu; (3) chỉ deploy sau khi (1) và (2) đều đạt.
 
     function isCoinDcaOwner() {
       return request.auth != null && request.auth.uid == "OWNER_UID_REQUIRED";
     }
-    // Không có `delete`: app không bao giờ xoá document; xoá nhầm sổ là mất tiền.
+    // Không có `delete`: app không bao giờ xoá document; xoá nhầm sổ là mất tiền. Giữ nguyên ở
+    // T-14 — đường restore ghi đè bằng update/create, không bao giờ cần delete (Step-C spec §8.2).
     match /ethdca/state {
       allow read, create, update: if isCoinDcaOwner();
     }

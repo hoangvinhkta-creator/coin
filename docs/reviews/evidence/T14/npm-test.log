@@ -1,0 +1,810 @@
+
+> test
+> node test_t12_ledger.js && node test_t12_mutations.js && node test_t14_deploy_isolation.js && node test_t14_rules.js && node test_t14_persistence.js && node test_t14_backup_restore.js && node test_t12_browser.js && node test_stepb_ui.js
+
+TAP version 13
+# Subtest: SC-01 oracle số nguyên tolerance=0
+ok 1 - SC-01 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 2.998994
+  type: 'test'
+  ...
+# Subtest: SC-02 oracle số nguyên tolerance=0
+ok 2 - SC-02 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 0.666226
+  type: 'test'
+  ...
+# Subtest: SC-03 oracle số nguyên tolerance=0
+ok 3 - SC-03 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 6.972329
+  type: 'test'
+  ...
+# Subtest: SC-04 oracle số nguyên tolerance=0
+ok 4 - SC-04 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 1.517729
+  type: 'test'
+  ...
+# Subtest: SC-05 oracle số nguyên tolerance=0
+ok 5 - SC-05 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 0.698925
+  type: 'test'
+  ...
+# Subtest: SC-06 oracle số nguyên tolerance=0
+ok 6 - SC-06 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 0.382659
+  type: 'test'
+  ...
+# Subtest: SC-07 oracle số nguyên tolerance=0
+ok 7 - SC-07 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 0.334154
+  type: 'test'
+  ...
+# Subtest: SC-08 oracle số nguyên tolerance=0
+ok 8 - SC-08 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 7.308337
+  type: 'test'
+  ...
+# Subtest: SC-09 oracle số nguyên tolerance=0
+ok 9 - SC-09 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 1.073591
+  type: 'test'
+  ...
+# Subtest: SC-10 oracle số nguyên tolerance=0
+ok 10 - SC-10 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 0.607934
+  type: 'test'
+  ...
+# Subtest: SC-11 oracle số nguyên tolerance=0
+ok 11 - SC-11 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 0.324791
+  type: 'test'
+  ...
+# Subtest: SC-12 oracle số nguyên tolerance=0
+ok 12 - SC-12 oracle số nguyên tolerance=0
+  ---
+  duration_ms: 1.144962
+  type: 'test'
+  ...
+# Subtest: INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot
+ok 13 - INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot
+  ---
+  duration_ms: 2.008454
+  type: 'test'
+  ...
+# Subtest: INV-2 150 hoán vị + hai process TZ cho cùng ledger
+ok 14 - INV-2 150 hoán vị + hai process TZ cho cùng ledger
+  ---
+  duration_ms: 112.341583
+  type: 'test'
+  ...
+# Subtest: INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND
+ok 15 - INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND
+  ---
+  duration_ms: 0.618827
+  type: 'test'
+  ...
+# Subtest: INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW
+ok 16 - INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW
+  ---
+  duration_ms: 0.322606
+  type: 'test'
+  ...
+# Subtest: INV-5 integer schema, boundary validation và decimal nhập chính xác
+ok 17 - INV-5 integer schema, boundary validation và decimal nhập chính xác
+  ---
+  duration_ms: 1.284365
+  type: 'test'
+  ...
+# Subtest: INV-6 metadata không đi vào tiền và SC-08 một clock canonical
+ok 18 - INV-6 metadata không đi vào tiền và SC-08 một clock canonical
+  ---
+  duration_ms: 0.653197
+  type: 'test'
+  ...
+# Subtest: INV-7 từ chối event trước opening và sửa opening vượt event
+ok 19 - INV-7 từ chối event trước opening và sửa opening vượt event
+  ---
+  duration_ms: 0.80064
+  type: 'test'
+  ...
+# Subtest: INV-8 P2P chỉ chuyển tài sản tiền tệ, không đầu tư
+ok 20 - INV-8 P2P chỉ chuyển tài sản tiền tệ, không đầu tư
+  ---
+  duration_ms: 0.162349
+  type: 'test'
+  ...
+# Subtest: INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm
+ok 21 - INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm
+  ---
+  duration_ms: 0.446323
+  type: 'test'
+  ...
+# Subtest: INV-10 PRICE không chạm tiền; không ENGINE trong module
+ok 22 - INV-10 PRICE không chạm tiền; không ENGINE trong module
+  ---
+  duration_ms: 1.005193
+  type: 'test'
+  ...
+# Subtest: INV-11 null UNKNOWN lan truyền và không có kế hoạch
+ok 23 - INV-11 null UNKNOWN lan truyền và không có kế hoạch
+  ---
+  duration_ms: 0.297155
+  type: 'test'
+  ...
+# Subtest: INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên
+ok 24 - INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên
+  ---
+  duration_ms: 1.542266
+  type: 'test'
+  ...
+# Subtest: INV-13 SPLIT_VND 80 ngân sách × n1..12, phần cuối nhận dư
+ok 25 - INV-13 SPLIT_VND 80 ngân sách × n1..12, phần cuối nhận dư
+  ---
+  duration_ms: 1.638321
+  type: 'test'
+  ...
+# Subtest: INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi
+ok 26 - INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi
+  ---
+  duration_ms: 0.987824
+  type: 'test'
+  ...
+# Subtest: INV-15 20 edits giữ id/seq; delete/create không reuse
+ok 27 - INV-15 20 edits giữ id/seq; delete/create không reuse
+  ---
+  duration_ms: 2.360042
+  type: 'test'
+  ...
+# Subtest: SC-05/06/07 qua update thật khớp fixture replay
+ok 28 - SC-05/06/07 qua update thật khớp fixture replay
+  ---
+  duration_ms: 1.45768
+  type: 'test'
+  ...
+# Subtest: Calendar plan versions, clamp tháng nhuận, next amount biết được
+ok 29 - Calendar plan versions, clamp tháng nhuận, next amount biết được
+  ---
+  duration_ms: 0.275987
+  type: 'test'
+  ...
+# Subtest: CHECK-T12-10 SC-12 báo chỉ số legacy, lý do W1 và đường sửa explicit
+ok 30 - CHECK-T12-10 SC-12 báo chỉ số legacy, lý do W1 và đường sửa explicit
+  ---
+  duration_ms: 0.534732
+  type: 'test'
+  ...
+# Subtest: CHECK-T12-06 đổi schedule chỉ bằng version về sau
+ok 31 - CHECK-T12-06 đổi schedule chỉ bằng version về sau
+  ---
+  duration_ms: 0.90972
+  type: 'test'
+  ...
+# Subtest: Migration P2P hai chân actual gồm fee; đối chiếu VND/cost và float delta
+ok 32 - Migration P2P hai chân actual gồm fee; đối chiếu VND/cost và float delta
+  ---
+  duration_ms: 0.455316
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 173.51525
+{
+  "baseline": "c610a29",
+  "total": 7,
+  "killed": 7,
+  "survivors": 0,
+  "results": [
+    {
+      "id": "INV-1",
+      "from": "return s;\n  }\n  function derive",
+      "to": "return Object.assign(s, { costVnd: 42 });\n  }\n  function derive",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-1 canonical allowlist, không durable derived, bỏ derivedSnapshot",
+        "    Expected values to be strictly deep-equal:",
+        "  name: 'AssertionError'",
+        "  expected:",
+        "  actual:"
+      ]
+    },
+    {
+      "id": "INV-3",
+      "from": "return exact(sign * ((2n * n + d) / (2n * d)));",
+      "to": "return exact(sign * (n / d));",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND",
+        "    Expected values to be strictly equal:",
+        "  name: 'AssertionError'",
+        "  expected: 3",
+        "  actual: 2"
+      ]
+    },
+    {
+      "id": "INV-4",
+      "from": "if (out > usdt.qty) inconsistent(e);",
+      "to": "/* mutant: lose deficit flag */",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-4 prefix deficit ghi event đầu tiên dù cuối sổ dương; reserve WITHDRAW",
+        "  name: 'AssertionError'",
+        "  expected: true",
+        "  actual: false"
+      ]
+    },
+    {
+      "id": "INV-9",
+      "from": "if (e.source === 'PLAN') planSpent[m]",
+      "to": "if (e.source !== 'PRICE') planSpent[m]",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-9 EXTRA/RESERVE cách ly plan/carry ở hai thời điểm",
+        "  name: 'AssertionError'",
+        "  expected: 12000000",
+        "  actual: 21000000"
+      ]
+    },
+    {
+      "id": "INV-11",
+      "from": "return cost === null || total <= 0 || qty > total ? null",
+      "to": "return cost === null || total <= 0 || qty > total ? 0",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-11 null UNKNOWN lan truyền và không có kế hoạch",
+        "    Expected values to be strictly equal:",
+        "  name: 'AssertionError'",
+        "  expected: ~",
+        "  actual: 30000000"
+      ]
+    },
+    {
+      "id": "INV-12",
+      "from": "if (!result.ok) return result;",
+      "to": "if (!result.ok) { await hooks.commit(current); return result; }",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên",
+        "    Expected values to be strictly equal:",
+        "  name: 'AssertionError'",
+        "  expected: 0",
+        "  actual: 1"
+      ]
+    },
+    {
+      "id": "INV-14",
+      "from": "await hooks.snapshot(clone(current));",
+      "to": "/* mutant: no snapshot */",
+      "exitCode": 1,
+      "result": "KILLED",
+      "evidence": [
+        "not ok 1 - INV-14 snapshot trước import/wipe/migration/delete, cả hủy/lỗi",
+        "    Expected values to be strictly deep-equal:",
+        "  name: 'AssertionError'",
+        "  expected:",
+        "  actual:"
+      ]
+    }
+  ]
+}
+
+=== CHECK-T14-04 — firebase.json khai hosting.target = "coindca" ===
+  ok: hosting.target === "coindca"
+  ok: hosting.public không đổi (webapp/public)
+  ok: không hard-code `site` vào repo — ánh xạ target->site là thao tác Owner một lần
+  ok: tài liệu vận hành ghi lệnh `firebase target:apply hosting coindca <site-id>` Owner chạy một lần
+
+=== C-AS-13 — bề mặt cấu hình còn lại KHÔNG đổi so với trước T-14 ===
+  ok: firebase.json khác bản trước T-14 ĐÚNG một khoá hosting.target và không gì khác
+  ok: không thêm khối cấu hình mới nào (functions/storage/... = không có)
+
+=== CHECK-T14-05 / C-AS-12 — runbook deploy rules 3 bước + lệnh có scope ===
+  ok: README có mục "Runbook deploy"
+  ok: cấm tường minh `firebase deploy` trần (không scope)
+  ok: lệnh deploy Hosting dùng `--only hosting:coindca`
+  ok: lệnh deploy rules dùng `--only firestore:rules`
+  ok: tìm thấy khối "Ba bước bắt buộc TRƯỚC mọi firebase deploy --only firestore:rules"
+  ok: bước 1 = chạy test safe-merge (`npm --prefix webapp run test:rules-merge`)
+  ok: bước 2 = đọc diff `firestore.rules` thủ công
+  ok: bước 3 = chỉ deploy sau khi (1) và (2) đều đạt
+  ok: ba bước xuất hiện ĐÚNG thứ tự test -> diff -> deploy
+  ok: bước 2 nêu rõ: thay đổi ngoài khối COINDCA = tín hiệu dừng và hỏi Owner
+  ok: runbook nhắc FB-3 (placeholder OWNER_UID_REQUIRED có thể tự khoá Owner khi deploy lại)
+  ok: script `test:rules-merge` tồn tại thật trong webapp/package.json (runbook không trỏ vào lệnh ma)
+
+=== TỔNG KẾT test_t14_deploy_isolation ===
+assertion đã chạy: 18 | FAIL: 0
+T-14 DEPLOY ISOLATION: PASS — CHECK-T14-04 + CHECK-T14-05 + C-AS-12/C-AS-13
+
+=== CHECK-T14-02 — firestore.rules: chỉ khối COINDCA bị chạm, shape không đổi ===
+  ok: tìm thấy cả hai mốc khối CONTENT và COINDCA
+  ok: header trước khối Content trùng từng byte với bản trước T-14
+  ok: TOÀN BỘ khối Content trùng từng byte với bản trước T-14 (không đổi một ký tự)
+  ok: dòng THI HÀNH của khối COINDCA không đổi (chỉ comment đổi)
+  ok: khối COINDCA không có rule `delete` nào
+  ok: đúng MỘT biểu thức so sánh UID duy nhất (không role, không bảng hồ sơ)
+  ok: khối COINDCA không đọc document nào khác để quyết định quyền
+  ok: "đã đăng nhập" KHÔNG được dùng làm điều kiện của CoinDCA (Step-C spec §6)
+
+=== CHECK-T14-03 — ma trận danh tính 5 kịch bản trên rules THẬT của repo ===
+  owner(google)=gfdv8xViohMvW7wAcLuFLuAfp8M1  other(google)=1KzevIWGOGT89pYVMMnmR6jup3BH  anon=WAenpsqhLAPIfozmIumiYecZuLzb
+  ok: 1. Owner Google UID -> read ethdca/state -> ALLOW
+  ok: 1. Owner Google UID -> read ethdca/seed -> ALLOW
+  ok: 1. Owner -> update ethdca/state -> ALLOW
+  ok: 1. Owner -> update ethdca/seed -> ALLOW
+  ok: 2. Không đăng nhập -> read ethdca/state -> DENY
+  ok: 2. Không đăng nhập -> write ethdca/state -> DENY
+  ok: 2. Không đăng nhập -> read ethdca/seed -> DENY
+  ok: 2b. Ẩn danh (đã xác thực) -> read ethdca/state -> DENY
+  ok: 2b. Ẩn danh -> write ethdca/state -> DENY
+  ok: 3. Tài khoản Google khác -> read ethdca/state -> DENY
+  ok: 3. Tài khoản Google khác -> write ethdca/state -> DENY
+  ok: 3. Tài khoản Google khác -> read ethdca/seed -> DENY
+  ok: 4. delete ethdca/state bởi Owner -> DENY
+  ok: 4. delete ethdca/seed bởi Owner -> DENY
+  ok: 4. delete ethdca/state bởi Google khác -> DENY
+  ok: 4. delete ethdca/seed bởi Google khác -> DENY
+  ok: 4. delete ethdca/state bởi ẩn danh -> DENY
+  ok: 4. delete ethdca/seed bởi ẩn danh -> DENY
+  ok: 4. delete ethdca/state bởi không đăng nhập -> DENY
+  ok: 4. delete ethdca/seed bởi không đăng nhập -> DENY
+  ok: 4b. document ethdca/* ngoài allow-list (kể cả Owner) -> DENY
+  ok: 5. Owner CoinDCA có ĐÚNG quyền Content của một người dùng đã đăng nhập bình thường (lệch: [])
+    (14 probe Content × 2 actor; hồ sơ quyền: {"users/{x}:read":true,"contents/{x}:read":true,"schedules/{x}:read":true,"groups/{x}:read":true,"config/{x}:read":true,"fb_queue/{x}:read":true,"audit_logs/{x}:read":false,"users/{x}:write":false,"contents/{x}:write":false,"schedules/{x}:write":true,"groups/{x}:write":false,"config/{x}:write":false,"fb_queue/{x}:write":true,"audit_logs/{x}:write":false})
+
+=== C-AS-04 — chạy lại nguyên văn test_shared_rules_merge.js (baseline DEC-023) ===
+  ok: test_shared_rules_merge.js exit 0 — CONTENT_BEHAVIOR_PRESERVED, 0 deviation
+  assertion đã chạy: 120 | FAIL: 0
+  SHARED RULES MERGE: PASS — CONTENT_BEHAVIOR_PRESERVED = YES, CoinDCA matrix 12/12
+
+=== TỔNG KẾT test_t14_rules ===
+assertion đã chạy: 31 | FAIL: 0
+T-14 RULES: PASS — CHECK-T14-02 + CHECK-T14-03 + C-AS-01..04/C-AS-13
+
+=== PR-AUTH-0 — app_logic.js: KHÔNG còn signInAnonymously(); đăng nhập qua GoogleAuthProvider ===
+  ok: không còn lệnh gọi signInAnonymously() nào trong app_logic.js
+  ok: dùng firebase.auth.GoogleAuthProvider()
+  ok: đăng nhập qua signInWithPopup()
+  ok: một điểm vào danh tính duy nhất: onAuthStateChanged
+  ok: bản build app_final.html cũng không còn signInAnonymously()
+  => PR-AUTH-0: PASS
+
+=== C-AS-02 — Chưa đăng nhập -> KHÔNG đọc/ghi được dữ liệu tài chính CoinDCA ===
+  ok: phase = SIGNED_OUT khi chưa có phiên Google nào
+  ok: không có UID nào được gán
+  ok: banner "CHƯA ĐĂNG NHẬP" hiện rõ
+  ok: nút "Đăng nhập bằng Google" có mặt
+  ok: nút lưu bị khoá — không ghi sổ
+  ok: phía Firebase: không document nào được tạo bởi phiên chưa đăng nhập
+  => C-AS-02: PASS
+
+=== PR-AUTH-1 — Nút bấm chạy THẬT signInWithPopup(GoogleAuthProvider); môi trường chặn -> FAIL CLOSED ===
+  ok: SDK thật sự khởi động đường popup Google (yêu cầu apis.google.com/js/api.js) — không phải nhánh giả
+  ok: kết cục xác định: AUTH_FAILED (sandbox chặn mạng) hoặc ONLINE (môi trường có mạng) — thấy AUTH_FAILED
+  ok: popup thất bại -> vẫn khoá ghi sổ (fail closed)
+  ok: popup thất bại -> không ghi gì lên Firebase
+    (môi trường sandbox chặn apis.google.com — chi tiết: auth/internal-error)
+  => PR-AUTH-1: PASS
+
+=== C-AS-01 — Owner đăng nhập Google -> UID tài khoản Google -> rules cho truy cập ===
+  ok: app dùng đúng UID phiên Google vừa đăng nhập (FrnaSVjIA9PLG0XKDswN8UuAWhD2)
+  ok: rules còn OWNER_UID_REQUIRED -> app từ chối, không im lặng coi là sổ trống
+  ok: banner nói đúng lý do: UID không phải chủ sở hữu
+  ok: tải lại: phiên Google được khôi phục, cùng UID, KHÔNG phải đăng nhập lại
+  ok: email tài khoản Google hiển thị đúng: coindca-owner@example.test
+  => C-AS-01: PASS
+
+=== C-AS-05 — Owner ghi qua UI Step B -> máy chủ xác nhận -> tải lại -> khớp chính xác ===
+  ok: bản durable phía Firebase khớp BIT-EXACT với bản trong trang
+  ok: durable có đủ 2 giao dịch + số dư đầu kỳ
+  ok: UI hiển thị đúng 2 giao dịch trong Lịch sử
+  ok: tải lại: TOÀN BỘ số liệu hiển thị khớp từng ký tự
+  ok: derive() trên bản durable sau reload trùng khít (tolerance 0)
+  => C-AS-05: PASS
+
+=== CHECK-T14-01 — Đăng xuất -> đăng nhập lại cùng tài khoản Google -> đúng UID, đúng sổ cũ ===
+  ok: sau đăng xuất: SIGNED_OUT, không còn UID
+  ok: sổ bị xoá khỏi bộ nhớ trang (không rò rỉ sang phiên sau)
+  ok: đăng xuất KHÔNG chạm nguồn bền — Firestore giữ nguyên
+  ok: đăng nhập lại cho ĐÚNG UID cũ (UID là của tài khoản Google, không của phiên)
+  ok: sổ cũ hiện lại y hệt sau khi đăng nhập lại
+  => CHECK-T14-01: PASS
+
+=== C-AS-03 — Tài khoản Google KHÁC đăng nhập -> bị từ chối, không thấy và không ghi được sổ ===
+  ok: UID tài khoản khác khác hẳn UID Owner
+  ok: phase = UNRECOGNIZED (không phải "sổ trống")
+  ok: không nạp được bất kỳ dữ liệu tài chính nào của Owner
+  ok: khoá ghi sổ hoàn toàn
+  ok: nguồn bền của Owner không bị chạm
+  => C-AS-03: PASS
+
+=== C-AS-07 — localStorage mới hơn nguồn bền -> KHÔNG âm thầm thắng; server vẫn là sự thật ===
+  ok: app phát hiện phân kỳ và CHỜ người dùng chọn
+  ok: app đứng trên bản BỀN, không trên mirror
+  ok: số liệu hiển thị = bản của máy chủ, không phải bản mirror lệch
+  ok: phía Firebase: KHÔNG bị mirror ghi đè
+  ok: trong lúc chờ chọn: khoá ghi
+  ok: chọn "Bỏ bản trên máy" -> nguồn bền vẫn nguyên
+  => C-AS-07: PASS
+
+=== T14-CONFLICT — Ghi xung đột (một nơi khác vừa ghi) -> từ chối ghi đè, không mất dữ liệu máy chủ ===
+  ok: app báo đúng lỗi stale-durable
+  ok: phía Firebase: bản mới hơn KHÔNG bị tab cũ ghi đè
+  ok: banner nói rõ nguồn bền đã đổi ở nơi khác
+  => T14-CONFLICT: PASS
+
+=== T14-CORRUPT — Bản durable không hợp lệ -> không trở thành sổ, không bị ghi đè ===
+  ok: phase = CORRUPT
+  ok: khoá ghi sổ
+  ok: bản hỏng được GIỮ NGUYÊN để cứu, không bị wipe/backfill
+  => T14-CORRUPT: PASS
+
+=== T14-WRITE-DENIED — Rules từ chối ghi -> app KHÔNG báo đã lưu; nguồn bền không đổi ===
+  ok: lỗi permission-denied hiện trong trạng thái
+  ok: chip KHÔNG báo "Đã lưu bền"
+  ok: nguồn bền không đổi một byte nào
+  => T14-WRITE-DENIED: PASS
+
+=== C-AS-06 — Trình duyệt/hồ sơ MỚI, localStorage trống -> đăng nhập -> ĐÚNG sổ đó ===
+  ok: hồ sơ mới: chưa có phiên nào — KHÔNG tự coi là chủ sở hữu mới
+  ok: hồ sơ mới thật sự trống localStorage (không thừa hưởng gì)
+  ok: CÙNG tài khoản Google trên hồ sơ mới -> CÙNG UID (danh tính không gắn thiết bị)
+  ok: hồ sơ mới tải ĐÚNG sổ cũ từ máy chủ — không hiện trạng thái rỗng
+  ok: đứng đúng trên rev bền của máy chủ
+  => C-AS-06: PASS
+
+=== T14-RESTART — Đóng hẳn trình duyệt, mở lại cùng hồ sơ -> phiên Google còn, không phải đăng nhập lại ===
+  ok: mở lại: vào thẳng ONLINE với đúng UID, không qua màn đăng nhập
+  ok: số liệu khớp chính xác sau khi mở lại trình duyệt
+  ok: nguồn bền vẫn nguyên sau toàn bộ kịch bản
+  => T14-RESTART: PASS
+
+=== T14-CLEAR-STORAGE — Xoá localStorage + sessionStorage -> vẫn khôi phục đủ sổ từ Firestore ===
+  ok: mất toàn bộ bộ nhớ cục bộ KHÔNG mất sổ và KHÔNG mất quyền sở hữu
+  => T14-CLEAR-STORAGE: PASS
+
+=== errors console/pageerror (phải rỗng) ===
+  []
+  ok: không có pageerror/console error nào trong toàn bộ phiên
+
+=== TỔNG KẾT test_t14_persistence ===
+  PR-AUTH-0: PASS — app_logic.js: KHÔNG còn signInAnonymously(); đăng nhập qua GoogleAuthProvider
+  C-AS-02: PASS — Chưa đăng nhập -> KHÔNG đọc/ghi được dữ liệu tài chính CoinDCA
+  PR-AUTH-1: PASS — Nút bấm chạy THẬT signInWithPopup(GoogleAuthProvider); môi trường chặn -> FAIL CLOSED
+  C-AS-01: PASS — Owner đăng nhập Google -> UID tài khoản Google -> rules cho truy cập
+  C-AS-05: PASS — Owner ghi qua UI Step B -> máy chủ xác nhận -> tải lại -> khớp chính xác
+  CHECK-T14-01: PASS — Đăng xuất -> đăng nhập lại cùng tài khoản Google -> đúng UID, đúng sổ cũ
+  C-AS-03: PASS — Tài khoản Google KHÁC đăng nhập -> bị từ chối, không thấy và không ghi được sổ
+  C-AS-07: PASS — localStorage mới hơn nguồn bền -> KHÔNG âm thầm thắng; server vẫn là sự thật
+  T14-CONFLICT: PASS — Ghi xung đột (một nơi khác vừa ghi) -> từ chối ghi đè, không mất dữ liệu máy chủ
+  T14-CORRUPT: PASS — Bản durable không hợp lệ -> không trở thành sổ, không bị ghi đè
+  T14-WRITE-DENIED: PASS — Rules từ chối ghi -> app KHÔNG báo đã lưu; nguồn bền không đổi
+  C-AS-06: PASS — Trình duyệt/hồ sơ MỚI, localStorage trống -> đăng nhập -> ĐÚNG sổ đó
+  T14-RESTART: PASS — Đóng hẳn trình duyệt, mở lại cùng hồ sơ -> phiên Google còn, không phải đăng nhập lại
+  T14-CLEAR-STORAGE: PASS — Xoá localStorage + sessionStorage -> vẫn khôi phục đủ sổ từ Firestore
+assertion đã chạy: 60 | FAIL: 0
+T-14 PERSISTENCE: PASS — CHECK-T14-01 + CHECK-T14-11 + CHECK-T14-12 (C-AS-01/02/03/05/06/07/14)
+
+=== CHECK-T14-06 — Export mang timestamp + schemaVersion + CHỈ nguồn sự thật canonical ===
+  ok: tên file mang thời điểm xuất: coindca-ledger-2026-03-21T05-00-01-322Z.json
+  ok: schemaVersion === CoinLedger.SCHEMA (coindca.ledger/2)
+  ok: exportedAt là ISO 8601 hợp lệ: 2026-03-21T05:00:01.322Z
+  ok: timestamp trong tên file khớp CHÍNH XÁC exportedAt (không đọc đồng hồ lần thứ hai)
+  ok: khối `state` khớp BIT-EXACT bản durable phía Firebase
+  ok: state chỉ chứa allowlist canonical — không trường dẫn xuất nào
+  ok: khối tham khảo mang nhãn `_meta: "INFORMATIONAL — NOT IMPORTED"`
+  ok: khối tham khảo đúng số liệu derive() hiện tại (chỉ để người đọc)
+  => CHECK-T14-06: PASS
+
+=== CHECK-T14-08 — Backup dị dạng -> từ chối TRƯỚC mọi mutation bền; state hiện tại bit-for-bit không đổi ===
+  ok: schemaVersion sai: app báo TỪ CHỐI KHÔI PHỤC — TỪ CHỐI KHÔI PHỤC — schemaVersion "coindca.ledger/999" không phải coindca.ledger/2. Sổ hiệ
+  ok: schemaVersion sai: bản durable phía Firebase KHÔNG đổi một byte
+  ok: trường bắt buộc hỏng kiểu: app báo TỪ CHỐI KHÔI PHỤC — TỪ CHỐI KHÔI PHỤC — validate thất bại: Số nguyên vượt miền hợp lệ. Sổ hiện tại giữ nguyên;
+  ok: trường bắt buộc hỏng kiểu: bản durable phía Firebase KHÔNG đổi một byte
+  ok: thiếu mảng events: app báo TỪ CHỐI KHÔI PHỤC — TỪ CHỐI KHÔI PHỤC — validate thất bại: Thiếu events. Sổ hiện tại giữ nguyên; không ghi gì.
+  ok: thiếu mảng events: bản durable phía Firebase KHÔNG đổi một byte
+  ok: không phải JSON: app báo TỪ CHỐI KHÔI PHỤC — TỪ CHỐI KHÔI PHỤC — file không phải JSON hợp lệ (Expected property name or '}' in JSON at 
+  ok: không phải JSON: bản durable phía Firebase KHÔNG đổi một byte
+  ok: không hộp thoại xác nhận nào bật lên cho file dị dạng (dừng trước cả bước hỏi)
+  ok: localStorage[coindca-last-snapshot] không đổi
+  ok: mirror localStorage không đổi
+  ok: số liệu trên màn hình không đổi
+  => CHECK-T14-08: PASS
+
+=== CHECK-T14-07 — Xem trước (schemaVersion / số event / khoảng ngày / validate) hiện TRƯỚC hộp thoại xác nhận ===
+  ok: đúng một hộp thoại xác nhận được bật
+  ok: tại thời điểm hỏi xác nhận, #l1Message đã hiện bản tóm tắt
+  ok: tóm tắt nêu schemaVersion
+  ok: tóm tắt nêu số lượng giao dịch
+  ok: tóm tắt nêu khoảng ngày min → max
+  ok: tóm tắt nêu KẾT QUẢ VALIDATE
+  ok: tóm tắt nêu thời điểm xuất của file
+  ok: hộp thoại nói rõ đã xuất bản snapshot trước thao tác
+  ok: hủy -> app báo đã hủy
+  ok: hủy -> nguồn bền không đổi
+  => CHECK-T14-07: PASS
+
+=== CHECK-T14-09 — Snapshot `coindca-before-restore-<ISO>` được tạo TRƯỚC khi ghi đè ===
+  ok: tên file snapshot riêng cho nhánh restore, timestamp khớp snapshotAt: coindca-before-restore-2026-03-21T05-00-06-237Z.json
+  ok: snapshot chứa ĐÚNG state hiện tại trước khi ghi
+  ok: snapshot ghi rõ ngữ cảnh BEFORE_RESTORE
+  ok: snapshotAt là ISO 8601
+  ok: localStorage['coindca-last-snapshot'] cũng giữ đúng state trước khi ghi
+  ok: localStorage['coindca-last-snapshot'].reason = BEFORE_RESTORE
+  => CHECK-T14-09: PASS
+
+=== CHECK-T14-10 — backup hợp lệ -> sổ bị xoá -> restore -> ACK -> reload -> derive() y hệt ===
+  ok: trạng thái xuất phát: sổ RỖNG trên nguồn bền
+  ok: màn hình đã khác hẳn trước khi khôi phục
+  ok: app báo đã khôi phục: Đã khôi phục từ backup; chờ xác nhận lưu bền. XEM TRƯỚC KHÔI PHỤC — schemaVersio
+  ok: derive() sau khôi phục TRÙNG KHÍT bản gốc (tolerance 0)
+  ok: toàn bộ số liệu dashboard/tóm tắt hiển thị y hệt trước khi hỏng
+  ok: state canonical khớp bản gốc (trừ `rev` — bộ đếm ghi bền, không phải số liệu tài chính)
+  ok: khối derivedSnapshot của file backup KHÔNG được nhập vào nguồn bền
+  ok: rev tiến lên đúng chuỗi ghi bền, không quay lui
+  => CHECK-T14-10: PASS
+
+=== C-AS-09b — derivedSnapshot lọt vào trong `state` cũng bị bỏ vô điều kiện, tiền không trôi ===
+  ok: nguồn bền không chứa derivedSnapshot
+  ok: derive() vẫn cho đúng số cũ — không đồng nào trôi
+  => C-AS-09b: PASS
+
+=== errors console/pageerror (phải rỗng) ===
+  []
+  ok: không có pageerror/console error nào
+
+=== TỔNG KẾT test_t14_backup_restore ===
+  CHECK-T14-06: PASS — Export mang timestamp + schemaVersion + CHỈ nguồn sự thật canonical
+  CHECK-T14-08: PASS — Backup dị dạng -> từ chối TRƯỚC mọi mutation bền; state hiện tại bit-for-bit không đổi
+  CHECK-T14-07: PASS — Xem trước (schemaVersion / số event / khoảng ngày / validate) hiện TRƯỚC hộp thoại xác nhận
+  CHECK-T14-09: PASS — Snapshot `coindca-before-restore-<ISO>` được tạo TRƯỚC khi ghi đè
+  CHECK-T14-10: PASS — backup hợp lệ -> sổ bị xoá -> restore -> ACK -> reload -> derive() y hệt
+  C-AS-09b: PASS — derivedSnapshot lọt vào trong `state` cũng bị bỏ vô điều kiện, tiền không trôi
+assertion đã chạy: 47 | FAIL: 0
+T-14 BACKUP/RESTORE: PASS — CHECK-T14-06..10 (C-AS-08/09/10/11)
+PASS P-1/P-2 Bundle thật; opening + 8 event qua UI; 2 treasury, 2 PLAN, EXTRA, RESERVE contribution/buy, PRICE.
+PASS P-3 Sửa giữ id/seq; hard delete có snapshot; nhập muộn ngày 04/02 khi thao tác 21/03.
+PASS P-4 Server ACK mỗi thao tác; REST ethdca/state bit-exact với mirror; oracle số nguyên tolerance=0.
+PASS P-5 Reload tự replay; dashboard/holdings/giá vốn khớp oracle tính tay.
+PASS P-6 Payload durable allowlist canonical; không derived truth.
+PASS INV-1/14 import Snapshot đầy đủ trước import; derivedSnapshot bị bỏ; tiền không trôi.
+PASS SC-12 production Legacy read-only → xác nhận ngày → snapshot → migration W-1 → server ACK → reload, UNKNOWN thấy được.
+PASS Migration M-1 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS Migration M-2 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS Migration M-3 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS Migration M-4 Snapshot trước lỗi, source/durable không đổi một byte canonical.
+PASS INV-14 hủy wipe Hủy sau snapshot vẫn giữ toàn bộ durable.
+PASS Persistence offline Offline chỉ xem mirror, không ghi; online reload lấy server.
+PASS Persistence rejected write/retry Permission denied không báo đã lưu; REST không đổi; retry sau khôi phục rules có ACK.
+PASS Persistence stale rev Tab cũ không ghi đè server revision mới hơn.
+PASS Persistence corrupt/version Unknown schema bị khóa, xuất raw đầy đủ, không wipe/backfill.
+PASS Persistence browser restart Đóng/mở Chrome cùng profile giữ phiên Google (T-14; trước đó là Anonymous UID); load server bit-exact.
+{
+  "results": [
+    {
+      "name": "P-1/P-2",
+      "status": "PASS",
+      "detail": "Bundle thật; opening + 8 event qua UI; 2 treasury, 2 PLAN, EXTRA, RESERVE contribution/buy, PRICE."
+    },
+    {
+      "name": "P-3",
+      "status": "PASS",
+      "detail": "Sửa giữ id/seq; hard delete có snapshot; nhập muộn ngày 04/02 khi thao tác 21/03."
+    },
+    {
+      "name": "P-4",
+      "status": "PASS",
+      "detail": "Server ACK mỗi thao tác; REST ethdca/state bit-exact với mirror; oracle số nguyên tolerance=0."
+    },
+    {
+      "name": "P-5",
+      "status": "PASS",
+      "detail": "Reload tự replay; dashboard/holdings/giá vốn khớp oracle tính tay."
+    },
+    {
+      "name": "P-6",
+      "status": "PASS",
+      "detail": "Payload durable allowlist canonical; không derived truth."
+    },
+    {
+      "name": "INV-1/14 import",
+      "status": "PASS",
+      "detail": "Snapshot đầy đủ trước import; derivedSnapshot bị bỏ; tiền không trôi."
+    },
+    {
+      "name": "SC-12 production",
+      "status": "PASS",
+      "detail": "Legacy read-only → xác nhận ngày → snapshot → migration W-1 → server ACK → reload, UNKNOWN thấy được."
+    },
+    {
+      "name": "Migration M-1",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "Migration M-2",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "Migration M-3",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "Migration M-4",
+      "status": "PASS",
+      "detail": "Snapshot trước lỗi, source/durable không đổi một byte canonical."
+    },
+    {
+      "name": "INV-14 hủy wipe",
+      "status": "PASS",
+      "detail": "Hủy sau snapshot vẫn giữ toàn bộ durable."
+    },
+    {
+      "name": "Persistence offline",
+      "status": "PASS",
+      "detail": "Offline chỉ xem mirror, không ghi; online reload lấy server."
+    },
+    {
+      "name": "Persistence rejected write/retry",
+      "status": "PASS",
+      "detail": "Permission denied không báo đã lưu; REST không đổi; retry sau khôi phục rules có ACK."
+    },
+    {
+      "name": "Persistence stale rev",
+      "status": "PASS",
+      "detail": "Tab cũ không ghi đè server revision mới hơn."
+    },
+    {
+      "name": "Persistence corrupt/version",
+      "status": "PASS",
+      "detail": "Unknown schema bị khóa, xuất raw đầy đủ, không wipe/backfill."
+    },
+    {
+      "name": "Persistence browser restart",
+      "status": "PASS",
+      "detail": "Đóng/mở Chrome cùng profile giữ phiên Google (T-14; trước đó là Anonymous UID); load server bit-exact."
+    }
+  ],
+  "oracle": {
+    "holdings.ETH.qty": 104000000,
+    "holdings.ETH.costUsdt": 2550600000,
+    "holdings.ETH.costVnd": 64351292,
+    "usdt.qty": 249400000,
+    "usdt.costVnd": 6248708,
+    "reserve.balance": 7494504,
+    "month.monthlyBudgetVnd": 20000000,
+    "month.carryInVnd": 10659700,
+    "month.plannedBudgetVnd": 30659700,
+    "month.investedThisMonthVnd": 5010992,
+    "month.planInvestedVnd": 0,
+    "month.remainingPlannedBudgetVnd": 30659700,
+    "month.nextPlannedDate": "2026-03-23",
+    "month.nextPlannedAmountVnd": 20000000
+  },
+  "realEventsCreated": 10,
+  "errors": []
+}
+PASS PR-1 App nạp qua app_final.html (bundle của build_app.js) qua HTTP server, không gọi module Node trực tiếp.
+PASS AS-02a Đổi VND→USDT qua sheet mới cập nhật USDT hiện có ngay, không reload.
+PASS AS-02b Hai lệnh Mua ETH · Kế hoạch qua sheet ghi đúng source=PLAN.
+PASS AS-03 Mua EXTRA qua UI: invested tăng, planInvested/remaining/nextPlanned bất biến (INV-9); badge EXTRA hiện ở Lịch sử.
+PASS AS-04 Nạp dự phòng rồi Mua-Từ dự phòng: thiếu note bị chặn tại form (không cần lỗi ledger.js); có note thì lưu, và số dư dự phòng trên Tổng quan khớp bit-với-bit derive().
+PASS AS-05 Sửa giao dịch qua Lịch sử → derive() chạy lại; id/seq bất biến (INV-15).
+PASS AS-06 Xoá qua Lịch sử: snapshot JSON xuất hiện trước khi xoá; sau xoá event biến mất khỏi durable.
+PASS AS-11 Nhập muộn (2026-03-04, xen giữa các giao dịch 03/03..21/03 đã có) ghi được qua sheet không cần thao tác đặc biệt; thứ tự (businessDate,seq) do derive() tự xử lý.
+PASS AS-01/AS-08 Bốn số + hành động kế tiếp trên Tổng quan khớp bit-với-bit derive() (tolerance 0), gồm nextPlannedDate/Amount theo scheduleDays/carry.
+PASS AS-07 Opening với usdt.costVnd=null: giá vốn VND hiện "—", banner UNKNOWN_VND_BASIS thường trực, không nút ẩn vĩnh viễn trong DOM.
+PASS AS-10 Grep toàn bộ DOM: không tuỳ chọn SELL/Bán ở form/menu nào; không hiển thị realized P&L/PnL.
+PASS AS-09 Ở khung hình 390px: không cuộn ngang; ghi một giao dịch PLAN từ Tổng quan tốn đúng 3 lần chạm (FAB, loại, Lưu).
+PASS PR-3 Ít nhất 1 sửa và 1 xoá qua UI mới với snapshot/xác nhận (xem AS-05/AS-06).
+PASS PR-4/PR-5 Toàn bộ ghi lên Firestore Emulator (rules thật), đọc lại từ SERVER; reload → derive() chạy lại → số trên Tổng quan trùng khớp tuyệt đối.
+PASS PR-6 Grep ledger_ui.js: không có phép cộng/trừ/nhân tiền độc lập ngoài derive()/update()/migrate()/destructive() của webapp/ledger.js.
+PASS AS-12/PR-2 Toàn bộ AS-01..AS-11 chạy qua app_final.html + UI mới (tap/điền form thật) + Firestore Emulator + firestore.rules; anti-vacuity: 15 thao tác thật ghi nhận.
+{
+  "results": [
+    {
+      "name": "PR-1",
+      "status": "PASS",
+      "detail": "App nạp qua app_final.html (bundle của build_app.js) qua HTTP server, không gọi module Node trực tiếp."
+    },
+    {
+      "name": "AS-02a",
+      "status": "PASS",
+      "detail": "Đổi VND→USDT qua sheet mới cập nhật USDT hiện có ngay, không reload."
+    },
+    {
+      "name": "AS-02b",
+      "status": "PASS",
+      "detail": "Hai lệnh Mua ETH · Kế hoạch qua sheet ghi đúng source=PLAN."
+    },
+    {
+      "name": "AS-03",
+      "status": "PASS",
+      "detail": "Mua EXTRA qua UI: invested tăng, planInvested/remaining/nextPlanned bất biến (INV-9); badge EXTRA hiện ở Lịch sử."
+    },
+    {
+      "name": "AS-04",
+      "status": "PASS",
+      "detail": "Nạp dự phòng rồi Mua-Từ dự phòng: thiếu note bị chặn tại form (không cần lỗi ledger.js); có note thì lưu, và số dư dự phòng trên Tổng quan khớp bit-với-bit derive()."
+    },
+    {
+      "name": "AS-05",
+      "status": "PASS",
+      "detail": "Sửa giao dịch qua Lịch sử → derive() chạy lại; id/seq bất biến (INV-15)."
+    },
+    {
+      "name": "AS-06",
+      "status": "PASS",
+      "detail": "Xoá qua Lịch sử: snapshot JSON xuất hiện trước khi xoá; sau xoá event biến mất khỏi durable."
+    },
+    {
+      "name": "AS-11",
+      "status": "PASS",
+      "detail": "Nhập muộn (2026-03-04, xen giữa các giao dịch 03/03..21/03 đã có) ghi được qua sheet không cần thao tác đặc biệt; thứ tự (businessDate,seq) do derive() tự xử lý."
+    },
+    {
+      "name": "AS-01/AS-08",
+      "status": "PASS",
+      "detail": "Bốn số + hành động kế tiếp trên Tổng quan khớp bit-với-bit derive() (tolerance 0), gồm nextPlannedDate/Amount theo scheduleDays/carry."
+    },
+    {
+      "name": "AS-07",
+      "status": "PASS",
+      "detail": "Opening với usdt.costVnd=null: giá vốn VND hiện \"—\", banner UNKNOWN_VND_BASIS thường trực, không nút ẩn vĩnh viễn trong DOM."
+    },
+    {
+      "name": "AS-10",
+      "status": "PASS",
+      "detail": "Grep toàn bộ DOM: không tuỳ chọn SELL/Bán ở form/menu nào; không hiển thị realized P&L/PnL."
+    },
+    {
+      "name": "AS-09",
+      "status": "PASS",
+      "detail": "Ở khung hình 390px: không cuộn ngang; ghi một giao dịch PLAN từ Tổng quan tốn đúng 3 lần chạm (FAB, loại, Lưu)."
+    },
+    {
+      "name": "PR-3",
+      "status": "PASS",
+      "detail": "Ít nhất 1 sửa và 1 xoá qua UI mới với snapshot/xác nhận (xem AS-05/AS-06)."
+    },
+    {
+      "name": "PR-4/PR-5",
+      "status": "PASS",
+      "detail": "Toàn bộ ghi lên Firestore Emulator (rules thật), đọc lại từ SERVER; reload → derive() chạy lại → số trên Tổng quan trùng khớp tuyệt đối."
+    },
+    {
+      "name": "PR-6",
+      "status": "PASS",
+      "detail": "Grep ledger_ui.js: không có phép cộng/trừ/nhân tiền độc lập ngoài derive()/update()/migrate()/destructive() của webapp/ledger.js."
+    },
+    {
+      "name": "AS-12/PR-2",
+      "status": "PASS",
+      "detail": "Toàn bộ AS-01..AS-11 chạy qua app_final.html + UI mới (tap/điền form thật) + Firestore Emulator + firestore.rules; anti-vacuity: 15 thao tác thật ghi nhận."
+    }
+  ]
+}
+NPM TEST EXIT=0

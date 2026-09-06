@@ -664,3 +664,35 @@ kiện của `T-14`. `H-42` (`PROJECT/HARDENING_BACKLOG.md`) được tách disp
 (danh tính bền vững, rules, deploy isolation logic, backup/recovery, bằng chứng persistence) nay
 có owner = `T-14`; phần DEFERRED (project vật lý riêng, tắt Anonymous provider) giữ nguyên
 HARDENING không có owner, chờ Owner chủ động.
+
+---
+
+## 17. `T-14` — thi hành xong ở mức `IMPLEMENTED` (2026-09-06, `S039`)
+
+Phiên `S039` thi hành `T-14` (`READY → IN_PROGRESS → IMPLEMENTED`) trên nhánh
+`claude/t14-step-c-firebase-isolation-xu6nxb`, base `origin/main` `97434d0`. Mục này chỉ ghi hệ
+quả về **capability**, không lặp lại nội dung kỹ thuật (xem
+`docs/reviews/T14-IMPLEMENTATION-REPORT.md`).
+
+    Capability mới          = 0
+    Lineage root mới        = 0
+    Task ID mới             = 0
+    Proposal mới            = 0
+    OWNER_ASSIGNMENT_REQUIRED mới = 0
+    Repair cycle tiêu       = 0   (CAP-WEBAPP giữ allowed 2 / used 1 / remaining 1)
+
+`T-14` vẫn nằm trọn trong `CAP-WEBAPP` (lineage root `WP-C1`), cùng lineage `T-09B`/`T-12`/`T-13`.
+Phiên thi hành **không** mở rộng ranh giới capability: không collection/document Firestore mới
+(`DEC-043` LOCKED giữ nguyên `ethdca/state` + `ethdca/seed`), không hệ thống multi-user/role
+(`DEC-021`), không SELL/realized P&L (`H-46` nguyên trạng), không project Firebase mới
+(`DEC-049` A).
+
+Hai finding mới của phiên (`H-51`, `H-52`, `PROJECT/HARDENING_BACKLOG.md`) được định tuyến đúng
+`REVIEW_PROTOCOL.md` § Finding Routing: **HARDENING có `RE_TRIGGER_CONDITION`, không owner, không
+task ID** — đúng `AGENTS.md` §3 *"A finding is not a task"*. Không mục nào chạm ngưỡng Absorption
+(`ABSORPTION_LIMIT_REACHED` = không).
+
+Trạng thái tiếp theo của capability: `T-14` chờ independent E2 rồi Owner Closure. Cho tới khi
+`T-14 DONE`, `CAP-WEBAPP` **không có** task nào ở trạng thái mở khác, và phần REQUIRED của `H-42`
+cùng `H-49` **chưa** được đóng.
+

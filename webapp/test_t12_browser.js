@@ -107,6 +107,10 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     await H.prepareContext(offlineContext, H.emulatorConfig({ emulator: { auth: 'http://127.0.0.1:9099', firestoreHost: '127.0.0.1', firestorePort: 1 } }));
     await offlineContext.addInitScript(state => localStorage.setItem('ethdca-tracker-state-v1', JSON.stringify(state)), migrated);
     const offlinePage = await offlineContext.newPage(); H.attachErrors(offlinePage); await offlinePage.goto(H.baseUrl());
+    // T-14: danh tính là Google Sign-In, nên một context mới bắt đầu ở SIGNED_OUT. Đăng nhập
+    // (Auth Emulator vẫn tới được) rồi mới tới được nhánh OFFLINE của Firestore (port 1). Chỉ là
+    // giàn giáo của kịch bản; khẳng định bên dưới không đổi.
+    await H.waitPhase(offlinePage, 'SIGNED_OUT'); await H.googleSignIn(offlinePage);
     await H.waitPhase(offlinePage, 'OFFLINE', 60000);
     A.deepEqual(await H.getDoc('state'), migrated); A.match(await offlinePage.textContent('#saveChip'), /KHÔNG GHI SỔ/);
     A.equal((await H.status(offlinePage)).mirrorShown, true); await offlineContext.close();
@@ -134,7 +138,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     A.deepEqual(await H.readState(profilePage.p), external); await ctx.close(); ctx = null;
     profilePage = await H.newPersistent(chromium, profile); ctx = profilePage.ctx; await H.waitPhase(profilePage.p, 'ONLINE');
     A.equal((await H.status(profilePage.p)).uid, restartUid); A.deepEqual(await H.readState(profilePage.p), external);
-    record('Persistence browser restart', 'Đóng/mở Chrome cùng profile giữ Anonymous UID; load server bit-exact.');
+    record('Persistence browser restart', 'Đóng/mở Chrome cùng profile giữ phiên Google (T-14; trước đó là Anonymous UID); load server bit-exact.');
 
     console.log(JSON.stringify({ results, oracle, realEventsCreated: 10, errors: opened.errs }, null, 2));
   } finally { if (ctx) await ctx.close(); await b.close(); await H.stopServer(); await stop(); }

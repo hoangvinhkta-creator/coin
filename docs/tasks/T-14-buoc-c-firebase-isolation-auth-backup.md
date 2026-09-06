@@ -2,9 +2,16 @@
 
 ## Metadata
 Status:
-READY
+IMPLEMENTED
 
-Hiện hành: Task được mở và đưa thẳng lên `READY` trong cùng phiên định nghĩa (`S038`,
+Hiện hành: `READY → IN_PROGRESS → IMPLEMENTED` tại phiên thi hành `S039` (2026-09-06, nhánh
+`claude/t14-step-c-firebase-isolation-xu6nxb`). Ready Gate được xác nhận lại còn hiệu lực TRƯỚC
+khi viết dòng mã production đầu tiên (17/17, `docs/reviews/T14-IMPLEMENTATION-REPORT.md` §3).
+12/12 REQUIRED check của Completion Gate PASS ở mức E1. **KHÔNG** chuyển `DONE` — chuyển
+`IMPLEMENTED → DONE` thuộc thẩm quyền chủ dự án (`STATE_AUTHORITY.md`), sau independent E2 đúng
+tiền lệ `T-09B`/`T-12`/`T-13`. Endpoint của phiên thi hành: **IMPLEMENTED — E2_REQUIRED**.
+
+Lịch sử: Task được mở và đưa thẳng lên `READY` trong phiên định nghĩa (`S038`,
 2026-09-06), theo đúng thẩm quyền Owner của chỉ thị phiên trực tiếp "COINDCA — L-1 STEP C
 DEFINITION" (ghi lại thành `DEC-049`, `PROJECT/PROJECT_DECISIONS.md`) — cùng khuôn `T-12`
 (`S032`) và `T-13` (`S035`): `NOT_PLANNED → READY` trong một phiên định nghĩa, trước khi có
@@ -301,108 +308,132 @@ task này, không phải repair cycle của `T-12`/`T-13`.
 ### Danh tính & Rules
 
 #### CHECK-T14-01 — Google Sign-In thay thế Anonymous Auth làm thẩm quyền danh tính
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: `webapp/app_logic.js::initPersistence()` không còn gọi `signInAnonymously()`. Đăng nhập
 qua `GoogleAuthProvider`. UID phiên đăng nhập là UID dùng để so sánh trong `firestore.rules`.
 Đăng xuất/đăng nhập lại (cùng tài khoản) trả về đúng UID, đọc đúng `ethdca/state` cũ.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_persistence.js` — `PR-AUTH-0` (không còn lệnh gọi `signInAnonymously()` trong `app_logic.js` lẫn bản build), `C-AS-01`, `CHECK-T14-01` (đăng xuất → đăng nhập lại cùng tài khoản Google → đúng UID cũ → sổ cũ hiện lại y hệt).
+
 #### CHECK-T14-02 — `isCoinDcaOwner()` giữ nguyên shape, không mở rộng quyền
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: diff `firestore.rules` chỉ chạm khối `COINDCA` (comment/tài liệu); logic so sánh vẫn là
 một biểu thức UID duy nhất; không thêm `delete`; khối Content không đổi một ký tự.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_rules.js` §A — SHA-256 của header và của TOÀN BỘ khối Content trùng từng byte với bản trước T-14; các dòng thi hành khối `COINDCA` trùng đúng danh sách khoá cứng; 0 rule `delete`; đúng MỘT biểu thức so UID.
+
 #### CHECK-T14-03 — Emulator rules matrix 5 kịch bản danh tính PASS
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: Owner (UID đúng) ALLOW; ẩn danh DENY; UID xác thực khác DENY; `delete` DENY (mặc định);
 hành vi Content không đổi so với baseline `DEC-023` (chạy lại `test_shared_rules_merge.js` hoặc
 kế thừa, 0 deviation).
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_rules.js` §B — 5 kịch bản danh tính trên rules THẬT của repo với token THẬT do Auth Emulator ký (Owner google.com ALLOW; không đăng nhập DENY; ẩn danh DENY; tài khoản Google khác DENY; `delete` DENY cho mọi actor; Owner không có quyền Content đặc biệt) + chạy lại nguyên văn `test_shared_rules_merge.js` (120 assertion, exit 0, 0 deviation so với baseline `DEC-023`).
+
 ### Deploy isolation
 
 #### CHECK-T14-04 — `firebase.json` khai `hosting.target`
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: khối `hosting` có khoá `target: "coindca"`. Tài liệu vận hành ghi lệnh
 `firebase target:apply hosting coindca <site-id>` Owner cần chạy một lần.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_deploy_isolation.js` — `firebase.json` có `hosting.target: "coindca"`; phần cấu hình còn lại trùng ĐÚNG bản trước T-14; `webapp/README.md` § Runbook deploy ghi lệnh `firebase target:apply hosting coindca <site-id-coindca>`.
+
 #### CHECK-T14-05 — Runbook deploy rules 3 bước được ghi lại
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: tài liệu vận hành mô tả đúng ba bước (test safe-merge → đọc diff thủ công → deploy có
 điều kiện) trước mọi `firebase deploy --only firestore:rules`. Lệnh deploy khuyến nghị dùng
 `--only hosting:coindca` / `--only firestore:rules`, không dùng `firebase deploy` trần.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_deploy_isolation.js` — `webapp/README.md` § Runbook deploy có đúng ba bước theo đúng thứ tự (`test:rules-merge` → `git diff -- firestore.rules` → chỉ deploy sau khi (1) và (2) đạt), cấm tường minh `firebase deploy` trần, lệnh khuyến nghị là `--only hosting:coindca` / `--only firestore:rules`.
+
 ### Backup & Recovery
 
 #### CHECK-T14-06 — Export mang timestamp + schema version + chỉ chứa nguồn sự thật
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: tên file `coindca-ledger-<ISO8601>.json`; JSON có `exportedAt` (ISO 8601) và
 `schemaVersion` (= `CoinLedger.SCHEMA`); nếu có `derivedSnapshot`, nó nằm trong khối
 `_meta: "INFORMATIONAL — NOT IMPORTED"`.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_backup_restore.js` — tên file `coindca-ledger-<ISO8601>.json` khớp `exportedAt`; `schemaVersion === CoinLedger.SCHEMA`; `state` bit-exact với bản durable phía Firebase và chỉ chứa allowlist canonical; `derivedSnapshot._meta === "INFORMATIONAL — NOT IMPORTED"`.
+
 #### CHECK-T14-07 — Preview + validate bắt buộc trước khi restore ghi đè
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: sau khi đọc file, hiển thị tóm tắt (schemaVersion, số event, khoảng ngày, kết quả
 validate) TRƯỚC dialog xác nhận ghi. Owner xác nhận dựa trên tóm tắt, không dựa trên "tin tưởng
 file".
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_backup_restore.js` — nội dung `#l1Message` ĐƯỢC ĐỌC TẠI ĐÚNG THỜI ĐIỂM hộp thoại xác nhận bật lên và đã chứa `schemaVersion`, số giao dịch, khoảng ngày min→max, `validate PASS`, thời điểm xuất.
+
 #### CHECK-T14-08 — Backup dị dạng bị từ chối, không mutate
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: file với `schemaVersion` sai hoặc field bắt buộc thiếu/hỏng khiến `canonical()`/
 `validate()` ném lỗi → restore dừng TRƯỚC khi ghi Firestore/`localStorage` chính; state hiện tại
 không đổi (đo bằng snapshot trước/sau thao tác thất bại, phải bit-for-bit giống nhau).
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_backup_restore.js` — 4 ca dị dạng (schemaVersion sai, trường hỏng kiểu, thiếu `events`, không phải JSON): app báo TỪ CHỐI KHÔI PHỤC, **không hộp thoại xác nhận nào bật lên**, bản durable phía Firebase + mirror + `coindca-last-snapshot` + số liệu màn hình đều không đổi một byte.
+
 #### CHECK-T14-09 — Snapshot tự động trước khi restore ghi đè
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: trước khi `destructive()`/ghi Firestore trên đường restore, tự động tải file
 `coindca-before-restore-<ISO8601>.json` chứa state hiện tại + ghi
 `localStorage['coindca-last-snapshot']`.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_backup_restore.js` — file `coindca-before-restore-<ISO8601>.json` được tải xuống TRƯỚC bước xác nhận, chứa đúng state hiện tại, `reason: "BEFORE_RESTORE"`; `localStorage['coindca-last-snapshot']` mang cùng nội dung.
+
 #### CHECK-T14-10 — Restore hợp lệ tái tạo đúng trạng thái tài chính canonical
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: `backup hợp lệ → state rỗng/hỏng → restore → ACK → reload → derive()` cho đúng y hệt
 bốn con số dashboard + toàn bộ trường `DerivedState` như trước khi hỏng (tolerance 0 trên số
 nguyên VND, dung sai làm tròn đã định nghĩa của `T-12` cho phần còn lại).
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_backup_restore.js` — backup hợp lệ → `Xóa sổ` → restore → ACK máy chủ → reload → `derive()` (tính độc lập trong Node trên bản durable) TRÙNG KHÍT bản gốc, toàn bộ số liệu dashboard/tóm tắt hiển thị y hệt; `state` canonical khớp bản gốc trừ `rev`; `derivedSnapshot` không được nhập.
+
 ### Multi-device & Persistence evidence (hấp thụ H-49)
 
 #### CHECK-T14-11 — Multi-device/mirror-reconcile chạy lại được qua UI Step B
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: bộ kịch bản Step-C spec §9 (reload, logout/login, hồ sơ mới, mirror cũ, ghi xung đột)
 chạy được bằng một test suite executable trỏ vào UI Step B hiện hành (thay thế 118 assertion
 legacy đã mất khả năng chạy khi `#tab-setup` bị gỡ, `H-49`), và `npm --prefix webapp test` (hoặc
 lệnh kế thừa tương đương) thoát mã 0 khi bao gồm suite mới này.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_persistence.js` — 14 kịch bản/60 assertion qua UI Step B hiện hành phủ đúng nhóm `CHECK-T09B-01/02/03/04/10/12/16` (ghi có ACK, reload khớp chính xác, xoá localStorage+sessionStorage, đóng/mở lại trình duyệt, ghi bị rules từ chối, durable hỏng fail-closed, mirror mới hơn không âm thầm thắng, ghi xung đột stale-durable) + `C-AS-06` hồ sơ trình duyệt mới. `npm --prefix webapp test` **exit 0** (log `docs/reviews/evidence/T14/npm-test.log`).
+
 ### Production reachability
 
 #### CHECK-T14-12 — Production reachability qua Auth Emulator + Firestore Emulator + rules thật
-Priority: REQUIRED · Status: NOT_TESTED · Evidence Level: E1
+Priority: REQUIRED · Status: **PASS** · Evidence Level: E1 (E2 độc lập chưa chạy)
 
 Yêu cầu: kịch bản Step-C spec §15 chạy trên app thật (Step B UI) + Firebase SDK thật + Auth
 Emulator + Firestore Emulator (rules thật của repo, không mock) + ít nhất một ca âm (C-AS-02
 hoặc C-AS-03) trên cùng hạ tầng.
 
+Kết quả `S039`: PASS · Bằng chứng: `webapp/test_t14_persistence.js` chạy trên `app_final.html` do `build_app.js` sinh ra, phục vụ qua HTTP như Hosting, Firebase SDK compat thật, Auth Emulator + Firestore Emulator với ĐÚNG `firestore.rules` của repo. Ca âm trên cùng hạ tầng: `C-AS-02` (chưa đăng nhập) và `C-AS-03` (tài khoản Google khác) đều DENY và app fail closed. `PR-AUTH-1` chứng minh nút bấm chạy THẬT `signInWithPopup(GoogleAuthProvider)`. Giới hạn môi trường ghi rõ tại `docs/reviews/T14-IMPLEMENTATION-REPORT.md` §14.
+
 ---
 
 ## Exit Criteria
 
-- [ ] 12/12 REQUIRED check PASS (E1 tối thiểu)
-- [ ] 0 defect nghiêm trọng chưa xử lý
-- [ ] 0 REQUIRED security check chưa xử lý
-- [ ] Regression: `test_t12_*`/`test_t13_*`/hồi quy kế toán hiện có vẫn PASS 100% (không đổi hành vi tài chính)
-- [ ] Regression: hành vi Content trong `firestore.rules` không đổi (safe-merge PASS)
-- [ ] `PROJECT/PROJECT_PROGRESS.md` cập nhật (roadmap, Current Task Snapshot, Session History)
-- [ ] `H-49` đóng hoặc re-scope tường minh dựa trên `CHECK-T14-11`
-- [ ] `H-42` cập nhật disposition (REQUIRED vs DEFERRED) phản ánh đúng những gì `T-14` đã đóng
+- [x] 12/12 REQUIRED check PASS (E1 tối thiểu) — `S039`
+- [x] 0 defect nghiêm trọng chưa xử lý
+- [x] 0 REQUIRED security check chưa xử lý
+- [x] Regression: `test_t12_ledger` (SC-01…SC-12, INV-1…INV-15), `test_t12_mutations` (7/7 mutant bị diệt), `test_t12_browser` (P-1…P-6 + 17 PASS), `test_stepb_ui` (T-13, AS-01…AS-12) đều PASS; `webapp/ledger.js` diff = 0 dòng
+- [x] Regression: hành vi Content trong `firestore.rules` không đổi — `test_shared_rules_merge.js` 120 assertion, 0 deviation; khối Content trùng SHA-256 từng byte
+- [x] `PROJECT/PROJECT_PROGRESS.md` cập nhật (roadmap, Current Task Snapshot, Session History)
+- [x] `H-49` — re-scope tường minh dựa trên `CHECK-T14-11`: sáu file V2.1.5 chính thức NGHỈ HƯU khỏi cổng release, thay bằng `webapp/test_t14_persistence.js`; ghi tại `PROJECT/HARDENING_BACKLOG.md` `H-49`. Đóng dứt điểm là hệ quả của `T-14 DONE` (thẩm quyền chủ dự án), không phải của phiên thi hành.
+- [x] `H-42` cập nhật disposition — phần REQUIRED (FB-2/FB-4/backup-recovery/bằng chứng persistence) đã đóng ở mức E1; `FB-3` giữ HARDENING (deploy là hành động Owner-executed, runbook là giảm thiểu); phần DEFERRED giữ nguyên. Ghi tại `PROJECT/HARDENING_BACKLOG.md` `H-42`.
 
 ## Escalation Triggers
 
@@ -433,8 +464,39 @@ sửa, một adapter nhỏ phải viết, một finding vừa xuất hiện đư
 
 ## Changed Files Registry
 
-Chưa có — phiên `S038` là phiên định nghĩa, production diff = EMPTY. Sẽ được điền tại phiên thi
-hành.
+Phiên thi hành `S039` (2026-09-06), base `origin/main` = `97434d0`, nhánh
+`claude/t14-step-c-firebase-isolation-xu6nxb`.
+
+**Production path** (theo `PROJECT/PRODUCTION_PATHS.md` §1 + hai file cấu hình Firebase mà Step-C
+spec §16 tính vào ước lượng production):
+
+| File | Diff | Nội dung |
+|---|---|---|
+| `webapp/app_logic.js` | +93 / −20 | Bỏ Anonymous Auth; `onAuthStateChanged` là điểm vào danh tính duy nhất; `signIn()` = `signInWithPopup(GoogleAuthProvider)`; `signOut()`; `resetLedger()`; tách `loadDurable()`; phase `SIGNED_OUT`; nút đăng nhập/đăng xuất render từ JS (KHÔNG chạm `app_shell.html`) |
+| `webapp/ledger_ui.js` | +80 / −2 | `stamp()`, `exportPayload()` (timestamp + `schemaVersion` + `derivedSnapshot._meta`), `restorePreview()` (dry-run validate), `restoreSnapshot()` (`coindca-before-restore-*`), luồng `l1Import` mới |
+| `firestore.rules` | +20 / −1 | CHỈ comment/tài liệu trong khối `COINDCA` (nguồn UID, cảnh báo "authenticated ≠ Owner", con trỏ runbook). Logic không đổi một ký tự |
+| `firebase.json` | +1 / −0 | `hosting.target: "coindca"` |
+| `webapp/firebase_config.js` | 0 | KHÔNG cần đổi — `authDomain` đã có, không thêm secret nào |
+| `webapp/ledger.js` | **0** | LOCKED (`DEC-042`/`DEC-043`) — không chạm |
+| `webapp/engine.js`, `webapp/app_shell.html`, `webapp/build_app.js`, `src/eth_dca_os/**` | **0** | không chạm |
+
+    git diff --shortstat origin/main -- webapp/app_logic.js webapp/ledger_ui.js webapp/ledger.js \
+      webapp/engine.js webapp/app_shell.html webapp/build_app.js webapp/firebase_config.js \
+      firestore.rules firebase.json src/eth_dca_os pyproject.toml pyproject.lock
+      -> 4 files changed, 194 insertions(+), 23 deletions(-)
+
+**Non-production** (test + tài liệu vận hành + governance):
+
+| File | Diff | Nội dung |
+|---|---|---|
+| `webapp/test_t14_rules.js` | mới | CHECK-T14-02/03, C-AS-01…04/13 |
+| `webapp/test_t14_persistence.js` | mới | CHECK-T14-01/11/12, C-AS-01/02/03/05/06/07/14 |
+| `webapp/test_t14_backup_restore.js` | mới | CHECK-T14-06…10, C-AS-08…11 |
+| `webapp/test_t14_deploy_isolation.js` | mới | CHECK-T14-04/05, C-AS-12/13 |
+| `webapp/test_firebase_harness.js` | +103 / −7 | `googleAccount`/`anonAccount`/`googleSignIn`/`googleSignOut`/`popupAttempt`; `bootstrapOwner` qua đường Google |
+| `webapp/test_t12_browser.js` | +5 / −1 | CHỈ giàn giáo: context mới nay bắt đầu ở `SIGNED_OUT` nên phải đăng nhập trước khi tới nhánh OFFLINE; một nhãn log được sửa cho đúng sự thật. Không assertion nào bị đổi/bỏ |
+| `webapp/package.json` | +6 / −3 | `scripts.test` = cổng release L-1 (bao gồm bốn bộ T-14); `test:legacy-v215` giữ sáu file V2.1.5 chạy được bằng tay. Bắt buộc bởi chính `CHECK-T14-11` (check gọi đích danh `npm --prefix webapp test`) |
+| `webapp/README.md` | +175 / −44 | § Danh tính chủ sở hữu · § Runbook deploy · § Sao lưu và khôi phục · mục Test viết lại |
 
 ## Implementation authority
 

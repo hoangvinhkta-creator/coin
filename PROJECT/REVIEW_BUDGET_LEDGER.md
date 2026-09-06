@@ -814,3 +814,41 @@ cycle của `T-12`/`T-13`.
 
 Mở `T-14` không phải một sự kiện làm reset hay cấp lại budget — đúng `AGENTS.md` §3 "Budget does
 not reset".
+
+---
+
+### 2.2.12 — S039 (thi hành) — `T-14: READY → IN_PROGRESS → IMPLEMENTED`, budget KHÔNG ĐỔI
+
+**S039 (2026-09-06) — phiên thi hành riêng của `T-14`** (bước C: Firebase isolation, Owner auth
+bền vững, backup/recovery), nhánh `claude/t14-step-c-firebase-isolation-xu6nxb`, base
+`origin/main` = `97434d0`. Đây là **INITIAL IMPLEMENTATION** của chính `T-14`, đúng khuôn `T-12`
+(`S034`) và `T-13` (`S036`) — **không** phải repair cycle của bất kỳ task nào.
+
+Production diff đo bằng git (không cộng tay từ báo cáo):
+
+    git diff --shortstat origin/main -- webapp/app_logic.js webapp/ledger_ui.js webapp/ledger.js \
+      webapp/engine.js webapp/app_shell.html webapp/build_app.js webapp/firebase_config.js \
+      firestore.rules firebase.json src/eth_dca_os pyproject.toml pyproject.lock
+      -> 4 files changed, 194 insertions(+), 23 deletions(-)
+
+    git diff --shortstat origin/main -- src/eth_dca_os webapp pyproject.toml pyproject.lock
+      -> 6 files changed, 462 insertions(+), 77 deletions(-)   (gồm cả test + README trong webapp/)
+
+Trần change budget frozen của `T-14`: **+600 / −400**. Thực tế **+194 / −23** → **TRONG TRẦN**,
+không có `CHANGE_BUDGET_EXCEEDED`, không có `OWNER_EXTENSION` nào được xin.
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 1 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1, T-12, DEC-043)
+    CURRENT BUDGET REMAINING  = 1 repair cycle    <- KHÔNG ĐỔI
+    S039 tiêu                 = 0 repair cycle
+    S039 tự cấp thêm          = 0
+
+Vì sao `S039` KHÔNG tiêu chu kỳ nào: không REQUIRED check nào của `T-14` FAIL trên mã production
+sau khi sửa trong phạm vi thi hành bình thường. Ba lần sửa trong phiên đều nằm ở **test do chính
+phiên này viết** (một assertion tĩnh tự bắt phải comment của chính nó; một assertion đếm thẻ lịch
+sử quên trừ thẻ "Số dư đầu kỳ") và ở **giàn giáo** của một test cũ (`test_t12_browser.js` cần
+thêm bước đăng nhập vì context mới nay bắt đầu ở `SIGNED_OUT`). Không lần nào là repair cycle theo
+nghĩa `REVIEW_BUDGET_LEDGER.md`.
+
+Chu kỳ còn lại (`remaining 1`) **được giữ nguyên cho vòng repair sau independent E2 của `T-14`,
+nếu E2 tìm thấy REQUIRED FAIL** — phiên thi hành không được tiêu trước.

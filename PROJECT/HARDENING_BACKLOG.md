@@ -1517,6 +1517,31 @@ phần REQUIRED nay có `RE_TRIGGER_CONDITION` MỚI:
     - `T-14` đạt `DONE` với toàn bộ REQUIRED check PASS — phần REQUIRED của `H-42` đóng, chỉ còn
       phần DEFERRED (project riêng) tồn tại trong backlog.
 
+**Cập nhật 2026-09-06 (`S039`, phiên thi hành `T-14`) — trạng thái từng vế sau khi `T-14` đạt
+`IMPLEMENTED` (E1, chưa `DONE`).** Bằng chứng đầy đủ: `docs/reviews/T14-IMPLEMENTATION-REPORT.md`
+§11.
+
+    FB-4 (danh tính không bền)      -> ĐÓNG Ở MỨC E1. Anonymous Auth bị gỡ khỏi
+      `webapp/app_logic.js`; danh tính là Google Sign-In, UID gắn tài khoản Google.
+      Bằng chứng chạy lại được: webapp/test_t14_persistence.js (C-AS-06 hồ sơ trình duyệt mới
+      cho CÙNG UID; T14-CLEAR-STORAGE xoá localStorage+sessionStorage vẫn đúng sổ).
+    FB-2 (thiếu khoá site/target)   -> ĐÓNG Ở MỨC E1. `firebase.json` khai
+      `hosting.target: "coindca"`; lệnh deploy khuyến nghị luôn có scope; `firebase deploy` trần
+      bị cấm tường minh trong `webapp/README.md`. Bằng chứng: webapp/test_t14_deploy_isolation.js.
+    FB-1 (Anonymous mở cửa Content) -> GIẢM THIỂU, CHƯA ĐÓNG. CoinDCA không còn cần Anonymous
+      nên provider CÓ THỂ tắt ở Console — thao tác Owner-executed ngoài repo, giữ DEFERRED đúng
+      `DEC-049` C.
+    FB-3 (placeholder OWNER_UID_REQUIRED) -> GIỮ HARDENING. Không tự đóng được trong repo: giá
+      trị thật do Owner deploy. Runbook deploy 3 bước (`webapp/README.md`) là cơ chế BẮT LỖI,
+      không phải đóng dứt điểm.
+    Backup/recovery (R-4)           -> ĐÓNG Ở MỨC E1 (preview/validate/snapshot/atomic).
+    Bằng chứng persistence          -> ĐÓNG Ở MỨC E1 (xem `H-49` bên dưới).
+
+`H-42` vẫn **KHÔNG đóng** sau `S039`: `T-14` mới ở `IMPLEMENTED`, independent E2 chưa chạy.
+Vế 1 của `RE_TRIGGER_CONDITION (phần REQUIRED)` đã kích hoạt đúng như dự kiến và cho kết quả:
+hai mục `FB-1`/`FB-3` được tách riêng, giữ HARDENING, chờ Owner; các mục còn lại chờ `T-14 DONE`
+để đóng chính thức.
+
 ---
 
 ## H-43 — Phần dư parity của `WP-C4`: OSCORE `engine.js` ↔ `score.py` nếu tab Research L-1 được bật
@@ -1737,6 +1762,29 @@ Bằng chứng: `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §15(b)(c), §23; ki
     - bằng chứng persistence legacy (sáu file trên) được nghỉ hưu/thay thế chính thức bằng một
       suite L-1 mới phủ đủ `CHECK-T09B-01`…`16` qua UI Step B.
 
+**Cập nhật 2026-09-06 (`S039`, phiên thi hành `T-14`) — vế 4 ĐÃ KÍCH HOẠT VÀ ĐÃ ĐƯỢC THỰC HIỆN.**
+`CHECK-T14-11` PASS ở mức E1. Cụ thể:
+
+- Suite thay thế: `webapp/test_t14_persistence.js` (329 dòng, 14 kịch bản, 60 assertion) chạy
+  qua **UI Step B hiện hành** và danh tính Google của bước C, phủ lại đúng nhóm hành vi mà
+  `CHECK-T09B-01/02/03/04/10/12/16` bảo vệ: ghi có xác nhận máy chủ, reload khớp chính xác, xoá
+  `localStorage`+`sessionStorage`, đóng/mở lại trình duyệt cùng hồ sơ, ghi bị rules từ chối hiện
+  rõ, durable hỏng fail-closed không bị ghi đè, mirror mới hơn KHÔNG âm thầm thắng nguồn bền,
+  ghi xung đột `stale-durable`.
+- Sáu file V2.1.5 **được giữ nguyên trên đĩa** (không xoá, không sửa để lấy suite xanh) nhưng
+  **nghỉ hưu khỏi cổng release**: chuyển sang script `test:legacy-v215` trong
+  `webapp/package.json`. KHÔNG resurrect UI V2.1.5 — đúng ranh giới `REMOVE_FROM_L1_PATH`.
+- `npm --prefix webapp test` (nay là cổng release của đường L-1, gồm cả suite mới) **thoát mã 0**
+  — log: `docs/reviews/evidence/T14/npm-test.log`.
+
+Giới hạn ghi thẳng: suite mới **không** tái tạo từng assertion một của 118 assertion cũ — nhiều
+assertion trong số đó đo đại lượng V2.1.5 (pool/ladder/OSCORE) đã bị gỡ khỏi đường sản phẩm.
+Cái được khôi phục là **năng lực chạy lại được của bằng chứng persistence trên đường sản phẩm
+hiện tại**, không phải bản sao của bộ cũ.
+
+Phân loại giữ **HARDENING** cho tới khi `T-14` đạt `DONE`: `T-14` mới ở `IMPLEMENTED` (E1),
+independent E2 chưa chạy. Đóng `H-49` là hệ quả của `T-14 DONE` (thẩm quyền chủ dự án).
+
 **Cập nhật 2026-09-06 (S038, `DEC-049`) — vế 2 ĐÃ KÍCH HOẠT: bước C mở (`T-14`).** Owner (qua
 chỉ thị phiên "COINDCA — L-1 STEP C DEFINITION") chỉ thị **hấp thụ** mục này vào Completion Gate
 của `T-14` thay vì mở task riêng — đúng "Finding != task": `CHECK-T14-11`
@@ -1769,3 +1817,69 @@ và `—` đã hiển thị đúng.
     - hiển thị giá thị trường trở thành một phần của luồng dùng hằng ngày (không còn thuần
       DESCRIPTIVE); HOẶC
     - một Completion Gate tương lai đòi đích danh định dạng "N ngày trước".
+
+---
+
+## H-51 — `PRODUCTION_PATHS.md` §1 không khai `firestore.rules` và `firebase.json` là production path
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (tài liệu)**
+Ngày ghi nhận: 2026-09-06 (`S039`, phiên thi hành `T-14`)
+
+`PROJECT/PRODUCTION_PATHS.md` §1 liệt kê `webapp/ledger.js`, `ledger_ui.js`, `app_logic.js`,
+`engine.js`, `app_shell.html`, `build_app.js`, `src/eth_dca_os/**`, `pyproject.toml`,
+`pyproject.lock` — **không** có `firestore.rules` và `firebase.json`. Nhưng hai file đó quyết
+định (a) ai được đọc/ghi toàn bộ sổ cái tài chính và (b) bề mặt deploy dùng chung với app Content.
+`docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` §16 lại tính cả hai vào ước lượng
+production diff. Hai tài liệu vì vậy không khớp nhau về định nghĩa "production".
+
+Vì sao **KHÔNG BLOCKING**: không có hậu quả nghiệp vụ nào nằm trong một Completion Gate hay
+risk register phụ thuộc vào việc phân loại này. `docs/reviews/T14-IMPLEMENTATION-REPORT.md` §18
+đã đo theo cách **chặt hơn** (tính cả hai file vào production diff), nên kết luận change budget
+của `T-14` không phụ thuộc vào cách giải quyết sai khác này.
+
+Đây là **finding, KHÔNG phải task** (`AGENTS.md` §3). Không tự sửa `PRODUCTION_PATHS.md` trong
+phiên thi hành: bảng đó là authority row 8 của `AGENTS.md` §1, sửa nó là quyết định governance,
+không phải một dòng dọn dẹp.
+
+    RE_TRIGGER_CONDITION:
+    - một phiên đo Delivery Change Budget bằng ĐÚNG lệnh chuẩn của `PRODUCTION_PATHS.md` cho một
+      thay đổi chạm `firestore.rules`/`firebase.json`; HOẶC
+    - một finding về rules/hosting cần phân loại BLOCKING vs HARDENING và kết luận phụ thuộc vào
+      việc file đó có phải production path hay không; HOẶC
+    - `PRODUCTION_PATHS.md` được cập nhật vì bất kỳ lý do nào khác — nhân dịp đó xử lý luôn.
+
+---
+
+## H-52 — `signInWithPopup()` phụ thuộc `apis.google.com`: luồng đăng nhập không chạy được trong môi trường chặn mạng ra ngoài
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **CONFIRMED HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S039`, phiên thi hành `T-14`)
+
+Firebase Auth `signInWithPopup()` **bắt buộc** nạp `https://apis.google.com/js/api.js` (gapi
+iframe = auth event manager) TRƯỚC khi mở cửa sổ popup — kể cả khi client đang trỏ vào Auth
+Emulator (`node_modules/@firebase/auth`, `gapiScript` + `BrowserPopupRedirectResolver`).
+`signInWithRedirect()` cũng dùng chung event manager đó cho chặng quay về. Hệ quả đo được trong
+sandbox của phiên `S039` (mọi host ngoài đều trả `000`): app gọi đúng đường popup nhưng nhận
+`auth/internal-error`, và **fail closed** — phase `AUTH_FAILED`, khoá ghi sổ, không ghi gì lên
+Firebase (`webapp/test_t14_persistence.js` `PR-AUTH-1`).
+
+Vì sao **KHÔNG BLOCKING**: với người dùng thật (trình duyệt có mạng) đây không phải khiếm khuyết
+— đó là cách Firebase Auth vận hành trên mọi ứng dụng web dùng popup. Không REQUIRED check nào
+của `T-14` đòi popup hoàn tất trong môi trường chặn mạng, và `CHECK-T14-12` được thoả bằng cấu
+hình hợp lệ mà Step-C spec §15 cho phép (test provider của Auth Emulator qua
+`GoogleAuthProvider.credential()` + `signInWithCredential()`, chạy trên SDK thật). Hành vi khi
+môi trường chặn là **fail closed**, không phải fail open — không có rủi ro dữ liệu.
+
+Hệ quả cần nhớ: **bằng chứng tự động sẽ không bao giờ phủ được thao tác bấm nút → màn hình đồng ý
+THẬT của Google → chọn tài khoản → popup đóng** trong môi trường này. Đó là bước chủ dự án phải
+tự xác nhận một lần khi thiết lập (ghi trong `webapp/README.md` § Test và
+`docs/reviews/T14-IMPLEMENTATION-REPORT.md` §14).
+
+    RE_TRIGGER_CONDITION:
+    - một Completion Gate tương lai đòi đích danh bằng chứng popup Google hoàn tất end-to-end;
+      HOẶC
+    - môi trường chạy test có đường ra `apis.google.com` (khi đó `PR-AUTH-1` tự chuyển sang nhánh
+      `ONLINE` và bằng chứng mạnh lên mà không cần sửa test); HOẶC
+    - chủ dự án báo không đăng nhập được trên trình duyệt thật (khi đó đây là chẩn đoán đầu tiên
+      cần kiểm: pop-up bị chặn, hoặc mạng chặn `apis.google.com`); HOẶC
+    - cơ chế đăng nhập được đổi sang một phương án không dùng popup/redirect resolver.

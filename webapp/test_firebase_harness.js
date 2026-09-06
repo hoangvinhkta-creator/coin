@@ -9,6 +9,23 @@
  *
  * Bằng chứng "phía Firebase" được đọc ĐỘC LẬP với app qua REST API của emulator (Node ->
  * emulator), không qua promise của SDK trong trang.
+ *
+ * T-14 (bước C): danh tính Owner nay là GOOGLE SIGN-IN (không còn Anonymous).
+ *
+ * GIỚI HẠN MÔI TRƯỜNG PHẢI GHI RÕ (không được che): `signInWithPopup()` của Firebase Auth bắt
+ * buộc nạp `https://apis.google.com/js/api.js` (gapi iframe = auth event manager) TRƯỚC khi mở
+ * popup — kể cả khi đang trỏ vào Auth Emulator. Sandbox chạy bộ test này CHẶN toàn bộ mạng ra
+ * ngoài (gstatic, apis.google.com, cdnjs… đều `000`), nên cửa sổ popup KHÔNG thể hoàn tất ở đây.
+ * Vì vậy bằng chứng chia làm hai phần, cả hai đều chạy trên SDK thật + Auth Emulator thật:
+ *   (1) `popupAttempt()` — bấm đúng nút của app, xác nhận app gọi thật
+ *       `signInWithPopup(new GoogleAuthProvider())` (bắt request tới apis.google.com) và khi môi
+ *       trường chặn thì app FAIL CLOSED: phase AUTH_FAILED, không ghi sổ.
+ *   (2) `googleSignIn()` — cấp danh tính federated `google.com` qua ĐÚNG SDK thật
+ *       (`GoogleAuthProvider.credential()` + `signInWithCredential()`, cơ chế test provider
+ *       chính thức của Firebase Emulator Suite, Step-C spec §15 cho phép). Từ đó trở đi mọi thứ
+ *       chạy trên đường sản phẩm: cùng `onAuthStateChanged` của app, rules thật, Firestore thật.
+ * UID là hàm của (`providerId`, `sub`) nên CÙNG tài khoản = CÙNG UID trên mọi hồ sơ trình duyệt
+ * — đây chính là tính chất bước C cần chứng minh, và nó KHÔNG phải mock.
  */
 const { spawn } = require('child_process');
 const http = require('http');
@@ -24,6 +41,9 @@ const CHROMIUM = process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium';
 const SDK_VERSION = '12.18.0';   // phải khớp app_shell.html + package.json
 const PROJECT = 'demo-ethdca';   // tiền tố demo-: emulator không cần project thật
 const AUTH_HOST = '127.0.0.1', AUTH_PORT = 9099;
+// Tài khoản Google tổng hợp dùng cho toàn bộ bộ test (KHÔNG phải tài khoản thật của chủ dự án).
+const OWNER_SUB = 'coindca-owner-sub', OWNER_EMAIL = 'coindca-owner@example.test';
+const OTHER_SUB = 'other-google-user-sub', OTHER_EMAIL = 'other-google-user@example.test';
 const FS_HOST = '127.0.0.1', FS_PORT = 8080;
 const ACK_TIMEOUT_MS = 4000;
 
@@ -108,6 +128,25 @@ async function clearFirestore() {
 async function clearAuth() {
   const r = await rest('DELETE', AUTH_PORT, '/emulator/v1/projects/' + PROJECT + '/accounts');
   if (r.status !== 200) throw new Error('clearAuth failed: ' + r.status);
+}
+/** Tạo/đăng nhập một danh tính federated `google.com` THẲNG qua Auth Emulator REST.
+ *  Dùng cho: (a) probe rules từ Node bằng ID token thật; (b) dựng sẵn tài khoản để widget IDP
+ *  hiện ra cho trình duyệt chọn lại — nhờ đó UID xác định trước và ổn định giữa các hồ sơ. */
+async function googleAccount(sub, email) {
+  const idToken = JSON.stringify({ sub: sub, email: email, email_verified: true });
+  const r = await rest('POST', AUTH_PORT,
+    '/identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=fake-api-key',
+    { postBody: 'id_token=' + encodeURIComponent(idToken) + '&providerId=google.com',
+      requestUri: 'http://localhost', returnIdpCredential: true, returnSecureToken: true });
+  if (r.status !== 200) throw new Error('googleAccount failed: ' + r.status + ' ' + JSON.stringify(r.body));
+  return { uid: r.body.localId, sub: sub, email: email, headers: { Authorization: 'Bearer ' + r.body.idToken } };
+}
+/** Đăng nhập ẩn danh qua Auth Emulator REST — CHỈ để dựng ca âm "ẩn danh bị từ chối". */
+async function anonAccount() {
+  const r = await rest('POST', AUTH_PORT,
+    '/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key', { returnSecureToken: true });
+  if (r.status !== 200) throw new Error('anonAccount failed: ' + r.status);
+  return { uid: r.body.localId, headers: { Authorization: 'Bearer ' + r.body.idToken } };
 }
 
 function toFs(v) {
@@ -217,6 +256,9 @@ async function routeSdk(ctx) {
   // Google Fonts bị proxy của môi trường agent chặn; nếu để trình duyệt tự chờ, mỗi lần nạp
   // trang mất ~12s (stylesheet chặn render). Abort ngay — không liên quan gì tới persistence.
   await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  // IDP login widget của Auth Emulator nạp CSS từ unpkg — bị proxy môi trường agent chặn; abort
+  // ngay để popup không treo ~12s. Chỉ là style, không ảnh hưởng luồng đăng nhập.
+  await ctx.route(/^https:\/\/unpkg\.com\//, (route) => route.abort());
   await ctx.route(/^https:\/\/www\.gstatic\.com\/firebasejs\//, (route) => {
     const url = route.request().url();
     const m = url.match(/firebasejs\/([^/]+)\/([^/?]+)/);
@@ -271,15 +313,64 @@ async function waitSaved(p, timeout) {
   }
 }
 
-/** Lần mở đầu tiên với rules còn OWNER_UID_REQUIRED -> app báo KHÔNG NHẬN DIỆN; lấy UID app
- *  hiện, nạp rules với UID đó (bước Owner deploy rules), tải lại -> ONLINE. Đây chính là
- *  chuỗi thiết lập thật của chủ dự án. */
-async function bootstrapOwner(p) {
-  const st = await waitPhase(p, ['UNRECOGNIZED', 'ONLINE']);
+/** (1) Bấm ĐÚNG nút "Đăng nhập bằng Google" của app. Trả về { gapi, phase }: `gapi` = app có
+ *  thật sự chạy đường `signInWithPopup(GoogleAuthProvider)` hay không (SDK nạp gapi trước khi mở
+ *  popup); `phase` = phase của app sau đó. Trong sandbox chặn mạng, phase kỳ vọng = AUTH_FAILED
+ *  (fail closed). Không mock gì cả — chỉ quan sát. */
+async function popupAttempt(p, timeoutMs) {
+  let gapi = false;
+  const seen = (r) => { if (/apis\.google\.com\/js\/api\.js/.test(r.url())) gapi = true; };
+  p.on('request', seen);
+  await p.click('[data-auth="signin"]').catch(() => {});
+  const t0 = Date.now();
+  let st = await status(p);
+  while (Date.now() - t0 < (timeoutMs || 20000) && st.phase === 'INIT') {
+    await p.waitForTimeout(150);
+    st = await status(p);
+  }
+  p.off('request', seen);
+  return { gapi, phase: st.phase, detail: st.detail, uid: st.uid };
+}
+
+/** (2) Cấp danh tính federated `google.com` cho TRANG ĐANG MỞ qua đúng SDK thật đang chạy trong
+ *  trang (`firebase.auth.GoogleAuthProvider.credential()` + `signInWithCredential()`), đối thoại
+ *  thật với Auth Emulator. App KHÔNG bị gọi hàm nội bộ nào: nó phản ứng qua chính
+ *  `onAuthStateChanged` của production. Cùng `sub` => cùng UID, ở bất kỳ hồ sơ trình duyệt nào. */
+async function googleSignIn(p, opts) {
+  opts = opts || {};
+  const idToken = JSON.stringify({
+    sub: opts.sub || OWNER_SUB, email: opts.email || OWNER_EMAIL, email_verified: true,
+  });
+  const r = await p.evaluate(async (t) => {
+    try {
+      const cred = firebase.auth.GoogleAuthProvider.credential(t);
+      const res = await firebase.auth().signInWithCredential(cred);
+      return { uid: res.user.uid, providerId: res.credential ? res.credential.providerId : null };
+    } catch (e) { return { error: String((e && (e.code || e.message)) || e) }; }
+  }, idToken);
+  if (r.error) throw new Error('googleSignIn failed: ' + r.error);
+  return r.uid;
+}
+/** Đăng xuất qua nút trong app (mục Cài đặt / banner), rồi chờ phase SIGNED_OUT. */
+async function googleSignOut(p) {
+  await p.click('[data-auth="signout"]');
+  return waitPhase(p, 'SIGNED_OUT');
+}
+
+/** Lần mở đầu tiên: app ở SIGNED_OUT -> đăng nhập Google; nếu rules còn OWNER_UID_REQUIRED thì
+ *  app báo KHÔNG NHẬN DIỆN -> nạp rules với UID đó (bước Owner deploy rules), tải lại -> ONLINE.
+ *  Đây chính là chuỗi thiết lập thật của chủ dự án dưới bước C. */
+async function bootstrapOwner(p, opts) {
+  let st = await waitPhase(p, ['SIGNED_OUT', 'UNRECOGNIZED', 'ONLINE']);
+  if (st.phase === 'SIGNED_OUT') {
+    await googleSignIn(p, opts);
+    st = await waitPhase(p, ['UNRECOGNIZED', 'ONLINE']);
+  }
   if (st.phase === 'ONLINE') return st.uid;
   await setRules(st.uid);
   await p.reload();
-  await waitPhase(p, 'ONLINE');
+  st = await waitPhase(p, ['SIGNED_OUT', 'ONLINE']);
+  if (st.phase === 'SIGNED_OUT') { await googleSignIn(p, opts); st = await waitPhase(p, 'ONLINE'); }
   return st.uid;
 }
 
@@ -292,6 +383,9 @@ async function newPage(b, opts) {
     await clearFirestore();
     await clearAuth();
     await setRules('OWNER_UID_REQUIRED');
+    // Dựng sẵn tài khoản Google của Owner để widget IDP hiện nó ra: UID xác định trước, giống
+    // nhau ở mọi hồ sơ trình duyệt của cùng bộ test (T-14 §9 multi-device).
+    await googleAccount(opts.sub || OWNER_SUB, opts.email || OWNER_EMAIL);
   }
   await startServer();
   const ctx = await b.newContext({ viewport: { width: 1200, height: 1000 } });
@@ -342,8 +436,10 @@ async function readState(p) {
 
 module.exports = {
   APP_FINAL, SEED_PATH, RULES_PATH, CHROMIUM, PROJECT, SDK_VERSION, ACK_TIMEOUT_MS,
+  OWNER_SUB, OWNER_EMAIL, OTHER_SUB, OTHER_EMAIL,
   ensureEmulators, setRules, rulesWithUid, clearFirestore, clearAuth, getDoc, putDoc,
+  googleAccount, anonAccount, googleSignIn, googleSignOut, popupAttempt,
   canon, canonJSON, diff, startServer, stopServer, baseUrl: () => baseUrl,
   prepareContext, emulatorConfig, attachErrors, status, waitPhase, waitSaved, bootstrapOwner,
-  newPage, newPersistent, readState,
+  newPage, newPersistent, readState, rest, AUTH_PORT, FS_PORT, DOCS, ADMIN,
 };

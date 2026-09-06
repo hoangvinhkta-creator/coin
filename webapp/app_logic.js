@@ -2,6 +2,10 @@
  * Persistence (T-09B, DEC-019/020/021): nguồn bền duy nhất là Cloud Firestore; localStorage
  * chỉ là mirror/cache — xem khối "persistence" bên dưới. KHÔNG đổi ở T-13 (Step B chỉ tiêu
  * thụ CoinLedger.derive/update/migrate/destructive qua CoinLedgerUI — xem ledger_ui.js).
+ * T-14 (bước C, DEC-049): thẩm quyền danh tính Owner chuyển từ Anonymous Auth sang GOOGLE
+ * SIGN-IN. UID gắn với tài khoản Google nên bền qua đổi thiết bị/trình duyệt/xoá site data
+ * (Step-C spec §3). Cơ chế ghi/đọc/mirror (persist/reconcileMirror/validateState) KHÔNG đổi
+ * một dòng nào — chỉ NGUỒN của UID đổi; `firestore.rules` vẫn so đúng một UID duy nhất.
  * V2.1.5 (OSCORE/ladder/pool/seed-nạp-tay) đã bị gỡ khỏi đường L-1 tại T-13 theo
  * Step-B spec §12 REMOVE_FROM_L1_PATH; `engine.js` giữ nguyên nội dung, không còn được UI này
  * gọi tới (O-11).
@@ -27,9 +31,10 @@
 
   /** Trạng thái persistence — EPHEMERAL, không bao giờ được ghi lên nguồn bền. */
   var P = {
-    phase: "INIT",       // INIT | UNCONFIGURED | AUTH_FAILED | UNRECOGNIZED | OFFLINE | CORRUPT | ONLINE
+    phase: "INIT",       // INIT | UNCONFIGURED | SIGNED_OUT | AUTH_FAILED | UNRECOGNIZED | OFFLINE | CORRUPT | ONLINE
     detail: "",          // mã lỗi / lý do của phase hiện tại
     uid: null,
+    email: "",           // email tài khoản Google đang đăng nhập (hiển thị; KHÔNG phải thẩm quyền)
     projectId: null,
     durableRev: null,    // rev của bản state đã được máy chủ xác nhận (null = chưa có bản bền)
     seedDurable: false,  // seed trong bộ nhớ đã nằm trên nguồn bền
@@ -86,8 +91,9 @@
    * Save flow:  touch() -> rev += 1 -> mirror localStorage (best-effort) -> persist() ghi lên
    *             Firestore và CHỜ máy chủ xác nhận. UI chỉ báo "Đã lưu bền" khi promise của
    *             set() resolve — cache cục bộ của SDK KHÔNG phải xác nhận (CHECK-T09B-10).
-   * Load flow:  initPersistence() — init SDK -> Anonymous Auth -> đọc từ SERVER (không lấy
-   *             cache) -> validateState() -> ONLINE, hoặc một phase lỗi hiện rõ + khoá ghi sổ.
+   * Load flow:  initPersistence() — init SDK -> khôi phục phiên Google đã lưu (hoặc SIGNED_OUT
+   *             chờ Owner bấm "Đăng nhập bằng Google") -> loadDurable(): đọc từ SERVER (không
+   *             lấy cache) -> validateState() -> ONLINE, hoặc một phase lỗi hiện rõ + khoá ghi.
    * Không có retry policy nhiều tầng, circuit breaker, queue bền hay đồng bộ realtime —
    * công cụ cá nhân tần suất thấp (DEC-021).
    */
@@ -206,8 +212,9 @@
   function expectedRevLabel() { return P.durableRev === null ? "chưa có" : P.durableRev; }
   function phaseLabel() {
     return ({
-      INIT: "đang kết nối", UNCONFIGURED: "chưa cấu hình Firebase", AUTH_FAILED: "xác thực thất bại",
-      UNRECOGNIZED: "không nhận diện thiết bị", OFFLINE: "không đọc được nguồn bền",
+      INIT: "đang kết nối", UNCONFIGURED: "chưa cấu hình Firebase", SIGNED_OUT: "chưa đăng nhập",
+      AUTH_FAILED: "đăng nhập Google thất bại",
+      UNRECOGNIZED: "tài khoản không phải chủ sở hữu", OFFLINE: "không đọc được nguồn bền",
       CORRUPT: "nguồn bền không hợp lệ", ONLINE: "đã kết nối",
     })[P.phase] || P.phase;
   }
@@ -299,10 +306,13 @@
       stat("Trạng thái", phaseLabel(), P.detail ? String(P.detail).slice(0, 90) : "",
         P.phase === "ONLINE" ? "var(--pass)" : (P.phase === "INIT" ? null : "var(--fail)")) +
       stat("Project", P.projectId || "—", "Cloud Firestore · ethdca/state + ethdca/seed") +
-      stat("UID thiết bị này", P.uid || "—", "Firebase Anonymous Auth") +
+      stat("UID tài khoản Google", P.uid || "—", P.email ? "Google Sign-In · " + P.email : "Google Sign-In") +
       stat("Bản bền", P.durableRev === null ? "chưa có" : "rev " + P.durableRev,
         (P.lastAck ? "xác nhận " + shortTs(P.lastAck) : "") +
-        (seed ? (P.seedDurable ? " · seed bền" : " · seed CHƯA bền") : "")) ;
+        (seed ? (P.seedDurable ? " · seed bền" : " · seed CHƯA bền") : "")) +
+      '<div class="stat"><p class="k">Phiên đăng nhập</p>' + (P.uid
+        ? '<button class="sm" id="fbSignOut" data-auth="signout">Đăng xuất</button>'
+        : '<button class="sm" id="fbSignIn" data-auth="signin">Đăng nhập bằng Google</button>') + "</div>";
     $("banners").innerHTML = persistenceBanners();
   }
 
@@ -318,19 +328,26 @@
         "<code>webapp/firebase_config.js</code> còn giá trị <code>REQUIRED</code>. App không có nguồn bền nên " +
         "<strong>không ghi sổ</strong>. Điền cấu hình từ Firebase Console rồi build + deploy lại " +
         "(xem <code>webapp/README.md</code>).");
+    } else if (P.phase === "SIGNED_OUT") {
+      out += b("warn", "CHƯA ĐĂNG NHẬP",
+        "Sổ CoinDCA gắn với <strong>tài khoản Google của chủ sở hữu</strong> — không gắn với trình duyệt hay " +
+        "thiết bị. Đăng nhập trên máy/hồ sơ nào cũng cho đúng UID đó và mở đúng sổ đó; xoá dữ liệu trình duyệt " +
+        "KHÔNG làm mất quyền sở hữu. <strong>Không ghi sổ</strong> cho tới khi đăng nhập. " +
+        '<button class="sm" data-auth="signin">Đăng nhập bằng Google</button>');
     } else if (P.phase === "AUTH_FAILED") {
       out += b("bad", "KHÔNG XÁC THỰC ĐƯỢC",
-        "Firebase Anonymous Auth thất bại: <code>" + esc(P.detail) + "</code>. Kiểm tra đã bật " +
-        "<em>Anonymous</em> trong Authentication → Sign-in method, và mạng tới Firebase. " +
-        "<strong>Không ghi sổ.</strong>");
+        "Đăng nhập Google thất bại: <code>" + esc(P.detail) + "</code>. Kiểm tra đã bật " +
+        "<em>Google</em> trong Authentication → Sign-in method, cửa sổ pop-up không bị trình duyệt chặn, và mạng " +
+        "tới Firebase. <strong>Không ghi sổ.</strong> " +
+        '<button class="sm" data-auth="signin">Thử đăng nhập lại</button>');
     } else if (P.phase === "UNRECOGNIZED") {
-      out += b("bad", "KHÔNG NHẬN DIỆN ĐƯỢC THIẾT BỊ/TRÌNH DUYỆT NÀY",
-        "UID hiện tại <code>" + esc(P.uid || "—") + "</code> không được <code>firestore.rules</code> cho phép " +
+      out += b("bad", "TÀI KHOẢN GOOGLE NÀY KHÔNG PHẢI CHỦ SỞ HỮU SỔ",
+        "UID Google hiện tại <code>" + esc(P.uid || "—") + "</code> không được <code>firestore.rules</code> cho phép " +
         "(<code>" + esc(P.detail) + "</code>). Đây <strong>không</strong> phải lỗi mạng và <strong>không</strong> " +
         "phải sổ trống: bản bền (nếu có) vẫn nguyên trên Firestore, chỉ không đọc được từ đây. " +
         "<strong>Không ghi sổ.</strong> Nếu đây là lần thiết lập đầu tiên: chép UID này (mục Cài đặt) vào " +
-        "<code>firestore.rules</code> rồi deploy lại rules. Nếu bạn vừa đổi máy/trình duyệt/cửa sổ riêng tư: " +
-        "giới hạn V1 (H-23) — dùng <em>Tải về JSON</em> ở máy cũ và <em>Nạp lại từ JSON</em> ở đây.");
+        "<code>firestore.rules</code> rồi deploy lại rules. Nếu vừa đăng nhập nhầm tài khoản Google: " +
+        '<button class="sm" data-auth="signout">Đăng xuất</button> rồi đăng nhập lại đúng tài khoản chủ sở hữu.');
     } else if (P.phase === "OFFLINE") {
       out += b("bad", "KHÔNG ĐỌC ĐƯỢC NGUỒN BỀN",
         "Không lấy được sổ từ Cloud Firestore: <code>" + esc(P.detail) + "</code>. " +
@@ -447,11 +464,56 @@
       P.projectId = c.projectId;
     } catch (e) { setPhase("OFFLINE", errCode(e)); return; }
 
-    try {
-      var cred = await fb.auth.signInAnonymously();   // dùng lại session Anonymous đã có, nếu còn
-      P.uid = cred.user.uid;
-    } catch (e) { setPhase("AUTH_FAILED", errCode(e)); return; }
+    // T-14 §3: KHÔNG còn dùng Anonymous Auth. MỘT điểm vào duy nhất cho mọi thay đổi danh tính —
+    // phiên Google đã lưu được khôi phục, đăng nhập thành công và đăng xuất đều đi qua đây, nên
+    // không có đường nạp sổ thứ hai để lệch nhau. Trang KHÔNG bao giờ tự mở popup lúc tải.
+    fb.auth.onAuthStateChanged(onAuthChanged, function (e) { setPhase("AUTH_FAILED", errCode(e)); });
+  }
 
+  /** Danh tính vừa đổi (khôi phục phiên / đăng nhập / đăng xuất). `authGen` chống đua: một lệnh
+   *  nạp sổ của danh tính CŨ không được phép đặt phase sau khi danh tính đã đổi. */
+  var authGen = 0;
+  async function onAuthChanged(user) {
+    var gen = ++authGen;
+    resetLedger();          // sổ của UID trước KHÔNG bao giờ sống sót qua một lần đổi danh tính
+    setUser(user);
+    if (!user) { setPhase("SIGNED_OUT", ""); return; }
+    setPhase("INIT", "đang nạp sổ của tài khoản này");
+    await loadDurable(gen);
+  }
+  function setUser(u) {
+    P.uid = u ? u.uid : null;
+    P.email = u && u.email ? u.email : "";
+  }
+  /** Xoá mọi dấu vết sổ khỏi BỘ NHỚ TRANG. Không chạm localStorage (mirror giữ nguyên để
+   *  reconcileMirror() còn đối chiếu được) và không chạm Firestore. */
+  function resetLedger() {
+    state = CoinLedger.empty(CoinLedger.clock().today.slice(0, 7));
+    seed = null;
+    P.durableRev = null; P.seedDurable = false; P.seedPending = false; P.seedGen++;
+    P.rawDurable = null; P.diverged = null; P.lastError = null; P.staleRev = undefined;
+    P.lastAck = null; P.mirrorShown = false; P.unconfirmed = false;
+  }
+  /** Nút "Đăng nhập bằng Google" — thẩm quyền danh tính Owner DUY NHẤT (Step-C spec §3.2).
+   *  UID nhận về là UID của TÀI KHOẢN Google: giống nhau trên mọi thiết bị/trình duyệt, không
+   *  phụ thuộc IndexedDB. Thành công thì onAuthStateChanged ở trên nạp sổ. */
+  async function signIn() {
+    if (!fb.auth) return;
+    setPhase("INIT", "đang chờ cửa sổ đăng nhập Google");
+    try { await fb.auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch (e) { if (!fb.auth.currentUser) setPhase("AUTH_FAILED", errCode(e)); }
+  }
+  /** Đăng xuất. Nguồn bền trên Firestore KHÔNG bị chạm — đăng nhập lại cùng tài khoản Google cho
+   *  lại đúng UID đó và đúng sổ đó (onAuthStateChanged lo phần còn lại). */
+  async function signOut() {
+    if (!fb.auth) return;
+    try { await fb.auth.signOut(); } catch (e) { setPhase("AUTH_FAILED", errCode(e)); }
+  }
+
+  /** Nạp bản bền cho UID đang đăng nhập. Tách khỏi initPersistence() để mọi đường đăng nhập đi
+   *  đúng CÙNG một mã, không nhân bản logic đọc/validate. */
+  async function loadDurable(gen) {
+    var live = function () { return gen === undefined || gen === authGen; };
     var snapState, snapSeed;
     try {
       // `source: "server"`: KHÔNG chấp nhận cache của SDK làm bản bền — offline thì phải lỗi rõ.
@@ -459,11 +521,13 @@
       snapSeed = await fb.db.doc("ethdca/seed").get({ source: "server" });
     } catch (e) {
       var code = errCode(e);
+      if (!live()) return;
       if (/permission-denied/i.test(code)) { setPhase("UNRECOGNIZED", code); return; }
       showMirrorReadOnly();
       setPhase("OFFLINE", code);
       return;
     }
+    if (!live()) return;
 
     if (snapState.exists) {
       var raw = snapState.data();
@@ -498,6 +562,15 @@
     if (!b) return;
     if (b.getAttribute("data-pdiv") === "push") pushDiverged(); else dropDiverged();
   });
+  // Đăng nhập/đăng xuất Google: nút nằm trong vùng do JS sinh ra (#banners, #fbBox) nên bắt
+  // sự kiện theo uỷ quyền — app_shell.html KHÔNG đổi.
+  function authClick(e) {
+    var b = e.target && e.target.closest ? e.target.closest("[data-auth]") : null;
+    if (!b) return;
+    if (b.getAttribute("data-auth") === "signin") signIn(); else signOut();
+  }
+  $("banners").addEventListener("click", authClick);
+  $("fbBox").addEventListener("click", authClick);
   $("fbCopyUid").addEventListener("click", function () {
     var msgEl = $("fbMsg");
     if (!P.uid) { msgEl.textContent = "Chưa có UID."; msgEl.className = "formmsg err"; return; }
@@ -520,7 +593,7 @@
   window.ETHDCA_DEBUG = {
     status: function () {
       return {
-        phase: P.phase, detail: P.detail, uid: P.uid, projectId: P.projectId,
+        phase: P.phase, detail: P.detail, uid: P.uid, email: P.email, projectId: P.projectId,
         rev: state.rev, durableRev: P.durableRev, saving: P.saving, unconfirmed: P.unconfirmed,
         lastError: P.lastError, staleRev: P.staleRev, seedPending: P.seedPending, seedDurable: P.seedDurable,
         diverged: !!P.diverged, mirrorShown: P.mirrorShown, hasSeed: !!seed,
@@ -529,5 +602,5 @@
   };
 
   render();           // khung trống + banner "đang kết nối"; mọi thao tác ghi đang khoá
-  initPersistence();  // Firebase init -> Anonymous Auth -> đọc bản bền -> validate -> ONLINE
+  initPersistence();  // Firebase init -> phiên Google (nếu có) -> đọc bản bền -> validate -> ONLINE
 })();
