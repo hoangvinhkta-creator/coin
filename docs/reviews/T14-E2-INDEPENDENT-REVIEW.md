@@ -822,3 +822,36 @@ Chủ dự án cần thực hiện **đúng một** quyết định lifecycle, c
 **Lưu ý ranh giới:** cảnh báo "dừng dùng app với tiền thật không giới hạn" (`H-41`, `DEC-041` K.2)
 **KHÔNG** tự động được gỡ bởi `T-14 DONE`. Bước C chỉ đóng nhóm điều kiện Firebase/auth/backup.
 Bước D (`OWNER_LOCAL_ACCEPTANCE`) và guard SELL (`H-46`) vẫn nằm ngoài và chưa được mở.
+
+---
+
+## Phụ lục A — `INTEGRATION_DECISION_REQUIRED` phát sinh sau khi push báo cáo này
+
+Sau commit của phiên review, `branch_authority_check.sh` báo:
+
+    behind upstream   = 0
+    ahead of default  = 3 commit(s)
+    divergence age    = 0 day(s)
+    divergence LOC    = 5258
+    INTEGRATION_DECISION_REQUIRED: loc>5000
+    tracked worktree  = CLEAN
+    production diff   = EMPTY
+    BRANCH AUTHORITY: PASS
+
+**Nguyên nhân:** ngưỡng `loc > 5000` bị vượt bởi **chính artifact của phiên review này**
+(báo cáo + log bằng chứng + hai script reviewer). **Production diff = EMPTY** và
+`tracked worktree = CLEAN`, nên đây **không** phải khiếm khuyết tích hợp của mã sản phẩm:
+`T-14` chỉ đóng góp `194/−23` dòng production, phần còn lại là tài liệu và bằng chứng.
+
+Theo `AGENTS.md` §7, đây là **Owner Decision, không phải cảnh báo được đi qua im lặng**.
+Reviewer **không** tự quyết và **không** merge `main`. Chủ dự án cần chọn một trong ba, đúng
+khuôn mà script nêu:
+
+1. **integrate/merge** — tích hợp nhánh `T-14` vào `main` sau khi ghi Owner Decision chuyển
+   `T-14 → DONE` (lựa chọn tự nhiên nhất: nhánh đã xong việc và đã qua E2);
+2. **cut scope** — không áp dụng ở đây (không còn hạng mục nào để cắt);
+3. **accept the divergence** kèm lý do và ngày đánh giá lại.
+
+Ghi chú kỹ thuật cho quyết định: divergence LOC ở đây đo **toàn bộ** dòng thay đổi, kể cả
+`docs/**` và `PROJECT/**`. Nếu chủ dự án muốn ngưỡng này phản ánh rủi ro tích hợp **mã**, đó là
+cùng một câu hỏi phân loại mà `H-51` đã nêu (§19) — có thể xử lý một lần cho cả hai.
