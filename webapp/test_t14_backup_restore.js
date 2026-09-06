@@ -135,7 +135,7 @@ async function importFile(p, name, body, expectDownload) {
       'state chỉ chứa allowlist canonical — không trường dẫn xuất nào');
     assert(backup.derivedSnapshot && backup.derivedSnapshot._meta === 'INFORMATIONAL — NOT IMPORTED',
       'khối tham khảo mang nhãn `_meta: "INFORMATIONAL — NOT IMPORTED"`');
-    assert(backup.derivedSnapshot.ethQty === goldenDerived.holdings.ETH.qty, 'khối tham khảo đúng số liệu derive() hiện tại (chỉ để người đọc)');
+    assert(backup.derivedSnapshot.holdings.ETH.qty === goldenDerived.holdings.ETH.qty, 'khối tham khảo đúng số liệu derive() hiện tại (chỉ để người đọc)');
     end();
 
     /* ---------- CHECK-T14-08 / C-AS-10 — dị dạng: từ chối, KHÔNG mutate ---------- */

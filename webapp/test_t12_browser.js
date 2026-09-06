@@ -51,9 +51,12 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     // March EXTRA100 + RESERVE100 exceed remaining49.4; first March BUY unknown, quantity preserved.
     // Use a second explicit treasury event to restore known coverage BEFORE March spend, via normal UI.
     s = await enter(p, F.p2p(10, '2026-03-01', 10000000, 400000000));
+    // Sửa L-1 (lỗi carry-in không vào lịch mua): plannedPerSlot chia theo plannedBudgetVnd
+    // (20.000.000 + carry 10.659.700 = 30.659.700 -> 3 x 10.219.900), nên mốc 23/03 còn lại
+    // 30.659.700 chứ không phải 20.000.000 như oracle cũ tính theo ngân sách gốc.
     // Exact hand oracle: March pool449.4/C11259700 after P2P; each BUY100 releases2505496. ETH(.5+.24+.02+.2+.04+.04)=1.04;
     // ETH costUSDT=1200+600.6+50+500+100+100=2550.6; costVND=30m+15315300+1275000+12750000+5010992=64351292.
-    const oracle = { 'holdings.ETH.qty': 104000000, 'holdings.ETH.costUsdt': 2550600000, 'holdings.ETH.costVnd': 64351292, 'usdt.qty': 249400000, 'usdt.costVnd': 6248708, 'reserve.balance': 7494504, 'month.monthlyBudgetVnd': 20000000, 'month.carryInVnd': 10659700, 'month.plannedBudgetVnd': 30659700, 'month.investedThisMonthVnd': 5010992, 'month.planInvestedVnd': 0, 'month.remainingPlannedBudgetVnd': 30659700, 'month.nextPlannedDate': '2026-03-23', 'month.nextPlannedAmountVnd': 20000000 };
+    const oracle = { 'holdings.ETH.qty': 104000000, 'holdings.ETH.costUsdt': 2550600000, 'holdings.ETH.costVnd': 64351292, 'usdt.qty': 249400000, 'usdt.costVnd': 6248708, 'reserve.balance': 7494504, 'month.monthlyBudgetVnd': 20000000, 'month.carryInVnd': 10659700, 'month.plannedBudgetVnd': 30659700, 'month.investedThisMonthVnd': 5010992, 'month.planInvestedVnd': 0, 'month.remainingPlannedBudgetVnd': 30659700, 'month.nextPlannedDate': '2026-03-23', 'month.nextPlannedAmountVnd': 30659700 };
     const d = L.derive(s.openingPosition, s.plan, s.events, '2026-03-21'); for (const [key, n] of Object.entries(oracle)) A.deepEqual(key.split('.').reduce((a, k) => a[k], d), n, key);
     const displayed = await summary(p);
     for (const [label, expected] of Object.entries({ 'Ngân sách tháng': '20.000.000', 'Carry từ tháng trước': '10.659.700', 'Ngân sách gồm carry': '30.659.700', 'Đã đầu tư': '5.010.992', 'Theo kế hoạch': '0', 'Còn lại theo kế hoạch': '30.659.700', 'Dự phòng': '7.494.504', ETH: '1,04', USDT: '249,4', 'Giá vốn pool USDT (VND)': '6.248.708' })) A.equal(displayed[label], expected, label);
@@ -97,6 +100,23 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
       await p.waitForFunction(code => document.getElementById('l1Message').textContent.includes(code), code);
       A.deepEqual(await H.getDoc('state'), raw); record('Migration ' + code, 'Snapshot trước lỗi, source/durable không đổi một byte canonical.');
     }
+    /* ---- T-16: sổ `coindca.ledger/2` nạp được ở chế độ CHỈ ĐỌC và nâng cấp được qua UI ---- */
+    const v2 = F.copy(migrated); v2.schema = 'coindca.ledger/2'; delete v2.LEGACY_ARCHIVE; delete v2.RESEARCH_ONLY; v2.rev = 0;
+    await H.putDoc('state', v2); await p.evaluate(() => localStorage.clear()); await p.reload(); await H.waitPhase(p, 'ONLINE');
+    A.match(await p.textContent('#l1Flags'), /SCHEMA 2 — CHỈ ĐỌC/);
+    A.equal(await p.locator('#l1MigrationV3').isHidden(), false, 'nút nâng cấp v2->v3 phải hiện');
+    A.equal(await p.locator('#l1Migration').isHidden(), true, 'luồng migration legacy v1 KHÔNG được hiện cho sổ v2');
+    A.deepEqual(await H.getDoc('state'), v2, 'sổ v2 KHÔNG bị ghi đè trước khi Owner bấm nâng cấp');
+    await openDetails(p);
+    const v3Snapshot = await snapshotClick(p, '#l1MigrateV3'); A.deepEqual(v3Snapshot.state, v2, 'snapshot chạy trước khi ghi');
+    await H.waitSaved(p);
+    const upgraded = await H.readState(p);
+    A.equal(upgraded.schema, L.SCHEMA);
+    const withoutSchema = o => { const c = F.copy(o); delete c.schema; delete c.rev; return c; };
+    A.deepEqual(withoutSchema(upgraded), withoutSchema(v2), 'nâng cấp không đổi một byte nội dung nào ngoài nhãn schema');
+    A.doesNotMatch(await p.textContent('#l1Flags'), /CHỈ ĐỌC/);
+    record('T-16 v2->v3', 'Sổ coindca.ledger/2 nạp CHỈ ĐỌC, không bị ghi đè; nâng cấp qua UI có snapshot, oracle khớp, nội dung không đổi.');
+
     await H.putDoc('state', migrated); await p.evaluate(() => localStorage.clear()); await p.reload(); await H.waitPhase(p, 'ONLINE'); await openDetails(p);
     p.removeAllListeners('dialog'); p.on('dialog', dialog => dialog.dismiss());
     const cancelledSnapshot = await snapshotClick(p, '#l1Wipe'); A.deepEqual(cancelledSnapshot.state, migrated);

@@ -148,21 +148,67 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     // AS-07: opening thiếu costVnd (usdt) -> "—" + banner UNKNOWN_VND_BASIS thường trực, không nút ẩn.
     await setOpening(p, Object.assign({}, F.opening, { usdt: { qty: 200000000, costVnd: null } }));
     bottom = await dashBottom(p);
-    A.equal(bottom['Giá vốn TB (VND)'], '—');
+    A.equal(bottom['Giá vốn TB ETH (VND)'], '—');
     const flagsText = await p.textContent('#l1Flags');
     A.match(flagsText, /UNKNOWN_VND_BASIS/);
     A.equal(await p.locator('#l1Flags button').count(), 0, 'banner UNKNOWN không có nút ẩn/dismiss');
     record('AS-07', 'Opening với usdt.costVnd=null: giá vốn VND hiện "—", banner UNKNOWN_VND_BASIS thường trực, không nút ẩn vĩnh viễn trong DOM.');
 
-    // AS-10 / CHECK-T13-09: rà toàn bộ UI RENDER (không phải mã nguồn <script>/<style> nhúng
-    // trong trang) — không có SELL/Bán, không lãi/lỗ đã thực hiện, trong bất kỳ nút/option/nhãn.
+    // AS-10 — T-16 (DEC-052) ĐẢO CHIỀU khẳng định này. T-13 đòi "không SELL, không P&L" vì lúc đó
+    // nghiệp vụ bán chưa được thiết kế và eventCheck chặn nó (T-15). T-16 thiết kế xong (H-46 phần
+    // bán lấy USDT), nên UI PHẢI có đường bán và PHẢI hiện lãi/lỗ đã thực hiện — tách rõ hai đơn vị.
     const uiText = await p.evaluate(() => Array.from(document.querySelectorAll(
       'button, option, label, select, .txtype, h1, h2, h3, summary, .dc-label, .dc-value, .hc-main, .stat small'
     )).map(el => el.textContent).join(' | '));
-    A.doesNotMatch(uiText, /\bSELL\b/);
-    A.doesNotMatch(uiText, /\bBán\b/);
-    A.doesNotMatch(uiText, /realizedFxVnd|lãi\/lỗ|P&L|PnL/i);
-    record('AS-10', 'Grep toàn bộ DOM: không tuỳ chọn SELL/Bán ở form/menu nào; không hiển thị realized P&L/PnL.');
+    A.match(uiText, /Bán coin/, 'phải có đường ghi lệnh bán');
+    A.match(uiText, /Lãi\/lỗ đã thực hiện \(USDT\)/, 'P&L thực hiện của lệnh bán hiện bằng ĐƠN VỊ USDT');
+    A.match(uiText, /Lãi\/lỗ tỷ giá đã thực hiện \(VND\)/, 'lãi/lỗ tỷ giá hiện riêng bằng VND');
+    A.doesNotMatch(uiText, /USDT\s*\+\s*VND|gộp/i, 'hai đơn vị không được gộp thành một con số');
+    A.match(uiText, /Nạp tiền mặt|Rút tiền mặt/, 'phải có đường ghi nạp/rút tiền mặt VND');
+    record('AS-10', 'T-16: UI có đường BÁN và hiển thị lãi/lỗ đã thực hiện tách hai đơn vị (USDT / VND), có nạp-rút tiền mặt VND.');
+
+    /* ---- T-16 (DEC-052): đa tài sản + BÁN + tiền mặt qua ĐÚNG các control mới, không gọi module ---- */
+    await setOpening(p, F.scenarios.find(s => s.id === 'SC-09').state.openingPosition);   // khôi phục giá vốn đã biết sau AS-07
+    // Nạp tiền mặt phải nằm TRƯỚC cuộc đổi VND->USDT ở AS-02a (25.600.000 ₫ ngày 05/03), nếu không
+    // vnd.balance âm ngay tại lệnh đổi đó và cờ LEDGER_INCONSISTENT của T-15 bật đúng — chính là
+    // vấn đề mà CASH DEPOSIT sinh ra để giải quyết cho sổ nhập từ nguồn cũ.
+    await pickType(p, 'cash_in'); await fill(p, 'l1Date', '2026-03-01'); await fill(p, 'l1Note', 'nạp tiền mặt vào ví');
+    await fill(p, 'l1CashAmount', '40000000'); await saveEvent(p);
+    await pickType(p, 'buy_extra'); await p.selectOption('#l1Symbol', 'BTC'); await fill(p, 'l1Date', '2026-03-07'); await fill(p, 'l1Note', 'mua BTC ngoài kế hoạch');
+    await fill(p, 'l1Notional', value(120000000, 6)); await fill(p, 'l1Fee', '0'); await fill(p, 'l1Qty', value(1000000, 8)); await saveEvent(p);
+    await pickType(p, 'sell'); await p.selectOption('#l1Symbol', 'ETH'); await fill(p, 'l1Date', '2026-03-20'); await fill(p, 'l1Note', 'bán bớt ETH');
+    await fill(p, 'l1Notional', value(60000000, 6)); await fill(p, 'l1Fee', '0'); await fill(p, 'l1Qty', value(2000000, 8)); await saveEvent(p);
+    const s16 = await H.readState(p);
+    const kinds = s16.events.map(e => e.kind + '/' + (e.side || e.type || e.dir || '') + '/' + (e.symbol || ''));
+    A.ok(kinds.includes('CASH/DEPOSIT/'), 'UI ghi được event CASH DEPOSIT: ' + JSON.stringify(kinds));
+    A.ok(kinds.includes('TRADE/BUY/BTC'), 'UI ghi được lệnh mua BTC');
+    A.ok(kinds.includes('TRADE/SELL/ETH'), 'UI ghi được lệnh bán ETH');
+    const d16 = L.derive(s16.openingPosition, s16.plan, s16.events, '2026-03-21');
+    // Khẳng định đúng thứ CASH DEPOSIT sinh ra để giải quyết: sổ này có hai cuộc đổi VND->USDT
+    // (30.600.000 ₫) trong khi số dư đầu kỳ vnd = 0. KHÔNG có CASH DEPOSIT thì vnd âm và cờ
+    // LEDGER_INCONSISTENT của T-15 bật; CÓ nó thì vnd dương và cờ đó không còn do tiền mặt gây ra.
+    // (Sổ ở bước này còn một cờ khác không liên quan tới T-16: AS-06 đã xoá lệnh nạp dự phòng nên
+    //  lệnh "mua từ dự phòng" ở 20/03 làm reserve âm — hành vi có sẵn, không phải hồi quy.)
+    const noCash = L.derive(s16.openingPosition, s16.plan, s16.events.filter(e => e.kind !== 'CASH'), '2026-03-21');
+    A.ok(noCash.vnd.balance < 0 && noCash.flags.includes('LEDGER_INCONSISTENT'), 'không có CASH DEPOSIT: vnd âm + cờ');
+    A.ok(d16.vnd.balance >= 0, 'có CASH DEPOSIT: vnd.balance = ' + d16.vnd.balance + ' không còn âm');
+    A.equal(d16.vnd.balance, 40000000 - 25600000 - 5000000);
+    A.equal(d16.firstOffendingBusinessDate, '2026-03-20', 'cờ còn lại đến từ reserve âm ở 20/03, không phải tiền mặt');
+    bottom = await dashBottom(p);
+    A.equal(bottom['Đang nắm giữ (BTC)'], (d16.holdings.BTC.qty / 1e8).toLocaleString('vi-VN', { maximumFractionDigits: 8 }), 'Tổng quan có dòng nắm giữ riêng cho BTC');
+    A.equal(bottom['Đang nắm giữ (ETH)'], (d16.holdings.ETH.qty / 1e8).toLocaleString('vi-VN', { maximumFractionDigits: 8 }));
+    A.equal(bottom['Lãi/lỗ đã thực hiện (USDT)'], (d16.realizedPnlUsdt / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 6 }));
+    A.equal(bottom['Lãi/lỗ tỷ giá đã thực hiện (VND)'], d16.realizedFxVnd.toLocaleString('vi-VN'));
+    A.ok(d16.realizedPnlUsdt !== 0, 'lệnh bán phải sinh lãi/lỗ đã thực hiện bằng USDT');
+    A.equal(d16.realizedFxVnd, 0, 'bán coin lấy USDT không tạo lãi/lỗ VND');
+    // Ranh giới kế hoạch: mua BTC (EXTRA) không chạm ngân sách ETH; bán cũng không.
+    const onlyEthPlan = s16.events.filter(e => e.kind === 'TRADE' && e.side === 'BUY' && e.symbol === 'ETH' && e.source === 'PLAN');
+    A.equal(d16.month.planInvestedVnd, onlyEthPlan.reduce((t, e) => t + d16.eventEffects[e.id].vndRelieved, 0), 'planInvested chỉ gồm lệnh mua ETH theo kế hoạch');
+    const cards16 = Object.fromEntries((await dashCards(p)).map(c => [c.label, c.value]));
+    A.equal(cards16['Đã đầu tư tháng này'], d16.month.investedThisMonthVnd.toLocaleString('vi-VN') + ' ₫');
+    A.match(await p.textContent('#l1History'), /Bán ETH/, 'Lịch sử hiện nhãn "Bán ETH"');
+    A.match(await p.textContent('#l1History'), /Nạp tiền mặt/);
+    record('T-16', 'Qua UI thật: CASH DEPOSIT, mua BTC (EXTRA), bán ETH; Tổng quan có dòng nắm giữ riêng từng coin, hai ô lãi/lỗ tách đơn vị, ngân sách kế hoạch không bị coin khác pha loãng.');
 
     // AS-09: khung hình ≤400px — không cuộn ngang; ghi PLAN từ Tổng quan ≤3 lần chạm (FAB, loại, Lưu).
     await p.setViewportSize({ width: 390, height: 844 });

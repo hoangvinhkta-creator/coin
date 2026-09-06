@@ -6,7 +6,6 @@ const path = require('path');
 const DIR = __dirname;
 const shell  = fs.readFileSync(path.join(DIR, 'app_shell.html'), 'utf8');
 const fbcfg  = fs.readFileSync(path.join(DIR, 'firebase_config.js'), 'utf8');
-const engine = fs.readFileSync(path.join(DIR, 'engine.js'), 'utf8');
 const ledger = fs.readFileSync(path.join(DIR, 'ledger.js'), 'utf8');
 const ledgerUI = fs.readFileSync(path.join(DIR, 'ledger_ui.js'), 'utf8');
 const logic  = fs.readFileSync(path.join(DIR, 'app_logic.js'), 'utf8');
@@ -17,7 +16,6 @@ const logic  = fs.readFileSync(path.join(DIR, 'app_logic.js'), 'utf8');
 // tạo một "nguồn sự thật" thứ ba cạnh Firestore, trái CHECK-T09B-16.
 const BODY = shell
   + '\n<script>\n' + fbcfg + '\n</script>\n'
-  + '<script>\n' + engine + '\n</script>\n'
   + '<script>\n' + ledger + '\n</script>\n'
   + '<script>\n' + ledgerUI + '\n</script>\n'
   + '<script>\n' + logic + '\n</script>\n';
@@ -31,9 +29,13 @@ const FULL = '<!doctype html><html lang="vi"><head><meta charset="utf-8">'
   if (FULL.includes(t)) throw new Error('legacy placeholder left in page: ' + t);
 });
 ['window.ETHDCA_FIREBASE_CONFIG', 'firebase-app-compat.js', 'firebase-auth-compat.js',
- 'firebase-firestore-compat.js', 'const ENGINE', 'ethdca/state'].forEach((t) => {
+ 'firebase-firestore-compat.js', 'window.CoinLedger', 'ethdca/state'].forEach((t) => {
   if (!FULL.includes(t)) throw new Error('required fragment missing from page: ' + t);
 });
+// `engine.js` (V2.1.5 OSCORE/ladder) đã bị gỡ khỏi đường L-1 tại T-13 (Step-B spec §12
+// REMOVE_FROM_L1_PATH) và không còn được app_logic.js/ledger_ui.js gọi tới. Nó vẫn mang lỗi
+// rolling-window B10 (đếm dòng thay vì đếm ngày lịch), nên không nhúng dead code đó lên trang.
+if (FULL.includes('const ENGINE')) throw new Error('engine.js must not be bundled into the L-1 page');
 
 // 1. webapp/app_final.html — bản dùng cho bộ test (mở qua HTTP server của harness).
 fs.writeFileSync(path.join(DIR, 'app_final.html'), FULL);

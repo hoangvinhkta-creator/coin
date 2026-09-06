@@ -1,4 +1,4 @@
-# CAPABILITY REGISTRY — dự án coin (ETH DCA Operating System V2.1.5)
+# CAPABILITY REGISTRY — dự án coin (CoinDCA; V2.1.5 = frozen research authority)
 
 Status:
 ACTIVE
@@ -39,9 +39,18 @@ chấm **trên §1.A**, KHÔNG phải trên lát cắt validation V2.1.5 đã ho
 Lát cắt này cắt ngang module (UI → lớp ghi sổ → persistence), đúng định nghĩa Vertical Slice:
 không module nào tự chứng minh được nó.
 
-Trạng thái lát cắt: **CHƯA CHẠY.** Sản phẩm L-1 chưa được đặc tả — pha kế tiếp là
-`L-1 PRODUCT + ACCOUNTING SPEC` (`DEC-041` Consequence). Không phiên nào được thi hành L-1
-trước khi spec đó tồn tại.
+Trạng thái lát cắt: **ĐÃ CHẠY BA LẦN** (`T-12` bước A, `T-13` bước B, `T-14` bước C — cả ba
+`DONE`), cộng một lượt sửa lỗi `T-15` (`DEC-051`). Spec đã được duyệt từ `DEC-042`
+(`docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md`), nên điều kiện tiên quyết cũ đã thoả.
+
+**Đính chính stale 2026-09-06 (`S042`).** Câu ở vị trí này trước đây ghi *"Sản phẩm L-1 chưa
+được đặc tả… Không phiên nào được thi hành L-1 trước khi spec đó tồn tại."* Điều đó đúng khi
+viết (`DEC-041`, 2026-09-05) nhưng đã sai kể từ `DEC-042` — và lệnh cấm đó, đọc nguyên văn, đã
+bị vượt qua ba lần. Đây là sửa **mô tả trạng thái**, không đổi quyết định nào.
+
+`END_TO_END_ACCEPTANCE` bên dưới **giữ nguyên `PENDING_OWNER_DATA`** — mục đó vẫn đúng: lát cắt
+chạy được trên dữ liệu tổng hợp, nhưng chưa có dữ liệu thật của Owner để nghiệm thu đầu-cuối
+(bước D, `OWNER_LOCAL_ACCEPTANCE`).
 
     END_TO_END_ACCEPTANCE = PENDING_OWNER_DATA
 

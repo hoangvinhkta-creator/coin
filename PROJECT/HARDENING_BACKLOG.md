@@ -1661,6 +1661,19 @@ của `T-12` yêu cầu hiển thị, và spec §6.4 tuyên bố L-1 "dừng ở
 
 ## H-46 — SELL: ngữ nghĩa tạo/giải phóng giá vốn VND khi bán ETH — khiếm khuyết ĐẶC TẢ, KHÔNG phải lỗi cài đặt `T-12`
 
+> **CẬP NHẬT 2026-09-06 (`S043`, `T-16`/`DEC-052`) — ĐÓNG MỘT PHẦN, KHÔNG đóng dứt điểm.**
+> **Đã đóng:** phần *"bán coin lấy USDT"*. `derive()` nay CHUYỂN giá vốn từ holding sang pool
+> USDT (`usdt.costVnd += relievedV`) thay vì cộng một `basis` tính theo giá trung bình của chính
+> pool; chênh lệch của lượt bán ghi bằng **đơn vị USDT** vào `realizedPnlUsdt` mới, không gộp với
+> `realizedFxVnd` (VND). Bất biến bảo toàn giá vốn VND có test property 60 chuỗi ngẫu nhiên +
+> một ca tính tay (`webapp/test_t16_multiasset.js` `T16-12`/`T16-13`/`T16-14`). `eventCheck`
+> KHÔNG còn chặn `SELL`.
+> **CÒN MỞ:** (a) lãi/lỗ thực hiện quy ra **VND** cho một lượt bán — hiện lãi/lỗ VND chỉ phát
+> sinh khi USDT đổi ngược ra VND thật (`TREASURY USDT_TO_VND`), nên một lượt bán chưa có con số
+> VND nào; (b) báo cáo lãi/lỗ theo lô hoặc theo kỳ; (c) chi phí/thuế. Mô tả gốc bên dưới giữ
+> nguyên văn cho phần còn mở.
+
+
 Capability: `CAP-WEBAPP` · Owner: **CHƯA CÓ — cần Owner quyết định trước khi mở nghiệp vụ SELL cho dữ liệu thật** · Phân loại: **HARDENING (khiếm khuyết đặc tả)**
 Ngày ghi nhận: 2026-09-05 (Independent E2 review, `F-E2-03`, `docs/reviews/T12-E2-INDEPENDENT-REVIEW.md` §14/§23)
 
@@ -1989,3 +2002,145 @@ hậu quả nghiệp vụ nào nằm trong Completion Gate/risk register phụ t
       thật (đổi bản chất dữ liệu Content, ngoài phạm vi CoinDCA); HOẶC
     - CoinDCA và Content được tách sang hai project Firebase riêng (`O-1`/phần DEFERRED của
       `H-42`) — khi đó mục này tự tiêu biến vì hai project không còn chung một ruleset.
+
+---
+
+## H-54 — `RESERVE CONTRIBUTE` không trừ `vnd.balance`: cùng một số tiền đếm hai lần trên Dashboard
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S042`, rà soát độc lập `COINDCA_L1_REVIEW_T12_T14.md` §2 nhóm 🟡)
+
+`derive()` (`webapp/ledger.js`, nhánh `e.kind === 'RESERVE'`) cộng/trừ `reserve` nhưng KHÔNG
+chạm `vnd`. Nạp 10 triệu vào dự phòng làm Dashboard hiện 10 triệu ở "Dự phòng" **và** vẫn hiện
+đủ 10 triệu đó ở "VND hiện có".
+
+Không nằm trong 7 lỗi được `DEC-051` giao, nên **không sửa** ở `T-15` (Scope OUT tường minh).
+Không BLOCKING: không REQUIRED check nào của Completion Gate đang `DONE` phụ thuộc vào nó, và
+nó không làm sai giá vốn hay carry — chỉ làm sai một con số hiển thị.
+
+    RE_TRIGGER_CONDITION:
+    - Owner mở một task chạm ngữ nghĩa dự phòng (bước D hoặc sau đó); HOẶC
+    - Owner báo con số "VND hiện có" trên Dashboard lệch với thực tế.
+
+---
+
+## H-55 — `startMonth` rất sớm (ví dụ `0001-01`) hợp lệ: vòng lặp tháng bùng nổ mỗi lần render
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S042`, cùng nguồn)
+
+`monthValid()` chỉ chặn `0000-*`. `startMonth = '0001-01'` đi qua, và vòng lặp
+`for (let m = start; m <= currentMonth; m = nextMonth(m))` trong `derive()` chạy ~24.309 lần mỗi
+render (đo được ~47 ms). Không sai số học, chỉ tốn thời gian; không nằm trong 7 lỗi được giao.
+
+    RE_TRIGGER_CONDITION:
+    - render Dashboard chậm thấy được trên máy Owner; HOẶC
+    - Owner mở một task chạm `planCheck`/`monthValid`.
+
+---
+
+## H-56 — `LEGACY_ARCHIVE` / `RESEARCH_ONLY` không giới hạn kích thước: có thể đẩy document vượt trần 1 MiB Firestore
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S042`, cùng nguồn)
+
+`canonical()` cho phép hai khoá `LEGACY_ARCHIVE`/`RESEARCH_ONLY` trong state bền nhưng không đặt
+trần kích thước; `migrate()` nhét nguyên bản legacy + history vào đó. Toàn bộ sổ vẫn nằm trong
+MỘT document `ethdca/state`. Cùng họ với `H-29` (trần 1 MiB), chưa đóng.
+
+    RE_TRIGGER_CONDITION:
+    - `H-29` được xử lý (khi đó xử lý luôn mục này); HOẶC
+    - một lần ghi Firestore thất bại vì vượt trần document.
+
+---
+
+## H-57 — Bộ `test:legacy-v215` đã chết từ `T-13` nhưng vẫn nằm trong `package.json`
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (nợ kỹ thuật, không ảnh hưởng hành vi)**
+Ngày ghi nhận: 2026-09-06 (`S042`, phát hiện khi kiểm L7g của `DEC-051` §D.3)
+
+Sáu suite của `npm run test:legacy-v215` (`test_app.js`, `test_zone.js`, `test_v01_v02_v03.js`,
+`test_multi_month_invariant.js`, `test_t09a_accounting.js`, `test_t09b_persistence.js`) đi qua
+`test_helpers.js`, vốn thao tác `[data-tab="entry"]`/`#pxAdd` và gọi `ENGINE` **bên trong trang**.
+`app_shell.html` sau `T-13` có **0** phần tử như vậy (Step-B spec §12 `REMOVE_FROM_L1_PATH`), nên
+bộ này đã không chạy được từ trước `T-15`. Nó KHÔNG nằm trong `npm test`.
+
+`T-15` gỡ `engine.js` khỏi **bundle** (`build_app.js`), không gỡ bộ test — gỡ một bộ test là
+quyết định riêng, và `webapp/engine.js` vẫn là frozen research artifact (`DEC-041` A) giữ nguyên
+trên đĩa. Ghi nhận để lần sau không ai tưởng bộ đó còn là lưới an toàn.
+
+    RE_TRIGGER_CONDITION:
+    - Owner quyết định dọn nợ kỹ thuật webapp; HOẶC
+    - ai đó định dựa vào `test:legacy-v215` làm bằng chứng cho một gate.
+
+---
+
+## H-58 — Guard `startMonth < effectiveFrom` mới có thể chặn một sổ bền đã lưu ở hình dạng đó
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (hệ quả CỐ Ý của `T-15` L3a)**
+Ngày ghi nhận: 2026-09-06 (`S042`, `DEC-051`)
+
+`planCheck()` nay từ chối plan có `startMonth` sớm hơn `effectiveFrom` nhỏ nhất. Đây là lựa chọn
+fail-visible thay cho hành vi cũ (ngân sách `null` vĩnh viễn, `flags = []` im lặng). Hệ quả: một
+state bền ĐÃ LƯU ở hình dạng đó sẽ **không nạp được** qua `canonical()`/`derive()` cho tới khi
+`startMonth` được sửa.
+
+Rủi ro đánh giá **thấp**: form UI mặc định `l1StartMonth = l1Effective =` tháng hiện tại, và sổ
+production hiện tại là synthetic. Đường cứu không cần code: xuất backup JSON, sửa
+`plan.startMonth`, restore (nhánh restore có dry-run validate trước mọi ghi).
+
+    RE_TRIGGER_CONDITION:
+    - một sổ bền thật vấp guard này (Owner báo app không nạp được sổ sau khi cập nhật).
+
+---
+
+## H-59 — `TRADE side='SELL'` vẫn nhận `source='PLAN'`/`'RESERVE'`: tổ hợp vô nghĩa không bị chặn
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S043`, `T-16`/`DEC-052`)
+
+`eventCheck` đòi `source ∈ {PLAN, EXTRA, RESERVE}` cho mọi `TRADE`, kể cả `SELL`. Về số học vô
+hại — `derive()` không cho `SELL` chạm `invested`/`planSpent`/`reserve` — nhưng "bán theo kế
+hoạch" hay "bán từ dự phòng" là tổ hợp không có nghĩa. UI mặc định `EXTRA` cho lệnh bán.
+
+Không sửa ở `T-16` vì thêm một luật validation ngoài chỉ thị là mở rộng phạm vi.
+
+    RE_TRIGGER_CONDITION:
+    - một sổ thật xuất hiện lệnh SELL mang source khác EXTRA; HOẶC
+    - Owner mở một task chạm ngữ nghĩa `source`.
+
+---
+
+## H-60 — `realizedPnlUsdt = null` khi giá vốn USDT của holding chưa biết, không có cờ riêng
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S043`, `T-16`/`DEC-052`)
+
+Số dư đầu kỳ cho phép `costUsdt = null` ("chưa biết"). Bán một holding như vậy làm
+`realizedPnlUsdt` thành `null` và lan `null` cho mọi lượt bán sau. Hiển thị là "—", nhất quán với
+cách `UNKNOWN_VND_BASIS` xử lý giá vốn VND, **nhưng không có cờ riêng cho "giá vốn USDT chưa
+biết"** — `UNKNOWN_VND_BASIS` chỉ nói về VND, đặt thêm cờ mới là mở rộng bề mặt ngoài chỉ thị.
+
+Đáng lưu ý khi nhập sổ Excel thật: nếu số dư đầu kỳ thiếu giá vốn USDT thì lãi/lỗ bán sẽ là "—"
+cho tới khi holding đó về 0 và được mua lại từ đầu.
+
+    RE_TRIGGER_CONDITION:
+    - sổ nhập thật có số dư đầu kỳ thiếu `costUsdt` và có lệnh bán; HOẶC
+    - Owner cần một cờ tường minh cho giá vốn USDT chưa biết.
+
+---
+
+## H-61 — Form số dư đầu kỳ sửa MỘT coin mỗi lần lưu, không phải trình soạn thảo N-dòng
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (UX)**
+Ngày ghi nhận: 2026-09-06 (`S043`, `T-16`/`DEC-052`)
+
+`openingPosition.assets` nay nhận 0..N tài sản, nhưng form chỉ sửa dòng của coin đang chọn ở
+dropdown; các coin khác giữ nguyên, và "lượng 0 + bỏ trống giá vốn" = xoá coin đó. Đủ dùng, và
+giữ nguyên hợp đồng id `l1Eth`/`l1EthCostUsdt`/`l1EthCostVnd` mà `test_t12_browser.js` và
+`test_stepb_ui.js` phụ thuộc (xem chú thích đầu `ledger_ui.js`). Nhưng nó không hiển thị đồng
+thời cả ba coin, nên dễ tưởng các coin khác đã mất.
+
+    RE_TRIGGER_CONDITION:
+    - Owner nhập số dư đầu kỳ nhiều coin và thấy vướng; HOẶC
+    - một task khác đã mở hợp đồng id của form số dư đầu kỳ.

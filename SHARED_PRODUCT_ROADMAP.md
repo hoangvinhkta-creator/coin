@@ -154,13 +154,18 @@ Current semantic model:
 
 ```text
 CoinDCA
-└── ETH Strategy V2.1.5   [ACTIVE / current]
+├── L-1 ledger + DCA discipline (ETH)   [ACTIVE / current]
+└── ETH Strategy V2.1.5                 [FROZEN RESEARCH — not a shipping strategy]
 
 Future possibilities
 ├── BTC Strategy          [NOT IMPLEMENTED]
 ├── SOL Strategy          [NOT IMPLEMENTED]
 └── Other strategies      [NOT IMPLEMENTED]
 ```
+
+Consistent with §3.2 ("Active strategy: none"): what ships today is a **ledger + DCA discipline
+product**, not a strategy engine. V2.1.5 is frozen historical research authority (`DEC-041` A);
+its OSCORE / regime / ladder concepts are forbidden on the L-1 path (`DEC-041` B).
 
 ### 4.2 Forbidden shortcut
 
