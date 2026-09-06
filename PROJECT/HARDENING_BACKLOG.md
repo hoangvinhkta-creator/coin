@@ -1989,3 +1989,92 @@ hậu quả nghiệp vụ nào nằm trong Completion Gate/risk register phụ t
       thật (đổi bản chất dữ liệu Content, ngoài phạm vi CoinDCA); HOẶC
     - CoinDCA và Content được tách sang hai project Firebase riêng (`O-1`/phần DEFERRED của
       `H-42`) — khi đó mục này tự tiêu biến vì hai project không còn chung một ruleset.
+
+---
+
+## H-54 — `RESERVE CONTRIBUTE` không trừ `vnd.balance`: cùng một số tiền đếm hai lần trên Dashboard
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S042`, rà soát độc lập `COINDCA_L1_REVIEW_T12_T14.md` §2 nhóm 🟡)
+
+`derive()` (`webapp/ledger.js`, nhánh `e.kind === 'RESERVE'`) cộng/trừ `reserve` nhưng KHÔNG
+chạm `vnd`. Nạp 10 triệu vào dự phòng làm Dashboard hiện 10 triệu ở "Dự phòng" **và** vẫn hiện
+đủ 10 triệu đó ở "VND hiện có".
+
+Không nằm trong 7 lỗi được `DEC-051` giao, nên **không sửa** ở `T-15` (Scope OUT tường minh).
+Không BLOCKING: không REQUIRED check nào của Completion Gate đang `DONE` phụ thuộc vào nó, và
+nó không làm sai giá vốn hay carry — chỉ làm sai một con số hiển thị.
+
+    RE_TRIGGER_CONDITION:
+    - Owner mở một task chạm ngữ nghĩa dự phòng (bước D hoặc sau đó); HOẶC
+    - Owner báo con số "VND hiện có" trên Dashboard lệch với thực tế.
+
+---
+
+## H-55 — `startMonth` rất sớm (ví dụ `0001-01`) hợp lệ: vòng lặp tháng bùng nổ mỗi lần render
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S042`, cùng nguồn)
+
+`monthValid()` chỉ chặn `0000-*`. `startMonth = '0001-01'` đi qua, và vòng lặp
+`for (let m = start; m <= currentMonth; m = nextMonth(m))` trong `derive()` chạy ~24.309 lần mỗi
+render (đo được ~47 ms). Không sai số học, chỉ tốn thời gian; không nằm trong 7 lỗi được giao.
+
+    RE_TRIGGER_CONDITION:
+    - render Dashboard chậm thấy được trên máy Owner; HOẶC
+    - Owner mở một task chạm `planCheck`/`monthValid`.
+
+---
+
+## H-56 — `LEGACY_ARCHIVE` / `RESEARCH_ONLY` không giới hạn kích thước: có thể đẩy document vượt trần 1 MiB Firestore
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Ngày ghi nhận: 2026-09-06 (`S042`, cùng nguồn)
+
+`canonical()` cho phép hai khoá `LEGACY_ARCHIVE`/`RESEARCH_ONLY` trong state bền nhưng không đặt
+trần kích thước; `migrate()` nhét nguyên bản legacy + history vào đó. Toàn bộ sổ vẫn nằm trong
+MỘT document `ethdca/state`. Cùng họ với `H-29` (trần 1 MiB), chưa đóng.
+
+    RE_TRIGGER_CONDITION:
+    - `H-29` được xử lý (khi đó xử lý luôn mục này); HOẶC
+    - một lần ghi Firestore thất bại vì vượt trần document.
+
+---
+
+## H-57 — Bộ `test:legacy-v215` đã chết từ `T-13` nhưng vẫn nằm trong `package.json`
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (nợ kỹ thuật, không ảnh hưởng hành vi)**
+Ngày ghi nhận: 2026-09-06 (`S042`, phát hiện khi kiểm L7g của `DEC-051` §D.3)
+
+Sáu suite của `npm run test:legacy-v215` (`test_app.js`, `test_zone.js`, `test_v01_v02_v03.js`,
+`test_multi_month_invariant.js`, `test_t09a_accounting.js`, `test_t09b_persistence.js`) đi qua
+`test_helpers.js`, vốn thao tác `[data-tab="entry"]`/`#pxAdd` và gọi `ENGINE` **bên trong trang**.
+`app_shell.html` sau `T-13` có **0** phần tử như vậy (Step-B spec §12 `REMOVE_FROM_L1_PATH`), nên
+bộ này đã không chạy được từ trước `T-15`. Nó KHÔNG nằm trong `npm test`.
+
+`T-15` gỡ `engine.js` khỏi **bundle** (`build_app.js`), không gỡ bộ test — gỡ một bộ test là
+quyết định riêng, và `webapp/engine.js` vẫn là frozen research artifact (`DEC-041` A) giữ nguyên
+trên đĩa. Ghi nhận để lần sau không ai tưởng bộ đó còn là lưới an toàn.
+
+    RE_TRIGGER_CONDITION:
+    - Owner quyết định dọn nợ kỹ thuật webapp; HOẶC
+    - ai đó định dựa vào `test:legacy-v215` làm bằng chứng cho một gate.
+
+---
+
+## H-58 — Guard `startMonth < effectiveFrom` mới có thể chặn một sổ bền đã lưu ở hình dạng đó
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (hệ quả CỐ Ý của `T-15` L3a)**
+Ngày ghi nhận: 2026-09-06 (`S042`, `DEC-051`)
+
+`planCheck()` nay từ chối plan có `startMonth` sớm hơn `effectiveFrom` nhỏ nhất. Đây là lựa chọn
+fail-visible thay cho hành vi cũ (ngân sách `null` vĩnh viễn, `flags = []` im lặng). Hệ quả: một
+state bền ĐÃ LƯU ở hình dạng đó sẽ **không nạp được** qua `canonical()`/`derive()` cho tới khi
+`startMonth` được sửa.
+
+Rủi ro đánh giá **thấp**: form UI mặc định `l1StartMonth = l1Effective =` tháng hiện tại, và sổ
+production hiện tại là synthetic. Đường cứu không cần code: xuất backup JSON, sửa
+`plan.startMonth`, restore (nhánh restore có dry-run validate trước mọi ghi).
+
+    RE_TRIGGER_CONDITION:
+    - một sổ bền thật vấp guard này (Owner báo app không nạp được sổ sau khi cập nhật).

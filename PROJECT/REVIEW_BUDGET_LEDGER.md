@@ -886,3 +886,48 @@ capability nếu cần.
 Đây là quan sát về divergence nhánh so với `main`, không phải sự kiện tiêu thụ repair budget —
 Owner quyết định ACCEPT INTEGRATION/MERGE tại `DEC-050` §E, không thi hành merge trong các phiên
 này.
+
+#### 2.2.14 `S042` (2026-09-06) — `T-15` sửa 7 lỗi kế toán L-1: **REPAIR CYCLE #2 CONSUMED**
+
+    CAPABILITY      = CAP-WEBAPP        (lineage root WP-C1)
+    TASK            = T-15              (NOT_PLANNED -> READY -> IN_PROGRESS
+                                         -> IMPLEMENTED -> DONE, một phiên, DEC-051)
+    LOẠI            = REPAIR CYCLE #2 — TIÊU MỘT CHU KỲ
+
+Vì sao là repair cycle chứ không phải implementation ban đầu: bảy lỗi nằm trong mã production
+**đã `DONE`** (`T-12`/`T-13`/`T-14`), do một rà soát ĐỘC LẬP tái lập **sau khi** các task đó
+đóng. Đúng tình huống §4.3 của chính ledger này mô tả: *"đây KHÔNG phải khiếm khuyết của một
+lượt sửa đã tiêu, nên sửa nó SẼ tiêu một repair cycle mới của capability nhận nó."*
+Không viện cớ "task ID mới nên là implementation ban đầu" — `AGENTS.md` §3: *budget không reset
+qua session, branch, repair cycle, subtask, work package, child task hay sibling task.*
+
+| # | Loại | BASE | HEAD | Diff production path | Kết quả |
+|---|---|---|---|---|---|
+| 2 | **Repair cycle 2** (`S042`, `DEC-051`) | `6c1d894` | nhánh `claude/fix-7-ledger-errors-91dybv` | **3 file, +77 / −24** (`webapp/ledger.js`, `webapp/ledger_ui.js`, `webapp/build_app.js`); tính cả test/harness: 7 file, +289 / −33 | 16/16 REQUIRED PASS (E1); fixture Owner bit-exact 9/9; mutation 7/7 KILLED; `npm test` exit 0 |
+
+Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat 6c1d894..HEAD -- webapp/ledger.js webapp/ledger_ui.js webapp/build_app.js
+      -> 3 files changed, 77 insertions(+), 24 deletions(-)
+    git diff --stat     6c1d894..HEAD -- src/eth_dca_os docs/spec firestore.rules
+      -> (rỗng)
+
+Trạng thái budget sau phiên:
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI (Owner-ratified, DEC-018)
+    CURRENT BUDGET USED       = 2 repair cycle    <- 1 (REPAIR_CYCLE_1, T-12, DEC-043)
+                                                     + 1 (REPAIR_CYCLE_2, T-15, DEC-051)
+    CURRENT BUDGET REMAINING  = 0 repair cycle
+    OWNER_EXTENSION           = CHƯA CẤP
+
+**`REMAINING = 0`.** Từ đây, mọi lượt sửa tiếp theo cho `CAP-WEBAPP` — kể cả trong bước D — chỉ
+còn ba lựa chọn: `ACCEPT_AS_IS`, `DESCOPE`, hoặc `OWNER_EXTENSION` tường minh ghi ở
+`PROJECT/PROJECT_DECISIONS.md`. Phiên sau phải **ĐỌC** hai con số này, không tự khai lại.
+
+Effective Risk của `CAP-WEBAPP` **KHÔNG đổi** (vẫn `HIGH`): `T-15` không thêm REQUIRED check nào
+vào các gate đã FROZEN, không mở rộng production path, không tăng Blast Radius — nó thu hẹp bề
+mặt sai (chặn SELL, chặn sửa hồi tố, chặn `priceUsdt = 0`, chặn plan sai hình dạng).
+
+Ngân sách artifact (`DEC-051` §B) là ràng buộc RIÊNG, không thay thế budget repair ở trên:
+1 task file + 1 báo cáo gộp + 1 DEC + 0 evidence log commit — đã tuân thủ, kiểm được bằng
+`git show --stat`.
