@@ -852,3 +852,37 @@ nghĩa `REVIEW_BUDGET_LEDGER.md`.
 
 Chu kỳ còn lại (`remaining 1`) **được giữ nguyên cho vòng repair sau independent E2 của `T-14`,
 nếu E2 tìm thấy REQUIRED FAIL** — phiên thi hành không được tiêu trước.
+
+---
+
+### 2.2.13 — S040/S041 (E2 độc lập + Owner Closure) — `T-14: IMPLEMENTED → DONE`, budget KHÔNG ĐỔI
+
+**S040 (2026-09-06) — Independent E2 review** cho `T-14`, reviewer khác implementer, HEAD reviewed
+`8ad0f13`, nhánh `claude/t14-step-c-firebase-isolation-xu6nxb`. Production diff của phiên E2 =
+**EMPTY** (chỉ `docs/reviews/T14-E2-INDEPENDENT-REVIEW.md` + `docs/reviews/evidence/T14-E2/`).
+Reviewer tái lập độc lập 12/12 REQUIRED + 14/14 `C-AS`, viết 37 assertion riêng (20 ma trận phân
+quyền + 17 ngữ nghĩa restore/derive), chạy lại `npm --prefix webapp test` (exit 0) trong môi
+trường của chính reviewer. `E2_VERDICT = PASS`. 0 BLOCKING.
+
+**S041 (2026-09-06) — Owner-authorized Lifecycle Closure** (`DEC-050`): `T-14: IMPLEMENTED →
+DONE`. Production diff của phiên đóng = **EMPTY** (chỉ `docs/tasks/T-14-*.md`, `PROJECT/*`,
+`docs/reviews/T14-OWNER-CLOSURE.md`).
+
+    ALLOWED BUDGET            = 2 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 1 repair cycle    <- KHÔNG ĐỔI (REPAIR_CYCLE_1, T-12, DEC-043)
+    CURRENT BUDGET REMAINING  = 1 repair cycle    <- KHÔNG ĐỔI
+    S040 tiêu                 = 0 repair cycle    (0 REQUIRED FAIL tìm thấy bởi E2)
+    S041 tiêu                 = 0 repair cycle    (đóng lifecycle, không sửa mã)
+    S040+S041 tự cấp thêm     = 0
+
+Vì sao S040/S041 KHÔNG tiêu chu kỳ nào: independent E2 không tìm thấy REQUIRED check nào FAIL
+trên mã production (12/12 PASS độc lập). Phiên đóng không sửa mã production — chỉ cập nhật
+state/governance surfaces. Chu kỳ `remaining 1` giữ nguyên trong pool `CAP-WEBAPP`
+(lineage root `WP-C1`), không dành riêng cho `T-14` — sẵn sàng cho thành viên tiếp theo của
+capability nếu cần.
+
+**Ghi chú tích hợp (không thuộc phạm vi budget này):** `branch_authority_check.sh` báo
+`INTEGRATION_DECISION_REQUIRED: loc>5000` sau khi cộng dồn artifact của `S039`+`S040`+`S041`.
+Đây là quan sát về divergence nhánh so với `main`, không phải sự kiện tiêu thụ repair budget —
+Owner quyết định ACCEPT INTEGRATION/MERGE tại `DEC-050` §E, không thi hành merge trong các phiên
+này.

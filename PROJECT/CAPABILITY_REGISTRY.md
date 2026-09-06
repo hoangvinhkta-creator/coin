@@ -696,3 +696,23 @@ Trạng thái tiếp theo của capability: `T-14` chờ independent E2 rồi Ow
 `T-14 DONE`, `CAP-WEBAPP` **không có** task nào ở trạng thái mở khác, và phần REQUIRED của `H-42`
 cùng `H-49` **chưa** được đóng.
 
+### 17.1 Cập nhật — Independent E2 + Owner-authorized Lifecycle Closure (2026-09-06, `S040`/`S041`, `DEC-050`)
+
+`T-14: IMPLEMENTED → DONE` sau independent E2 độc lập (`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`,
+`E2_VERDICT = PASS`, reviewer khác implementer, HEAD `8ad0f13`). Completion Gate **12/12 REQUIRED
+PASS ở mức E1+E2**; 14/14 `C-AS` PASS. Không mở lại `T-14`, không tạo task/capability/lineage
+mới, không đổi budget: `CAP-WEBAPP` giữ nguyên `allowed 2 / used 1 / remaining 1` (chi tiết
+`REVIEW_BUDGET_LEDGER.md` §2.2.13).
+
+Ba finding E2 mới route thành HARDENING (`H-49` ĐÓNG như hệ quả trực tiếp; `H-51` xác nhận, giữ
+nguyên; `H-53` mới), 0 BLOCKING, không task mới. `H-42` phần REQUIRED **ĐÓNG**; phần DEFERRED
+(project Firebase riêng) giữ nguyên chưa xử lý. `H-46`/`H-41` giữ nguyên **ACTIVE** — `T-14 DONE`
+không cấp phép SELL thật và không tự mở bước D (`OWNER_LOCAL_ACCEPTANCE`). Số task ID mới do
+phiên này tạo = **0**; số capability mới = **0**; số lineage root mới = **0**; production diff
+của phiên đóng = **EMPTY**.
+
+`branch_authority_check.sh` báo `INTEGRATION_DECISION_REQUIRED: loc>5000` sau các phiên E2/closure
+— Owner quyết định **ACCEPT INTEGRATION/MERGE** (`DEC-050` §E), ghi nhận nhưng **không** thi hành
+merge `main` trong phiên đóng này. Ngưỡng bị vượt bởi artifact review/evidence/governance, không
+phải mã sản phẩm (production diff của E2 + closure = EMPTY).
+

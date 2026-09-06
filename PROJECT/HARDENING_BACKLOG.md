@@ -1542,6 +1542,33 @@ Vế 1 của `RE_TRIGGER_CONDITION (phần REQUIRED)` đã kích hoạt đúng n
 hai mục `FB-1`/`FB-3` được tách riêng, giữ HARDENING, chờ Owner; các mục còn lại chờ `T-14 DONE`
 để đóng chính thức.
 
+**Cập nhật 2026-09-06 (`S041`, Owner-authorized Lifecycle Closure, `DEC-050`) — PHẦN REQUIRED
+ĐÓNG.** Vế 2 của `RE_TRIGGER_CONDITION (phần REQUIRED)` kích hoạt: `T-14` đạt `DONE` với
+12/12 REQUIRED PASS ở mức E1+E2 độc lập (`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`,
+`E2_VERDICT = PASS`). Disposition cuối cùng của bốn mục REQUIRED:
+
+    FB-4 (danh tính không bền)      -> ĐÓNG. Xác nhận độc lập bởi E2: 0 lệnh gọi
+      signInAnonymously() còn lại; ma trận phân quyền 20/20 PASS của reviewer.
+    FB-2 (thiếu khoá site/target)   -> ĐÓNG. Xác nhận độc lập: firebase.json diff = +1 dòng
+      (hosting.target), operator theo runbook không đè được hosting Content.
+    Backup/recovery (R-4)           -> ĐÓNG. Xác nhận độc lập: round-trip byte-identical,
+      derivedSnapshot không bao giờ thành thẩm quyền phục hồi (37 assertion riêng của reviewer).
+    Bằng chứng persistence          -> ĐÓNG cùng H-49 (xem trên).
+
+Hai mục **KHÔNG** đóng, giữ nguyên HARDENING, KHÔNG phải hệ quả tự động của `T-14 DONE`:
+
+    FB-3 (placeholder OWNER_UID_REQUIRED) -> GIỮ HARDENING. Không tự đóng được trong repo — giá
+      trị thật do Owner deploy. Runbook 3 bước là cơ chế BẮT LỖI (reviewer xác nhận bằng thực
+      nghiệm: ruleset placeholder không cấp quyền cho bất kỳ ai — fail-closed, không fail-open),
+      không phải đóng dứt điểm. Đóng khi Owner tự deploy UID thật.
+    FB-1 (Anonymous mở cửa Content) -> GIỮ HARDENING, DEFERRED. CoinDCA không còn cần Anonymous
+      Auth nên provider CÓ THỂ tắt ở Console — vẫn là thao tác Owner-executed ngoài repo, cần
+      Owner tự xác nhận Content không phụ thuộc trước khi tắt (đúng `DEC-049` C).
+
+Phần **DEFERRED** gốc (project Firebase vật lý riêng cho CoinDCA) giữ nguyên HARDENING, không
+owner, `RE_TRIGGER_CONDITION` gốc không đổi. `H-42` do đó **KHÔNG đóng toàn bộ** — chỉ phần
+REQUIRED gắn với `T-14` đóng; phần DEFERRED tồn tại trong backlog chờ Owner chủ động.
+
 ---
 
 ## H-43 — Phần dư parity của `WP-C4`: OSCORE `engine.js` ↔ `score.py` nếu tab Research L-1 được bật
@@ -1722,9 +1749,9 @@ Bằng chứng tái lập: `docs/reviews/evidence/T13/sell-label-reachability.tx
 
 ---
 
-## H-49 — Bằng chứng persistence `T-09B` không còn chạy lại được sau khi gỡ `#tab-setup`; `npm test` đỏ
+## H-49 — Bằng chứng persistence `T-09B` không còn chạy lại được sau khi gỡ `#tab-setup`; `npm test` đỏ — **CLOSED**
 
-Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING**
+Capability: `CAP-WEBAPP` · Owner: `T-14` · Phân loại: **HARDENING → CLOSED** (`S041`, `DEC-050`, 2026-09-06)
 Ngày ghi nhận: 2026-09-05 (Independent E2 review `T-13`, `F-T13-E2-02`,
 `docs/reviews/T13-E2-INDEPENDENT-REVIEW.md` §15/§23/§24)
 
@@ -1796,6 +1823,31 @@ ghi xung đột), và `npm --prefix webapp test` phải thoát mã 0 khi bao g�
 
 ---
 
+**Cập nhật 2026-09-06 (`S041`, Owner-authorized Lifecycle Closure, `DEC-050`) — ĐÓNG.**
+`T-14: IMPLEMENTED → DONE` sau independent E2 (`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`,
+`E2_VERDICT = PASS`). Reviewer E2 xác nhận độc lập `CHECK-T14-11` PASS ở mức E1+E2: `npm --prefix
+webapp test` exit 0 (tái lập trong môi trường của reviewer, không chỉ tin log của implementer);
+sáu file V2.1.5 UNCHANGED trên đĩa, không skip/deselect nào che hành vi còn liên quan;
+`test:legacy-v215` tách đúng khỏi cổng release.
+
+**Sửa mô tả đã lỗi thời (`F-T14-E2-01`).** Đoạn mô tả gốc phía trên ("tất cả timeout tại đúng một
+điểm `page.setInputFiles: … waiting for locator('#seedFile')`") mô tả đúng hành vi **TRƯỚC**
+`T-14`. Sau `T-14`, app khởi động ở `SIGNED_OUT` (không còn tự đăng nhập ẩn danh), nên bộ suite
+V2.1.5 đã nghỉ hưu (`test:legacy-v215`) — nếu chạy thử — sẽ dừng **sớm hơn**, ở chặng auth
+(`waitPhase UNRECOGNIZED,ONLINE timeout; now phase=SIGNED_OUT`), không còn ở `#seedFile`. Đây là
+sai lệch **mô tả**, không phải sai lệch **hành vi**: bộ legacy đã không chạy được từ trước
+`T-14` (đó chính là nội dung gốc của phát hiện này); `T-14` không phá vỡ thêm gì. Mô tả đúng hiện
+tại: **bộ suite legacy V2.1.5 đã tách khỏi cổng release sản phẩm hiện hành, và có thể fail ngay
+từ bước auth vì app hiện nay chủ ý khởi động ở `SIGNED_OUT` dưới bước C** — không phải vì
+`#seedFile` bị gỡ (dù cả hai đều đúng: `#seedFile` cũng đã bị gỡ, nhưng không còn là điểm dừng
+đầu tiên).
+
+`H-49` **ĐÓNG** như hệ quả trực tiếp của `T-14 DONE` — đúng `RE_TRIGGER_CONDITION` vế 4 đã ghi ở
+trên ("bằng chứng persistence legacy được nghỉ hưu/thay thế chính thức bằng một suite L-1 mới phủ
+đủ `CHECK-T09B-01`…`16` qua UI Step B"). Không mở lại task nào để đóng mục này.
+
+---
+
 ## H-50 — "Định giá hiện tại" hiện NGÀY của giá tham chiếu thay vì TUỔI như spec §16.3 mô tả
 
 Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (nhỏ)**
@@ -1848,6 +1900,14 @@ không phải một dòng dọn dẹp.
       việc file đó có phải production path hay không; HOẶC
     - `PRODUCTION_PATHS.md` được cập nhật vì bất kỳ lý do nào khác — nhân dịp đó xử lý luôn.
 
+**Cập nhật 2026-09-06 (`S040`, Independent E2 review, `F-T14-E2-02`) — XÁC NHẬN ĐỘC LẬP.**
+Reviewer E2 (khác implementer) xác nhận sự không khớp giữa `PRODUCTION_PATHS.md` §1/§2 và
+Step-C spec §16 là có thật, và xác nhận **không** ảnh hưởng tính đúng đắn của bằng chứng `T-14`:
+implementer đã đo change budget theo cách chặt hơn (gộp cả hai file), và `firestore.rules` được
+Completion Gate đóng băng phủ trực tiếp qua `CHECK-T14-02`/`CHECK-T14-03` độc lập với bảng
+production path. Phân loại giữ nguyên **HARDENING**, không BLOCKING. Chi tiết:
+`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md` §19.
+
 ---
 
 ## H-52 — `signInWithPopup()` phụ thuộc `apis.google.com`: luồng đăng nhập không chạy được trong môi trường chặn mạng ra ngoài
@@ -1883,3 +1943,49 @@ tự xác nhận một lần khi thiết lập (ghi trong `webapp/README.md` § 
     - chủ dự án báo không đăng nhập được trên trình duyệt thật (khi đó đây là chẩn đoán đầu tiên
       cần kiểm: pop-up bị chặn, hoặc mạng chặn `apis.google.com`); HOẶC
     - cơ chế đăng nhập được đổi sang một phương án không dùng popup/redirect resolver.
+
+**Cập nhật 2026-09-06 (`S040`, Independent E2 review) — XÁC NHẬN PHƯƠNG ÁN A, KHÔNG RESOLVE.**
+Reviewer E2 (khác implementer) đo trực tiếp, không nhận lời implementer: `apis.google.com/js/api.js`
+trả HTTP `000` trong khi `accounts.google.com` trả `302` và `registry.npmjs.org` trả `200` — chặn
+đúng một host `gapi`, không phải mạng chung. Xác nhận bốn điều bằng thực nghiệm: (1) lời gọi
+`signInWithPopup(new GoogleAuthProvider())` tại `app_logic.js:503` là API sản phẩm thật; (2) môi
+trường chặn thật; (3) thất bại **fail-closed** (`AUTH_FAILED`, khoá ghi, không ghi gì lên
+Firebase); (4) đường `signInWithCredential()` của test **không bypass** rules — trên cùng hạ tầng,
+toàn bộ ma trận phân quyền 20/20 của reviewer vẫn DENY đúng chỗ. Grep toàn bộ mã production xác
+nhận **không có nhánh rẽ nào theo provider** (`isAnonymous`/`providerId`/`providerData`/
+`credential`), nên đường credential test đi đúng **cùng mã** hậu-auth với popup thật.
+
+Phân loại giữ nguyên **CONFIRMED HARDENING / environment limitation** (phương án A). Reviewer
+**KHÔNG resolve** — `H-52` không tự đóng chỉ vì E2 xác nhận nó là giới hạn môi trường; đóng dứt
+điểm vẫn cần một trong các `RE_TRIGGER_CONDITION` ở trên (đặc biệt: Owner tự xác nhận đăng nhập
+Google thành công một lần trên trình duyệt thật có mạng — xem `docs/reviews/
+T14-E2-INDEPENDENT-REVIEW.md` §23 mục 3). Chi tiết đầy đủ: `T14-E2-INDEPENDENT-REVIEW.md` §7.
+
+---
+
+## H-53 — Owner CoinDCA đọc được `users/*` của Content — thuộc tính có sẵn của project dùng chung, không phải hồi quy của `T-14`
+
+Capability: `CAP-WEBAPP` · Owner: chưa có · Phân loại: **HARDENING (quan sát, không hồi quy)**
+Ngày ghi nhận: 2026-09-06 (Independent E2 review `T-14`, `F-T14-E2-03`,
+`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md` §9/§20)
+
+Ma trận phân quyền độc lập của reviewer E2 (nhóm D) cho thấy một danh tính CoinDCA Owner đã xác
+thực — vì rules Content khai `allow read: if signedIn()` — đọc được `users/*` của Content
+(hồ sơ tên/role hiển thị công khai cho mọi người dùng đã đăng nhập trong app Content).
+
+Reviewer kiểm bằng thực nghiệm và xác nhận đây **không phải hệ quả của `T-14`**: danh tính
+**Anonymous** trước `T-14` cũng thoả `signedIn()` và cũng có **đúng cùng** quyền đọc đó. `T-14`
+đổi *nguồn* UID (Anonymous → Google), không đổi *lớp* quyền Content mà bất kỳ danh tính CoinDCA
+nào nắm giữ. Không có leo thang: Owner CoinDCA vẫn `DENY` trên thao tác admin-only của Content
+(ví dụ `delete` một user). Chiều ngược lại — người dùng Content có giành được quyền CoinDCA
+không — đã được kiểm riêng và `DENY` kể cả với role `ADMIN` mạnh nhất của Content.
+
+Vì sao **KHÔNG BLOCKING**: đây là thuộc tính có sẵn của quyết định dùng chung project
+(`DEC-023`), nằm ngoài Scope IN của `T-14` (mục `O-2` cấm hệ thống multi-user/roles), và không có
+hậu quả nghiệp vụ nào nằm trong Completion Gate/risk register phụ thuộc vào việc đóng mục này.
+
+    RE_TRIGGER_CONDITION:
+    - dữ liệu Content trở nên nhạy cảm tới mức "mọi người dùng đã đăng nhập đọc được" là rủi ro
+      thật (đổi bản chất dữ liệu Content, ngoài phạm vi CoinDCA); HOẶC
+    - CoinDCA và Content được tách sang hai project Firebase riêng (`O-1`/phần DEFERRED của
+      `H-42`) — khi đó mục này tự tiêu biến vì hai project không còn chung một ruleset.

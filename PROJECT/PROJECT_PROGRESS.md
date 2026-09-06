@@ -25,7 +25,24 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-06 — **`S037` — Independent E2 review + Owner-authorized Lifecycle Closure: `T-13:
+2026-09-06 — **`S041` — Owner-authorized Lifecycle Closure: `T-14: IMPLEMENTED → DONE`
+(`DEC-050`).** Independent E2 (`S040`, `docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`, reviewer
+khác implementer, HEAD `8ad0f13`) → `E2_VERDICT = PASS`: 12/12 REQUIRED check + 14/14 `C-AS`
+PASS độc lập, tolerance 0, qua 37 assertion riêng của reviewer (20 ma trận phân quyền + 17 ngữ
+nghĩa restore/derive), `npm --prefix webapp test` exit 0 chạy lại trong môi trường của reviewer.
+Completion Gate **12/12 REQUIRED PASS** (E1+E2). 0 finding `BLOCKING`. `H-42` phần REQUIRED
+**ĐÓNG**; `H-49` **ĐÓNG** (mô tả chữ ký lỗi legacy sửa theo `F-T14-E2-01`); `H-51`/`H-52` xác
+nhận độc lập, giữ nguyên HARDENING (`H-52` KHÔNG resolve); một finding mới `H-53`
+(`F-T14-E2-03`). `CAP-WEBAPP` budget **KHÔNG đổi** `2/1/1` — E2 và closure không tiêu repair
+cycle nào (production diff của cả hai phiên = EMPTY). **Guard SELL/real-money giữ nguyên**:
+`T-14 DONE` KHÔNG cấp phép SELL thật (`H-46` vẫn ACTIVE), KHÔNG có nghĩa sẵn sàng tiền thật
+không giới hạn (`H-41` vẫn còn hiệu lực), bước D (`OWNER_LOCAL_ACCEPTANCE`) vẫn CHƯA mở.
+**Integration Decision**: `branch_authority_check` báo `INTEGRATION_DECISION_REQUIRED: loc>5000`
+(artifact review/evidence, production diff EMPTY) — Owner quyết định **ACCEPT
+INTEGRATION/MERGE** (`DEC-050` §E), ghi nhận nhưng **chưa** thi hành merge `main`. Chi tiết đầy
+đủ: `docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`, `docs/reviews/T14-OWNER-CLOSURE.md`.
+
+Trước đó, 2026-09-06 — **`S037` — Independent E2 review + Owner-authorized Lifecycle Closure: `T-13:
 IMPLEMENTED → DONE` (`DEC-048`).** Independent E2 (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`,
 reviewer khác implementer, HEAD `cb75d6c`) → `E2_VERDICT = PASS`: cả 7 check `E2_REQUIRED`
 (`CHECK-T13-02/03/05/06/07/10/13`) PASS độc lập, tolerance 0, qua 45 kiểm chứng riêng của
@@ -954,7 +971,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | CANCELLED | T-11 | Tầng tự động hóa chiến lược đầy đủ | Hoàn thiện app MVP theo spec — phần bị cổng verdict khóa | D | max | Sau T-07, WP-C2, WP-C3, WP-C4, và chỉ khi verdict = BUILD · **`DEC-041` (2026-09-05)**: `PLANNED → CANCELLED`, nhãn **`NOT_APPLICABLE_TO_V2_1_5`**. Điều kiện của `T-11` gồm `verdict = BUILD`, mà `DEC-040` §E xác lập điều kiện này KHÔNG BAO GIỜ thoả được nữa dưới V2.1.5. Đóng luôn mâu thuẫn trạng thái cũ (`PLANNED` ở bảng vs `BLOCKED` ở `DEC-040` §D — stale `ST-08`). Verdict `BUILD` từ chiến lược/version khác trong tương lai phải tự đủ điều kiện từ đầu |
 | DONE | T-12 | Sổ cái L-1 v2: mô hình dữ liệu, `derive()` tất định, migration và test kế toán | Dựng sự thật tài chính canonical của CoinDCA L-1 (số dư đầu kỳ + sự kiện → tính lại giá vốn) trước khi có bất kỳ giao diện nào hiển thị nó | D | max | **DONE — Owner-authorized Lifecycle Closure tại `DEC-046`** (2026-09-05), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T12-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 9/9 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 14/14 REQUIRED PASS** (5 E1-only + 9 E1+E2), không sửa câu chữ/ngữ nghĩa. Golden `c610a29` không đổi trong suốt E2; production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1** (`REPAIR_CYCLE_1` vẫn CONSUMED, không tiêu chu kỳ thứ hai). Bốn finding E2 (`F-E2-01`…`04`) route thành HARDENING `H-44`…`H-47`, không task mới. **`T-12 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46`/`F-E2-03` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Bước **A** của `docs/spec-l1/COINDCA_L1_PRODUCT_ACCOUNTING_SPEC.md` §24. Sau `DEC-041`/`DEC-042`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Trước đó IMPLEMENTED tại `S034` (`docs/reviews/T12-IMPLEMENTATION-REPORT.md`). Định nghĩa đầy đủ: `docs/tasks/T-12-so-cai-l1-v2-va-derive.md` |
 | DONE | T-13 | CoinDCA L-1 Bước B: Dashboard hằng ngày + Nhập giao dịch/Lịch sử | Biến sự thật tài chính của T-12 thành công cụ dùng được hằng ngày (dashboard, nhập 8 loại giao dịch, lịch sử, sửa/xoá, plan/carry UX) mà không cần biết cấu trúc kỹ thuật bên dưới | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-048`** (2026-09-06, `S037`), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T13-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, 7/7 check E2-required PASS trên bằng chứng tái lập độc lập). **Completion Gate 13/13 REQUIRED PASS** (6 E1-only + 7 E1+E2), không sửa câu chữ/ngữ nghĩa. Production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1**. Ba finding E2 (`F-T13-E2-01`…`03`) route thành HARDENING `H-48`…`H-50`, không task mới. **`T-13 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46` (khiếm khuyết đặc tả, không phải lỗi cài đặt) phải xử lý bằng một Owner Decision riêng TRƯỚC khi mở SELL thật; `H-42` (Firebase isolation, bước C) và `OWNER_LOCAL_ACCEPTANCE` (bước D) chưa đóng, không đổi bởi quyết định này. Trước đó IMPLEMENTED tại `S036` (`docs/reviews/T13-IMPLEMENTATION-REPORT.md`), READY tại `DEC-047`/`S035`. Bước **B** của spec kế toán §24 + `docs/spec-l1/COINDCA_L1_STEP_B_UX_SPEC.md`. Capability `CAP-WEBAPP`, lineage root `WP-C1`. Định nghĩa đầy đủ: `docs/tasks/T-13-buoc-b-dashboard-giao-dich-lich-su.md` |
-| IMPLEMENTED | T-14 | CoinDCA L-1 Bước C: Firebase Isolation, Owner Auth bền vững, Backup/Recovery | Đóng ba khoảng trống product-readiness trước khi dùng tiền thật không giới hạn: danh tính Owner bền vững (Google Sign-In thay Anonymous Auth), cô lập logic trong project Firebase dùng chung (rules/deploy), backup/recovery có validate/snapshot/atomic; hấp thụ luôn `H-49` (bằng chứng persistence) | C | xhigh | **`READY → IN_PROGRESS → IMPLEMENTED` tại `S039`** (2026-09-06, nhánh `claude/t14-step-c-firebase-isolation-xu6nxb`, base `origin/main` `97434d0`): 12/12 REQUIRED check PASS ở mức E1. Anonymous Auth được thay bằng Google Sign-In (`webapp/app_logic.js`); `firestore.rules` chỉ đổi comment trong khối `COINDCA` (header + khối Content trùng SHA-256 từng byte); `firebase.json` khai `hosting.target: "coindca"` kèm runbook deploy 3 bước; export/restore có timestamp · schemaVersion · preview · validate · snapshot · ghi nguyên tử; `npm --prefix webapp test` exit 0 (hấp thụ `H-49`). Production diff **+194/−23 trên 4 file**, trần frozen +600/−400 → TRONG TRẦN; `webapp/ledger.js` 0 dòng đổi; budget `CAP-WEBAPP` KHÔNG đổi (`2/1/1`). **CHƯA `DONE`** — endpoint `IMPLEMENTED — E2_REQUIRED`, chờ independent E2 rồi Owner Closure (thẩm quyền chủ dự án). Báo cáo: `docs/reviews/T14-IMPLEMENTATION-REPORT.md`; phiên: `docs/sessions/S039-t14-step-c-firebase-isolation-implementation.md`. — Định nghĩa gốc (`DEC-049`, `S038`, `NOT_PLANNED → READY`): Owner Decision chiến lược **"Shared Firebase Project with Strong Logical Isolation"** — project Firebase riêng KHÔNG bắt buộc, DEFERRED thành hardening tương lai; `H-42` tách disposition REQUIRED (owner `T-14`) / DEFERRED; không đổi schema kế toán `T-12`, không redesign UX `T-13` ngoài một điểm vào nhỏ, không mở SELL (`H-46` giữ nguyên). Spec: `docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (CANONICAL — APPROVED). Capability `CAP-WEBAPP`, lineage root `WP-C1`. Định nghĩa đầy đủ: `docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md` |
+| DONE | T-14 | CoinDCA L-1 Bước C: Firebase Isolation, Owner Auth bền vững, Backup/Recovery | Đóng ba khoảng trống product-readiness trước khi dùng tiền thật không giới hạn: danh tính Owner bền vững (Google Sign-In thay Anonymous Auth), cô lập logic trong project Firebase dùng chung (rules/deploy), backup/recovery có validate/snapshot/atomic; hấp thụ luôn `H-49` (bằng chứng persistence) | C | xhigh | **DONE — Owner-authorized Lifecycle Closure tại `DEC-050`** (2026-09-06, `S041`), sau independent E2 `E2_VERDICT = PASS` (`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`, reviewer khác implementer, HEAD `8ad0f13`, 37 assertion riêng của reviewer, 12/12 REQUIRED + 14/14 `C-AS` tái lập độc lập). **Completion Gate 12/12 REQUIRED PASS ở mức E1+E2**, không sửa câu chữ/ngữ nghĩa. Production diff của E2/closure = RỖNG. `CAP-WEBAPP` budget **KHÔNG đổi 2/1/1**. `H-42` phần REQUIRED **ĐÓNG**; `H-49` **ĐÓNG** (mô tả sửa theo `F-T14-E2-01`); `H-51`/`H-52` xác nhận độc lập, giữ HARDENING; một finding mới `H-53` (`F-T14-E2-03`, quan sát không hồi quy), 0 BLOCKING. **`T-14 DONE` KHÔNG cấp phép dùng tiền thật cho SELL** — `H-46` giữ ACTIVE; **cảnh báo `H-41` VẪN CÒN HIỆU LỰC** — `T-14 DONE` không có nghĩa sẵn sàng tiền thật không giới hạn, chỉ đóng nhóm điều kiện Firebase/auth/backup. Owner còn phải tự thiết lập UID thật + deploy + xác nhận đăng nhập Google trước khi dùng thật (`DEC-050` §F); bước D (`OWNER_LOCAL_ACCEPTANCE`) chưa mở. `branch_authority_check` báo `INTEGRATION_DECISION_REQUIRED: loc>5000` (do artifact review/evidence, production diff EMPTY) — Owner quyết định ACCEPT INTEGRATION/MERGE (`DEC-050` §E), ghi nhận nhưng chưa thi hành merge `main`. Trước đó IMPLEMENTED tại `S039` (`docs/reviews/T14-IMPLEMENTATION-REPORT.md`), READY tại `DEC-049`/`S038`. Spec: `docs/spec-l1/COINDCA_L1_STEP_C_FIREBASE_ISOLATION_SPEC.md` (CANONICAL — APPROVED). Capability `CAP-WEBAPP`, lineage root `WP-C1`. Định nghĩa đầy đủ: `docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md` |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -1068,6 +1085,43 @@ lại điều kiện đó — không kế thừa gì từ V2.1.5).
 ```
 
 ## Current Task Snapshot
+
+**T-14 — DONE (`DEC-050`, Owner Closure, 2026-09-06, sau independent E2 `E2_VERDICT = PASS`).**
+
+    Task ID        T-14
+    File           docs/tasks/T-14-buoc-c-firebase-isolation-auth-backup.md
+    Báo cáo E2     docs/reviews/T14-E2-INDEPENDENT-REVIEW.md (reviewer khác implementer, HEAD 8ad0f13)
+    Báo cáo đóng   docs/reviews/T14-OWNER-CLOSURE.md
+    Bằng chứng E2  docs/reviews/evidence/T14-E2/ (37 assertion riêng của reviewer, 0 FAIL)
+    Owner Decision DEC-050 (PROJECT/PROJECT_DECISIONS.md)
+    Trạng thái     READY -> IN_PROGRESS -> IMPLEMENTED (S039) -> independent E2 PASS (S040) ->
+                   IMPLEMENTED -> DONE (S041, Owner-authorized Lifecycle Closure)
+    Completion Gate 12/12 REQUIRED PASS — Evidence Level E1 + E2 độc lập cho cả 12
+    C-AS           14/14 PASS, tái lập bằng trạng thái/hành động do reviewer kiểm soát
+    Production diff của implementation (S039) = +194/−23 trên 4 file, dưới trần +600/−400.
+                   Production diff của E2 (S040) + closure (S041) = EMPTY.
+    H-42           Phần REQUIRED (FB-2/FB-4/backup-recovery/bằng chứng persistence) ĐÓNG.
+                   FB-3 giữ HARDENING (Owner-executed); FB-1 + phần DEFERRED (project riêng)
+                   giữ HARDENING, không owner.
+    H-49           ĐÓNG. Mô tả chữ ký lỗi legacy sửa theo F-T14-E2-01 (nay hỏng ở SIGNED_OUT,
+                   không phải #seedFile — sai lệch mô tả, không phải hành vi).
+    H-51 / H-52    Giữ nguyên HARDENING, xác nhận độc lập bởi E2 (F-T14-E2-02); H-52 KHÔNG
+                   resolve — vẫn cần Owner tự xác nhận đăng nhập Google thật một lần.
+    Finding mới    H-53 (F-T14-E2-03) — Owner CoinDCA đọc users/* của Content; thuộc tính có
+                   sẵn từ DEC-023, không phải hồi quy của T-14. Finding, KHÔNG phải task.
+    Guard          H-41 VẪN CÒN HIỆU LỰC — T-14 DONE KHÔNG có nghĩa sẵn sàng tiền thật không
+                   giới hạn. H-46 vẫn ACTIVE — SELL/realized P&L KHÔNG mở. Bước D
+                   (OWNER_LOCAL_ACCEPTANCE) CHƯA mở.
+    Integration    branch_authority_check báo INTEGRATION_DECISION_REQUIRED: loc>5000 (do
+                   artifact review/evidence, production diff EMPTY). Owner quyết định ACCEPT
+                   INTEGRATION/MERGE (DEC-050 §E) — ghi nhận, CHƯA thi hành merge main.
+    Owner setup    còn cần: (1) thay OWNER_UID_REQUIRED bằng UID Google thật; (2) firebase
+                   target:apply hosting coindca <site-id>; (3) deploy theo runbook 3 bước;
+                   (4) tự xác nhận đăng nhập Google một lần trên trình duyệt thật có mạng.
+    Budget         CAP-WEBAPP allowed 2 / used 1 / remaining 1 — KHÔNG ĐỔI; S040+S041 tiêu 0 chu kỳ.
+    Task ID mới    0 · capability mới 0 · lineage root mới 0 · proposal mới 0
+
+### Snapshot trước đó — T-14 IMPLEMENTED, chờ E2 (giữ để truy vết)
 
 **T-14 — IMPLEMENTED (`S039`, 2026-09-06). Endpoint: `IMPLEMENTED — E2_REQUIRED`. CHƯA `DONE`.**
 
@@ -1913,11 +1967,52 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
   Gate 12/12 REQUIRED FROZEN). `H-42` tách REQUIRED (owner `T-14`) / DEFERRED (project riêng).
   `H-49` hấp thụ vào `CHECK-T14-11`. Task ID mới = 1. `CAP-WEBAPP` budget `2/1/1` không đổi.
   Production diff = EMPTY
+- **DEC-050** — Owner-authorized Lifecycle Closure: `T-14: IMPLEMENTED → DONE`, sau independent
+  E2 `E2_VERDICT = PASS` (`docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`). Completion Gate 12/12
+  REQUIRED PASS (E1+E2); 14/14 `C-AS` PASS. `H-42` phần REQUIRED ĐÓNG; `H-49` ĐÓNG (mô tả sửa
+  theo `F-T14-E2-01`); `H-51`/`H-52` xác nhận, giữ HARDENING (không resolve); một finding mới
+  `H-53`, 0 BLOCKING. `CAP-WEBAPP` budget `2/1/1` không đổi. Integration Decision: **ACCEPT
+  INTEGRATION/MERGE** cho `INTEGRATION_DECISION_REQUIRED: loc>5000` (artifact review/evidence,
+  production diff EMPTY) — ghi nhận, KHÔNG thi hành merge `main` trong phiên này. `T-14 DONE`
+  KHÔNG cấp phép SELL thật (`H-46` giữ ACTIVE); cảnh báo `H-41` vẫn còn hiệu lực; bước D
+  (`OWNER_LOCAL_ACCEPTANCE`) chưa mở
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 (Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
 
 ## Session History
+
+- **S041 (2026-09-06)** — **OWNER CLOSURE `T-14`** (chỉ thị phiên trực tiếp "COINDCA — T-14 OWNER
+  CLOSURE + INTEGRATION DECISION", nhánh `claude/t14-step-c-firebase-isolation-xu6nxb`).
+  `T-14: IMPLEMENTED → DONE` (`DEC-050`). Xác nhận lại điều kiện đóng từ canonical state (không
+  chạy lại toàn bộ E2 — canonical state nhất quán): Ready Gate 17/17, Completion Gate **12/12
+  REQUIRED PASS ở mức E1+E2**, 14/14 `C-AS` PASS, accounting non-regression PASS, T-13
+  non-regression PASS, 0 BLOCKING, production diff của E2+closure = EMPTY. `H-42` phần REQUIRED
+  **ĐÓNG**; `H-49` **ĐÓNG** (mô tả chữ ký lỗi legacy sửa theo `F-T14-E2-01` — nay hỏng ở
+  `SIGNED_OUT`, không phải `#seedFile`); `H-51`/`H-52` xác nhận độc lập, giữ nguyên HARDENING,
+  **không resolve** `H-52`; finding mới `H-53` (`F-T14-E2-03`, quan sát không hồi quy). Guard
+  giữ nguyên: `H-41` vẫn còn hiệu lực, `H-46` vẫn ACTIVE, bước D chưa mở. **Integration Decision**:
+  `branch_authority_check` báo `INTEGRATION_DECISION_REQUIRED: loc>5000` (do artifact review/
+  evidence tích luỹ qua `S039`+`S040`+`S041`, production diff EMPTY) — Owner quyết định **ACCEPT
+  INTEGRATION/MERGE**, ghi nhận tại `DEC-050` §E, **không** merge `main` trong phiên này.
+  `CAP-WEBAPP` budget **KHÔNG đổi** (`2/1/1`) — S041 tiêu **0** repair cycle. Không sửa mã
+  production. Task ID mới = 0, capability mới = 0, lineage root mới = 0. `docs/reviews/
+  T14-OWNER-CLOSURE.md`, `DEC-050`.
+
+- **S040 (2026-09-06)** — **Independent E2 review** cho `T-14` (reviewer khác implementer, HEAD
+  reviewed `8ad0f13`, nhánh `claude/t14-step-c-firebase-isolation-xu6nxb`) → `E2_VERDICT = PASS`.
+  Reviewer xử lý mọi kết luận của `T14-IMPLEMENTATION-REPORT.md` như CLAIM cần kiểm, tự viết 37
+  assertion độc lập (20 ma trận phân quyền + 17 ngữ nghĩa restore/derive) không tái sử dụng
+  assertion của implementer, và chạy lại `npm --prefix webapp test` (exit 0) trong môi trường
+  của chính mình. Xác nhận độc lập: SHA-256 phần thi hành của `firestore.rules` trùng khít trước/
+  sau `T-14` (chỉ comment đổi); `webapp/ledger.js` + golden fixture + `engine.js`/`app_shell.html`/
+  `build_app.js` = 0 dòng đổi; SC-01…12 + INV-1…15 PASS; 7/7 mutant bị diệt; Content safe-merge
+  120 assertion, 0 deviation. `H-52` xác nhận là giới hạn môi trường (đo trực tiếp
+  `apis.google.com` HTTP `000`; không nhánh rẽ theo provider trong mã production). `H-51` xác
+  nhận là finding thật, giữ HARDENING. Ba finding mới `F-T14-E2-01`/`02`/`03` (routed `H-49`/
+  `H-51`/mục mới), 0 BLOCKING. Production diff của phiên review = **EMPTY**. Không sửa mã
+  production, không tiêu repair authority. `docs/reviews/T14-E2-INDEPENDENT-REVIEW.md`,
+  `docs/reviews/evidence/T14-E2/`.
 
 - **S039 (2026-09-06)** — **THI HÀNH `T-14`** (`READY → IN_PROGRESS → IMPLEMENTED`), nhánh
   `claude/t14-step-c-firebase-isolation-xu6nxb` tách đúng từ `origin/main` `97434d0`. Ready Gate
@@ -2719,30 +2814,41 @@ D1 R2 B2 A1 X1 → 1.45 → B; U1 V2 H1 C1 F2 → 1.45 → medium.
 
 ## Next Session
 
-**Hiện hành sau `S039` (thi hành `T-14`):**
+**Hiện hành sau `S041` (Owner Closure `T-14`):**
 
-    NEXT SMALLEST ACTION = mở phiên INDEPENDENT E2 REVIEW cho T-14 (reviewer độc lập, KHÔNG phải
-    phiên thi hành S039), đúng tiền lệ T-12 (docs/reviews/T12-E2-INDEPENDENT-REVIEW.md) và T-13
-    (docs/reviews/T13-E2-INDEPENDENT-REVIEW.md). Không có Owner Decision nào đang chờ để bắt đầu
-    E2.
+    NEXT SMALLEST ACTION = KHÔNG có phiên implementation nào đang chờ. `T-14 DONE`. Hai việc còn
+    mở, cả hai đều thuộc thẩm quyền/thao tác Owner, không phải phiên agent kế tiếp tự khởi động:
+    (1) thiết lập thật (UID + deploy + xác nhận đăng nhập Google — xem dưới); (2) quyết định
+    merge nhánh `claude/t14-step-c-firebase-isolation-xu6nxb` vào `main` (Owner đã quyết định
+    ACCEPT INTEGRATION tại `DEC-050` §E nhưng chưa thi hành — merge là hành động riêng, tách khỏi
+    việc đóng lifecycle).
 
-`T-14` đang ở **IMPLEMENTED — E2_REQUIRED** (12/12 REQUIRED PASS ở mức E1). Ràng buộc cho phiên
-E2 và cho Owner Closure sau đó:
+`T-14` đã **DONE** (`DEC-050`, 2026-09-06, `S041`). Completion Gate 12/12 REQUIRED PASS ở mức
+E1+E2; `H-42` phần REQUIRED và `H-49` đã ĐÓNG. Ràng buộc cho bất kỳ phiên nào chạm capability
+`CAP-WEBAPP` tiếp theo:
 
-1. Chạy `branch_authority_check.sh` TRƯỚC khi đọc state; nhánh E2 tách từ `origin/main`, KHÔNG
-   commit lên nhánh thi hành `claude/t14-step-c-firebase-isolation-xu6nxb`.
-2. E2 phải **tự kiểm chứng độc lập**, không lấy lời implementer làm bằng chứng — đúng khuôn
-   `T-12`/`T-13`: reviewer viết kiểm chứng riêng, chạy lại trên đường sản phẩm thật.
-3. Bốn điểm đáng soi nhất của `T-14`: (a) giới hạn bằng chứng popup Google
-   (`H-52`, báo cáo §14) — E2 quyết định giới hạn đó có chấp nhận được cho `CHECK-T14-12` không;
-   (b) `CHECK-T14-08` "không mutation" đo đủ chặt chưa; (c) `CHECK-T14-11` có thật sự phủ nhóm
-   hành vi `CHECK-T09B-*` không, hay chỉ phủ tên gọi; (d) `firestore.rules` có đúng là chỉ đổi
-   comment không (SHA-256 chạy lại được).
-4. **Không** tiêu chu kỳ repair còn lại (`remaining 1`) trừ khi E2 tìm thấy REQUIRED FAIL thật.
-5. `IMPLEMENTED → DONE` là **thẩm quyền chủ dự án** (`STATE_AUTHORITY.md`) — E2 không tự chuyển.
-6. `H-42` (phần REQUIRED) và `H-49` chỉ đóng khi `T-14 DONE`, không đóng khi E2 PASS.
-7. Guard giữ nguyên: `H-46` (SELL) chưa có Owner Decision; bước D (`OWNER_LOCAL_ACCEPTANCE`) chưa
-   mở; cảnh báo `H-41` ("dừng dùng app với tiền thật không giới hạn") **vẫn còn hiệu lực**.
+1. Chạy `branch_authority_check.sh` TRƯỚC khi đọc state.
+2. `CAP-WEBAPP` không có task nào đang mở. Một task mới trong capability này (nếu có) dùng chung
+   pool budget hiện tại (`allowed 2 / used 1 / remaining 1`), không được reset.
+3. Guard giữ nguyên tuyệt đối: `H-46` (SELL) chưa có Owner Decision, guard giữ ACTIVE; bước D
+   (`OWNER_LOCAL_ACCEPTANCE`) chưa mở — chỉ có ý nghĩa sau khi Owner hoàn tất thiết lập thật;
+   cảnh báo `H-41` ("dừng dùng app với tiền thật không giới hạn") **vẫn còn hiệu lực** — `T-14
+   DONE` KHÔNG đồng nghĩa sẵn sàng tiền thật không giới hạn.
+4. `H-42` phần DEFERRED (project Firebase riêng), `FB-1`, `FB-3`, `H-51`, `H-52`, `H-53` vẫn
+   HARDENING trong backlog, không owner, chờ Owner chủ động — không tự đóng bởi bất kỳ phiên
+   agent nào.
+5. **Owner setup còn cần trước khi dùng thật** (không phải hệ quả tự động của `T-14 DONE`,
+   không thực hiện bởi agent trừ khi Owner uỷ quyền tường minh):
+   - thay `OWNER_UID_REQUIRED` bằng UID Google thật trong `firestore.rules`, deploy theo đúng
+     runbook 3 bước (`npm --prefix webapp run test:rules-merge` → đọc diff → deploy có điều
+     kiện; không bao giờ `firebase deploy` trần);
+   - chạy một lần `firebase target:apply hosting coindca <site-id-coindca>`;
+   - tự xác nhận đăng nhập Google thành công một lần trên trình duyệt thật có mạng (đóng `H-52`
+     nếu thành công).
+6. **Integration**: `branch_authority_check` báo `INTEGRATION_DECISION_REQUIRED: loc>5000`.
+   Owner đã quyết định **ACCEPT INTEGRATION/MERGE** (`DEC-050` §E) nhưng merge `main` **chưa**
+   được thi hành trong bất kỳ phiên nào — đó là một hành động tích hợp riêng, cần một phiên/uỷ
+   quyền riêng, không tự động theo sau việc đóng lifecycle.
 
 ### Ràng buộc đã dùng cho phiên thi hành `T-14` (đã hoàn tất tại `S039` — giữ để truy vết)
 
