@@ -4,9 +4,9 @@
   "description": "Test harness cho app CoinDCA/ETH DCA trên web (webapp/). Không phải package publish.",
   "scripts": {
     "build": "node build_app.js",
-    "test": "node test_t12_ledger.js && node test_t12_mutations.js && node test_t14_deploy_isolation.js && node test_t14_rules.js && node test_t14_persistence.js && node test_t14_backup_restore.js && node test_t12_browser.js && node test_stepb_ui.js",
+    "test": "node test_t12_ledger.js && node test_l1_fixes.js && node test_t12_mutations.js && node test_t14_deploy_isolation.js && node test_t14_rules.js && node test_t14_persistence.js && node test_t14_backup_restore.js && node test_t12_browser.js && node test_stepb_ui.js",
     "test:t14": "node test_t14_deploy_isolation.js && node test_t14_rules.js && node test_t14_persistence.js && node test_t14_backup_restore.js",
-    "test:t12": "node test_t12_ledger.js && node test_t12_mutations.js && node test_t12_browser.js",
+    "test:t12": "node test_t12_ledger.js && node test_l1_fixes.js && node test_t12_mutations.js && node test_t12_browser.js",
     "test:stepb": "node test_stepb_ui.js",
     "test:rules-merge": "node test_shared_rules_merge.js",
     "test:legacy-v215": "node test_app.js && node test_zone.js && node test_v01_v02_v03.js && node test_multi_month_invariant.js && node test_t09a_accounting.js && node test_t09b_persistence.js",

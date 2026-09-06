@@ -45,15 +45,16 @@ test('INV-2 150 hoán vị + hai process TZ cho cùng ledger', () => {
   const outputs = ['UTC', 'America/Los_Angeles'].map(TZ => execFileSync(process.execPath, ['-e', script], { cwd: __dirname, env: { ...process.env, TZ }, encoding: 'utf8' }));
   A.equal(outputs[0], outputs[1]); A.deepEqual(JSON.parse(outputs[0]), expected);
 });
-test('INV-3 WAC conservation, pool drain, SELL ETH/USDT và ROUND_VND', () => {
+test('INV-3 WAC conservation, pool drain, SELL bị chặn và ROUND_VND', () => {
   const o = F.copy(F.opening); o.usdt = { qty: 3000000, costVnd: 10 };
   const s = F.state(o, F.plan(), [F.buy(1, '2026-01-02', 1000000, 1000), F.buy(2, '2026-01-03', 2000000, 2000)]);
   const d = derive(s); A.equal(d.eventEffects['event-1'].vndRelieved, 3); A.equal(d.eventEffects['event-2'].vndRelieved, 7);
   A.equal(d.usdt.costVnd, 0); A.equal(d.usdt.qty, 0); A.equal(d.holdings.ETH.costVnd, 30000010); A.equal(d.realizedFxVnd, 0);
+  // SELL từng phá bất biến bảo toàn VND trong im lặng (relieved bị vứt đi, cộng basis không liên
+  // quan vào pool). Nay bị chặn ở eventCheck tới khi có thiết kế P&L thực hiện (H-46);
+  // ca tái lập đầy đủ nằm ở test_l1_fixes.js.
   const sell = F.event(1, '2026-01-02', { kind: 'TRADE', side: 'SELL', symbol: 'ETH', source: 'EXTRA', qty: 25000000, usdtNotional: 700000000, feeUsdt: 1000000 });
-  const sold = derive(F.state(F.opening, F.plan(), [sell]));
-  A.equal(sold.holdings.ETH.qty, 25000000); A.equal(sold.holdings.ETH.costUsdt, 600000000); A.equal(sold.holdings.ETH.costVnd, 15000000);
-  A.equal(sold.usdt.qty, 899000000); A.equal(sold.usdt.costVnd, 22475000);
+  A.throws(() => derive(F.state(F.opening, F.plan(), [sell])), /H-46/);
   const sale = F.event(1, '2026-01-02', { kind: 'TREASURY', dir: 'USDT_TO_VND', vndAmount: 5100000, usdtAmount: 200000000 });
   const p = derive(F.state(F.opening, F.plan(), [sale])); A.equal(p.usdt.qty, 0); A.equal(p.usdt.costVnd, 0); A.equal(p.realizedFxVnd, 100000);
   A.equal(L.round(5, 2), 3); A.equal(L.round(4, 2), 2);
@@ -107,8 +108,11 @@ test('INV-11 null UNKNOWN lan truyền và không có kế hoạch', () => {
   const s = F.copy(F.scenarios[2].state); s.openingPosition.usdt.costVnd = null;
   const d = derive(s, '2026-01-06'); A.equal(d.holdings.ETH.costVnd, null); A.equal(d.holdings.ETH.costUsdt, 1800600000); A.equal(d.month.planInvestedVnd, null); A.equal(d.month.remainingPlannedBudgetVnd, null); A.equal(d.usdt.costVnd, null); A.ok(d.flags.includes('UNKNOWN_VND_BASIS'));
   const p = F.copy(s); p.plan.versions = []; A.equal(derive(p).month.monthlyBudgetVnd, null);
-  const sale = F.event(1, '2026-01-02', { kind: 'TRADE', side: 'SELL', symbol: 'ETH', source: 'EXTRA', qty: 25000000, usdtNotional: 500000000, feeUsdt: 0 });
-  const o = F.copy(F.opening); o.usdt = { qty: 0, costVnd: 0 }; A.equal(derive(F.state(o, F.plan(), [sale])).usdt.costVnd, null);
+  // Ca cũ dùng SELL để làm rỗng giá vốn pool; SELL nay bị chặn, nên lan truyền null được kiểm
+  // qua đường P2P ra (USDT_TO_VND) trên một pool chưa biết giá vốn.
+  const o = F.copy(F.opening); o.usdt = { qty: 300000000, costVnd: null };
+  const out = F.event(1, '2026-01-02', { kind: 'TREASURY', dir: 'USDT_TO_VND', vndAmount: 5000000, usdtAmount: 200000000 });
+  A.equal(derive(F.state(o, F.plan(), [out])).usdt.costVnd, null);
 });
 test('INV-12 M1/M2/M3/M4 migration nguyên tử, raw legacy giữ nguyên', async () => {
   for (const code of ['M-1', 'M-2', 'M-3', 'M-4']) {

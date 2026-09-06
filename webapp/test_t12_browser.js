@@ -51,9 +51,12 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     // March EXTRA100 + RESERVE100 exceed remaining49.4; first March BUY unknown, quantity preserved.
     // Use a second explicit treasury event to restore known coverage BEFORE March spend, via normal UI.
     s = await enter(p, F.p2p(10, '2026-03-01', 10000000, 400000000));
+    // Sửa L-1 (lỗi carry-in không vào lịch mua): plannedPerSlot chia theo plannedBudgetVnd
+    // (20.000.000 + carry 10.659.700 = 30.659.700 -> 3 x 10.219.900), nên mốc 23/03 còn lại
+    // 30.659.700 chứ không phải 20.000.000 như oracle cũ tính theo ngân sách gốc.
     // Exact hand oracle: March pool449.4/C11259700 after P2P; each BUY100 releases2505496. ETH(.5+.24+.02+.2+.04+.04)=1.04;
     // ETH costUSDT=1200+600.6+50+500+100+100=2550.6; costVND=30m+15315300+1275000+12750000+5010992=64351292.
-    const oracle = { 'holdings.ETH.qty': 104000000, 'holdings.ETH.costUsdt': 2550600000, 'holdings.ETH.costVnd': 64351292, 'usdt.qty': 249400000, 'usdt.costVnd': 6248708, 'reserve.balance': 7494504, 'month.monthlyBudgetVnd': 20000000, 'month.carryInVnd': 10659700, 'month.plannedBudgetVnd': 30659700, 'month.investedThisMonthVnd': 5010992, 'month.planInvestedVnd': 0, 'month.remainingPlannedBudgetVnd': 30659700, 'month.nextPlannedDate': '2026-03-23', 'month.nextPlannedAmountVnd': 20000000 };
+    const oracle = { 'holdings.ETH.qty': 104000000, 'holdings.ETH.costUsdt': 2550600000, 'holdings.ETH.costVnd': 64351292, 'usdt.qty': 249400000, 'usdt.costVnd': 6248708, 'reserve.balance': 7494504, 'month.monthlyBudgetVnd': 20000000, 'month.carryInVnd': 10659700, 'month.plannedBudgetVnd': 30659700, 'month.investedThisMonthVnd': 5010992, 'month.planInvestedVnd': 0, 'month.remainingPlannedBudgetVnd': 30659700, 'month.nextPlannedDate': '2026-03-23', 'month.nextPlannedAmountVnd': 30659700 };
     const d = L.derive(s.openingPosition, s.plan, s.events, '2026-03-21'); for (const [key, n] of Object.entries(oracle)) A.deepEqual(key.split('.').reduce((a, k) => a[k], d), n, key);
     const displayed = await summary(p);
     for (const [label, expected] of Object.entries({ 'Ngân sách tháng': '20.000.000', 'Carry từ tháng trước': '10.659.700', 'Ngân sách gồm carry': '30.659.700', 'Đã đầu tư': '5.010.992', 'Theo kế hoạch': '0', 'Còn lại theo kế hoạch': '30.659.700', 'Dự phòng': '7.494.504', ETH: '1,04', USDT: '249,4', 'Giá vốn pool USDT (VND)': '6.248.708' })) A.equal(displayed[label], expected, label);

@@ -7,6 +7,10 @@
   'use strict';
   const SCHEMA = 'coindca.ledger/2', LIMIT = 9000000000000000;
   const clone = x => JSON.parse(JSON.stringify(x));
+  // Bản đồ tích luỹ dùng prototype null để id = '__proto__' là OWN-PROPERTY (nếu không, chốt M-2
+  // của migration bỏ sót đúng event đó). `plain()` trả lại prototype thường ở biên public để
+  // consumer/JSON/deepEqual vẫn thấy một object bình thường, own-property giữ nguyên.
+  const plain = o => Object.defineProperties({}, Object.getOwnPropertyDescriptors(o));
   const fail = message => { throw new Error(message); };
   function integer(x, nullable = false, signed = false) {
     if (x === null && nullable) return x;
@@ -79,6 +83,9 @@
       if (p.carryPolicy !== 'CAPPED_CARRY' || p.carryCapMonths !== 1) fail('Chỉ CAPPED_CARRY cap 1 được duyệt');
       if (!Array.isArray(p.scheduleDays) || !p.scheduleDays.length || p.scheduleDays.some((d, i, a) => !Number.isInteger(d) || d < 1 || d > 31 || (i > 0 && d <= a[i - 1]))) fail('Lịch không hợp lệ');
     }
+    // L-1 fix (a): startMonth trước version đầu tiên => mọi tháng ở giữa không có ngân sách và null lan xuống. Chặn ở cổng vào.
+    const earliest = [...months].sort()[0];
+    if (plan.versions.length && plan.startMonth < earliest) fail('Tháng bắt đầu ' + plan.startMonth + ' sớm hơn version kế hoạch đầu tiên (' + earliest + '): các tháng ở giữa không có ngân sách nào. Đặt tháng bắt đầu bằng ' + earliest + ', hoặc thêm một version áp dụng từ ' + plan.startMonth + '.');
   }
   function openingCheck(o) {
     if (o === null) return;
@@ -107,15 +114,19 @@
       if (!['VND_TO_USDT', 'USDT_TO_VND'].includes(e.dir)) fail('Chiều P2P sai');
       integer(e.vndAmount); integer(e.usdtAmount); if (!e.usdtAmount || !e.vndAmount) fail('P2P phải dương');
     } else if (e.kind === 'TRADE') {
-      if (!['BUY', 'SELL'].includes(e.side) || e.symbol !== 'ETH' || !['PLAN', 'EXTRA', 'RESERVE'].includes(e.source)) fail('Trade sai');
+      // L-1 fix: BÁN chưa có thiết kế P&L thực hiện (relieved bị vứt đi, bất biến bảo toàn VND vỡ im lặng).
+      // Chặn ở cổng vào cho tới khi H-46 được thiết kế; đây KHÔNG phải thiết kế P&L.
+      if (e.side === 'SELL') fail('Chưa hỗ trợ ghi nhận BÁN: lãi/lỗ thực hiện chưa được thiết kế (H-46). Sổ L-1 chỉ nhận lệnh MUA.');
+      if (e.side !== 'BUY' || e.symbol !== 'ETH' || !['PLAN', 'EXTRA', 'RESERVE'].includes(e.source)) fail('Trade sai');
       integer(e.qty); integer(e.usdtNotional); integer(e.feeUsdt);
-      if (!e.qty || !e.usdtNotional || (e.side === 'SELL' && e.feeUsdt > e.usdtNotional)) fail('Lượng/phí không hợp lệ');
+      if (!e.qty || !e.usdtNotional || e.feeUsdt > e.usdtNotional) fail('Lượng/phí không hợp lệ');
       if (e.source === 'RESERVE' && !e.note.trim()) fail('Giải ngân dự phòng cần lý do');
     } else if (e.kind === 'RESERVE') {
       if (!['CONTRIBUTE', 'WITHDRAW'].includes(e.type)) fail('Loại dự phòng sai');
       integer(e.vndAmount); if (!e.vndAmount) fail('Số tiền phải dương');
     } else {
       if (e.symbol !== 'ETH') fail('Chỉ ETH'); integer(e.priceUsdt); integer(e.usdVndRate, true);
+      if (!e.priceUsdt) fail('Giá tham chiếu phải dương'); if (e.usdVndRate !== null && !e.usdVndRate) fail('Tỷ giá USDT/VND phải dương hoặc bỏ trống');
     }
   }
   function empty(startMonth) {
@@ -145,7 +156,8 @@
     delete eth.symbol;
     const usdt = clone(o ? o.usdt : { qty: 0, costVnd: 0 });
     let vnd = o && o.vnd ? o.vnd.qty : 0, reserve = o && o.reserveVnd !== undefined ? o.reserveVnd : 0, realizedFxVnd = 0;
-    const flags = new Set(), eventEffects = {}, invested = {}, planSpent = {};
+    // L-1 fix: id = '__proto__' phải là own-property, nếu không chốt M-2 của migration bỏ sót event đó.
+    const flags = new Set(), eventEffects = Object.create(null), invested = Object.create(null), planSpent = Object.create(null);
     let firstOffendingEventId = null, firstOffendingBusinessDate = null;
     function inconsistent(e) { flags.add('LEDGER_INCONSISTENT'); if (!firstOffendingEventId) { firstOffendingEventId = e.id; firstOffendingBusinessDate = e.businessDate; } }
     function release(out, e) {
@@ -168,6 +180,9 @@
         if (e.source === 'PLAN') planSpent[m] = add(planSpent[m] === undefined ? 0 : planSpent[m], relieved);
         if (e.source === 'RESERVE') reserve = sub(reserve, relieved);
       } else if (e.kind === 'TRADE') {
+        // KHÔNG CÒN TỚI ĐƯỢC: eventCheck từ chối side = 'SELL'. Giữ nguyên khối này làm điểm neo cho
+        // H-46 (thiết kế P&L thực hiện) — nó vẫn mang lỗi bảo toàn VND cũ và KHÔNG được mở lại
+        // trước khi H-46 sửa `usdt.costVnd += relieved` + ghi realizedPnlVnd.
         const proceeds = sub(e.usdtNotional, e.feeUsdt), basis = usdt.costVnd === null || usdt.qty <= 0 ? null : round(BigInt(proceeds) * BigInt(usdt.costVnd), usdt.qty);
         const relievedUsdt = portion(e.qty, eth.costUsdt, eth.qty); relieved = portion(e.qty, eth.costVnd, eth.qty);
         if (e.qty > eth.qty) inconsistent(e);
@@ -175,10 +190,10 @@
         if (eth.qty === 0) { eth.costUsdt = 0; eth.costVnd = 0; }
         usdt.qty = add(usdt.qty, proceeds); usdt.costVnd = add(usdt.costVnd, basis);
       } else if (e.kind === 'RESERVE') reserve = e.type === 'CONTRIBUTE' ? add(reserve, e.vndAmount) : sub(reserve, e.vndAmount);
-      if (reserve !== null && reserve < 0) inconsistent(e);
+      if ((reserve !== null && reserve < 0) || (vnd !== null && vnd < 0)) inconsistent(e);
       eventEffects[e.id] = { vndRelieved: relieved, usdtQty: usdt.qty, usdtCostVnd: usdt.costVnd, ethQty: eth.qty };
     }
-    const currentMonth = asOfDate.slice(0, 7), months = {};
+    const currentMonth = asOfDate.slice(0, 7), months = Object.create(null);
     const versions = plan.versions.slice().sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
     const versionFor = m => m < plan.startMonth ? null : versions.filter(p => p.effectiveFrom <= m).slice(-1)[0];
     let start = plan.startMonth;
@@ -188,7 +203,10 @@
       const p = versionFor(m), spent = planSpent[m] === undefined ? 0 : planSpent[m];
       const budget = p ? p.monthlyBudgetVnd : null, cin = !p || incoming === null ? null : Math.min(incoming, budget);
       const planned = add(budget, cin), remaining = planned === null || spent === null ? null : Math.max(0, sub(planned, spent));
-      return { monthlyBudgetVnd: budget, carryInVnd: cin, plannedBudgetVnd: planned, investedThisMonthVnd: invested[m] === undefined ? 0 : invested[m], planInvestedVnd: spent, remainingPlannedBudgetVnd: remaining, carryOutVnd: m < currentMonth ? remaining : null };
+      // L-1 fix (b): tháng KHÔNG có version thì không có ngân sách để mang sang -> carryOut = 0.
+      // null chỉ dành cho "chưa biết" (UNKNOWN_VND_BASIS), không được lan sang tháng đã có version.
+      const out = p ? remaining : 0;
+      return { monthlyBudgetVnd: budget, carryInVnd: cin, plannedBudgetVnd: planned, investedThisMonthVnd: invested[m] === undefined ? 0 : invested[m], planInvestedVnd: spent, remainingPlannedBudgetVnd: remaining, carryOutVnd: m < currentMonth ? out : null };
     }
     for (let m = start; m <= currentMonth; m = nextMonth(m)) {
       months[m] = buildMonth(m, carry); carry = months[m].carryOutVnd;
@@ -200,9 +218,11 @@
     const p = versionFor(currentMonth);
     function slots(p, m) { return [...new Set(p.scheduleDays.map(d => Math.min(d, daysInMonth(m))))].map(d => m + '-' + String(d).padStart(2, '0')); }
     if (p) {
-      const dates = slots(p, currentMonth); plannedPerSlot = split(p.monthlyBudgetVnd, dates.length);
+      // L-1 fix: chia theo plannedBudgetVnd (ngân sách + carryIn); chia theo ngân sách gốc thì tiền
+      // carry không bao giờ lên lịch mua — đúng thứ CAPPED_CARRY sinh ra để giải quyết.
+      const dates = slots(p, currentMonth); plannedPerSlot = month.plannedBudgetVnd === null ? [] : split(month.plannedBudgetVnd, dates.length);
       let cumulative = 0;
-      for (let i = 0; i < dates.length; i++) {
+      for (let i = 0; i < plannedPerSlot.length; i++) {
         cumulative = add(cumulative, plannedPerSlot[i]);
         if (dates[i] >= asOfDate && month.planInvestedVnd !== null && cumulative > month.planInvestedVnd) {
           nextPlannedDate = dates[i]; nextPlannedAmountVnd = month.remainingPlannedBudgetVnd === null ? null : Math.min(Math.max(0, sub(cumulative, month.planInvestedVnd)), month.remainingPlannedBudgetVnd); break;
@@ -210,25 +230,36 @@
       }
       if (!nextPlannedDate && month.planInvestedVnd !== null) {
         const nm = nextMonth(currentMonth), np = versionFor(nm);
-        if (np) { const dates = slots(np, nm); nextPlannedDate = dates[0]; const cumulative = split(np.monthlyBudgetVnd, dates.length)[0]; nextPlannedAmountVnd = month.remainingPlannedBudgetVnd === null ? null : Math.min(Math.max(0, sub(cumulative, month.planInvestedVnd)), month.remainingPlannedBudgetVnd); }
+        // Carry-in của tháng sau chưa chốt được (tháng này chưa đóng) nên dùng ngân sách gốc của tháng sau; không trừ planInvested và không cap bằng remaining của tháng này.
+        if (np) { const nd = slots(np, nm); nextPlannedDate = nd[0]; nextPlannedAmountVnd = split(np.monthlyBudgetVnd, nd.length)[0]; }
       }
     }
     Object.assign(month, { nextPlannedDate, nextPlannedAmountVnd, plannedPerSlot });
     eth.avgCostUsdt = ratio(eth.costUsdt, eth.qty, 100000000); eth.avgCostVnd = ratio(eth.costVnd, eth.qty, 100000000);
     usdt.avgVnd = ratio(usdt.costVnd, usdt.qty, 1000000);
-    if ([usdt.costVnd, eth.costVnd, reserve, ...Object.values(invested)].some(x => x === null)) flags.add('UNKNOWN_VND_BASIS');
+    if ([usdt.costVnd, eth.costVnd, reserve, month.plannedBudgetVnd, ...Object.values(invested)].some(x => x === null)) flags.add('UNKNOWN_VND_BASIS');
     const mark = ordered.filter(e => e.kind === 'PRICE' && e.businessDate <= asOfDate).slice(-1)[0];
-    const valuation = mark && mark.businessDate >= previousDay(asOfDate) ? { usdt: round(BigInt(eth.qty) * BigInt(mark.priceUsdt), 100000000), businessDate: mark.businessDate } : null;
-    return { holdings: { ETH: eth }, usdt, vnd: { balance: vnd }, reserve: { balance: reserve }, currentMonth, month, months, eventEffects, realizedFxVnd, valuation, flags: [...flags].sort(), firstOffendingEventId, firstOffendingBusinessDate };
+    // L-1 fix: usdVndRate (tuỳ chọn, do Owner nhập trên chính event PRICE) chỉ dùng cho ĐỊNH GIÁ
+    // hiển thị — không bao giờ chạm giá vốn. Không có tỷ giá thì vnd = null, không suy diễn.
+    let valuation = null;
+    if (mark && mark.businessDate >= previousDay(asOfDate)) {
+      const usdtValue = round(BigInt(eth.qty) * BigInt(mark.priceUsdt), 100000000);
+      valuation = { usdt: usdtValue, vnd: mark.usdVndRate === null || mark.usdVndRate === undefined ? null : round(BigInt(usdtValue) * BigInt(mark.usdVndRate), 1000000), usdVndRate: mark.usdVndRate === undefined ? null : mark.usdVndRate, businessDate: mark.businessDate };
+    }
+    return { holdings: { ETH: eth }, usdt, vnd: { balance: vnd }, reserve: { balance: reserve }, currentMonth, month, months: plain(months), eventEffects: plain(eventEffects), realizedFxVnd, valuation, flags: [...flags].sort(), firstOffendingEventId, firstOffendingBusinessDate };
   }
   function update(state, action, meta) {
     const s = canonical(state);
     if (action.type === 'opening') s.openingPosition = clone(action.value);
     else if (action.type === 'plan') {
       const next = clone(action.value); planCheck(next);
+      // L-1 fix: version đã tồn tại là bất biến về MỌI trường quyết định tiền — không chỉ
+      // effectiveFrom/scheduleDays. Đổi monthlyBudgetVnd của version cũ là sửa hồi tố ngân sách
+      // tháng đã đóng, kéo theo carryOut tháng đó và carry-in mọi tháng sau.
+      const FROZEN = ['effectiveFrom', 'asset', 'monthlyBudgetVnd', 'scheduleDays', 'carryPolicy', 'carryCapMonths'];
       for (const old of s.plan.versions) {
         const retained = next.versions.find(p => p.id === old.id);
-        if (!retained || retained.effectiveFrom !== old.effectiveFrom || JSON.stringify(retained.scheduleDays) !== JSON.stringify(old.scheduleDays)) fail('Không đổi lịch của version cũ; thêm version về sau');
+        if (!retained || FROZEN.some(k => JSON.stringify(retained[k]) !== JSON.stringify(old[k]))) fail('Không đổi ngân sách/lịch của version cũ; thêm version mới áp dụng từ tháng thay đổi trở đi');
       }
       for (const p of next.versions.filter(p => !s.plan.versions.some(old => old.id === p.id))) {
         if (s.plan.versions.length && (!meta.today || p.effectiveFrom < meta.today.slice(0, 7))) fail('Version lịch mới chỉ áp dụng từ tháng thay đổi trở đi');
@@ -267,13 +298,22 @@
       candidate = canonical(candidate);
       const d = derive(candidate.openingPosition, candidate.plan, candidate.events, meta.today);
       if (Object.values(d.eventEffects).some(e => e.usdtQty < 0 || e.ethQty < 0)) fail('M-2: âm số lượng trong replay');
-      const comparisons = { eth: [d.holdings.ETH.qty, legacy.eth, 100000000], usdt: [d.usdt.qty, legacy.treasury.usdt, 1000000], vnd: [d.vnd.balance, legacy.treasury.vnd, 1], costUsdt: [d.holdings.ETH.costUsdt, legacy.costUsdt, 1000000] };
+      // L-1 fix: app cũ cộng costUsdt KHÔNG gồm phí, derive() cộng usdtNotional + feeUsdt. Oracle
+      // phải so cùng một định nghĩa, nếu không mọi sổ cũ có phí ≠ 0 đều kẹt vĩnh viễn ở LEGACY.
+      const migratedFeeUsdt = candidate.events.reduce((t, e) => e.kind === 'TRADE' && e.side === 'BUY' ? add(t, e.feeUsdt) : t, 0);
+      const costUsdtExFee = sub(d.holdings.ETH.costUsdt, migratedFeeUsdt);
+      const comparisons = { eth: [d.holdings.ETH.qty, legacy.eth, 100000000], usdt: [d.usdt.qty, legacy.treasury.usdt, 1000000], vnd: [d.vnd.balance, legacy.treasury.vnd, 1], costUsdt: [costUsdtExFee, legacy.costUsdt, 1000000] };
       for (const [k, [actual, old, scale]] of Object.entries(comparisons)) {
         if (actual === null || typeof old !== 'number' || !Number.isFinite(old)) fail('M-3: thiếu oracle ' + k);
         deltas[k] = { deltaUnits: actual - old * scale, legacyRounded: Math.round(old * scale), actual };
         if (Math.abs(deltas[k].deltaUnits) > 1) errors.push('M-3: lệch ' + k);
       }
-      deltas.costVnd = { actual: d.holdings.ETH.costVnd, legacy: legacy.costVnd, deltaVnd: d.holdings.ETH.costVnd === null ? null : d.holdings.ETH.costVnd - legacy.costVnd };
+      // L-1 fix: giá vốn VND lệch không còn "chỉ báo cáo" — nó là cờ CỨNG như bốn oracle kia.
+      // actual === null là trạng thái UNKNOWN đã có W-1/UNKNOWN_VND_BASIS lo, không chặn ở đây.
+      const legacyCostVnd = typeof legacy.costVnd === 'number' && Number.isFinite(legacy.costVnd) ? Math.round(legacy.costVnd) : null;
+      deltas.costVnd = { actual: d.holdings.ETH.costVnd, legacy: legacy.costVnd, deltaVnd: d.holdings.ETH.costVnd === null || legacyCostVnd === null ? null : d.holdings.ETH.costVnd - legacyCostVnd };
+      if (d.holdings.ETH.costVnd !== null && legacyCostVnd === null) errors.push('M-3: thiếu oracle costVnd');
+      if (deltas.costVnd.deltaVnd !== null && Math.abs(deltas.costVnd.deltaVnd) > 1) errors.push('M-3: lệch costVnd');
       if (errors.length) return { ok: false, errors, deltas };
       candidate.LEGACY_ARCHIVE = { label: 'LEGACY_ARCHIVE — READ ONLY', raw: clone(legacy) };
       candidate.RESEARCH_ONLY = { extraDays: clone(legacy.extraDays || []), history: clone(seed && seed.history || []) };
