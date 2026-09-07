@@ -16,6 +16,7 @@ async function saveEvent(p, expectOk = true) {
   return m;
 }
 async function setOpening(p, o) {
+  await H.goTab(p, 'plan');                     // T-18: Kế hoạch nay là tab riêng
   await openDetails(p);
   await fill(p, 'l1OpeningDate', o.asOf);
   const a = o.assets[0] || { qty: 0, costUsdt: 0, costVnd: 0 };
@@ -26,6 +27,7 @@ async function setOpening(p, o) {
   await p.click('#l1SaveOpening'); await H.waitSaved(p);
 }
 async function setPlan(p, start, budget, days) {
+  await H.goTab(p, 'plan');
   await openDetails(p);
   await fill(p, 'l1StartMonth', start); await fill(p, 'l1Effective', start);
   await fill(p, 'l1Budget', budget); await fill(p, 'l1Days', days);
@@ -106,6 +108,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
 
     // AS-05: sửa một giao dịch cũ (đổi qty) — derive() chạy lại, id/seq không đổi.
     const editTarget = s.events.find(e => e.kind === 'TRADE' && e.source === 'PLAN' && e.businessDate === '2026-03-03');
+    await H.goTab(p, 'history');                  // T-18: nút Sửa/Xoá nay chỉ hiện ở tab Lịch sử
     await p.click('button[data-id="' + editTarget.id + '"][data-action="edit"]');
     await fill(p, 'l1Qty', value(9000000, 8));
     await saveEvent(p);

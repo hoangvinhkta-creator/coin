@@ -56,8 +56,8 @@ a{color:var(--accent)}
 .wrap{max-width:1140px;margin:0 auto;padding:0 22px 80px}
 
 /* header */
-header.top{padding:28px 0 16px;border-bottom:2px solid var(--ink);display:flex;
-  flex-wrap:wrap;gap:14px 28px;align-items:flex-end;justify-content:space-between}
+header.top{padding:20px 0 14px;border-bottom:2px solid var(--ink)}
+.hdr-top{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-end;justify-content:space-between}
 header.top h1{font-family:"IBM Plex Serif",Georgia,serif;font-weight:600;
   font-size:clamp(22px,3vw,30px);margin:0;letter-spacing:-.018em}
 header.top .sub{margin:5px 0 0;color:var(--muted);font-size:13.5px;max-width:56ch}
@@ -225,10 +225,12 @@ footer{border-top:1px solid var(--rule);margin-top:40px;padding-top:14px;color:v
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
 /* ---- Step B (T-13): CoinDCA L-1 dashboard/history/plan/settings IA ---- */
-.wrap{padding-bottom:96px}
-h2{margin-top:26px}
+/* T-18: 4 mục là TAB thật (ẩn/hiện qua thuộc tính `hidden`, ledger_ui.js::routeTo), không còn
+   một trang cuộn dài — nên .wrap chỉ cần chừa chỗ cho FAB, không còn thanh điều hướng cố định
+   ở đáy để tránh đè nội dung. */
+.wrap{padding-bottom:32px}
+h2{margin-top:0}
 .view-sec{scroll-margin-top:14px}
-.view-sec:first-of-type{margin-top:18px}
 
 /* dashboard main block: 4 numbers + 1 action, always visible without scroll on desktop */
 .dashmain{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin:14px 0}
@@ -256,14 +258,15 @@ h2{margin-top:26px}
    breakpoint .hero (860px) đã dùng ở trên trong file này. */
 @media (max-width:860px){.dashbottom-groups{grid-template-columns:1fr}}
 
-/* bottom nav + FAB */
-.bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;
-  background:var(--surface);border-top:1px solid var(--rule);
-  padding:6px max(8px,env(safe-area-inset-left)) max(6px,env(safe-area-inset-bottom))}
-.bottomnav button{flex:1;border:none;background:none;border-radius:6px;color:var(--muted);
-  font-size:11.5px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px}
-.bottomnav button[aria-current="true"]{color:var(--accent);font-weight:600}
-.fab{position:fixed;right:16px;bottom:74px;z-index:41;border-radius:999px;
+/* T-18: 4 tab "card" trong header (trước đây là thanh cố định ở đáy màn hình) */
+.tabnav{display:flex;gap:8px;margin-top:16px;overflow-x:auto}
+.tabnav button{flex:1;min-width:96px;border:1px solid var(--rule);background:var(--surface);
+  border-radius:8px;color:var(--muted);font-size:12px;padding:9px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap}
+.tabnav button:hover{border-color:var(--accent);color:var(--ink-soft)}
+.tabnav button[aria-current="true"]{border-color:var(--accent);color:var(--accent);
+  background:var(--accent-soft);font-weight:600}
+.fab{position:fixed;right:16px;bottom:16px;z-index:41;border-radius:999px;
   background:var(--accent);color:var(--ground);border:none;padding:13px 18px;
   font-weight:600;box-shadow:var(--shadow)}
 
@@ -306,21 +309,32 @@ h2{margin-top:26px}
 
 @media (max-width:520px){
   .dashmain{grid-template-columns:1fr 1fr}
-  .fab{right:12px;bottom:70px;padding:11px 15px;font-size:13px}
+  .fab{right:12px;bottom:12px;padding:11px 15px;font-size:13px}
+  .tabnav button{min-width:78px;font-size:11px}
 }
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div>
-      <h1>CoinDCA</h1>
-      <p class="sub">Giữ kỷ luật tích luỹ crypto theo kế hoạch DCA. Bạn nhập giao dịch thật (có
-        ngày do bạn chọn); ứng dụng chỉ tính lại đúng những gì đã xảy ra, không khuyến nghị.</p>
+    <div class="hdr-top">
+      <div>
+        <h1>CoinDCA</h1>
+        <p class="sub">Giữ kỷ luật tích luỹ crypto theo kế hoạch DCA. Bạn nhập giao dịch thật (có
+          ngày do bạn chọn); ứng dụng chỉ tính lại đúng những gì đã xảy ra, không khuyến nghị.</p>
+      </div>
+      <div class="hdr-right">
+        <span class="savechip" id="saveChip" title="Trạng thái lưu bền trên Cloud Firestore">—</span>
+        <button id="saveBtn" class="primary" title="Ghi lại lên nguồn bền khi lần lưu trước thất bại">Lưu lại</button>
+      </div>
     </div>
-    <div class="hdr-right">
-      <span class="savechip" id="saveChip" title="Trạng thái lưu bền trên Cloud Firestore">—</span>
-      <button id="saveBtn" class="primary" title="Ghi lại lên nguồn bền khi lần lưu trước thất bại">Lưu lại</button>
-    </div>
+    <!-- T-18: 4 tab thật, chuyển từ thanh cố định ở đáy lên header (id/hành vi giữ nguyên —
+         data-view + aria-current — chỉ đổi VỊ TRÍ và tên id/class cho đúng vai trò mới). -->
+    <nav class="tabnav" id="tabNav" role="navigation" aria-label="Điều hướng chính">
+      <button type="button" data-view="dashboard" aria-current="true">Tổng quan</button>
+      <button type="button" data-view="history">Lịch sử</button>
+      <button type="button" data-view="plan">Kế hoạch</button>
+      <button type="button" data-view="settings">Cài đặt</button>
+    </nav>
   </header>
 
   <div id="banners"></div>
@@ -350,10 +364,4 @@ h2{margin-top:26px}
   <footer id="foot"></footer>
 </div>
 
-<nav class="bottomnav" id="bottomNav" role="navigation" aria-label="Điều hướng chính">
-  <button type="button" data-view="dashboard" aria-current="true">Tổng quan</button>
-  <button type="button" data-view="history">Lịch sử</button>
-  <button type="button" data-view="plan">Kế hoạch</button>
-  <button type="button" data-view="settings">Cài đặt</button>
-</nav>
 <button type="button" class="fab" id="fabEntry">+ Ghi giao dịch</button>

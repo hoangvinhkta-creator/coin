@@ -34,7 +34,34 @@ Adoption record: `docs/decisions/ADOPTION-V4_3-migration-record.md`.
 Adoption KHÔNG đổi trạng thái task nào, KHÔNG tạo task ID nào, KHÔNG sửa production code.
 
 Last Updated:
-2026-09-06 — **`T-17` (sắp xếp lại giao diện CoinDCA L-1): `NOT_PLANNED → DONE` trong một phiên
+2026-09-07 — **`T-18` (4 mục thành tab thật, điều hướng lên header): `NOT_PLANNED → DONE` trong
+một phiên (`DEC-054`).** Owner: "hãy cho 4 mục hiện tại là tổng quan - lịch sử - kế hoạch - cài
+đặt thành 4 tab riêng biệt thay vì nằm trên 1 trang tĩnh như hiện tại... cho 4 card chọn của 4 tab
+này lên header thay vì footer". **Thuần điều hướng/trình bày — `webapp/ledger.js` diff RỖNG.**
+`routeTo()` viết lại: 3 mục không active bị ẩn thật qua thuộc tính `hidden` thay vì chỉ cuộn tới;
+`#bottomNav` (thanh cố định ở đáy) dời vào `<header>`, đổi tên `#tabNav`, style lại thành 4 nút
+"card". `#l1Entry` ("+ Ghi giao dịch") giữ nguyên KHÔNG bị gate theo tab — vẫn luôn có mặt/mở sẵn
+bất kể tab nào đang chọn (quyết định gốc T-13). Yêu cầu này đảo ngược đúng một ràng buộc kiến trúc
+đã ghi từ T-13 (giữ mọi mục luôn tương tác được để `test_t12_browser.js` — Completion Gate
+`CHECK-T13-12` FROZEN — không bao giờ cần bấm điều hướng trước khi thao tác form), nên bắt buộc
+phải sửa **4 file test** (`test_t12_browser.js`, `test_stepb_ui.js`, `test_t14_backup_restore.js`,
+`test_t14_persistence.js`) + 1 helper dùng chung (`test_firebase_harness.js::goTab`) — mỗi chỗ
+CHỈ chèn thêm một lệnh chuyển tab trước đúng hành động cần nó, không xoá/nới lỏng một assertion
+nào (xác nhận: số lượng assertion mỗi file PASS đúng như trước khi sửa). Phát hiện phương pháp
+luận đáng ghi lại: phương thức Playwright chỉ ĐỌC (`evaluateAll`/`textContent`/`count`/
+`inputValue`) không cần phần tử đang hiển thị, chỉ HÀNH ĐỘNG thật (`click`/`fill`/`selectOption`/
+`isHidden`) mới cần đúng tab active — xác nhận bằng chạy test thật và quan sát lỗi thật, không
+suy diễn suông. Completion Gate **11/11 REQUIRED PASS** (E1 toàn bộ — không chạm
+`accounting_financial`); toàn bộ `npm test` (10 suite, gồm Firestore Emulator + Chromium thật)
+PASS, không suite nào bị bỏ qua. Bốn phép đo Playwright thủ công xác nhận: đúng-một-tab-hiện-tại-
+một-thời-điểm, refresh-safe qua URL hash, FAB luôn hiện bất kể tab, layout 4 card không tràn ở
+390px đo bằng `getComputedStyle`/`getBoundingClientRect` thật (không tin ảnh chụp màn hình đã co
+giãn — một lần tự phát hiện đọc nhầm ảnh chụp "2 hàng" trong khi số đo thật xác nhận 1 hàng, không
+tràn). `CAP-WEBAPP`: `T-18` tiêu **0** repair cycle (implementation ban đầu), budget **KHÔNG đổi
+`4/2/2`**. Không `HARDENING` mới. Chi tiết:
+`docs/reviews/T18-IMPLEMENTATION-AND-E2-REPORT.md`.
+
+Trước đó, 2026-09-06 — **`T-17` (sắp xếp lại giao diện CoinDCA L-1): `NOT_PLANNED → DONE` trong một phiên
 (`DEC-053`).** Sau khi Owner tự nhập kế hoạch + 102 sự kiện thật vào production trên `T-16`, hai
 vấn đề usability: khối "Tổng quan" phần dưới render mọi con số (từng coin đang giữ, USDT, VND,
 lãi/lỗ) thành một lưới `.stat` phẳng không phân nhóm; Lịch sử chỉ có một bộ lọc dropdown, thẻ
@@ -977,12 +1004,14 @@ Không có task MAJOR nào đang IN_PROGRESS. Chuỗi L-1 hiện tại: **`T-12`
 → **`T-15` DONE** (`DEC-051`, 2026-09-06 — sửa 7 lỗi kế toán do rà soát độc lập tái lập)
 → **`T-16` DONE** (`DEC-052`, 2026-09-06 — sổ đa tài sản, SELL đúng, CASH DEPOSIT/WITHDRAW)
 → **`T-17` DONE** (`DEC-053`, 2026-09-06 — sắp xếp lại giao diện, thuần trình bày, `ledger.js`
-diff rỗng).
+diff rỗng) → **`T-18` DONE** (`DEC-054`, 2026-09-07 — 4 mục thành tab thật, điều hướng lên
+header, `ledger.js` diff rỗng).
 Báo cáo: `docs/reviews/T12-IMPLEMENTATION-REPORT.md`, `T12-E2-INDEPENDENT-REVIEW.md`,
 `T12-OWNER-CLOSURE.md`, `T13-IMPLEMENTATION-REPORT.md`, `T13-E2-INDEPENDENT-REVIEW.md`,
 `T13-OWNER-CLOSURE.md`, `T14-IMPLEMENTATION-REPORT.md`, `T14-E2-INDEPENDENT-REVIEW.md`,
 `T14-OWNER-CLOSURE.md`, `T15-IMPLEMENTATION-AND-E2-REPORT.md`,
-`T16-IMPLEMENTATION-AND-E2-REPORT.md`, `T17-IMPLEMENTATION-AND-E2-REPORT.md`.
+`T16-IMPLEMENTATION-AND-E2-REPORT.md`, `T17-IMPLEMENTATION-AND-E2-REPORT.md`,
+`T18-IMPLEMENTATION-AND-E2-REPORT.md`.
 
 Current Task Mode:
 (không có task MAJOR/MICRO/SPIKE đang thi hành)
@@ -990,7 +1019,7 @@ Current Task Mode:
 Next Recommended Task:
 KHÔNG mở task mới trong closure này (`AGENTS.md` §3). Bước D của chuỗi L-1
 (`OWNER_LOCAL_ACCEPTANCE`, spec-l1 §24) là quyết định của Owner, không phải hệ quả tự động của
-`T-17 DONE`.
+`T-18 DONE`.
 
 **Việc kế tiếp Owner đã nêu, chạy NGOÀI repo:** nhập sổ Excel theo dõi thủ công từ 08/10/2025.
 Điều kiện: deploy bản này, rồi nâng cấp sổ production `coindca.ledger/2 → /3` bằng nút
@@ -1079,6 +1108,7 @@ Bản đối chiếu độ phủ: `docs/reviews/S002-coverage-regression-check.m
 | DONE | T-15 | CoinDCA L-1: sửa 7 lỗi kế toán do rà soát độc lập tái lập | Sửa 7 lỗi trong chính mã L-1 mới (`webapp/ledger.js`, `ledger_ui.js`, `build_app.js`) mà một rà soát độc lập sau `T-14` tái lập được bằng harness riêng — trong đó lỗi L1 hỏng đúng tính năng lõi "Mua kế tiếp" mỗi cuối tháng và lỗi L2 khiến tiền carry của `CAPPED_CARRY` không bao giờ lên lịch mua | C | high | **DONE — Owner Direction + Lifecycle Closure `DEC-051` (2026-09-06, `S042`)**, `NOT_PLANNED → DONE` trong một phiên. Sau `T-14`. Completion Gate 16/16 REQUIRED PASS (E1); test tái lập đỏ 15/15 trước / xanh 15/15 sau; fixture Owner bit-exact 9/9 tolerance 0 (KHÔNG sửa fixture); mutation 7/7 KILLED; `npm --prefix webapp test` exit 0 với Firestore Emulator + Chromium thật. **REPAIR CYCLE #2 của `CAP-WEBAPP`** — budget `2/1/1 → 2/2/0`, mọi lượt sửa sau cần `OWNER_EXTENSION`. KHÔNG thiết kế P&L thực hiện (`H-46` giữ ACTIVE, chỉ chặn đường vào SELL); KHÔNG chạm `src/eth_dca_os/`, `docs/spec/*_V2_1_5.md`, khối rules Content. `H-41` (chưa nên dùng tiền thật) giữ nguyên |
 | DONE | T-16 | CoinDCA L-1: sổ đa tài sản (BTC/ETH/ADA), SELL đúng, CASH DEPOSIT/WITHDRAW | Mở đủ từ vựng và hình dạng sổ để nhập một sổ Excel theo dõi thủ công có sẵn (từ 08/10/2025) mà không phải bịa dữ liệu: nhiều coin ở tầng nắm giữ, lệnh bán có ngữ nghĩa giá vốn đúng, và sự kiện nạp/rút tiền mặt VND để cờ `vnd` âm của `T-15` không bắn oan | C | xhigh | **DONE — Owner Direction + Lifecycle Closure `DEC-052` (2026-09-06, `S043`)**, `NOT_PLANNED → DONE` trong một phiên. Sau `T-15`. Completion Gate 20/20 REQUIRED PASS (E1); `test_t16_multiasset.js` 14/14 gồm property test 60 chuỗi ngẫu nhiên + một ca SELL tính tay; hai đường UI thật (nâng cấp v2→v3 qua nút; CASH + mua BTC + bán ETH qua control mới) trên Firestore Emulator + Chromium thật; fixture Owner bit-exact 9/9; mutation 7/7 KILLED; `npm test` exit 0. Schema `coindca.ledger/2 → /3` — sổ production phải được Owner NÂNG CẤP thủ công (có snapshot + oracle) trước khi ghi tiếp. **Implementation ban đầu, tiêu 0 repair cycle**; `OWNER_EXTENSION` +2 cho `CAP-WEBAPP` → `4/2/2`. Đơn tài sản ở tầng KẾ HOẠCH giữ nguyên (không làm ngân sách đa tài sản). `H-46` đóng một phần; `H-41` (chưa nên dùng tiền thật) giữ nguyên |
 | DONE | T-17 | CoinDCA L-1: sắp xếp lại giao diện (Tổng quan theo nhóm, bộ lọc Lịch sử dạng nút có đếm, icon/màu theo loại giao dịch) | Sau khi Owner tự nhập kế hoạch + 102 sự kiện thật vào production, khối Tổng quan phần dưới render mọi con số thành một lưới phẳng không phân nhóm, và Lịch sử chỉ có một bộ lọc dropdown không phân biệt trực quan theo loại — chậm và dễ đọc nhầm khi kiểm sổ hằng ngày | B | high | **DONE — Owner Direction + Lifecycle Closure `DEC-053` (2026-09-06)**, `NOT_PLANNED → DONE` trong một phiên. Sau `T-16`. Thuần trình bày: **`webapp/ledger.js` diff RỖNG**, KHÔNG mang category `accounting_financial` (khác `T-12`/`T-13`/`T-16`) — routing đo được `D2 R2 B2 A1 X1` → Tier B/Sonnet, `U1 V3 H2 C2 F3` → effort `high`. Completion Gate 14/14 REQUIRED PASS (E1); toàn bộ 10 suite `npm test` (gồm Firestore Emulator + Chromium thật) PASS nguyên văn, không sửa test nào. `#dashBottom` nay 3 khối có tiêu đề (Đang nắm giữ / Tiền mặt & USDT / Lãi-lỗ đã thực hiện), lưới 2 cột desktop / 1 cột mobile ở breakpoint 860px; bộ lọc Lịch sử là nút `.histtype` có đếm, `#histFilterType` giữ nguyên id (select ẩn đồng bộ giá trị — không test nào cần sửa); mỗi loại giao dịch có icon/màu riêng (RESERVE giữ nguyên không đổi). **Implementation ban đầu, tiêu 0 repair cycle**; `CAP-WEBAPP` budget KHÔNG đổi `4/2/2`, không cần `OWNER_EXTENSION`. Không `HARDENING` mới |
+| DONE | T-18 | CoinDCA L-1: 4 mục thành tab thật (ẩn/hiện qua `hidden`), bộ chọn tab chuyển từ footer lên header | Trang cuộn dài buộc người dùng kéo qua toàn bộ Lịch sử để tới Kế hoạch/Cài đặt; bộ chọn tab nằm ở đáy màn hình không luôn thấy được | C | xhigh | **DONE — Owner Direction + Lifecycle Closure `DEC-054` (2026-09-07)**, `NOT_PLANNED → DONE` trong một phiên. Sau `T-17`. Thuần điều hướng/trình bày: **`webapp/ledger.js` diff RỖNG**, KHÔNG mang category `accounting_financial` — routing đo được `D3 R3 B3 A2 X2` → Tier C/Opus, `U2 V3 H3 C3 F3` → effort `xhigh` (cao hơn `T-17` vì Blast Radius/Failure cost của việc chạm hợp đồng test FROZEN `CHECK-T13-12`, không phải vì chạm lớp tài chính). Completion Gate 11/11 REQUIRED PASS (E1); toàn bộ `npm test` (10 suite, gồm Firestore Emulator + Chromium thật) PASS, không assertion nào bị xoá/nới lỏng. `routeTo()` viết lại: ẩn thật 3 mục không active qua `hidden` thay vì chỉ cuộn; `#bottomNav` → `#tabNav`, dời vào `<header>`, style lại thành 4 nút "card"; `#l1Entry` ("+ Ghi giao dịch") giữ nguyên KHÔNG bị gate theo tab. Bắt buộc sửa 4 file test (`test_t12_browser.js`, `test_stepb_ui.js`, `test_t14_backup_restore.js`, `test_t14_persistence.js`) + 1 helper dùng chung (`test_firebase_harness.js::goTab`) vì yêu cầu đảo ngược đúng ràng buộc "không display:none" đã ghi từ `T-13` — mỗi chỗ sửa chỉ CHÈN THÊM một lệnh chuyển tab trước hành động cần nó, không xoá/nới lỏng gì. Phát hiện phương pháp luận: phương thức Playwright chỉ ĐỌC (`evaluateAll`/`textContent`/`count`/`inputValue`) không cần phần tử hiển thị, chỉ HÀNH ĐỘNG (`click`/`fill`/`selectOption`/`isHidden`) mới cần đúng tab active. **Implementation ban đầu, tiêu 0 repair cycle**; `CAP-WEBAPP` budget KHÔNG đổi `4/2/2`. Không `HARDENING` mới |
 
 ## Roadmap Change Applied — RCP-001
 
@@ -2123,6 +2153,18 @@ Chi tiết: `docs/reviews/GOVDEF-001-routing-engine-boundary.md` mục "Resoluti
   grep xác nhận không test nào thao tác bốn id lọc lịch sử. `CAP-WEBAPP` budget **KHÔNG đổi
   `4/2/2`** (`T-17` implementation ban đầu, tiêu 0; không cần `OWNER_EXTENSION`). Không
   `HARDENING` mới. Task ID mới = 1 (`T-17`)
+- **DEC-054** — Owner Direction + Lifecycle Closure: mở và đóng `T-18` (4 mục Tổng quan/Lịch sử/
+  Kế hoạch/Cài đặt thành tab thật, bộ chọn tab dời từ footer lên header) trong một phiên; thuần
+  điều hướng/trình bày, `webapp/ledger.js` diff RỖNG — routing `D3 R3 B3 A2 X2` → Tier C/Opus,
+  `U2 V3 H3 C3 F3` → effort `xhigh` (cao hơn `T-17` vì Blast Radius/Failure cost của việc chạm
+  hợp đồng test FROZEN `CHECK-T13-12`, không phải vì chạm lớp tài chính). Completion Gate 11/11
+  REQUIRED PASS (E1); toàn bộ `npm test` (10 suite, gồm emulator + trình duyệt thật) PASS, không
+  assertion nào bị xoá/nới lỏng. Bắt buộc sửa 4 file test + 1 helper dùng chung
+  (`test_firebase_harness.js::goTab`) vì yêu cầu đảo ngược đúng ràng buộc "không display:none" đã
+  ghi từ `T-13`; mỗi chỗ chỉ chèn thêm một lệnh chuyển tab trước hành động cần nó. Phát hiện
+  phương pháp luận: phương thức Playwright chỉ ĐỌC không cần phần tử hiển thị, chỉ HÀNH ĐỘNG mới
+  cần đúng tab active. `CAP-WEBAPP` budget **KHÔNG đổi `4/2/2`** (`T-18` implementation ban đầu,
+  tiêu 0). Không `HARDENING` mới. Task ID mới = 1 (`T-18`)
 
 Chi tiết: `PROJECT/PROJECT_DECISIONS.md`.
 (Trước `DEC-041`, mục này dừng ở `DEC-017` — stale `ST-05`, đóng tại `DEC-041` I.)
