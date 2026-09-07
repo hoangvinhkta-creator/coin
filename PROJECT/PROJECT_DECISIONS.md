@@ -4989,3 +4989,90 @@ phiên. Các `RE_TRIGGER_CONDITION` đang mở của `T-16`/`T-15` (`H-46`, `H-5
 không liên quan tới task này.
 
 ---
+
+## DEC-054 — Owner Direction + Lifecycle Closure: mở và đóng `T-18` (4 mục thành tab thật, điều hướng lên header)
+
+Date:
+2026-09-07 (Owner Decision, qua chỉ thị phiên trực tiếp "hãy cho 4 mục hiện tại là tổng quan -
+lịch sử - kế hoạch - cài đặt thành 4 tab riêng biệt thay vì nằm trên 1 trang tĩnh như hiện tại...
+cho 4 card chọn của 4 tab này lên header thay vì footer", nhánh
+`claude/coincda-ui-reorganize-2ykjse`)
+
+Task:
+`T-18` — capability `CAP-WEBAPP`, lineage root `WP-C1`. Quyết định này vừa MỞ vừa ĐÓNG `T-18`
+trong cùng một phiên, nối tiếp `T-17` (`DEC-053`).
+
+Điều kiện tiên quyết đã kiểm trước khi bắt đầu: `T-17 = DONE`, `CAP-WEBAPP` =
+`ALLOWED 4 / USED 2 / REMAINING 2` (không đổi bởi `T-17`).
+
+## Owner Direction (tóm lược)
+
+    4 mục Tổng quan/Lịch sử/Kế hoạch/Cài đặt hiện là 4 khối cuộn chung một trang (điều hướng chỉ
+    cuộn tới). Chuyển thành 4 TAB thật (chỉ một mục hiện tại một thời điểm). Chuyển 4 nút chọn
+    tab từ thanh cố định ở đáy màn hình lên header.
+
+## Decision
+
+**A. Rủi ro đã xác định TRƯỚC khi sửa, không phải phát hiện giữa chừng.** Bản thân code cũ có
+comment ghi rõ lý do KHÔNG dùng tab thật trước đây: giữ mọi mục luôn tương tác được cho
+`test_t12_browser.js` (Completion Gate `CHECK-T13-12`, FROZEN từ `T-13`) — vốn không bao giờ bấm
+điều hướng trước khi thao tác form. Yêu cầu lần này đảo ngược đúng ràng buộc đó, nên bắt buộc phải
+sửa test đang phụ thuộc giả định cũ — không có cách nào đạt được yêu cầu Owner mà không chạm test.
+Ghi nhận tường minh: **4 file test bị sửa** (`test_t12_browser.js`, `test_stepb_ui.js`,
+`test_t14_backup_restore.js`, `test_t14_persistence.js`) + 1 helper dùng chung
+(`test_firebase_harness.js`) — mỗi chỗ sửa CHỈ chèn thêm đúng một lệnh chuyển tab trước hành động
+cần nó, không xoá/nới lỏng một assertion nào. Chi tiết đối chiếu từng điểm:
+`docs/reviews/T18-IMPLEMENTATION-AND-E2-REPORT.md` §2.4.
+
+**B. Lifecycle.** `T-18`: `NOT_PLANNED → READY → IN_PROGRESS → IMPLEMENTED → DONE` trong một
+phiên. Task Mode `MAJOR`. Routing đo được: `D3 R3 B3 A2 X2` → `model_score 2.7` → Tier C/Opus;
+`U2 V3 H3 C3 F3` → `effort_score 2.8` → `xhigh`; không floor nào áp dụng — vẫn KHÔNG mang category
+`accounting_financial` (`webapp/ledger.js` diff rỗng, xác nhận bằng `git diff --stat`), nhưng Tier
+cao hơn `T-17` (Tier B) vì Blast Radius và Failure cost của việc đổi mô hình điều hướng lõi + chạm
+hợp đồng test FROZEN cao hơn hẳn một thay đổi CSS/nhóm hiển thị thuần tuý. Completion Gate FROZEN
+2026-09-07, **11/11 REQUIRED PASS**. Bằng chứng:
+`docs/reviews/T18-IMPLEMENTATION-AND-E2-REPORT.md`.
+
+**C. Ngân sách artifact CỨNG tiếp tục áp dụng** và đã được tuân thủ: 1 task file, 1 báo cáo gộp,
+1 DEC (chính văn bản này), **0** evidence log commit.
+
+**D. Mức bằng chứng = E1 toàn bộ; KHÔNG mở vòng E2 độc lập** — cùng lý do đã lập tại `T-17` §C
+(không chạm `accounting_financial`). Rủi ro trình bày/điều hướng phủ bằng: toàn bộ 10 suite test
+hiện có PASS nguyên số assertion (không suite nào bị bỏ qua), cộng một kịch bản Playwright xác
+nhận riêng đo TRỰC TIẾP hành vi tab (đúng-một-mục-hiện-tại-một-thời-điểm, refresh-safe qua hash,
+layout 4 card không tràn ở 390px bằng `getComputedStyle`/`getBoundingClientRect` thật — không chỉ
+đọc CSS nguồn hay tin ảnh chụp màn hình đã co giãn).
+
+**E. Phát hiện phương pháp luận, ghi nhận để phiên sau không phải dò lại:** phương thức Playwright
+chỉ ĐỌC (`evaluateAll`, `textContent`, `count`, `inputValue`) không yêu cầu phần tử đang hiển
+thị, chỉ các HÀNH ĐỘNG thật (`click`, `fill`, `selectOption`, `isHidden`/`isVisible`) mới cần
+đúng tab đang active. Xác nhận bằng chạy test thật và quan sát lỗi thật (`googleSignOut` timeout
+"element is not visible" khi Settings tab không active), không suy diễn suông từ tài liệu API.
+Nhờ vậy các hàm đọc tổng hợp số liệu (`dash()`, `ui()`, `summary()`, `dashCards()`,
+`dashBottom()`) trong cả 4 file test **không cần sửa** — giảm đáng kể diện sửa so với lo ngại ban
+đầu.
+
+**F. Budget `CAP-WEBAPP` — KHÔNG đổi, không cần `OWNER_EXTENSION`.** `T-18` là implementation ban
+đầu (đổi mô hình điều hướng theo yêu cầu Owner, không phải lượt sửa sau một finding trên mã
+production đã `DONE`), tiêu **0** repair cycle. `ALLOWED` giữ **4**, `USED` giữ **2**, `REMAINING`
+giữ **2**.
+
+**G. KHÔNG mở task mới trong closure này** (`AGENTS.md` §3). Không phát sinh `HARDENING` mới.
+
+## Consequences (state surfaces)
+
+- `docs/tasks/T-18-tab-that-va-dieu-huong-header.md` (mới);
+  `docs/reviews/T18-IMPLEMENTATION-AND-E2-REPORT.md` (mới).
+- `PROJECT/PROJECT_PROGRESS.md`: `T-18 = DONE`; Current/Next Task; Recent Decisions.
+- `PROJECT/REVIEW_BUDGET_LEDGER.md` §2.2.17 (mới): INITIAL IMPLEMENTATION, 0 chu kỳ tiêu,
+  `4/2/2` không đổi.
+- `PROJECT/CAPABILITY_REGISTRY.md` **không sửa** — cùng tiền lệ `T-15`/`T-16`/`T-17`.
+- Số task ID mới = **1** (`T-18`). Capability mới = **0**. Lineage root mới = **0**.
+  DEC ngoài `DEC-054` = **0**. Evidence log commit = **0**. HARDENING mới = **0**.
+
+## Can Revisit After
+
+Không có điều kiện tái mở nào phát sinh từ quyết định này — task thuần điều hướng/trình bày, hoàn
+tất trong phiên. Các `RE_TRIGGER_CONDITION` đang mở của `T-16`/`T-15` giữ nguyên, không liên quan.
+
+---

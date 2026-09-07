@@ -47,12 +47,14 @@ const value = (n, places = 0) => (n === null ? '' : (n / 10 ** places).toFixed(p
 const fill = (p, id, x) => p.locator('#' + id).fill(String(x));
 const openDetails = (p) => p.locator('#l1Root details').evaluateAll((ds) => ds.forEach((d) => { d.open = true; }));
 async function uiSetPlan(p, start) {
+  await H.goTab(p, 'plan');                     // T-18: Kế hoạch nay là tab riêng
   await openDetails(p);
   await fill(p, 'l1StartMonth', start); await fill(p, 'l1Effective', start);
   await fill(p, 'l1Budget', 20000000); await fill(p, 'l1Days', '3,13,23');
   await p.click('#l1SavePlan'); await H.waitSaved(p);
 }
 async function uiSetOpening(p, o) {
+  await H.goTab(p, 'plan');
   await openDetails(p);
   await fill(p, 'l1OpeningDate', o.asOf);
   const a = o.assets[0] || { qty: 0, costUsdt: 0, costVnd: 0 };

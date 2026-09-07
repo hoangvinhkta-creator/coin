@@ -11,12 +11,14 @@ async function save(p, id) {
 }
 async function openDetails(p) { await p.locator('#l1Root details').evaluateAll(ds => ds.forEach(d => d.open = true)); }
 async function setOpening(p, o) {
+  await H.goTab(p, 'plan');                     // T-18: Kế hoạch nay là tab riêng
   await openDetails(p); await fill(p, 'l1OpeningDate', o.asOf);
   const a = o.assets[0] || { qty: 0, costUsdt: 0, costVnd: 0 };
   for (const [id, x, places] of [['l1Eth', a.qty, 8], ['l1EthCostUsdt', a.costUsdt, 6], ['l1EthCostVnd', a.costVnd, 0], ['l1Usdt', o.usdt.qty, 6], ['l1UsdtCost', o.usdt.costVnd, 0], ['l1Vnd', o.vnd.qty, 0], ['l1Reserve', o.reserveVnd, 0]]) await fill(p, id, value(x, places));
   await fill(p, 'l1OpeningNote', o.note);
 }
 async function setPlan(p, start = '2026-01') {
+  await H.goTab(p, 'plan');
   await openDetails(p); await fill(p, 'l1StartMonth', start); await fill(p, 'l1Effective', start); await fill(p, 'l1Budget', 20000000); await fill(p, 'l1Days', '3,13,23');
 }
 async function enter(p, e) {
@@ -39,6 +41,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     let s; for (const e of input) s = await enter(p, e);
     A.equal(s.events.length, 8); A.ok(s.openingPosition); record('P-1/P-2', 'Bundle thật; opening + 8 event qua UI; 2 treasury, 2 PLAN, EXTRA, RESERVE contribution/buy, PRICE.');
     const edit = s.events.find(e => e.seq === 2), deleted = s.events.find(e => e.seq === 3);
+    await H.goTab(p, 'history');                 // T-18: nút Sửa/Xoá nay chỉ hiện ở tab Lịch sử
     await p.click('button[data-id="' + edit.id + '"][data-action="edit"]'); await fill(p, 'l1Qty', '0.24'); s = await save(p, 'l1SaveEvent');
     A.equal(s.events.find(e => e.id === edit.id).seq, edit.seq);
     const beforeDelete = JSON.stringify(s); const snap = await snapshotClick(p, 'button[data-id="' + deleted.id + '"][data-action="delete"]'); await H.waitSaved(p);
@@ -68,6 +71,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     record('P-5', 'Reload tự replay; dashboard/holdings/giá vốn khớp oracle tính tay.');
     A.deepEqual(L.canonical(s), s); A.deepEqual(Object.keys(s).sort(), ['events', 'nextSeq', 'openingPosition', 'plan', 'rev', 'schema']);
     record('P-6', 'Payload durable allowlist canonical; không derived truth.');
+    await H.goTab(p, 'settings');                 // T-18: #l1Export/#l1Import nay chỉ hiện ở tab Cài đặt
     await openDetails(p); const file = await snapshotClick(p, '#l1Export'); A.deepEqual(file.state, s);
     const exportInput = { state: s, derivedSnapshot: { costVnd: 42 } }; exportInput.state.derivedSnapshot = { holdings: 0 };
     const beforeImport = F.copy(s); delete beforeImport.derivedSnapshot;
@@ -103,6 +107,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     /* ---- T-16: sổ `coindca.ledger/2` nạp được ở chế độ CHỈ ĐỌC và nâng cấp được qua UI ---- */
     const v2 = F.copy(migrated); v2.schema = 'coindca.ledger/2'; delete v2.LEGACY_ARCHIVE; delete v2.RESEARCH_ONLY; v2.rev = 0;
     await H.putDoc('state', v2); await p.evaluate(() => localStorage.clear()); await p.reload(); await H.waitPhase(p, 'ONLINE');
+    await H.goTab(p, 'plan');                     // T-18: l1MigrationV3/l1Migration nay chỉ hiện ở tab Kế hoạch
     A.match(await p.textContent('#l1Flags'), /SCHEMA 2 — CHỈ ĐỌC/);
     A.equal(await p.locator('#l1MigrationV3').isHidden(), false, 'nút nâng cấp v2->v3 phải hiện');
     A.equal(await p.locator('#l1Migration').isHidden(), true, 'luồng migration legacy v1 KHÔNG được hiện cho sổ v2');
@@ -118,6 +123,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     record('T-16 v2->v3', 'Sổ coindca.ledger/2 nạp CHỈ ĐỌC, không bị ghi đè; nâng cấp qua UI có snapshot, oracle khớp, nội dung không đổi.');
 
     await H.putDoc('state', migrated); await p.evaluate(() => localStorage.clear()); await p.reload(); await H.waitPhase(p, 'ONLINE'); await openDetails(p);
+    await H.goTab(p, 'settings');                 // T-18: #l1Wipe nay chỉ hiện ở tab Cài đặt
     p.removeAllListeners('dialog'); p.on('dialog', dialog => dialog.dismiss());
     const cancelledSnapshot = await snapshotClick(p, '#l1Wipe'); A.deepEqual(cancelledSnapshot.state, migrated);
     await p.waitForFunction(() => document.getElementById('l1Message').textContent.includes('Đã hủy'));
@@ -148,6 +154,7 @@ async function snapshotClick(p, selector) { const dl = p.waitForEvent('download'
     record('Persistence stale rev', 'Tab cũ không ghi đè server revision mới hơn.');
     const corrupt = { schema: 'unsupported/999', rev: external.rev + 1 }; await H.putDoc('state', corrupt);
     await p.reload(); await H.waitPhase(p, 'CORRUPT'); await openDetails(p);
+    await H.goTab(p, 'settings');                 // T-18: #l1Export nay chỉ hiện ở tab Cài đặt
     const rawExport = await snapshotClick(p, '#l1Export'); A.deepEqual(rawExport.state, corrupt); A.deepEqual(await H.getDoc('state'), corrupt);
     record('Persistence corrupt/version', 'Unknown schema bị khóa, xuất raw đầy đủ, không wipe/backfill.');
     await H.putDoc('state', external);

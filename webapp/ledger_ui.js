@@ -168,14 +168,18 @@
   }
   function kindFields() { for (const k of ['TREASURY', 'TRADE', 'RESERVE', 'CASH', 'PRICE']) $('l1Fields' + k).hidden = $('l1Kind').value !== k; }
 
-  /* -------- điều hướng: 4 điểm đến trong MỘT tài liệu cuộn được, refresh-safe --------
-   * (không display:none các section — history/plan/settings phải luôn tương tác được cho
-   * test_t12_browser.js vốn không bao giờ bấm điều hướng trước khi thao tác trên form). */
+  /* -------- điều hướng: 4 tab THẬT (ẩn/hiện qua `hidden`), refresh-safe qua URL hash --------
+   * (T-18). "+ Ghi giao dịch" (`#l1Entry`) KHÔNG phải một trong 4 `.view-sec` — nó là một
+   * sibling luôn hiện, mở sẵn theo mặc định (quyết định gốc T-13, giữ nguyên) — nên các trường
+   * của nó (`l1Kind`, `l1Date`, các field theo kind, `l1SaveEvent`…) vẫn tương tác được bất kể
+   * tab nào đang active, không cần chuyển tab trước. Chỉ các trường NẰM TRONG một `.view-sec`
+   * (Kế hoạch/Lịch sử/Cài đặt) mới cần đúng tab đó đang active để bấm/điền được. */
   function routeTo(view, behavior) {
     const el = $('view-' + view); if (!el) return;
-    el.scrollIntoView({ behavior: behavior || 'smooth', block: 'start' });
-    document.querySelectorAll('#bottomNav button').forEach(b => b.setAttribute('aria-current', String(b.dataset.view === view)));
+    document.querySelectorAll('.view-sec').forEach(sec => { sec.hidden = sec !== el; });
+    document.querySelectorAll('#tabNav button').forEach(b => b.setAttribute('aria-current', String(b.dataset.view === view)));
     if (location.hash !== '#/' + view) history.replaceState(null, '', '#/' + view);
+    window.scrollTo({ top: 0, behavior: behavior || 'smooth' });
   }
   function viewFromHash() { const m = /^#\/(dashboard|history|plan|settings)/.exec(location.hash); return m ? m[1] : 'dashboard'; }
 
@@ -496,7 +500,7 @@
     for (const id of ['histFilterType', 'histFrom', 'histTo']) $(id).onchange = () => render();
     $('histSearch').oninput = () => render();
 
-    document.querySelectorAll('#bottomNav button').forEach(b => { b.onclick = () => routeTo(b.dataset.view); });
+    document.querySelectorAll('#tabNav button').forEach(b => { b.onclick = () => routeTo(b.dataset.view); });
     $('fabEntry').onclick = () => openEntry();
     window.addEventListener('hashchange', () => routeTo(viewFromHash(), 'auto'));
     routeTo(viewFromHash(), 'auto');

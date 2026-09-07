@@ -33,12 +33,14 @@ const j = (x) => JSON.stringify(H.canon(x));
 const TODAY = '2026-03-21';
 
 async function uiSetPlan(p, start) {
+  await H.goTab(p, 'plan');                     // T-18: Kế hoạch nay là tab riêng
   await openDetails(p);
   await fill(p, 'l1StartMonth', start); await fill(p, 'l1Effective', start);
   await fill(p, 'l1Budget', 20000000); await fill(p, 'l1Days', '3,13,23');
   await p.click('#l1SavePlan'); await H.waitSaved(p);
 }
 async function uiSetOpening(p, o) {
+  await H.goTab(p, 'plan');
   await openDetails(p);
   await fill(p, 'l1OpeningDate', o.asOf);
   const a = o.assets[0] || { qty: 0, costUsdt: 0, costVnd: 0 };
@@ -88,6 +90,7 @@ async function armConfirm(p, answer) {
 const confirmLog = (p) => p.evaluate(() => window.__confirmLog || []);
 /** Nạp file backup qua đúng input `#l1Import`; trả về { download|null, message }. */
 async function importFile(p, name, body, expectDownload) {
+  await H.goTab(p, 'settings');                 // T-18: #l1Import nay chỉ hiện ở tab Cài đặt
   const dl = expectDownload ? p.waitForEvent('download', { timeout: 15000 }) : null;
   await p.setInputFiles('#l1Import', { name, mimeType: 'application/json', buffer: Buffer.from(body) });
   let file = null;
@@ -118,6 +121,7 @@ async function importFile(p, name, body, expectDownload) {
 
     /* ---------- CHECK-T14-06 / C-AS-08 ---------- */
     begin('CHECK-T14-06', 'Export mang timestamp + schemaVersion + CHỈ nguồn sự thật canonical');
+    await H.goTab(p, 'settings');                // T-18: #l1Export nay chỉ hiện ở tab Cài đặt
     await openDetails(p);
     const dl = p.waitForEvent('download');
     await p.click('#l1Export');
@@ -196,6 +200,7 @@ async function importFile(p, name, body, expectDownload) {
     /* ---------- CHECK-T14-10 / C-AS-09 — restore hợp lệ tái tạo ĐÚNG trạng thái ---------- */
     begin('CHECK-T14-10', 'backup hợp lệ -> sổ bị xoá -> restore -> ACK -> reload -> derive() y hệt');
     await armConfirm(p, true);
+    await H.goTab(p, 'settings');                               // T-18: #l1Wipe nay chỉ hiện ở tab Cài đặt
     await p.click('#l1Wipe');                                   // sổ về rỗng qua đúng UI
     await H.waitSaved(p);
     const wiped = await H.getDoc('state');

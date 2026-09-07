@@ -351,8 +351,12 @@ async function googleSignIn(p, opts) {
   if (r.error) throw new Error('googleSignIn failed: ' + r.error);
   return r.uid;
 }
-/** Đăng xuất qua nút trong app (mục Cài đặt / banner), rồi chờ phase SIGNED_OUT. */
+/** Đăng xuất qua nút trong app (mục Cài đặt / banner), rồi chờ phase SIGNED_OUT.
+ *  T-18: khi ONLINE, nút "Đăng xuất" chỉ chắc chắn có trong `#fbBox` (mục Cài đặt) — banner auth
+ *  chỉ hiện lúc SIGNED_OUT/UNRECOGNIZED, không phải lúc ONLINE. Chuyển tab Cài đặt trước để nút
+ *  đó thật sự hiện (`.view-sec` khác đang `hidden`). */
 async function googleSignOut(p) {
+  await goTab(p, 'settings');
   await p.click('[data-auth="signout"]');
   return waitPhase(p, 'SIGNED_OUT');
 }
@@ -433,6 +437,11 @@ async function readState(p) {
   if (d.length) throw new Error('DURABLE != IN-MEMORY state (' + d.length + ' lệch):\n  ' + d.slice(0, 10).join('\n  '));
   return durable;
 }
+/** T-18: 4 mục (Tổng quan/Lịch sử/Kế hoạch/Cài đặt) nay là tab THẬT (`ledger_ui.js::routeTo` ẩn
+ *  các `.view-sec` khác qua `hidden`) — các trường bên trong một tab chỉ bấm/điền được khi đúng
+ *  tab đó đang active. `#l1Entry` ("+ Ghi giao dịch") KHÔNG bị gate theo tab nên KHÔNG cần gọi
+ *  hàm này trước khi thao tác trường của nó. */
+async function goTab(p, view) { await p.click('#tabNav button[data-view="' + view + '"]'); }
 
 module.exports = {
   APP_FINAL, SEED_PATH, RULES_PATH, CHROMIUM, PROJECT, SDK_VERSION, ACK_TIMEOUT_MS,
@@ -441,5 +450,5 @@ module.exports = {
   googleAccount, anonAccount, googleSignIn, googleSignOut, popupAttempt,
   canon, canonJSON, diff, startServer, stopServer, baseUrl: () => baseUrl,
   prepareContext, emulatorConfig, attachErrors, status, waitPhase, waitSaved, bootstrapOwner,
-  newPage, newPersistent, readState, rest, AUTH_PORT, FS_PORT, DOCS, ADMIN,
+  newPage, newPersistent, readState, goTab, rest, AUTH_PORT, FS_PORT, DOCS, ADMIN,
 };

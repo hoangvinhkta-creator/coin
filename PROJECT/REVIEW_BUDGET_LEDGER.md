@@ -1015,3 +1015,45 @@ của capability nếu cần — `T-17` không tiêu vào đó vì nó không ph
 Effective Risk của `CAP-WEBAPP` **KHÔNG đổi** (vẫn `HIGH`). `T-17` không mở rộng production path,
 không thêm REQUIRED check vào gate đã FROZEN của các task trước, không đổi bất kỳ field/phép tính
 nào của `derive()` — thuần thay đổi cách trình bày dữ liệu đã có.
+
+#### 2.2.17 `S045` (2026-09-07) — `T-18` 4 tab thật + điều hướng lên header: implementation ban đầu (0 chu kỳ)
+
+    CAPABILITY      = CAP-WEBAPP        (lineage root WP-C1)
+    TASK            = T-18              (NOT_PLANNED -> DONE, một phiên, DEC-054)
+    LOẠI            = INITIAL IMPLEMENTATION — KHÔNG tiêu repair cycle
+
+Vì sao KHÔNG phải repair cycle: `T-18` là công việc MỚI theo yêu cầu Owner (đổi mô hình điều
+hướng), không phải một lượt sửa sau khi reviewer trả finding trên mã production đã `DONE`.
+`webapp/ledger.js` diff **rỗng** — task này ở NGOÀI ranh giới `accounting_financial`, giống
+`T-17`. `USED` giữ nguyên **2**.
+
+**Khác với `T-17`: task này BẮT BUỘC phải sửa 4 file test** (`test_t12_browser.js`,
+`test_stepb_ui.js`, `test_t14_backup_restore.js`, `test_t14_persistence.js`) + 1 helper dùng
+chung (`test_firebase_harness.js`), vì yêu cầu Owner đảo ngược đúng ràng buộc kiến trúc mà các
+test đó đang giả định (mọi mục luôn tương tác được, không cần chuyển tab). Mỗi chỗ sửa CHỈ chèn
+thêm một lệnh chuyển tab trước hành động cần nó — không xoá/nới lỏng một assertion nào, xác nhận
+bằng số lượng assertion mỗi file PASS đúng như trước khi sửa. Chi tiết:
+`docs/reviews/T18-IMPLEMENTATION-AND-E2-REPORT.md` §2.4, §3.
+
+| # | Loại | BASE | HEAD | Diff production path | Kết quả |
+|---|---|---|---|---|---|
+| — | `T-18` implementation ban đầu (`S045`) | `563fda3` | nhánh `claude/coincda-ui-reorganize-2ykjse` | **2 file, ~+40/−20** (`webapp/ledger_ui.js`, `webapp/app_shell.html`); tính cả test/harness: 7 file, +74/−36 | 11/11 REQUIRED PASS (E1); `npm test` (10 suite, gồm emulator + browser) exit 0; không assertion nào bị xoá/nới lỏng |
+
+Đo trực tiếp, không cộng tay:
+
+    git diff --shortstat 563fda3..HEAD -- webapp/ledger_ui.js webapp/app_shell.html webapp/test_firebase_harness.js webapp/test_t12_browser.js webapp/test_stepb_ui.js webapp/test_t14_backup_restore.js webapp/test_t14_persistence.js
+      7 files changed, 74 insertions(+), 36 deletions(-)
+    git diff --stat     563fda3..HEAD -- webapp/ledger.js src/eth_dca_os docs/spec firestore.rules
+      -> (rỗng)
+
+Trạng thái budget sau phiên — **KHÔNG đổi, không cần `OWNER_EXTENSION`**:
+
+    ALLOWED BUDGET            = 4 repair cycle    <- KHÔNG ĐỔI
+    CURRENT BUDGET USED       = 2 repair cycle    <- KHÔNG ĐỔI. T-18 tiêu 0.
+    CURRENT BUDGET REMAINING  = 2 repair cycle    <- KHÔNG ĐỔI
+
+Effective Risk của `CAP-WEBAPP` **KHÔNG đổi** (vẫn `HIGH`). `T-18` không mở rộng production path,
+không thêm REQUIRED check vào gate đã FROZEN của các task tính toán trước đó (`T-12`/`T-15`/
+`T-16`), không đổi bất kỳ field/phép tính nào của `derive()` — thuần đổi mô hình điều hướng UI.
+Tier routing cao hơn `T-17` (C/xhigh so với B/high) vì Blast Radius/Failure cost của việc chạm
+hợp đồng test FROZEN, KHÔNG phải vì chạm lớp tài chính.
